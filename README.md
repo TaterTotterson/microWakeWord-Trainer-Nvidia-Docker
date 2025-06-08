@@ -7,7 +7,6 @@ Easily train MicroWakeWord detection models with this pre-built Docker image.
 
 ## Prerequisites
 
-- Docker installed on your system.
 - An NVIDIA GPU with CUDA support.
 
 ## Quick Start
