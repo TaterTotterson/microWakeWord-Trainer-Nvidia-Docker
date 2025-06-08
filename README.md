@@ -7,8 +7,8 @@ Easily train MicroWakeWord detection models with this pre-built Docker image.
 
 ## Prerequisites
 
-- An NVIDIA GPU with CUDA support.
-- Advanced playbook requires RTX xx90, you need more then 20GB vram
+- An NVIDIA GPU with CUDA support (Advanced Playbook).
+- Advanced playbook requires RTX xx90, you need more then 20GB vram (Advanced Playbook).
 
 ## Quick Start
 
