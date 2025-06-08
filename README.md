@@ -30,7 +30,7 @@ docker run --rm -it \
     -v $(pwd):/data \
     masterphooey/microwakeword-trainer
 ```
---gpus all: Enables GPU acceleration (optional, remove if not using a GPU).
+--gpus all: Enables GPU acceleration.
 -p 8888:8888: Exposes the Jupyter Notebook on port 8888.
 -v $(pwd):/data: Maps the current directory to the container's /data directory for saving your files.
 
