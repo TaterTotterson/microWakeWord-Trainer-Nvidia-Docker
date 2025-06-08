@@ -1,6 +1,6 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/MasterPhooey/MicroWakeWord-Trainer-Docker/refs/heads/main/mmw.png" alt="MicroWakeWord Trainer Logo" width="100" />
-  <h1>MicroWakeWord Trainer Docker</h1>
+  <h1>microWakeWord Trainer Docker</h1>
 </div>
 
 Easily train MicroWakeWord detection models with this pre-built Docker image.
