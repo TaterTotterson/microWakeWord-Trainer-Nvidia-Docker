@@ -3,7 +3,7 @@
   <h1>microWakeWord Trainer Docker</h1>
 </div>
 
-Easily train MicroWakeWord detection models with this pre-built Docker image.
+Easily train microWakeWord detection models with this pre-built Docker image.
 
 ## Prerequisites
 
