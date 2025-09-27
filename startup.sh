@@ -1,19 +1,23 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Check if basic training notebook exists in /data
-if [ ! -f /data/basic_training_notebook.ipynb ]; then
-    echo "Basic training notebook not found in /data. Copying the default notebook..."
-    cp /root/basic_training_notebook.ipynb /data/basic_training_notebook.ipynb
-else
-    echo "Basic training notebook already exists in /data. Skipping copy."
+: "${NB_UID:=0}"
+: "${NB_GID:=0}"
+umask 002
+
+NOTEBOOK_SRC="/root/microWakeWord_training_notebook.ipynb"
+NOTEBOOK_DST="/data/microWakeWord_training_notebook.ipynb"
+
+mkdir -p /data /data/generated_samples
+
+if [[ ! -f "$NOTEBOOK_DST" ]]; then
+  echo "No training notebook found in /data; copying default…"
+  cp -n "$NOTEBOOK_SRC" "$NOTEBOOK_DST"
 fi
 
-# Check if advanced training notebook exists in /data
-if [ ! -f /data/advanced_training_notebook.ipynb ]; then
-    echo "Advanced training notebook not found in /data. Copying the default notebook..."
-    cp /root/advanced_training_notebook.ipynb /data/advanced_training_notebook.ipynb
-else
-    echo "Advanced training notebook already exists in /data. Skipping copy."
+# Try to align ownership for convenience (ignore errors if not permitted)
+if [[ "$NB_UID" != "0" || "$NB_GID" != "0" ]]; then
+  chown -R "$NB_UID:$NB_GID" /data || true
 fi
 
 exec "$@"
