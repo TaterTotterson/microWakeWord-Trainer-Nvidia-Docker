@@ -1,12 +1,14 @@
 # CUDA + cuDNN userspace from NVIDIA (Ubuntu 22.04)
-FROM nvidia/cuda:12.6.2-cudnn-runtime-ubuntu22.04
-
+FROM nvidia/cuda:12.6.2-cudnn-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_ROOT_USER_ACTION=ignore \
-    HF_HUB_DISABLE_SYMLINKS_WARNING=1
+    HF_HUB_DISABLE_SYMLINKS_WARNING=1 \
+    XLA_FLAGS="--xla_gpu_cuda_data_dir=/usr/local/cuda" \
+    PATH="/usr/local/cuda/bin:${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
 
 # System deps (+dev headers for building C/C++ extensions)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,7 +24,6 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 \
  && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
 # Python deps
-# Pre-install numpy (and cython) so native builds (webrtcvad, pymicro_features) have headers ready
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip \
  && pip install "numpy==1.26.4" "cython>=0.29.36" \
