@@ -5,10 +5,6 @@
 
 Easily train microWakeWord detection models with this pre-built Docker image.
 
-## Prerequisites
-
-- Advanced notebook requires Nvidia RTX xx90, you need more then 20GB vram.
-
 ## Quick Start
 
 Follow these steps to get started with the microWakeWord Trainer:
