@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/MasterPhooey/MicroWakeWord-Trainer-Docker/refs/heads/main/mmw.png" alt="MicroWakeWord Trainer Logo" width="100" />
+  <img src="https://raw.githubusercontent.com/TaterTotterson/microWakeWord-Trainer-Nividia-Docker/refs/heads/main/mmw.png" alt="MicroWakeWord Trainer Logo" width="100" />
   <h1>microWakeWord Trainer Docker</h1>
 </div>
 
@@ -17,7 +17,7 @@ Follow these steps to get started with the microWakeWord Trainer:
 
 Pull the Docker image from Docker Hub:
 ```bash
-docker pull masterphooey/microwakeword-trainer
+docker pull ghcr.io/tatertotterson/microwakeword:latest
 ```
 
 ### 2. Run the Docker Container
@@ -28,7 +28,7 @@ docker run --rm -it \
     --gpus all \ 
     -p 8888:8888 \
     -v $(pwd):/data \
-    masterphooey/microwakeword-trainer
+    ghcr.io/tatertotterson/microwakeword:latest
 ```
 --gpus all: Enables GPU acceleration.
 -p 8888:8888: Exposes the Jupyter Notebook on port 8888.
