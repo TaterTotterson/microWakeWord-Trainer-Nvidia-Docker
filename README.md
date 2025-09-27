@@ -3,76 +3,86 @@
   <h1>microWakeWord Trainer Docker</h1>
 </div>
 
-Easily train microWakeWord detection models with this pre-built Docker image.
+# 🥔 MicroWakeWord Trainer – Tater Approved  
 
-## Quick Start
+**✅ Tater Totterson tested & working on an NVIDIA RTX 3070 Laptop GPU (8 GB VRAM).**  
+Easily train microWakeWord detection models with this pre-built Docker image and JupyterLab notebook.  
 
-Follow these steps to get started with the microWakeWord Trainer:
+---
 
-### 1. Pull the Pre-Built Docker Image
+## 🚀 Quick Start  
 
-Pull the Docker image from Docker Hub:
+Follow these steps to get up and running:  
+
+### 1️⃣ Pull the Pre-Built Docker Image  
+
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-### 2. Run the Docker Container
+---
 
-Start the container with a mapped volume for saving your data and expose the Jupyter Notebook:
+### 2️⃣ Run the Docker Container  
+
 ```bash
 docker run --rm -it \
-    --gpus all \ 
+    --gpus all \
     -p 8888:8888 \
     -v $(pwd):/data \
     ghcr.io/tatertotterson/microwakeword:latest
 ```
---gpus all: Enables GPU acceleration.
--p 8888:8888: Exposes the Jupyter Notebook on port 8888.
--v $(pwd):/data: Maps the current directory to the container's /data directory for saving your files.
 
-### 3. Access Jupyter Notebook
+**What these flags do:**  
+- `--gpus all` → Enables GPU acceleration  
+- `-p 8888:8888` → Exposes JupyterLab on port 8888  
+- `-v $(pwd):/data` → Saves your work in the current folder  
 
-Open your web browser and navigate to:
+---
+
+### 3️⃣ Open JupyterLab  
+
+Visit [http://localhost:8888](http://localhost:8888) in your browser — the notebook UI will open.  
+
+---
+
+### 4️⃣ Set Your Wake Word  
+
+At the **top of the notebook**, find this line:  
+
 ```bash
-http://localhost:8888
+TARGET_WORD = "hey_tater"  # Change this to your desired wake word
 ```
-The notebook interface should appear.
 
-### 4. Edit the Wake Word
+Change `"hey_tater"` to your desired wake word (phonetic spellings often work best).  
 
-Locate and edit the second cell in the notebook to specify your desired wake word:
-```bash
-target_word = 'khum_puter'  # Phonetic spellings may produce better samples
-```
-Change 'khum_puter' to your desired wake word.
+---
 
-### 5. Run the Notebook
-Run all cells in the notebook. The process will:
+### 5️⃣ Run the Notebook  
 
-Generate wake word samples.
-Train a detection model.
-Output a quantized .tflite model for on-device use.
+Run all cells in the notebook. This process will:  
+- Generate wake word samples  
+- Train a detection model  
+- Output a quantized `.tflite` model ready for on-device use  
 
-### 6. Retrieve the Trained Model and JSON
-Once the training is complete, the quantized .tflite model and .json will be available for download. Follow the instructions in the last cell of the notebook to download the model.
+---
 
-## Resetting to a Clean State
-If you need to start fresh:
+### 6️⃣ Retrieve the Trained Model & JSON  
 
-### Delete your data folder:
-Locate and delete the data folder that was mapped to your Docker container.
+When training finishes, download links for both the `.tflite` model and its `.json` manifest will be displayed in the last cell.  
 
-### Restart the Docker container:
-Run the container again using the steps provided above.
+---
 
-### Fresh notebook generated:
-Upon restarting, a clean version of the training notebook will be placed in the newly created data directory.
-This will reset your MicroWakeWord-Training-Docker environment to its initial state.
+## 🔄 Resetting to a Clean State  
 
-## Credits
+If you need to start fresh:  
 
-This project builds upon the excellent work of [kahrendt/microWakeWord](https://github.com/kahrendt/microWakeWord). A huge thank you to the original authors for their contributions to the open-source community!
+1. Delete the `data` folder that was mapped to your Docker container.  
+2. Restart the container using the steps above.  
+3. A fresh copy of the notebook will be placed into the `data` directory.  
 
+---
 
+## 🙌 Credits  
 
-
+This project builds upon the excellent work of [kahrendt/microWakeWord](https://github.com/kahrendt/microWakeWord).  
+Huge thanks to the original authors for their contributions to the open-source community!
