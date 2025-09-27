@@ -1,6 +1,11 @@
 # --- Core training (Microwakeword) ---
 torch==2.5.1
 torchaudio==2.5.1
+tensorboard==2.18.0
+tensorboard-data-server==0.7.2
+tensorflow==2.18.0
+tensorflow-estimator==2.13.0
+tensorflow-io-gcs-filesystem==0.37.1
 numpy==1.26.4
 scipy==1.12.0
 librosa==0.10.2.post1
@@ -13,16 +18,16 @@ scikit-learn==1.6.0
 numba==0.60.0
 joblib==1.4.2
 pandas==2.2.3
-# feature extractors + metadata helpers your repo uses
 pymicro_features @ git+https://github.com/puddly/pymicro-features@e1d3f88183e12bb8af2df9e399ea157af7393762
 audio-metadata @ git+https://github.com/whatsnowplaying/audio-metadata@d4ebb238e6a401bb1a5aaaac60c9e2b3cb30929f
 bitstruct==8.19.0
 
 # --- Piper sample generation ---
+piper-tts>=1.2.0
 onnxruntime-gpu>=1.16.0
 piper-phonemize-cross==1.2.1
 
-# --- Notebook / tooling (keep light) ---
+# --- Notebook / tooling ---
 ipykernel==6.29.5
 jupyterlab==4.3.4
 ipywidgets==8.1.5

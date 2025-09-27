@@ -1,17 +1,21 @@
-# CUDA + cuDNN userspace from NVIDIA (no manual repo installs needed)
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
+# CUDA + cuDNN userspace from NVIDIA (Ubuntu 22.04)
+FROM nvidia/cuda:12.6.2-cudnn-runtime-ubuntu22.04
+
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PIP_ROOT_USER_ACTION=ignore \
+    HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
 # System deps (+dev headers for building C/C++ extensions)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 python3.10-venv python3.10-distutils python3.10-dev python3-pip \
-    git wget curl unzip ca-certificates \
+    git wget curl unzip ca-certificates git-lfs \
     build-essential g++ cmake \
     libsndfile1 libsndfile1-dev libffi-dev \
-    && rm -rf /var/lib/apt/lists/*
+    ffmpeg \
+ && rm -rf /var/lib/apt/lists/*
 
 # Use python3.10 everywhere
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 \
