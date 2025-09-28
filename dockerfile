@@ -1,4 +1,4 @@
-# CUDA + cuDNN userspace from NVIDIA (Ubuntu 22.04)
+# CUDA 12.6 + cuDNN devel (Ubuntu 22.04)
 FROM nvidia/cuda:12.6.2-cudnn-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 \
  && update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
+# ---- No cuDNN repo meddling needed if using TF 2.17.x ----
+
 # Python deps
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip \
@@ -40,7 +42,6 @@ RUN chmod +x /usr/local/bin/startup.sh
 
 EXPOSE 8888
 
-# Launch JupyterLab (tokenless for local dev; set a token if you want auth)
 CMD ["/bin/bash", "-lc", "/usr/local/bin/startup.sh && \
      exec jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root \
      --ServerApp.token='' --ServerApp.password='' --ServerApp.root_dir=/data"]

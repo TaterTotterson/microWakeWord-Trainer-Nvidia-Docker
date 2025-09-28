@@ -1,11 +1,14 @@
 # --- Core training (Microwakeword) ---
 torch==2.5.1
 torchaudio==2.5.1
-tensorboard==2.18.0
+
+# TensorFlow stack (match CUDA/cuDNN in the base image)
+tensorflow==2.17.1
+tensorboard==2.17.1
 tensorboard-data-server==0.7.2
-tensorflow==2.18.0
-tensorflow-estimator==2.13.0
 tensorflow-io-gcs-filesystem==0.37.1
+# tensorflow-estimator not needed (remove)
+
 numpy==1.26.4
 scipy==1.12.0
 librosa==0.10.2.post1
