@@ -103,9 +103,6 @@ Both files are also saved in your `/data` directory, ready to drop into **ESPHom
 ---
 
 ## 🙌 Credits  
-
-Built by **Tater Totterson**  
 Based on the brilliant work of [kahrendt/microWakeWord](https://github.com/kahrendt/microWakeWord).  
-Special thanks to the **Piper TTS** and **TensorFlow** communities for enabling on-device wake-word magic.
 
 ---
