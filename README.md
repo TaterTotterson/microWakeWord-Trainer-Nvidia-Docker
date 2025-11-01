@@ -1,4 +1,4 @@
-div align="center">
+<div align="center">
   <img src="https://raw.githubusercontent.com/TaterTotterson/microWakeWord-Trainer-Nvidia-Docker/refs/heads/main/mmw.png" alt="MicroWakeWord Trainer Logo" width="100" />
   <h1>microWakeWord Trainer – NVIDIA Docker Edition</h1>
 </div>
