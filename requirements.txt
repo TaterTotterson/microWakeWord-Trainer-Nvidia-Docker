@@ -1,41 +1,39 @@
-# --- Core training (Microwakeword) ---
-torch==2.5.1
-torchaudio==2.5.1
+# --- core / ui ---
+streamlit==1.39.0
+rich==13.9.4
+tqdm==4.67.1
 
-# TensorFlow stack (match CUDA/cuDNN in the base image)
-tensorflow==2.17.1
-tensorboard==2.17.1
-tensorboard-data-server==0.7.2
-tensorflow-io-gcs-filesystem==0.37.1
-# tensorflow-estimator not needed (remove)
-
+# --- audio / signal ---
 numpy==1.26.4
 scipy==1.12.0
 librosa==0.10.2.post1
 soundfile==0.12.1
 soxr==0.5.0.post1
+audioread>=3.0.0
+
+# --- ML helpers ---
+scikit-learn==1.6.0
+pandas==2.2.3
+joblib==1.4.2
+numba==0.60.0
+
+# --- HF datasets (used in dataset prep) ---
+datasets[audio]==2.20.0
+
+# --- wakeword deps ---
 audiomentations==0.38.0
 webrtcvad==2.0.10
-tqdm==4.67.1
-scikit-learn==1.6.0
-numba==0.60.0
-joblib==1.4.2
-pandas==2.2.3
+bitstruct==8.19.0
+mmap-ninja==0.8.0
 pymicro_features @ git+https://github.com/puddly/pymicro-features@e1d3f88183e12bb8af2df9e399ea157af7393762
 audio-metadata @ git+https://github.com/whatsnowplaying/audio-metadata@d4ebb238e6a401bb1a5aaaac60c9e2b3cb30929f
-bitstruct==8.19.0
 
-# --- Piper sample generation ---
+# --- ONNX Runtime (GPU) ---
+onnxruntime-gpu==1.18.0
+
+# --- Piper (for future sample gen) ---
 piper-tts>=1.2.0
-onnxruntime-gpu>=1.16.0
 piper-phonemize-cross==1.2.1
 
-# --- Notebook / tooling ---
-ipykernel==6.29.5
-jupyterlab==4.3.4
-ipywidgets==8.1.5
-matplotlib-inline==0.1.7
-rich==13.9.4
-
-# --- microWakeWord ---
--e git+https://github.com/kahrendt/microWakeWord@ac6502bf48b5e372c47ed509f5f5ca181e6d50bb#egg=microwakeword
+# --- NVIDIA fix for PyTorch pynvml warning ---
+nvidia-ml-py>=12.555.43
