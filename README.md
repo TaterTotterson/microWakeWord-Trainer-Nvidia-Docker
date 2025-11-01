@@ -1,88 +1,111 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/TaterTotterson/microWakeWord-Trainer-Nvidia-Docker/refs/heads/main/mmw.png" alt="MicroWakeWord Trainer Logo" width="100" />
-  <h1>microWakeWord Trainer Docker</h1>
+  <h1>microWakeWord Trainer – NVIDIA Docker Edition</h1>
 </div>
 
 # 🥔 MicroWakeWord Trainer – Tater Approved  
 
-**✅ Tater Totterson tested & working on an NVIDIA RTX 3070 Laptop GPU (8 GB VRAM).**  
-Easily train microWakeWord detection models with this pre-built Docker image and JupyterLab notebook.  
+**✅ Verified working on RTX 3070 (8 GB VRAM)**  
+A full-featured Dockerized environment for generating and training **microWakeWord** models with GPU acceleration.  
+Now featuring a **Streamlit web UI** — no Jupyter notebook needed.
 
 ---
 
 ## 🚀 Quick Start  
 
-Follow these steps to get up and running:  
+### 1️⃣ Pull the Pre-Built Image
 
-### 1️⃣ Pull the Pre-Built Docker Image  
-
-```bash
 docker pull ghcr.io/tatertotterson/microwakeword:latest
-```
 
 ---
 
-### 2️⃣ Run the Docker Container  
-
-```bash
+### 2️⃣ Run the Container
+```
 docker run --rm -it \
-    --gpus all \
-    -p 8888:8888 \
-    -v $(pwd):/data \
-    ghcr.io/tatertotterson/microwakeword:latest
+  --gpus all \
+  -p 8502:8502 \
+  -v $(pwd):/data \
+  ghcr.io/tatertotterson/microwakeword:latest
 ```
-
-**What these flags do:**  
-- `--gpus all` → Enables GPU acceleration  
-- `-p 8888:8888` → Exposes JupyterLab on port 8888  
-- `-v $(pwd):/data` → Saves your work in the current folder  
-
----
-
-### 3️⃣ Open JupyterLab  
-
-Visit [http://localhost:8888](http://localhost:8888) in your browser — the notebook UI will open.  
+**What this does:**
+- `--gpus all` → Enables full CUDA acceleration  
+- `-p 8502:8502` → Exposes Streamlit web UI  
+- `-v $(pwd):/data` → Mounts your working directory for model outputs  
 
 ---
 
-### 4️⃣ Set Your Wake Word  
+### 3️⃣ Open the Trainer UI  
 
-At the **top of the notebook**, find this line:  
-
-```bash
-TARGET_WORD = "hey_tater"  # Change this to your desired wake word
-```
-
-Change `"hey_tater"` to your desired wake word (phonetic spellings often work best).  
+Visit [http://localhost:8502](http://localhost:8502) in your browser.  
+You’ll see the **microWakeWord Trainer Dashboard**, powered by Streamlit.
 
 ---
 
-### 5️⃣ Run the Notebook  
+## 🧰 Modes
 
-Run all cells in the notebook. This process will:  
-- Generate wake word samples  
-- Train a detection model  
-- Output a quantized `.tflite` model ready for on-device use  
+### 🧱 Run Once (Setup)
+Performs all one-time steps:
+- Environment and GPU validation  
+- Installs `microWakeWord` and dependencies  
+- Prepares all background and augmentation datasets  
 
----
-
-### 6️⃣ Retrieve the Trained Model & JSON  
-
-When training finishes, download links for both the `.tflite` model and its `.json` manifest will be displayed in the last cell.  
+Use this first when you start from a fresh container or new system.
 
 ---
 
-## 🔄 Resetting to a Clean State  
+### 🎤 Generate (Train a New Wake Word)
+End-to-end training pipeline that:
+1. Generates TTS samples for your chosen wake word  
+2. Builds augmentations and spectrogram features  
+3. Trains the TensorFlow model (GPU accelerated)  
+4. Exports `.tflite` and `.json` files ready for ESPHome or on-device inference  
 
-If you need to start fresh:  
+You can customize:
+- Wake word name  
+- Number of generated samples  
+- Piper voice model (English, German, French, or Dutch)
 
-1. Delete the `data` folder that was mapped to your Docker container.  
-2. Restart the container using the steps above.  
-3. A fresh copy of the notebook will be placed into the `data` directory.  
+---
+
+## 🧹 Clean Runs Made Easy  
+
+Each training run automatically clears previous outputs:
+training_parameters.yaml  
+trained_models/  
+generated_augmented_features/  
+generated_samples/  
+
+so you can retrain new wake words back-to-back without manually deleting data for fast repeat runs.
+
+---
+
+## 📦 Outputs  
+
+After completion, download links for your model files will appear directly in the **web UI**:
+
+- `<your_wakeword>.tflite` – the trained model  
+- `<your_wakeword>.json` – metadata and configuration  
+
+Both files are also saved in your `/data` directory, ready to drop into **ESPHome** or any **microWakeWord-compatible** inference engine.
+
+---
+
+## ⚙️ System Requirements  
+
+| Component | Recommended |
+|------------|--------------|
+| GPU | NVIDIA RTX 3060 + |
+| VRAM | ≥ 6 GB |
+| RAM | ≥ 16 GB |
+| Disk | ≥ 30 GB free |
+| CUDA | 12.x (included in container) |
 
 ---
 
 ## 🙌 Credits  
 
-This project builds upon the excellent work of [kahrendt/microWakeWord](https://github.com/kahrendt/microWakeWord).  
-Huge thanks to the original authors for their contributions to the open-source community!
+Built by **Tater Totterson**  
+Based on the brilliant work of [kahrendt/microWakeWord](https://github.com/kahrendt/microWakeWord).  
+Special thanks to the **Piper TTS** and **TensorFlow** communities for enabling on-device wake-word magic.
+
+---
