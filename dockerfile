@@ -1,5 +1,5 @@
 # CUDA 12.6 + cuDNN devel (Ubuntu 22.04)
-FROM nvidia/cuda:12.6.2-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
@@ -29,7 +29,11 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 \
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip \
  && pip install "numpy==1.26.4" "cython>=0.29.36" \
- && pip install -r /tmp/requirements.txt
+ && pip install -r /tmp/requirements.txt \
+ && pip install \
+      torch==2.7.1 \
+      torchaudio==2.7.1 \
+      --index-url https://download.pytorch.org/whl/cu128
 
 # Workspace + notebook fallback
 RUN mkdir -p /data

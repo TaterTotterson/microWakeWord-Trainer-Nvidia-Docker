@@ -1,6 +1,4 @@
 # --- Core training (Microwakeword) ---
-torch==2.5.1
-torchaudio==2.5.1
 
 # TensorFlow stack (match CUDA/cuDNN in the base image)
 tensorflow==2.17.1
