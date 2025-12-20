@@ -1,12 +1,5 @@
 # --- Core training (Microwakeword) ---
 
-# TensorFlow stack (match CUDA/cuDNN in the base image)
-tensorflow==2.17.1
-tensorboard==2.17.1
-tensorboard-data-server==0.7.2
-tensorflow-io-gcs-filesystem==0.37.1
-# tensorflow-estimator not needed (remove)
-
 numpy==1.26.4
 scipy==1.12.0
 librosa==0.10.2.post1
@@ -25,7 +18,6 @@ bitstruct==8.19.0
 
 # --- Piper sample generation ---
 piper-tts>=1.2.0
-onnxruntime-gpu>=1.16.0
 piper-phonemize-cross==1.2.1
 
 # --- Notebook / tooling ---

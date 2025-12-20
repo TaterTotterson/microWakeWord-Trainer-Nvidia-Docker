@@ -1,5 +1,5 @@
-# CUDA 12.6 + cuDNN devel (Ubuntu 22.04)
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
+# Standard Ubuntu base image.  CUDA base images not needed.
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
@@ -26,10 +26,18 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 \
 # ---- No cuDNN repo meddling needed if using TF 2.17.x ----
 
 # Python deps
+# Order is important. onnxruntime, tensorflow and torch have
+# to be installed in the order below or their cuda dependencies
+# will conflict.
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip \
  && pip install "numpy==1.26.4" "cython>=0.29.36" \
  && pip install -r /tmp/requirements.txt \
+ && pip install "onnxruntime-gpu[cuda]>=1.16.0" \
+ && pip install "tensorflow[and-cuda]==2.18.0" \
+    "tensorboard==2.18.0" \
+    "tensorboard-data-server==0.7.2" \
+    "tensorflow-io-gcs-filesystem==0.37.1" \
  && pip install \
       torch==2.7.1 \
       torchaudio==2.7.1 \
