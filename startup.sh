@@ -8,7 +8,7 @@ umask 002
 NOTEBOOK_SRC="/root/microWakeWord_training_notebook.ipynb"
 NOTEBOOK_DST="/data/microWakeWord_training_notebook.ipynb"
 
-mkdir -p /data /data/generated_samples
+mkdir -p /data /data/generated_samples /data/personal_samples
 
 if [[ ! -f "$NOTEBOOK_DST" ]]; then
   echo "No training notebook found in /data; copying default…"
