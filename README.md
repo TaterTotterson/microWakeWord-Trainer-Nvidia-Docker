@@ -82,6 +82,41 @@ If you need to start fresh:
 
 ---
 
+## 🎤 Optional: Personal Voice Samples
+
+In addition to synthetic TTS samples, the trainer can optionally use your own real voice recordings to significantly improve accuracy for your voice and environment.
+
+### How it works
+- If a folder named personal_samples/ exists and contains .wav files, the trainer will:
+  - Automatically extract features from those recordings
+  - Include them during training alongside the synthetic TTS data
+  - Up-weight your personal samples during training for better real-world performance
+
+No extra flags or configuration are required — it is detected automatically.
+
+### How to use it
+1. Create a folder in the repo root:
+   mkdir personal_samples
+
+2. Record yourself saying the wake word naturally and save the files as .wav:
+   personal_samples/
+     hey_tater_01.wav
+     hey_tater_02.wav
+     hey_tater_03.wav
+     ...
+
+3. Run the training script as normal:
+
+If personal samples are found, you’ll see a message during training indicating they are being included.
+
+### Recording tips
+- 10–30 recordings is usually enough to see a noticeable improvement
+- Vary distance, volume, and tone slightly
+- Record in the same environment where the wake word will be used (room noise matters)
+- Use 16-bit WAV files if possible (most recorders do this by default)
+
+---
+
 ## 🙌 Credits  
 
 This project builds upon the excellent work of [kahrendt/microWakeWord](https://github.com/kahrendt/microWakeWord).  
