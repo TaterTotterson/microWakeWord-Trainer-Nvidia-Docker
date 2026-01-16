@@ -1,0 +1,129 @@
+#!/bin/bash
+
+PROGPATH=$(realpath "$0")
+PROGDIR=$(dirname "${PROGPATH}")
+TRAINING_STEPS=40000
+DATA_DIR=/data
+source "${PROGDIR}/shell.functions"
+
+source "${DATA_DIR}/.venv/bin/activate"
+
+export TF_CPP_MIN_LOG_LEVEL=9
+export GLOG_minloglevel=2
+export GRPC_VERBOSITY="ERROR"
+
+echo -e "\n===== Testing Python Environment =====\n"
+
+echo -e "\n===== Testing Cuda =====\n"
+"${PROGDIR}/cudainfo"
+
+python - 2>/dev/null <<EOF
+import os, sys
+
+print("\n===== Testing Tensorflow =====\n")
+try:
+    from ai_edge_litert.interpreter import Interpreter
+    import tensorflow as tf
+
+    try:
+        with tf.device("/GPU:0"):
+            a = tf.random.normal([10000, 10000])
+            b = tf.random.normal([10000, 10000])
+            c = tf.matmul(a, b)
+        if c.device.find("GPU") >= 0:
+            result = "Available - " + c.device
+        else:
+            result = "Not available"
+    except:
+        result = "Not available"
+
+    print("GPU:", result)
+
+    try:
+        with tf.device("/CPU:0"):
+            a = tf.random.normal([10000, 10000])
+            b = tf.random.normal([10000, 10000])
+            c = tf.matmul(a, b)
+        result = "Available - " + c.device
+    except:
+        result = "Not available"
+
+    print("CPU:", result)
+except:
+    print("Tensorflow not available")
+EOF
+
+
+python - 2>/dev/null <<EOF
+import os, sys
+print("\n===== Testing Torch =====\n")
+
+try:
+    import torch
+
+    if torch.cuda.is_available():
+        print(f"GPU: Available - {torch.cuda.get_device_name(0)}")
+    else:
+        print("GPU:", "Not available")
+    print("CPU:", "Available")
+except:
+    print("Torch not available")
+EOF
+
+python - 2>/dev/null <<EOF
+import os, sys
+print("\n===== Testing onnxruntime =====\n")
+
+try:
+    import onnxruntime as ort
+
+    providers = ort.get_available_providers()
+    if 'CUDAExecutionProvider' in providers:
+        print("GPU:", "Available")
+    else:
+        print("GPU:", "Not available")
+
+    if 'CPUExecutionProvider' in providers:
+        print("CPU:", "Available")
+    else:
+        print("CPU:", "Not available")
+
+    if 'TensorrtExecutionProvider' in providers:
+        print("TensorRT:", "Available")
+    else:
+        print("TensorRT:", "Not available")
+except:
+    print("onnxruntime not available")
+EOF
+
+python - 2>/dev/null <<EOF
+import os, sys
+
+print("\n===== Testing micro-wake-word =====\n")
+
+try:
+    import numpy as np
+    import librosa
+    from mmap_ninja.ragged import RaggedMmap
+    from microwakeword.audio.augmentation import Augmentation
+    from microwakeword.audio.clips import Clips
+    from microwakeword.audio.spectrograms import SpectrogramGeneration
+    from microwakeword.audio.audio_utils import save_clip
+
+    print("micro-wake-word available")
+except:
+    print("micro-wake-word not available")
+
+print("")
+EOF
+
+echo -e "===== Testing piper-sample-generator =====\n"
+
+./tools/piper-sample-generator/generate_samples.py --help &>/dev/null && {
+    echo "piper-sample-generator available"
+} || {
+    echo "piper-sample-generator not available"
+}
+
+echo
+echo -e "\n===== Python Environment Testing Complete =====\n"

@@ -1,0 +1,112 @@
+#!/bin/bash
+set -e
+
+PROGPATH=$(realpath "$0")
+PROGDIR=$(dirname "${PROGPATH}")
+
+KNOWN_ARGS=( samples batch-size data-dir )
+source "${PROGDIR}/shell.functions"
+WAKE_WORD="${POSITIONAL_ARGS[0]}"
+
+if [ ${#UNKNOWN_ARGS[@]} -gt 0 ] ; then
+    echo "Unknown argument(s): ${UNKNOWN_ARGS[*]}" >&2
+    HELP=true
+fi
+
+if [ "${HELP}" == "true" ] || [ -z "${WAKE_WORD}" ] ; then
+    cat <<EOF >&2
+Usage: $0 [ --samples=<samples> ] [ --batch-size=<batch_size> ] <wake_word>
+
+--samples:            The number of samples to generate for the wake word.
+                      Default: ${DEFAULT_SAMPLES}
+
+--batch-size:         How many samples should be generated at a time.  The more
+                      samples, the more memory is needed.
+                      Default: ${DEFAULT_BATCH_SIZE}
+
+<wake_word>           The word to generate samples for.
+                      Required.
+
+EOF
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+source "${DATA_DIR}/.venv/bin/activate"
+
+WORK_DIR="${DATA_DIR}/work"
+mkdir -p "${WORK_DIR}" || :
+cd "${WORK_DIR}"
+
+PSG="${DATA_DIR}/tools/piper-sample-generator"
+MODELS_DIR="${PSG}/models"
+MODEL_NAME=en_US-libritts_r-medium.pt
+MODEL_FILE="${MODELS_DIR}/${MODEL_NAME}"
+SAMPLES_DIR="${WORK_DIR}/wake_word_samples"
+
+mkdir -p "${SAMPLES_DIR}" || :
+
+REGENERATE=false
+
+if [ "${SAMPLES}" -eq 1 ] ; then
+    echo "===== Generating ${SAMPLES} sample of '${WAKE_WORD}' ====="
+    wake_word_filename="${WAKE_WORD//[ \`~\!\$&*\(\)\{\}\[\]\|\;\'\"<>.?\/]/_}"
+
+    mkdir -p "${WORK_DIR}/test_sample" || :
+    "${PSG}/generate_samples.py" "${WAKE_WORD}" \
+        --model "${MODEL_FILE}" \
+        --max-samples ${SAMPLES} \
+        --batch-size ${BATCH_SIZE} \
+        --output-dir "${WORK_DIR}/test_sample" \
+        --max-speakers 100 2>&1 | sed -r -e "s/(DEBUG|INFO):__main__:/      /g"
+    mv "${WORK_DIR}/test_sample/0.wav" "${WORK_DIR}/test_sample/${wake_word_filename}.wav"
+    echo "Sample available at ${WORK_DIR}/test_sample/${wake_word_filename}.wav"
+    echo "Play it from your host."
+    exit 0
+fi
+
+grep -q "${WAKE_WORD}:${SAMPLES}:${MODEL_NAME}" "${WORK_DIR}/last_wake_word" &>/dev/null || REGENERATE=true
+
+# Double check that the number of existing samples matches SAMPLES"
+existing_samples=$(find "${SAMPLES_DIR}" -name '*.wav' | wc -l)
+[ "${existing_samples}" -eq "${SAMPLES}" ] || REGENERATE=true
+
+START_TS=$EPOCHSECONDS
+
+if ! ${REGENERATE} ; then
+    echo "Sample generation not required"
+    echo
+    exit 0
+fi
+
+echo -e "\n===== Generating ${SAMPLES} wake word samples in batches of ${BATCH_SIZE}  ====="
+export TF_CPP_MIN_LOG_LEVEL=9
+export TF_FORCE_GPU_ALLOW_GROWTH=true
+export TF_GPU_ALLOCATOR=cuda_malloc_async
+export TF_XLA_FLAGS="--tf_xla_auto_jit=0"
+export NVIDIA_TF32_OVERRIDE=1
+export TF_CUDNN_WORKSPACE_LIMIT_IN_MB=512
+export GLOG_minloglevel=2
+export GRPC_VERBOSITY=ERROR
+
+echo "   Generating samples"
+rm -rf "${SAMPLES_DIR}" || :
+mkdir -p "${SAMPLES_DIR}" || :
+"${PSG}/generate_samples.py" "${WAKE_WORD}" \
+    --model "${MODEL_FILE}" \
+    --max-samples ${SAMPLES} \
+    --batch-size ${BATCH_SIZE} \
+    --output-dir "${SAMPLES_DIR}" 2>&1 | sed -r -e "s/(DEBUG|INFO):__main__:/      /g"
+
+generated_files=$(find "${SAMPLES_DIR}" -name '*.wav' | wc -l)
+if [ "${generated_files}" -ne "${SAMPLES}" ] ; then
+    echo "ERROR:  only generated ${generated_files} files" >&2
+    exit 1
+fi
+END_TS=$(date +%s.%N)
+echo "${WAKE_WORD}:${SAMPLES}:${MODEL_NAME}" > "${WORK_DIR}/last_wake_word"
+echo
+END_TS=$EPOCHSECONDS
+print_elapsed_time "${START_TS}" "${END_TS}" "Generated ${SAMPLES} wake word samples."
+
+exit 0

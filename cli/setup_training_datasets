@@ -1,0 +1,48 @@
+#!/bin/bash
+set -euo pipefail
+
+PROGPATH=$(realpath "$0")
+PROGDIR=$(dirname "${PROGPATH}")
+
+KNOWN_ARGS=( data-dir cleanup-archives cleanup-intermediate-files )
+source "${PROGDIR}/shell.functions"
+
+if [ ${#UNKNOWN_ARGS[@]} -gt 0 ] ; then
+    echo "Unknown argument(s): ${UNKNOWN_ARGS[*]}" >&2
+    HELP=true
+fi
+
+if [ "${HELP}" == "true" ] ; then
+    cat <<EOF >&2
+Usage: setup_training_datasets [ --cleanup-archives ] [ --cleanup-intermediate-files ]
+
+Options:
+--cleanup-archives:           Automatically delete the tarballs or zipfiles after
+                              they've been extracted.
+
+--cleanup-intermediate-files: Automatically delete the intermediate files
+                              after they've been converted.
+
+EOF
+    exit 1
+fi
+
+cd "${DATA_DIR}"
+
+START_TS=$EPOCHSECONDS
+echo -e "\n===== Setting up Training Datasets =====\n"
+
+${PROGDIR}/setup_negative_datasets --cleanup-archives=${CLEANUP_ARCHIVES} \
+    --cleanup-intermediate-files=${CLEANUP_INTERMEDIATE_FILES} --data-dir="${DATA_DIR}"
+
+${PROGDIR}/setup_mit_audio --cleanup-archives=${CLEANUP_ARCHIVES} \
+    --cleanup-intermediate-files=${CLEANUP_INTERMEDIATE_FILES} --data-dir="${DATA_DIR}"
+
+${PROGDIR}/setup_audioset --cleanup-archives=${CLEANUP_ARCHIVES} \
+    --cleanup-intermediate-files=${CLEANUP_INTERMEDIATE_FILES} --data-dir="${DATA_DIR}"
+
+${PROGDIR}/setup_fma --cleanup-archives=${CLEANUP_ARCHIVES} \
+    --cleanup-intermediate-files=${CLEANUP_INTERMEDIATE_FILES} --data-dir="${DATA_DIR}"
+
+END_TS=$(date +%s.%N)
+print_elapsed_time "${START_TS}" "${END_TS}" "Training dataset setup"

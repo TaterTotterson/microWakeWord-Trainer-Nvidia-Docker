@@ -1,0 +1,85 @@
+#!/bin/bash
+set -euo pipefail
+
+PROGPATH=$(realpath "$0")
+PROGDIR=$(dirname "${PROGPATH}")
+
+source "${PROGDIR}/shell.functions"
+
+if [ "${HELP}" == "true" ] ; then
+    cat <<EOF >&2
+Usage: $0 [ --cleanup-archives ] [ --data-dir=<data_dir> ]
+
+    --cleanup-archives    : Automatically clean up any downloaded archvies after
+                            extraction.
+    <data_dir>            : Path to the data directory.
+                          :    Default: ${DATA_DIR}
+
+EOF
+    exit 1
+fi
+
+mkdir -p "${DATA_DIR}/training_datasets/downloads" || :
+cd "${DATA_DIR}/training_datasets"
+
+mkdir -p ./negative_datasets || :
+
+NEGATIVE_DATASET_URL="https://huggingface.co/datasets/kahrendt/microwakeword/resolve/main"
+declare -a NEGATIVE_DATASETS=( dinner_party dinner_party_eval no_speech speech )
+AUDIO_FILECOUNT="./downloads/negative_filecount"
+
+declare -A filecounts=( [dinner_party.zip]=0 [dinner_party_eval.zip]=0 [no_speech.zip]=0 [speech.zip]=0 )
+get_filecounts filecounts "${AUDIO_FILECOUNT}"
+
+echo "===== Checking negative datasets: ${NEGATIVE_DATASETS[*]} ====="
+write_filecount=false
+
+for ds in "${NEGATIVE_DATASETS[@]}" ; do
+    AUDIO_ZIPFILE="${ds}.zip"
+    AUDIO_ZIP="./downloads/${AUDIO_ZIPFILE}"
+    AUDIO_DIR="./negative_datasets/${ds}"
+    mkdir -p "${AUDIO_DIR}" || :
+
+    expected_filecount=${filecounts[${AUDIO_ZIPFILE}]}
+    actual_filecount=$(find "${AUDIO_DIR}" -name '*.ninja' 2>/dev/null | wc -l) || :
+
+    if [ "${actual_filecount}" -ne 0 ] && [ "${actual_filecount}" -eq "${expected_filecount}" ] ; then
+        echo "   Existing ${ds} valid"
+        continue
+    fi
+
+    if [ ! -f "${AUDIO_ZIP}" ] ; then
+        echo "   Downloading ${AUDIO_ZIPFILE}"
+        curl -sfL "${NEGATIVE_DATASET_URL}/${ds}.zip" -o "${AUDIO_ZIP}"
+    fi
+
+    rm -rf "${AUDIO_DIR}" || :
+    echo "   Unzipping ${AUDIO_ZIPFILE}"
+    unzip -q -d "./negative_datasets" "${AUDIO_ZIP}"
+    actual_filecount=$(find "${AUDIO_DIR}" -name '*.ninja' 2>/dev/null | wc -l) || :
+    filecounts[${AUDIO_ZIPFILE}]="${actual_filecount}"
+    write_filecount=true
+
+    if "${CLEANUP_ARCHIVES}" && [ -f "${AUDIO_ZIP}" ] ; then
+        echo "   Cleaning up ${AUDIO_ZIPFILE}"
+        rm -rf "${AUDIO_ZIP}"
+    fi
+done
+
+if ${write_filecount} ; then
+    write_filecounts filecounts "${AUDIO_FILECOUNT}"
+fi
+
+if "${CLEANUP_ARCHIVES}" ; then
+    for ds in "${NEGATIVE_DATASETS[@]}" ; do
+        AUDIO_ZIPFILE="${ds}.zip"
+        AUDIO_ZIP="./downloads/${AUDIO_ZIPFILE}"
+        if [ -f "${AUDIO_ZIP}" ] ; then
+            echo "   Cleaning up ${AUDIO_ZIPFILE}"
+            rm -rf "${AUDIO_ZIP}"
+        fi
+    done
+fi
+
+echo "   Negative datasets complete"
+

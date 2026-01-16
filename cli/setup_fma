@@ -1,0 +1,131 @@
+#!/bin/bash
+set -euo pipefail
+
+PROGPATH=$(realpath "$0")
+PROGDIR=$(dirname "${PROGPATH}")
+
+source "${PROGDIR}/shell.functions"
+
+if [ "${HELP}" == "true" ] ; then
+    cat <<EOF >&2
+Usage: $0 [ --cleanup-archives ] [ --cleanup-input-files ] [ --data-dir=<data_dir> ]
+
+    --cleanup-archives    : Automatically clean up any downloaded archvies after
+                            extraction.
+    --cleanup-intermediate-files
+                          : Automatically clean up the intermediate files after they've
+                          : converted to 16k.
+    <data_dir>            : Path to the data directory.
+                          :    Default: ${DATA_DIR}
+
+EOF
+    exit 1
+fi
+
+mkdir -p "${DATA_DIR}/training_datasets/downloads" || :
+cd "${DATA_DIR}/training_datasets"
+
+echo "***** Checking FMA *****"
+
+AUDIO_URL="https://huggingface.co/datasets/mchl914/fma_xsmall/resolve/main/fma_xs.zip"
+AUDIO_ZIPFILE="fma_xs.zip"
+AUDIO_ZIP="./downloads/${AUDIO_ZIPFILE}"
+AUDIO_DIR="fma"
+mkdir -p "${AUDIO_DIR}" || :
+AUDIO16K_DIR="fma_16k"
+mkdir -p "${AUDIO16K_DIR}" || :
+AUDIO_FILECOUNT="./downloads/fma_filecount"
+AUDIO_IN_GLOB="*.mp3"
+
+declare -A filecounts=( [${AUDIO_ZIPFILE}]=0 )
+get_filecounts filecounts "${AUDIO_FILECOUNT}"
+
+converter() {
+    source ${DATA_DIR}/.venv/bin/activate
+    python - "${AUDIO_DIR}" "${AUDIO16K_DIR}" <<-EOF
+import os, sys, subprocess, scipy.io.wavfile, numpy as np
+from pathlib import Path
+import soundfile as sf
+import librosa
+from tqdm import tqdm
+
+def write_wav(dst: Path, data: np.ndarray, sr: int):
+    x = np.clip(data, -1.0, 1.0)
+    scipy.io.wavfile.write(dst, sr, (x * 32767).astype(np.int16))
+
+fma_dir = Path(sys.argv[1])
+fma_out = Path(sys.argv[2])
+
+# convert MP3 → 16k mono WAV
+mp3s = list(fma_dir.rglob("*.mp3"))
+print(f"   MP3 files: {len(mp3s)}")
+fma_bad = []
+ok = 0
+for p in tqdm(mp3s, desc="   FMA→WAV (resample 16k mono)"):
+    try:
+        outfile = Path(fma_out / (p.stem + ".wav"))
+        if outfile.exists():
+            continue
+        y, _ = librosa.load(p, sr=16000, mono=True)
+        if y.size == 0:
+            raise ValueError("empty audio")
+        write_wav(outfile, y, 16000)
+        ok += 1
+    except Exception as e:
+        fma_bad.append(f"{p}:{e}")
+
+if fma_bad:
+    (fma_out / "fma_corrupted_files.log").write_text("\n".join(fma_bad))
+print(f"   FMA complete ({ok} ok, {len(fma_bad)} failed)")
+EOF
+
+}
+
+expected_filecount=${filecounts[${AUDIO_ZIPFILE}]}
+actual_filecount=$(find ${AUDIO16K_DIR} -name '*.wav' 2>/dev/null | wc -l) || :
+write_filecount=false
+
+if [ "${actual_filecount}" -ne 0 ] && [ "${actual_filecount}" -eq "${expected_filecount}" ] ; then
+    echo "   Existing FMA valid"
+else
+    actual_filecount=$(find "${AUDIO_DIR}" -name "${AUDIO_IN_GLOB}" 2>/dev/null | wc -l) || :
+    if [ "${actual_filecount}" -eq 0 ] || [ "${actual_filecount}" -ne "${expected_filecount}" ] ; then
+        if [ ! -f "${AUDIO_ZIP}" ]  ; then
+            echo "   Downloading ${AUDIO_ZIPFILE}"
+            curl -sfL "${AUDIO_URL}" -o "${AUDIO_ZIP}"
+        fi
+
+        rm -rf "${AUDIO_DIR}" || :
+        mkdir "${AUDIO_DIR}"
+        echo "   Unzipping ${AUDIO_ZIPFILE}"
+        unzip -q -d "${AUDIO_DIR}" "${AUDIO_ZIP}"
+    fi
+    if "${CLEANUP_ARCHIVES}" && [ -f "${AUDIO_ZIP}" ] ; then
+        echo "   Cleaning up ${AUDIO_ZIPFILE}"
+        rm -rf "${AUDIO_ZIP}"
+    fi
+
+    converter
+
+    actual_filecount=$(find "${AUDIO16K_DIR}" -name "*.wav" 2>/dev/null | wc -l) || :
+    filecounts[${AUDIO_ZIPFILE}]="${actual_filecount}"
+    write_filecount=true
+fi
+
+if ${write_filecount} ; then
+    write_filecounts filecounts "${AUDIO_FILECOUNT}"
+fi
+
+if "${CLEANUP_ARCHIVES}" && [ -f "${AUDIO_ZIP}" ] ; then
+    echo "   Cleaning up ${AUDIO_ZIPFILE}"
+    rm -rf "${AUDIO_ZIP}"
+fi
+
+if "${CLEANUP_INTERMEDIATE_FILES}" && [ -d "${AUDIO_DIR}" ]; then
+    echo "   Cleaning up ${AUDIO_DIR}"
+    rm -rf "${AUDIO_DIR}"
+fi
+
+echo "   FMA complete"
+exit 0
+

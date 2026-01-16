@@ -1,0 +1,175 @@
+#!/bin/bash
+set -euo pipefail
+
+PROGPATH=$(realpath "$0")
+PROGDIR=$(dirname "${PROGPATH}")
+
+source "${PROGDIR}/shell.functions"
+
+if [ "${HELP}" == "true" ] ; then
+    cat <<EOF >&2
+Usage: $0 [ --cleanup-archives ] [ --cleanup-input-files ] [ --data-dir=<data_dir> ]
+
+    --cleanup-archives    : Automatically clean up any downloaded archvies after
+                            extraction.
+    --cleanup-intermediate-files
+                          : Automatically clean up the intermediate files after they've
+                          : converted to 16k.
+    <data_dir>            : Path to the data directory.
+                          : Default: ${DATA_DIR}
+
+EOF
+    exit 1
+fi
+
+mkdir -p "${DATA_DIR}/training_datasets/downloads" || :
+cd "${DATA_DIR}/training_datasets"
+
+echo "***** Checking audioset *****"
+
+AUDIO_URL="https://huggingface.co/datasets/agkphysics/AudioSet/resolve"
+AUDIO_DIR="./audioset"
+mkdir -p "${AUDIO_DIR}"
+AUDIO16K_DIR="./audioset_16k"
+mkdir -p "${AUDIO16K_DIR}"
+AUDIO_FILECOUNT="./downloads/audioset_filecount"
+AUDIO_IN_GLOB="*.flac"
+
+declare -A filecounts
+for i in {0..9} ; do
+    fname="bal_train0${i}.tar"
+    filecounts[${fname}]=0
+done
+
+get_filecounts filecounts "${AUDIO_FILECOUNT}"
+
+
+REV_CANDIDATES=(
+    "6762f044d1c88619c7f2006486036192128fb07e"
+    "0049167e89f259a010c3f070fe3666d9e5242836"
+    "ceb9eaaa7844c9ad7351e659c84a572e376ad06d"
+    "main"
+)
+
+TAR_PATTERNS=(
+    "data/bal_train0"
+    "data/bal_train/bal_train0"
+)
+
+find_rev() {
+    for rev in "${REV_CANDIDATES[@]}" ; do
+        for pattern in "${TAR_PATTERNS[@]}" ; do
+            url="https://huggingface.co/datasets/agkphysics/AudioSet/resolve/${rev}/${pattern}0.tar"
+            curl -I -L --fail -s "${url}" > /dev/null && echo "${rev},${pattern}"
+        done
+    done
+    echo ""
+}
+
+converter() {
+    source ${DATA_DIR}/.venv/bin/activate
+    python - "${AUDIO_DIR}" "${AUDIO16K_DIR}" <<-EOF
+import os, sys, subprocess, scipy.io.wavfile, numpy as np
+from pathlib import Path
+import soundfile as sf
+import librosa
+from tqdm import tqdm
+
+def write_wav(dst: Path, data: np.ndarray, sr: int):
+    x = np.clip(data, -1.0, 1.0)
+    scipy.io.wavfile.write(dst, sr, (x * 32767).astype(np.int16))
+
+audioset_dir = Path(sys.argv[1])
+audioset_out = Path(sys.argv[2])
+
+# convert FLAC → 16k mono WAV
+flacs = list(audioset_dir.rglob("*.flac"))
+print(f"   FLAC files: {len(flacs)}")
+audioset_bad = []
+ok = 0
+for p in tqdm(flacs, desc="   AudioSet→WAV (resample 16k mono)"):
+    try:
+        outfile = Path(audioset_out / (p.stem + ".wav"))
+        if outfile.exists():
+            continue
+        y, _ = librosa.load(p, sr=16000, mono=True)
+        if y.size == 0:
+            raise ValueError("empty audio")
+        write_wav(outfile, y, 16000)
+        ok += 1
+    except Exception as e:
+        audioset_bad.append(f"{p}:{e}")
+
+if audioset_bad:
+    (audioset_out / "audioset_corrupted_files.log").write_text("\n".join(audioset_bad))
+print(f"   AudioSet complete ({ok} ok, {len(audioset_bad)} failed)")
+EOF
+}
+
+expected_filecount=$(get_total_filecount filecounts)
+actual_filecount=$(find "${AUDIO16K_DIR}" -name "*.wav" 2>/dev/null | wc -l) || :
+write_filecount=false
+
+if [ "${actual_filecount}" -ne 0 ] && [ "${actual_filecount}" -eq "${expected_filecount}" ] ; then
+    echo "   Existing Audioset valid"
+else
+    dl=$(find_rev)
+    [ -n "$dl" ] || { echo "   Could not locate an AudioSet revision with FLAC tarballs still present on HF." ; exit 1 ; }
+    rev=${dl%%,*}
+    pattern=${dl##*,}
+    echo "   Checking 10 tarballs"
+    for i in {0..9} ; do
+        fname="downloads/bal_train0${i}.tar"
+        if [ ! -f "${fname}" ] ; then
+            echo "   Downloading bal_train0${i}.tar"
+            url="${AUDIO_URL}/${rev}/${pattern}${i}.tar"
+            curl -L -s --fail "${url}" -o "${fname}" || { echo "Could not fetch ${fname} at rev ${rev}; continuing." ; continue ; }
+        fi
+
+        tarball_filecount=$(tar -tvf "${fname}" | wc -l )
+        filecounts["bal_train0${i}.tar"]=${tarball_filecount}
+        write_filecount=true
+
+        echo "   Untarring bal_train0${i}.tar"
+        tar -xf "${fname}" -C "${AUDIO_DIR}"
+        if "${CLEANUP_ARCHIVES}" && [ -f "${fname}" ] ; then
+            echo "   Cleaning up bal_train0${i}.tar"
+            rm -rf "${fname}"
+        fi
+    done
+    rm -rf "${AUDIO16K_DIR}/audioset_corrupted_files.log" || :
+    converter
+    if [ -f "${AUDIO16K_DIR}/audioset_corrupted_files.log" ] ; then
+        failed=$(cat "${AUDIO16K_DIR}/audioset_corrupted_files.log" | wc -l)
+        filecounts[failed]=-${failed}
+    fi
+    expected_filecount=$(get_total_filecount filecounts)
+    actual_filecount=$(find ${AUDIO16K_DIR} -name "*.wav" 2>/dev/null | wc -l) || :
+    if [ "${actual_filecount}" -ne "${expected_filecount}" ] ; then
+        echo "   Converted file count(${actual_filecount}) != expected file count(${expected_filecount})" >&2
+        exit 1
+    fi
+fi
+
+if ${write_filecount} ; then
+    write_filecounts filecounts "${AUDIO_FILECOUNT}"
+fi
+
+if "${CLEANUP_ARCHIVES}" ; then
+    for i in {0..9} ; do
+        fname="downloads/bal_train0${i}.tar"
+        if [ -f "${fname}" ] ; then
+            echo "   Cleaning up bal_train0${i}.tar"
+            rm -rf "${fname}"
+        fi
+    done
+fi
+
+if "${CLEANUP_INTERMEDIATE_FILES}" && [ -d "${AUDIO_DIR}" ] ; then
+    echo "   Cleaning up ${AUDIO_DIR}"
+    rm -rf "${AUDIO_DIR}"
+fi
+
+echo "   Audioset complete"
+exit 0
+
