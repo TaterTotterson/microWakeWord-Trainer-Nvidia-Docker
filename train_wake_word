@@ -3,9 +3,10 @@ set -e
 
 PROGPATH=$(realpath "$0")
 PROGDIR=$(dirname "${PROGPATH}")
+CLIDIR="${PROGDIR}/cli"
 
 KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir )
-source "${PROGDIR}/shell.functions"
+source "${CLIDIR}/shell.functions"
 WAKE_WORD=${POSITIONAL_ARGS[0]}
 
 if [ ${#UNKNOWN_ARGS[@]} -gt 0 ] ; then
@@ -62,7 +63,7 @@ fi
 
 printf "%-80s\n" "=" | tr ' ' "="
 echo "===== Running '${WAKE_WORD}(${WAKE_WORD_TITLE})' generation, augmentation and training ====="
-"${PROGDIR}/cudainfo"
+"${CLIDIR}/cudainfo"
 echo
 START_TS=$EPOCHSECONDS
 
@@ -75,16 +76,12 @@ export TF_CUDNN_WORKSPACE_LIMIT_IN_MB=512
 export GLOG_minloglevel=2
 export GRPC_VERBOSITY=ERROR
 
-
-"${PROGDIR}/wake_word_sample_generator" \
+"${CLIDIR}/wake_word_sample_generator" \
     --samples=${SAMPLES} \
     --batch-size=${BATCH_SIZE} \
     --data-dir="${DATA_DIR}" "${WAKE_WORD}"
 
 POST_GEN_TS=$EPOCHSECONDS
-
-ww="${WAKE_WORD// /_}"
-ww="${ww//./}"
 
 AUGMENT=false
 GENERATED_DIR="${DATA_DIR}/work/wake_word_samples"
@@ -96,7 +93,7 @@ AUGMENTED_DIR="${DATA_DIR}/work/wake_word_samples_augmented"
 if ${AUGMENT} ; then
     rm -rf "${AUGMENTED_DIR}" || :
     mkdir -p "${AUGMENTED_DIR}" || :
-    "${PROGDIR}/wake_word_sample_augmenter" --data-dir="${DATA_DIR}" || { rm -rf "${AUGMENTED_DIR}" ; exit 1 ; }
+    "${CLIDIR}/wake_word_sample_augmenter" --data-dir="${DATA_DIR}" || { rm -rf "${AUGMENTED_DIR}" ; exit 1 ; }
 else
     echo "Augmentation not required"
     echo
@@ -104,18 +101,26 @@ fi
 
 POST_AUGMENT_TS=$EPOCHSECONDS
 
-"${PROGDIR}/wake_word_sample_trainer" --samples=${SAMPLES} --training-steps=${TRAINING_STEPS} --data-dir="${DATA_DIR}" \
-        "${WAKE_WORD}" "${WAKE_WORD_TITLE}"
+"${CLIDIR}/wake_word_sample_trainer" \
+    --samples=${SAMPLES} \
+    --training-steps=${TRAINING_STEPS} \
+    --data-dir="${DATA_DIR}" \
+    "${WAKE_WORD}" "${WAKE_WORD_TITLE}"
 
 if ${CLEANUP_WORK_DIR} ; then
-    rm -rf "${DATA_DIR}/work/trained_models" "${DATA_DIR}/work/wake_word_samples" \
-    "${DATA_DIR}/work/wake_word_samples_augmented" "${DATA_DIR}/work/last_wake_word" || :
+    rm -rf \
+      "${DATA_DIR}/work/trained_models" \
+      "${DATA_DIR}/work/wake_word_samples" \
+      "${DATA_DIR}/work/wake_word_samples_augmented" \
+      "${DATA_DIR}/work/personal_augmented_features" \
+      "${DATA_DIR}/work/last_wake_word" || :
 fi
+
 END_TS=$EPOCHSECONDS
 
 python -c $'print(f"{\'=\' * 80}")'
 printf "%44s\n\n" "Training Summary"
-"${PROGDIR}/system_summary"
+"${CLIDIR}/system_summary"
 echo
 print_elapsed_time --no-separators "${START_TS}" "${POST_GEN_TS}" "Generate ${SAMPLES} samples, ${BATCH_SIZE}/batch"
 print_elapsed_time --no-separators "${POST_GEN_TS}" "${POST_AUGMENT_TS}" "Augment ${SAMPLES} samples"

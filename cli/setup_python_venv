@@ -1,5 +1,6 @@
 #!/bin/bash
-PROGDIR="$(dirname $(realpath $0))"
+PROGDIR="$(dirname "$(realpath "$0")")"
+ROOTDIR="$(dirname "${PROGDIR}")"
 
 KNOWN_ARGS=( data-dir python gpu no-gpu )
 source "${PROGDIR}/shell.functions"
@@ -27,7 +28,7 @@ EOF
     exit 1
 fi
 
-[ -n "${DATA_DIR}" ] && DATA_DIR="$(realpath ${DATA_DIR})"
+[ -n "${DATA_DIR}" ] && DATA_DIR="$(realpath "${DATA_DIR}")"
 [ -d  "${DATA_DIR}" ] || {
     echo "Data directory '${DATA_DIR}' doesn't exist." >&2
     exit 1
@@ -52,7 +53,8 @@ if [ -n "${PYTHON}" ] ; then
     PYTHONS=( "${PYTHON}" )
     unset PYTHON
 else
-    PYTHONS=( python3.12 python3.10 )
+    # Add 3.11 as a common middle-ground (especially outside Ubuntu 24.04)
+    PYTHONS=( python3.12 python3.11 python3.10 )
 fi
 
 for p in "${PYTHONS[@]}" ; do
@@ -60,14 +62,14 @@ for p in "${PYTHONS[@]}" ; do
 done
 
 [ -n "${PYTHON}" ] || {
-    echo "A python 3.12 or 3.10 interpreter wasn't found.  You 'll need to install one before proceeding." >&2
+    echo "A python 3.12/3.11/3.10 interpreter wasn't found. You'll need to install one before proceeding." >&2
     exit 1
 }
 
-if [ -d  "${VENV}" ] ; then
+if [ -d "${VENV}" ] ; then
     if [ -f "${DATA_DIR}/.mww-data-dir" ] ; then
         source "${VENV}/bin/activate" || {
-            echo "Unable to activate existing virtualenv '${VENV}'.  You should delete it and try again." >&2
+            echo "Unable to activate existing virtualenv '${VENV}'. You should delete it and try again." >&2
             exit 1
         }
     else
@@ -82,24 +84,28 @@ if [ -z "$VIRTUAL_ENV" ] ; then
 else
     echo "   ===== Updating virtualenv at '${VENV}' ====="
 fi
+
 ${PYTHON} -m venv --upgrade-deps "${VENV}"
 source "${VENV}/bin/activate"
 
 set -euo pipefail
 
-declare -a progfiles=( $(find ${PROGDIR} -mindepth 1 -maxdepth 1 -executable -type f) )
+# Symlink CLI scripts into .venv/bin
+declare -a progfiles=( $(find "${PROGDIR}" -mindepth 1 -maxdepth 1 -executable -type f) )
 progfiles+=( "${PROGDIR}/shell.functions" )
 
+# Also symlink the top-level entrypoint if present
+[ -x "${ROOTDIR}/train_wake_word" ] && progfiles+=( "${ROOTDIR}/train_wake_word" )
+
 for f in "${progfiles[@]}" ; do
-    ln -sfr "${f}" ".venv/bin/$(basename ${f})"
+    ln -sfr "${f}" ".venv/bin/$(basename "${f}")"
 done
 
 #
-# Pip doesn't process packages from requirements.txt in
-# order but order is important because tensorflow, torch,
-# onnxruntime and micro-wake-word all depend on CUDA packages
-# at various versions. They need to be installed in this specific
-# order or they may not be able to use the GPU.
+# Pip doesn't process packages from requirements.txt in order but order is
+# important because tensorflow, torch, onnxruntime and micro-wake-word all
+# depend on CUDA packages at various versions. They need to be installed in
+# this specific order or they may not be able to use the GPU.
 #
 export PIP_PROGRESS_BAR=off
 export PIP_NO_COLOR=1
@@ -117,7 +123,8 @@ pip_install() {
 START_TS=$EPOCHSECONDS
 
 echo "   ===== Installing common requirements ====="
-pip_install -r "${PROGDIR}/requirements.txt"
+# requirements.txt lives in repo root now
+pip_install -r "${ROOTDIR}/requirements.txt"
 
 ${GPU} && tfgpu='[and-cuda]' || tfgpu=""
 echo "   ===== Installing Tensorflow${tfgpu} ====="
@@ -140,7 +147,7 @@ pip_install -e "${MWW}"
 
 echo "   ===== Checking piper-sample-generator ====="
 PSG="${DATA_DIR}/tools/piper-sample-generator"
-if [ ! -d "${PSG}" ] || [ -n "$(git -C ${PSG} status --porcelain)" ] ; then
+if [ ! -d "${PSG}" ] || [ -n "$(git -C "${PSG}" status --porcelain)" ] ; then
     rm -rf "${PSG}" || :
     echo "   Cloning piper-sample-generator to ${DATA_DIR}/tools"
     git clone https://github.com/rhasspy/piper-sample-generator "${PSG}" &>/dev/null
@@ -171,7 +178,7 @@ echo "   ===== Installing keras ====="
 # keras 3.13 has "issues" so we need to back down to 3.12.
 pip_install "keras==3.12.0"
 
-${PROGDIR}/test_python --data-dir="${DATA_DIR}"
+"${PROGDIR}/test_python" --data-dir="${DATA_DIR}"
 
 touch .mww-data-dir
 END_TS=$EPOCHSECONDS
@@ -179,5 +186,3 @@ END_TS=$EPOCHSECONDS
 echo "Run 'source ${VENV}/bin/activate' to activate the new virtualenv in the current shell."
 
 print_elapsed_time "${START_TS}" "${END_TS}" "Python package installation complete"
-
-

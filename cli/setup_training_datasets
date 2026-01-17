@@ -1,8 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-PROGPATH=$(realpath "$0")
-PROGDIR=$(dirname "${PROGPATH}")
+PROGPATH="$(realpath "$0")"
+PROGDIR="$(dirname "${PROGPATH}")"
+ROOTDIR="$(dirname "${PROGDIR}")"  # repo root (train_wake_word, requirements.txt, etc.)
 
 KNOWN_ARGS=( data-dir cleanup-archives cleanup-intermediate-files )
 source "${PROGDIR}/shell.functions"
@@ -27,22 +28,38 @@ EOF
     exit 1
 fi
 
+# Normalize + validate DATA_DIR (shell.functions typically sets a default,
+# but this makes the script standalone-safe)
+[ -n "${DATA_DIR:-}" ] && DATA_DIR="$(realpath "${DATA_DIR}")"
+[ -d "${DATA_DIR}" ] || {
+    echo "Data directory '${DATA_DIR}' doesn't exist." >&2
+    exit 1
+}
+
 cd "${DATA_DIR}"
 
 START_TS=$EPOCHSECONDS
 echo -e "\n===== Setting up Training Datasets =====\n"
 
-${PROGDIR}/setup_negative_datasets --cleanup-archives=${CLEANUP_ARCHIVES} \
-    --cleanup-intermediate-files=${CLEANUP_INTERMEDIATE_FILES} --data-dir="${DATA_DIR}"
+"${PROGDIR}/setup_negative_datasets" \
+    --cleanup-archives="${CLEANUP_ARCHIVES}" \
+    --cleanup-intermediate-files="${CLEANUP_INTERMEDIATE_FILES}" \
+    --data-dir="${DATA_DIR}"
 
-${PROGDIR}/setup_mit_audio --cleanup-archives=${CLEANUP_ARCHIVES} \
-    --cleanup-intermediate-files=${CLEANUP_INTERMEDIATE_FILES} --data-dir="${DATA_DIR}"
+"${PROGDIR}/setup_mit_audio" \
+    --cleanup-archives="${CLEANUP_ARCHIVES}" \
+    --cleanup-intermediate-files="${CLEANUP_INTERMEDIATE_FILES}" \
+    --data-dir="${DATA_DIR}"
 
-${PROGDIR}/setup_audioset --cleanup-archives=${CLEANUP_ARCHIVES} \
-    --cleanup-intermediate-files=${CLEANUP_INTERMEDIATE_FILES} --data-dir="${DATA_DIR}"
+"${PROGDIR}/setup_audioset" \
+    --cleanup-archives="${CLEANUP_ARCHIVES}" \
+    --cleanup-intermediate-files="${CLEANUP_INTERMEDIATE_FILES}" \
+    --data-dir="${DATA_DIR}"
 
-${PROGDIR}/setup_fma --cleanup-archives=${CLEANUP_ARCHIVES} \
-    --cleanup-intermediate-files=${CLEANUP_INTERMEDIATE_FILES} --data-dir="${DATA_DIR}"
+"${PROGDIR}/setup_fma" \
+    --cleanup-archives="${CLEANUP_ARCHIVES}" \
+    --cleanup-intermediate-files="${CLEANUP_INTERMEDIATE_FILES}" \
+    --data-dir="${DATA_DIR}"
 
-END_TS=$(date +%s.%N)
+END_TS=$EPOCHSECONDS
 print_elapsed_time "${START_TS}" "${END_TS}" "Training dataset setup"
