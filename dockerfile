@@ -27,8 +27,11 @@ COPY --chown=root:root --chmod=0755 \
     requirements.txt \
     /root/mww-scripts/
 
-# CLI folder (THIS IS THE IMPORTANT CHANGE)
+# CLI folder
 COPY --chown=root:root cli/ /root/mww-scripts/cli/
+
+# Make all CLI scripts executable (avoids "Permission denied")
+RUN chmod -R a+x /root/mww-scripts/cli
 
 # Static UI for recorder
 COPY --chown=root:root --chmod=0644 static/index.html /root/mww-scripts/static/index.html

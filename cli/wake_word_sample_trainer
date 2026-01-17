@@ -129,88 +129,136 @@ EOF
 echo "   Wrote training_parameters.yaml"
 rm -rf "${WORK_DIR}/trained_models/wakeword"
 
-export TF_CPP_MIN_LOG_LEVEL=9
-export TF_FORCE_GPU_ALLOW_GROWTH=true
-export TF_GPU_ALLOCATOR=cuda_malloc_async
-export TF_XLA_FLAGS="--tf_xla_auto_jit=0"
-export NVIDIA_TF32_OVERRIDE=1
-export TF_CUDNN_WORKSPACE_LIMIT_IN_MB=512
-export GLOG_minloglevel=9
-export GRPC_VERBOSITY=ERROR
-
-echo "   Loading Tensorflow"
-
-wake_word_filename="${WAKE_WORD//[ \`~\!\$&*\(\)\{\}\[\]\|\;\'\"<>.?\/]/_}"
+wake_word_filename="${WAKE_WORD//[ \`~\!\$&*$begin:math:text$$end:math:text$\{\}$begin:math:display$$end:math:display$\|\;\'\"<>.?\/]/_}"
 OUTPUT_DIR="${DATA_DIR}/output/$(date +'%Y-%m-%d-%H-%M-%S')-${wake_word_filename}-${SAMPLES}-${TRAINING_STEPS}"
 mkdir -p "${OUTPUT_DIR}/logs" || :
 
-python - \
-  --training_config="${WORK_DIR}/trained_models/training_parameters.yaml" \
-  --train 1 \
-  --restore_checkpoint 1 \
-  --test_tf_nonstreaming 0 \
-  --test_tflite_nonstreaming 0 \
-  --test_tflite_nonstreaming_quantized 0 \
-  --test_tflite_streaming 0 \
-  --test_tflite_streaming_quantized 1 \
-  --use_weights "best_weights" \
-  mixednet \
-  --pointwise_filters "64,64,64,64" \
-  --repeat_in_block "1,1,1,1" \
-  --mixconv_kernel_sizes "[5], [7,11], [9,15], [23]" \
-  --residual_connection "0,0,0,0" \
-  --first_conv_filters 32 \
-  --first_conv_kernel_size 5 \
-  --stride 2 <<EOF 2>&1 | tr '\r' '\n' | stdbuf -i0 -o0 sed -r -e "/^Validation Batch/d" |\
-        tee "${OUTPUT_DIR}/logs/training.log" | sed -r -e '/^INFO:absl:/!d' \
-            -r -e "/None|Sharding|unsupported characters|AUC|fingerprint/d" \
-            -r -e 's/INFO:absl:/   /g' \
-            -r -e "s/, (recall =|estimated false|average viable recall)/,\n      \1/g"
+TRAIN_LOG="${OUTPUT_DIR}/logs/training.log"
 
-import sys, os, gc
-import runpy
-import yaml
-print("   Loading Tensorflow")
-import tensorflow as tf
+# ------------------------------------------------------------------
+# Training args (same as before)
+# ------------------------------------------------------------------
+TRAIN_ARGS=(
+  -m microwakeword.model_train_eval
+  --training_config "${WORK_DIR}/trained_models/training_parameters.yaml"
+  --train 1
+  --restore_checkpoint 1
+  --test_tf_nonstreaming 0
+  --test_tflite_nonstreaming 0
+  --test_tflite_nonstreaming_quantized 0
+  --test_tflite_streaming 0
+  --test_tflite_streaming_quantized 1
+  --use_weights best_weights
+  mixednet
+  --pointwise_filters "64,64,64,64"
+  --repeat_in_block "1,1,1,1"
+  --mixconv_kernel_sizes "[5], [7,11], [9,15], [23]"
+  --residual_connection "0,0,0,0"
+  --first_conv_filters 32
+  --first_conv_kernel_size 5
+  --stride 2
+)
 
-print("   GPU memory config")
-# Per-device memory growth (belt + suspenders)
-for g in tf.config.list_physical_devices("GPU"):
-    try:
-        tf.config.experimental.set_memory_growth(g, True)
-    except Exception:
-        pass
-print(f"INFO:absl:GPUs: {tf.config.list_physical_devices('GPU')}")
-gc.collect()
+# ------------------------------------------------------------------
+# GPU failure markers that should trigger CPU fallback
+# (OOM + known GPU runtime/copy/init failures)
+# ------------------------------------------------------------------
+GPU_FALLBACK_MARKERS=(
+  "resourceexhaustederror"
+  "resource exhausted"
+  "oom"
+  "out of memory"
+  "cuda_error_out_of_memory"
+  "failed to allocate"
+  "cudnn"
+  "cublas"
+  "internalerror: cuda"
+  "failed call to cuinit"
+  "dst tensor is not initialized"
+  "failed copying input tensor"
+  "_eagerconst"
+)
 
-print()
-try:
-    runpy.run_module("microwakeword.model_train_eval", run_name="__main__", alter_sys=True)
-except Exception as e:
-    print(e, file=sys.stderr)
-    sys.exit(1)
-EOF
+run_attempt() {
+  local label="$1"
+  shift
+  echo
+  echo "================================================================================"
+  echo "===== ${label} ====="
+  echo "================================================================================"
+  echo "→ ${PYTHON_BIN:-python} ${TRAIN_ARGS[*]}"
+  echo
+
+  # stream everything except validation minibatch spam
+  "${PYTHON_BIN:-python}" "${TRAIN_ARGS[@]}" 2>&1 \
+    | tr '\r' '\n' \
+    | stdbuf -i0 -o0 sed -r -e "/^Validation Batch/d" \
+    | tee "${TRAIN_LOG}" \
+    | sed -r -e "/^Validation Batch/d" -e "s/^INFO:absl:/   /g"
+
+  return ${PIPESTATUS[0]}
+}
+
+# ---- Common TF env (mirrors your notebook) ----
+export TF_CPP_MIN_LOG_LEVEL="${TF_CPP_MIN_LOG_LEVEL:-2}"
+export TF_XLA_FLAGS="${TF_XLA_FLAGS:---tf_xla_auto_jit=0}"
+export NVIDIA_TF32_OVERRIDE="${NVIDIA_TF32_OVERRIDE:-1}"
+export TF_FORCE_GPU_ALLOW_GROWTH="${TF_FORCE_GPU_ALLOW_GROWTH:-true}"
+export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
+
+# Attempt 1: GPU
+if run_attempt "Attempt 1/2: GPU training (allow_growth + cuda_malloc_async)" ; then
+  echo "✅ Training complete (GPU path)."
+else
+  echo "⚠️  GPU attempt failed. Checking whether this looks like a GPU/OOM/runtime failure…"
+
+  # Check log for GPU/OOM/runtime markers
+  log_lc="$(tr '[:upper:]' '[:lower:]' < "${TRAIN_LOG}" || true)"
+  looks_like_gpu_fail="false"
+  for m in "${GPU_FALLBACK_MARKERS[@]}"; do
+    if echo "${log_lc}" | grep -qF "${m}"; then
+      looks_like_gpu_fail="true"
+      break
+    fi
+  done
+
+  if [ "${looks_like_gpu_fail}" = "true" ]; then
+    echo "↪️  Detected GPU/OOM/runtime failure markers. Falling back to CPU."
+
+    # Attempt 2: CPU (hide GPU completely)
+    export CUDA_VISIBLE_DEVICES=""
+    unset TF_GPU_ALLOCATOR
+    if run_attempt "Attempt 2/2: CPU fallback (CUDA_VISIBLE_DEVICES='')" ; then
+      echo "✅ Training complete (CPU fallback)."
+    else
+      echo "❌ Training failed on BOTH GPU and CPU. See: ${TRAIN_LOG}" >&2
+      exit 1
+    fi
+  else
+    echo "❌ Training failed (does not look GPU/OOM/runtime). See: ${TRAIN_LOG}" >&2
+    exit 1
+  fi
+fi
 
 source_path="${WORK_DIR}/trained_models/wakeword/tflite_stream_state_internal_quant/stream_state_internal_quant.tflite"
 
 if [ ! -f "${source_path}" ] ; then
-    echo "Output model not found! Training didn't complete successfully.  See ${WORK_DIR}/training.log"
+    echo "Output model not found! Training didn't complete successfully.  See ${TRAIN_LOG}"
     exit 1
 fi
 
-cp "${WORK_DIR}/trained_models/wakeword/model_summary.txt" "${OUTPUT_DIR}/logs/"
-cp -a "${WORK_DIR}/trained_models/wakeword/logs/train" "${OUTPUT_DIR}/logs/"
-cp -a "${WORK_DIR}/trained_models/wakeword/logs/validation" "${OUTPUT_DIR}/logs/"
+cp "${WORK_DIR}/trained_models/wakeword/model_summary.txt" "${OUTPUT_DIR}/logs/" || :
+cp -a "${WORK_DIR}/trained_models/wakeword/logs/train" "${OUTPUT_DIR}/logs/" || :
+cp -a "${WORK_DIR}/trained_models/wakeword/logs/validation" "${OUTPUT_DIR}/logs/" || :
 
 echo -e "\n   Training complete!"
-echo "   Full log: ${OUTPUT_DIR}/logs/training.log"
+echo "   Full log: ${TRAIN_LOG}"
 
 tflite_filename="${wake_word_filename}.tflite"
 tflite_path="${OUTPUT_DIR}/${tflite_filename}"
 
 cp "${source_path}" "${tflite_path}"
 
-# --- Write JSON metadata file with matching model name ---
 json_path="${OUTPUT_DIR}/${wake_word_filename}.json"
 cat <<-EOF > "${json_path}"
 {
@@ -238,4 +286,3 @@ echo
 END_TS=$EPOCHSECONDS
 print_elapsed_time "${START_TS}" "${END_TS}" "Training completed."
 echo
-

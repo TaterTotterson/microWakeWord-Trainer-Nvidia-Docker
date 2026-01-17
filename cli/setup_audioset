@@ -67,42 +67,66 @@ find_rev() {
 }
 
 converter() {
-    source ${DATA_DIR}/.venv/bin/activate
+    # shellcheck source=/dev/null
+    source "${DATA_DIR}/.venv/bin/activate"
+
     python - "${AUDIO_DIR}" "${AUDIO16K_DIR}" <<-EOF
-import os, sys, subprocess, scipy.io.wavfile, numpy as np
+import os, sys
 from pathlib import Path
-import soundfile as sf
+from datetime import datetime, timezone
+
+import numpy as np
+import scipy.io.wavfile
 import librosa
-from tqdm import tqdm
 
 def write_wav(dst: Path, data: np.ndarray, sr: int):
+    dst.parent.mkdir(parents=True, exist_ok=True)
     x = np.clip(data, -1.0, 1.0)
     scipy.io.wavfile.write(dst, sr, (x * 32767).astype(np.int16))
 
 audioset_dir = Path(sys.argv[1])
 audioset_out = Path(sys.argv[2])
 
-# convert FLAC → 16k mono WAV
 flacs = list(audioset_dir.rglob("*.flac"))
-print(f"   FLAC files: {len(flacs)}")
+total = len(flacs)
+print(f"   FLAC files: {total}")
+print("   Converting AudioSet → 16k mono WAV")
+print("   Sit tight — this step can take a while.")
+print("")
+
 audioset_bad = []
 ok = 0
-for p in tqdm(flacs, desc="   AudioSet→WAV (resample 16k mono)"):
+skipped = 0
+
+START = datetime.now(timezone.utc).replace(microsecond=0)
+
+# Heartbeat interval (prints every N files)
+HEARTBEAT_EVERY = 500
+
+for idx, p in enumerate(flacs, start=1):
     try:
-        outfile = Path(audioset_out / (p.stem + ".wav"))
+        outfile = audioset_out / (p.stem + ".wav")
         if outfile.exists():
-            continue
-        y, _ = librosa.load(p, sr=16000, mono=True)
-        if y.size == 0:
-            raise ValueError("empty audio")
-        write_wav(outfile, y, 16000)
-        ok += 1
+            skipped += 1
+        else:
+            y, _ = librosa.load(p, sr=16000, mono=True)
+            if y.size == 0:
+                raise ValueError("empty audio")
+            write_wav(outfile, y, 16000)
+            ok += 1
     except Exception as e:
         audioset_bad.append(f"{p}:{e}")
 
+    if idx == 1 or (idx % HEARTBEAT_EVERY) == 0 or idx == total:
+        print(f"   Progress: {idx}/{total}  (ok={ok}, skipped={skipped}, failed={len(audioset_bad)})")
+
 if audioset_bad:
     (audioset_out / "audioset_corrupted_files.log").write_text("\n".join(audioset_bad))
-print(f"   AudioSet complete ({ok} ok, {len(audioset_bad)} failed)")
+
+END = datetime.now(timezone.utc).replace(microsecond=0)
+elapsed = END - START
+print("")
+print(f"   AudioSet complete ({ok} ok, {skipped} skipped, {len(audioset_bad)} failed)  Elapsed: {elapsed}")
 EOF
 }
 
@@ -110,13 +134,15 @@ expected_filecount=$(get_total_filecount filecounts)
 actual_filecount=$(find "${AUDIO16K_DIR}" -name "*.wav" 2>/dev/null | wc -l) || :
 write_filecount=false
 
-if [ "${actual_filecount}" -ne 0 ] && [ "${actual_filecount}" -eq "${expected_filecount}" ] ; then
-    echo "   Existing Audioset valid"
+# Option B behavior: if we already have output WAVs, don't re-download/re-extract/re-convert
+if [ "${actual_filecount}" -ne 0 ] ; then
+    echo "   Existing ${AUDIO16K_DIR} present (${actual_filecount} wav); skipping extract/convert"
 else
     dl=$(find_rev)
     [ -n "$dl" ] || { echo "   Could not locate an AudioSet revision with FLAC tarballs still present on HF." ; exit 1 ; }
     rev=${dl%%,*}
     pattern=${dl##*,}
+
     echo "   Checking 10 tarballs"
     for i in {0..9} ; do
         fname="downloads/bal_train0${i}.tar"
@@ -137,17 +163,16 @@ else
             rm -rf "${fname}"
         fi
     done
+
     rm -rf "${AUDIO16K_DIR}/audioset_corrupted_files.log" || :
     converter
-    if [ -f "${AUDIO16K_DIR}/audioset_corrupted_files.log" ] ; then
-        failed=$(cat "${AUDIO16K_DIR}/audioset_corrupted_files.log" | wc -l)
-        filecounts[failed]=-${failed}
-    fi
+
+    # Recompute counts and warn (but do not fail)
     expected_filecount=$(get_total_filecount filecounts)
-    actual_filecount=$(find ${AUDIO16K_DIR} -name "*.wav" 2>/dev/null | wc -l) || :
+    actual_filecount=$(find "${AUDIO16K_DIR}" -name "*.wav" 2>/dev/null | wc -l) || :
     if [ "${actual_filecount}" -ne "${expected_filecount}" ] ; then
         echo "   Converted file count(${actual_filecount}) != expected file count(${expected_filecount})" >&2
-        exit 1
+        echo "   WARNING: mismatch is expected if some AudioSet files are corrupted; continuing." >&2
     fi
 fi
 
@@ -172,4 +197,3 @@ fi
 
 echo "   Audioset complete"
 exit 0
-

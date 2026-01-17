@@ -8,9 +8,9 @@ if [ ! -v DATA_DIR ] ; then
     [ -f .mww-data-dir ] && DATA_DIR="${PWD}" || DATA_DIR="/data"
 fi
 
-DEFAULT_SAMPLES=20000
+DEFAULT_SAMPLES=50000
 DEFAULT_BATCH_SIZE=100
-DEFAULT_TRAINING_STEPS=25000
+DEFAULT_TRAINING_STEPS=40000
 
 [ -f "${DATA_DIR}/.defaults.env" ] && source "${DATA_DIR}/.defaults.env" || :
 

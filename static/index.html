@@ -250,6 +250,10 @@
   }
 
   async function api(path, opts) {
+    opts = opts || {};
+    // Always try to avoid cache for polling endpoints
+    if (!opts.cache) opts.cache = "no-store";
+
     const res = await fetch(path, opts);
     const ct = res.headers.get("content-type") || "";
     const data = ct.includes("application/json") ? await res.json() : await res.text();
@@ -268,10 +272,9 @@
     return (el.scrollHeight - el.scrollTop - el.clientHeight) <= px;
   }
 
-  function appendLogChunkAutoScroll(el, chunk) {
-    if (!chunk) return;
+  function setLogTextAutoScroll(el, text) {
     const stick = isNearBottom(el);
-    el.textContent += chunk;
+    el.textContent = text || "";
     if (stick) el.scrollTop = el.scrollHeight;
   }
   // --------------------------------------------------------------------------
@@ -296,11 +299,20 @@
   let currentTake = 0;
   let takesPerSpeaker = 10;
 
-  // --- incremental log streaming state ---
-  // Polls /api/train_status?offset=<N> and appends training.log_text (reads /data/recorder_training.log)
-  let trainOffset = 0;
+  // --- training poll (append mode; scrollback works) ---
   let trainingPollRunning = false;
   let trainingPollAbort = false;
+
+  let logBuffer = "";          // full text we’ve shown in the browser
+  let lastChunk = "";          // last chunk we received (for de-dupe)
+  let seenAnyOutput = false;
+
+  function appendLogAutoScroll(el, chunk) {
+    if (!chunk) return;
+    const stick = isNearBottom(el);
+    el.textContent += chunk;
+    if (stick) el.scrollTop = el.scrollHeight;
+  }
 
   function startThreshold() { return parseFloat($("startThresh").value); }
   function silenceStopMs() { return parseInt($("silenceMs").value, 10); }
@@ -585,9 +597,11 @@
 
     setPill($("status"), auto ? "Auto-starting training…" : "Preparing training environment…", "warn");
 
-    // reset streaming log state (we show recorder_training.log from the start of this run)
-    trainOffset = 0;
+    // Reset log state for a fresh run
     trainingPollAbort = false;
+    logBuffer = "";
+    lastChunk = "";
+    seenAnyOutput = false;
 
     const logEl = $("trainLog");
     logEl.textContent = "(preparing…)\n";
@@ -603,7 +617,7 @@
       // Only start polling AFTER training was successfully kicked off
       if (!trainingPollRunning) {
         trainingPollRunning = true;
-        pollTrainingIncremental();
+        pollTrainingTail();
       }
 
       setPill($("status"), "Training running…", "warn");
@@ -636,9 +650,7 @@
     }
   });
 
-  // Polls /api/train_status?offset=<trainOffset>
-  // Expects JSON: { ok: true, training: { running, exit_code, log_text, next_offset } }
-  async function pollTrainingIncremental() {
+  async function pollTrainingTail() {
     const logEl = $("trainLog");
 
     for (;;) {
@@ -648,22 +660,37 @@
       }
 
       try {
-        const st = await api(`/api/train_status?offset=${trainOffset}`, { method:"GET" });
+        const st = await api(`/api/train_status?ts=${Date.now()}`, { method:"GET", cache:"no-store" });
         const tr = st.training || {};
 
-        const chunk = tr.log_text || "";
-        const next = (typeof tr.next_offset === "number") ? tr.next_offset : trainOffset;
+        // NOTE: this assumes /api/train_status returns NEW output chunks (not full tail snapshots)
+        const chunkRaw = tr.log_text || "";
+        const chunk = chunkRaw; // keep exact newlines from server
 
-        // If we got real output, replace the "(preparing…)" placeholder
-        if (chunk && logEl.textContent.startsWith("(preparing…)")) {
-          logEl.textContent = "";
+        if (chunk) {
+          // wipe placeholder once
+          if (!seenAnyOutput) {
+            logEl.textContent = "";
+            logBuffer = "";
+            lastChunk = "";
+            seenAnyOutput = true;
+          }
+
+          // simple de-dupe: if server repeats the same chunk, skip it
+          if (chunk !== lastChunk) {
+            lastChunk = chunk;
+            logBuffer += chunk;
+            appendLogAutoScroll(logEl, chunk);
+          }
+        } else {
+          // before first output, show waiting message but do NOT overwrite later scrollback
+          if (!seenAnyOutput) {
+            if (!logEl.textContent || logEl.textContent.includes("(no training") || logEl.textContent.startsWith("(preparing…")) {
+              logEl.textContent = "Waiting for training output…\n";
+            }
+          }
         }
 
-        if (chunk) appendLogChunkAutoScroll(logEl, chunk);
-
-        trainOffset = next;
-
-        // Stop polling only when training has ended and exit_code is set
         const exitCodeIsSet = (tr.exit_code !== null && tr.exit_code !== undefined);
 
         if (!tr.running && exitCodeIsSet) {
@@ -681,7 +708,7 @@
         // ignore transient polling errors
       }
 
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
 
@@ -717,11 +744,12 @@
       $("takesList").textContent = "";
       $("trainLog").textContent = "(no training started)";
 
-      trainOffset = 0;
-
-      // If a previous training poll loop is running, ask it to stop
+      // Stop any previous poll loop cleanly
       trainingPollAbort = true;
       trainingPollRunning = false;
+      logBuffer = "";
+      lastChunk = "";
+      seenAnyOutput = false;
 
       refreshUI();
 
@@ -741,6 +769,7 @@
       setPill($("sessionPill"), "Session failed", "err");
       alert("Start session failed: " + e.message);
     } finally {
+      // allow a new poll loop to start later
       trainingPollAbort = false;
     }
   });

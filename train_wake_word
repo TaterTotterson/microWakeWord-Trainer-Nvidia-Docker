@@ -93,7 +93,7 @@ AUGMENTED_DIR="${DATA_DIR}/work/wake_word_samples_augmented"
 if ${AUGMENT} ; then
     rm -rf "${AUGMENTED_DIR}" || :
     mkdir -p "${AUGMENTED_DIR}" || :
-    "${CLIDIR}/wake_word_sample_augmenter" --data-dir="${DATA_DIR}" || { rm -rf "${AUGMENTED_DIR}" ; exit 1 ; }
+    python -u "${CLIDIR}/wake_word_sample_augmenter" --data-dir="${DATA_DIR}" || { rm -rf "${AUGMENTED_DIR}" ; exit 1 ; }
 else
     echo "Augmentation not required"
     echo
