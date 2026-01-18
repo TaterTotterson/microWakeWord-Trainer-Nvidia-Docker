@@ -1,0 +1,150 @@
+
+if [ "$0" == "${BASH_SOURCE[0]}" ] ; then
+    echo "${BASH_SOURCE[0]} is meant to be 'sourced' not run directly" >&2
+    exit 1
+fi
+
+if [ ! -v DATA_DIR ] ; then
+    [ -f .mww-data-dir ] && DATA_DIR="${PWD}" || DATA_DIR="/data"
+fi
+
+DEFAULT_SAMPLES=50000
+DEFAULT_BATCH_SIZE=100
+DEFAULT_TRAINING_STEPS=40000
+
+[ -f "${DATA_DIR}/.defaults.env" ] && source "${DATA_DIR}/.defaults.env" || :
+
+: "${SAMPLES:=${DEFAULT_SAMPLES}}"
+: "${BATCH_SIZE:=${DEFAULT_BATCH_SIZE}}"
+: "${TRAINING_STEPS:=${DEFAULT_TRAINING_STEPS}}"
+: "${CLEANUP_WORK_DIR:=false}"
+: "${CLEANUP_ARCHIVES:=false}"
+: "${CLEANUP_INTERMEDIATE_FILES:=false}"
+: "${QUIET:=false}"
+: "${VERBOSE:=false}"
+
+HELP=false
+
+if [ -v KNOWN_ARGS ] ; then
+    KNOWN_ARGS+=( help verbose quiet h v q )
+fi
+declare -gi OPTION_COUNT=0
+declare -ga POSITIONAL_ARGS=()
+declare -ga EXTRA_ARGS=()
+declare -ga UNKNOWN_ARGS=()
+declare -i __stop_parsing=0
+for a in "$@"; do
+    if [ "$a" == "--" ] ; then
+        __stop_parsing=1
+        shift
+        continue
+    fi
+    if [ $__stop_parsing == 1 ] ; then
+        EXTRA_ARGS+=( "$a" )
+        shift
+        continue
+    fi
+
+    if [ -v KNOWN_ARGS ] && [[ "${a}" =~ ^--?([^=]+)=?.* ]] ; then
+        _arg=${BASH_REMATCH[1]}
+        known=false
+        for _k in "${KNOWN_ARGS[@]}" ; do
+            [ "${_arg}" == "${_k}" ] && { known=true ; break ; } || :
+        done
+        $known || UNKNOWN_ARGS+=( "${a}" )
+    fi
+    OPTION_COUNT+=1
+    case "$a" in
+        -h | --help)
+            HELP=true
+            break
+            ;;
+        -q | --quiet)
+            QUIET=true
+            break
+            ;;
+        -v | --verbose)
+            VERBOSE=true
+            break
+            ;;
+        --*=*)
+            [[ $a =~ --([^=]+)=(.*) ]]
+            l=${BASH_REMATCH[1]//-/_}
+            declare -n var="${l^^}"
+            var="${BASH_REMATCH[2]}"
+            ;;
+        --no-*)
+            [[ $a =~ --no-(.+) ]]
+            l=${BASH_REMATCH[1]//-/_}
+            declare -n var="${l^^}"
+            var=false
+            ;;
+        --*)
+            [[ $a =~ --(.+) ]]
+            l=${BASH_REMATCH[1]//-/_}
+            declare -n var="${l^^}"
+            var=true
+            ;;
+        *)
+            POSITIONAL_ARGS+=( "$a" )
+            ;;
+    esac
+done
+
+
+print_elapsed_time() {
+    print_seps=True
+    if [ "$1" == "--no-separators" ] ; then
+        shift
+        print_seps=False
+    fi
+    local START_TS=${1:?"Usage: $0 <start_timestamp> <end_timestamp>"}
+    local END_TS=${2:?"Usage: $0 <start_timestamp> <end_timestamp>"}
+    message="${3}"
+    python <<EOF
+from datetime import datetime
+st=datetime.fromtimestamp(int($START_TS))
+et=datetime.fromtimestamp(int($END_TS))
+msg=f"${message}  Elapsed time: {et-st!s}"
+if ${print_seps}:
+    print(f"{'=' * 80}")
+print(f"{msg:>80s}")
+if ${print_seps}:
+    print(f"{'=' * 80}")
+EOF
+}
+
+justify_text() {
+    msg="${1:?Need a string}"
+    len="${2:?Need a length}"
+    printf "%*s\n" $(( (${#msg}+len)/2)) "${msg}"
+}
+
+get_filecounts() {
+    declare -ln fca=${1}
+    local af=${2}
+    if [ -f "${af}" ] ; then
+        mapfile -t fc < <(cat "${af}")
+        for ds in "${fc[@]}" ; do
+            [[ "${ds}" =~ ^([^:]+):([0-9-]+)$ ]] && fca[${BASH_REMATCH[1]}]=${BASH_REMATCH[2]} || :
+        done
+    fi
+}
+
+get_total_filecount() {
+    declare -ln fca=${1}
+    declare -li total=0
+    for ds in "${fca[@]}" ; do
+        total+=${ds}
+    done
+    echo $total
+}
+
+write_filecounts() {
+    declare -ln fca=${1}
+    local af=${2}
+    rm -rf "${af}" || :
+    for ds in "${!fca[@]}" ; do
+        echo "${ds}:${fca[${ds}]}" >> "${af}"
+    done
+}

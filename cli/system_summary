@@ -1,0 +1,18 @@
+#!/bin/bash
+PROGPATH=$(realpath "$0")
+PROGDIR=$(dirname "${PROGPATH}")
+
+CUDA_INFO=$("${PROGDIR}/cudainfo")
+CUDA_CORES=$(sed -n -r -e "s/\s*Total\s+CUDA\s+Cores:\s+([0-9]+)$/\1/gp" <<<${CUDA_INFO})
+GPU_NAME="$(sed -n -r -e 's/\s*GPU\s+Name:\s+(.+)$/\1/gp' <<<${CUDA_INFO})"
+GPU_MEMORY="$(sed -n -r -e 's/\s*Total\s+Memory:\s*([0-9.]+).*/\1/gp' <<<${CUDA_INFO})"
+CPU_NAME="$(sed -n -r -e 's/model\s+name\s*:\s*(.+)$/\1/gp' /proc/cpuinfo | head -1)"
+CPU_CORES="$(nproc)"
+SYS_MEMORY="$(free -m | sed -n -r -e 's/Mem:\s+([0-9.]+)\s+.*/\1/gp')"
+
+printf "CPU: %s (%d cores)  Memory: %s mb\n" "${CPU_NAME}" "${CPU_CORES}" "${SYS_MEMORY}"
+if [ -z "${GPU_NAME}" ] ; then
+	printf "GPU: N/A\n"
+else
+	printf "GPU: %s (%d cores)  Memory: %s mb\n" "${GPU_NAME}" "${CUDA_CORES}" "${GPU_MEMORY}"
+fi

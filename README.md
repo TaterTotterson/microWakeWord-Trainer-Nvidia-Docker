@@ -1,20 +1,14 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/TaterTotterson/microWakeWord-Trainer-Nvidia-Docker/refs/heads/main/mmw.png" alt="MicroWakeWord Trainer Logo" width="100" />
-  <h1>microWakeWord Trainer Docker</h1>
-</div>
+# microWakeWord Nvidia Trainer & Recorder  
 
-# 🥔 MicroWakeWord Trainer – Tater Approved  
+Train **microWakeWord** detection models using a simple **web-based recorder + trainer UI**, packaged in a Docker container.
 
-**✅ Tater Totterson tested & working on an NVIDIA RTX 3070 Laptop GPU (8 GB VRAM).**  
-Easily train microWakeWord detection models with this pre-built Docker image and JupyterLab notebook.  
+No Jupyter notebooks required. No manual cell execution. Just record your voice (optional) and train.
 
 ---
 
-## 🚀 Quick Start  
+## 🚀 Quick Start
 
-Follow these steps to get up and running:  
-
-### 1️⃣ Pull the Pre-Built Docker Image  
+### 1️⃣ Pull the Docker Image
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:latest
@@ -22,102 +16,118 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 
 ---
 
-### 2️⃣ Run the Docker Container  
+### 2️⃣ Run the Container
 
 ```bash
 docker run --rm -it \
-    --gpus all \
-    -p 8888:8888 \
-    -v $(pwd):/data \
-    ghcr.io/tatertotterson/microwakeword:latest
+  --gpus all \
+  -p 8888:8888 \
+  -v $(pwd):/data \
+  ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-**What these flags do:**  
+**What these flags do:**
 - `--gpus all` → Enables GPU acceleration  
-- `-p 8888:8888` → Exposes JupyterLab on port 8888  
-- `-v $(pwd):/data` → Saves your work in the current folder  
+- `-p 8888:8888` → Exposes the Recorder + Trainer WebUI  
+- `-v $(pwd):/data` → Persists all models, datasets, and cache  
 
 ---
 
-### 3️⃣ Open JupyterLab  
+### 3️⃣ Open the Recorder WebUI
 
-Visit [http://localhost:8888](http://localhost:8888) in your browser — the notebook UI will open.  
+Open your browser and go to:
+
+👉 **http://localhost:8888**
+
+You’ll see the **microWakeWord Recorder & Trainer UI**.
 
 ---
 
-### 4️⃣ Set Your Wake Word  
+## 🎤 Recording Voice Samples (Optional)
 
-At the **top of the notebook**, find this line:  
+Personal voice recordings are **optional**.
 
-```bash
-TARGET_WORD = "hey_tater"  # Change this to your desired wake word
+- You may **record your own voice** for better accuracy  
+- Or simply **click “Train” without recording anything**
+
+If no recordings are present, training will proceed using **synthetic TTS samples only**.
+
+### Remote systems (important)
+If you are running this on a **remote PC / server**, browser-based recording will not work unless:
+- You use a **reverse proxy** (HTTPS + mic permissions), **or**
+- You access the UI via **localhost** on the same machine
+
+Training itself works fine remotely — only recording requires local microphone access.
+
+---
+
+## 🧠 Training Behavior (Important Notes)
+
+### ⏬ First training run
+The **first time you click Train**, the system will download **large training datasets** (background noise, speech corpora, etc.).
+
+- This can take **several minutes**
+- This happens **only once**
+- Data is cached inside `/data`
+
+You **will NOT need to download these again** unless you delete `/data`.
+
+---
+
+### 🔁 Re-training is safe and incremental
+
+- You can train **multiple wake words** back-to-back
+- You do **NOT** need to clear any folders between runs
+- Old models are preserved in timestamped output directories
+- All required cleanup and reuse logic is handled automatically
+
+---
+
+## 📦 Output Files
+
+When training completes, you’ll get:
+- `<wake_word>.tflite` – quantized streaming model  
+- `<wake_word>.json` – ESPHome-compatible metadata  
+
+Both are saved under:
+
+```text
+/data/output/
 ```
 
-Change `"hey_tater"` to your desired wake word (phonetic spellings often work best).  
+Each run is placed in its own timestamped folder.
 
 ---
 
-### 5️⃣ Run the Notebook  
+## 🎤 Optional: Personal Voice Samples (Advanced)
 
-Run all cells in the notebook. This process will:  
-- Generate wake word samples  
-- Train a detection model  
-- Output a quantized `.tflite` model ready for on-device use  
+If you record personal samples:
+- They are automatically augmented
+- They are **up-weighted during training**
+- This significantly improves real-world accuracy
 
----
-
-### 6️⃣ Retrieve the Trained Model & JSON  
-
-When training finishes, download links for both the `.tflite` model and its `.json` manifest will be displayed in the last cell.  
+No configuration required — detection is automatic.
 
 ---
 
-## 🔄 Resetting to a Clean State  
+## 🔄 Resetting Everything (Optional)
 
-If you need to start fresh:  
+If you want a **completely clean slate**:
 
-1. Delete the `data` folder that was mapped to your Docker container.  
-2. Restart the container using the steps above.  
-3. A fresh copy of the notebook will be placed into the `data` directory.  
+Delete the /data folder
 
----
+Then restart the container.
 
-## 🎤 Optional: Personal Voice Samples
-
-In addition to synthetic TTS samples, the trainer can optionally use your own real voice recordings to significantly improve accuracy for your voice and environment.
-
-### How it works
-- If a folder named personal_samples/ exists and contains .wav files, the trainer will:
-  - Automatically extract features from those recordings
-  - Include them during training alongside the synthetic TTS data
-  - Up-weight your personal samples during training for better real-world performance
-
-No extra flags or configuration are required — it is detected automatically.
-
-### How to use it
-1. Create a folder in the repo root:
-   mkdir personal_samples
-
-2. Record yourself saying the wake word naturally and save the files as .wav:
-   personal_samples/
-     hey_tater_01.wav
-     hey_tater_02.wav
-     hey_tater_03.wav
-     ...
-
-3. Run the training script as normal:
-
-If personal samples are found, you’ll see a message during training indicating they are being included.
-
-### Recording tips
-- 10–30 recordings is usually enough to see a noticeable improvement
-- Vary distance, volume, and tone slightly
-- Record in the same environment where the wake word will be used (room noise matters)
-- Use 16-bit WAV files if possible (most recorders do this by default)
+⚠️ This will:
+- Remove cached datasets
+- Require re-downloading training data
+- Delete trained models
 
 ---
 
-## 🙌 Credits  
+## 🙌 Credits
 
-This project builds upon the excellent work of [kahrendt/microWakeWord](https://github.com/kahrendt/microWakeWord).  
-Huge thanks to the original authors for their contributions to the open-source community!
+Built on top of the excellent  
+**https://github.com/kahrendt/microWakeWord**
+
+Huge thanks to the original authors ❤️

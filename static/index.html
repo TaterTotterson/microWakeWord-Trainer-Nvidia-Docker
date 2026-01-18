@@ -1,0 +1,811 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>microWakeWord Recorder</title>
+  <style>
+    :root{
+      --bg: #070709;
+      --panel: rgba(18, 18, 22, 0.78);
+      --panel2: rgba(24, 24, 30, 0.86);
+      --text: #e9e9ee;
+      --muted: #a2a2ad;
+      --line: rgba(255,255,255,0.10);
+      --orange: #ff8a2a;
+      --orange2:#ffb066;
+      --ok:#38d39f;
+      --warn:#ffb020;
+      --err:#ff4a4a;
+      --shadow: 0 18px 50px rgba(0,0,0,0.45);
+      --radius: 16px;
+    }
+
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:
+        radial-gradient(900px 500px at 12% 6%, rgba(255, 138, 42, 0.12), transparent 55%),
+        radial-gradient(700px 420px at 80% 14%, rgba(255, 176, 102, 0.09), transparent 60%),
+        radial-gradient(800px 600px at 50% 100%, rgba(255, 138, 42, 0.06), transparent 55%),
+        linear-gradient(180deg, #050506 0%, #09090d 100%);
+    }
+
+    .wrap { max-width: 940px; margin: 0 auto; padding: 26px 18px 42px; }
+
+    h2 { margin: 0 0 8px; font-size: 22px; letter-spacing: 0.2px; }
+    p { margin: 0 0 14px; color: var(--muted); line-height: 1.45; }
+
+    .topbar {
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 12px; margin-bottom: 14px;
+    }
+
+    .brand { display:flex; align-items:center; gap:10px; }
+    .logo {
+      width: 38px; height: 38px; border-radius: 12px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,176,102,0.55), rgba(255,138,42,0.25) 45%, rgba(0,0,0,0) 72%),
+        linear-gradient(180deg, rgba(255,138,42,0.22), rgba(255,138,42,0.06));
+      border: 1px solid rgba(255,138,42,0.30);
+      box-shadow: 0 10px 28px rgba(255,138,42,0.08);
+    }
+
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+    .card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .muted { color: var(--muted); }
+
+    input[type="text"], input[type="number"]{
+      padding: 11px 12px;
+      font-size: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.35);
+      color: var(--text);
+      outline: none;
+    }
+    input[type="text"] { width: 420px; max-width: 100%; }
+    input[type="number"] { width: 120px; }
+    input::placeholder { color: rgba(233,233,238,0.35); }
+
+    button {
+      padding: 10px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      transition: transform 0.04s ease, border-color .15s ease, background .15s ease;
+    }
+    button:hover { border-color: rgba(255,138,42,0.35); background: rgba(255,255,255,0.08); }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .primary {
+      border-color: rgba(255,138,42,0.40);
+      background: linear-gradient(180deg, rgba(255,138,42,0.24), rgba(255,138,42,0.12));
+    }
+    .primary:hover { border-color: rgba(255,138,42,0.65); }
+
+    .pill {
+      display:inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pill.ok   { color: var(--ok); border-color: rgba(56,211,159,0.25); background: rgba(56,211,159,0.08); }
+    .pill.warn { color: var(--warn); border-color: rgba(255,176,32,0.25); background: rgba(255,176,32,0.08); }
+    .pill.err  { color: var(--err); border-color: rgba(255,74,74,0.25); background: rgba(255,74,74,0.08); }
+
+    details { margin-top: 10px; }
+    summary { cursor: pointer; color: var(--orange2); }
+    summary:hover { color: var(--orange); }
+
+    label { display:flex; gap:10px; align-items:center; }
+    input[type="range"] { width: 240px; }
+
+    .meter {
+      height: 10px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      width: 280px;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .meter > div {
+      height: 10px;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(255,138,42,0.55), rgba(255,176,102,0.85));
+    }
+
+    pre {
+      background: rgba(0,0,0,0.55);
+      color: #e6e6ea;
+      padding: 12px;
+      border-radius: 14px;
+      overflow: auto;
+      max-height: 300px;
+      border: 1px solid rgba(255,255,255,0.10);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .big { font-size: 16px; }
+
+    .divider {
+      height: 1px;
+      width: 100%;
+      background: rgba(255,255,255,0.10);
+      margin: 12px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h2>🎙️ microWakeWord Personal Recorder</h2>
+          <p class="muted">Enter a wake word, test TTS pronunciation, then record takes. Recording starts when you speak and stops after silence.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <input id="phrase" type="text" placeholder='e.g. "tater totterson"' />
+        <button id="startSessionBtn" class="primary">Start session</button>
+        <button id="ttsBtn" disabled>🔊 Test TTS</button>
+        <span id="sessionPill" class="pill">No session</span>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <label class="muted">Speakers
+          <input id="speakersTotal" type="number" min="1" max="10" value="1" />
+        </label>
+        <label class="muted">Takes / speaker
+          <input id="takesPerSpeaker" type="number" min="1" max="50" value="10" />
+        </label>
+        <span id="speakerPill" class="pill">Speaker: -</span>
+      </div>
+
+      <details>
+        <summary>Advanced (if it’s too sensitive / not sensitive enough)</summary>
+        <div style="margin-top:10px;">
+          <label>
+            Start sensitivity
+            <input id="startThresh" type="range" min="0.005" max="0.08" step="0.001" value="0.02" />
+            <span id="startThreshVal" class="muted"></span>
+          </label>
+          <label>
+            Silence stop (ms)
+            <input id="silenceMs" type="range" min="300" max="2000" step="50" value="900" />
+            <span id="silenceMsVal" class="muted"></span>
+          </label>
+          <label>
+            Min take length (ms)
+            <input id="minTakeMs" type="range" min="300" max="2000" step="50" value="650" />
+            <span id="minTakeMsVal" class="muted"></span>
+          </label>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <button id="beginBtn" disabled class="primary">🎬 Begin recording</button>
+        <button id="resetBtn" disabled>🧹 Reset recordings</button>
+        <button id="trainBtn" disabled>🧠 Start training</button>
+        <span id="status" class="pill">Idle</span>
+      </div>
+
+      <div style="margin-top:12px;" class="row">
+        <div class="meter"><div id="meterFill"></div></div>
+        <span class="muted" id="meterText">Mic level</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="big">
+        Speaker: <b id="speakerNum">-</b> / <b id="speakerTotal">-</b>
+        <span id="speakerState" class="pill">Waiting</span>
+      </p>
+
+      <p class="big">
+        Take: <b id="takeNum">0</b> / <b id="takeTotal">10</b>
+        <span id="takeState" class="pill">Not recording</span>
+      </p>
+
+      <div id="takesList" class="muted"></div>
+
+      <h4 style="margin-top: 18px; margin-bottom: 10px;">Training log</h4>
+      <pre id="trainLog">(no training started)</pre>
+    </div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function setPill(el, text, cls) {
+    el.className = "pill " + (cls || "");
+    el.textContent = text;
+  }
+
+  async function api(path, opts) {
+    opts = opts || {};
+    // Always try to avoid cache for polling endpoints
+    if (!opts.cache) opts.cache = "no-store";
+
+    const res = await fetch(path, opts);
+    const ct = res.headers.get("content-type") || "";
+    const data = ct.includes("application/json") ? await res.json() : await res.text();
+    if (!res.ok) {
+      const err = (typeof data === "string") ? { error: data } : (data || {});
+      const msg = err.error || err.message || JSON.stringify(err);
+      const e = new Error(msg);
+      e.details = err;
+      throw e;
+    }
+    return data;
+  }
+
+  // -------------------- log auto-scroll (sticky to bottom) --------------------
+  function isNearBottom(el, px = 40) {
+    return (el.scrollHeight - el.scrollTop - el.clientHeight) <= px;
+  }
+
+  function setLogTextAutoScroll(el, text) {
+    const stick = isNearBottom(el);
+    el.textContent = text || "";
+    if (stick) el.scrollTop = el.scrollHeight;
+  }
+  // --------------------------------------------------------------------------
+
+  let session = null;
+  let isRunning = false;
+
+  let stream = null;
+  let audioCtx = null;
+  let analyser = null;
+  let source = null;
+
+  let capturing = false;
+  let startedAt = 0;
+  let silenceStart = null;
+  let floatChunks = [];
+  let frameSize = 2048;
+
+  let currentSpeaker = 1;
+  let speakersTotal = 1;
+
+  let currentTake = 0;
+  let takesPerSpeaker = 10;
+
+  // --- training poll (append mode; scrollback works) ---
+  let trainingPollRunning = false;
+  let trainingPollAbort = false;
+
+  let logBuffer = "";          // full text we’ve shown in the browser
+  let lastChunk = "";          // last chunk we received (for de-dupe)
+  let seenAnyOutput = false;
+
+  function appendLogAutoScroll(el, chunk) {
+    if (!chunk) return;
+    const stick = isNearBottom(el);
+    el.textContent += chunk;
+    if (stick) el.scrollTop = el.scrollHeight;
+  }
+
+  function startThreshold() { return parseFloat($("startThresh").value); }
+  function silenceStopMs() { return parseInt($("silenceMs").value, 10); }
+  function minTakeMs() { return parseInt($("minTakeMs").value, 10); }
+
+  function updateAdvancedLabels() {
+    $("startThreshVal").textContent = startThreshold().toFixed(3);
+    $("silenceMsVal").textContent = silenceStopMs() + "ms";
+    $("minTakeMsVal").textContent = minTakeMs() + "ms";
+  }
+  ["startThresh","silenceMs","minTakeMs"].forEach(id => $(id).addEventListener("input", updateAdvancedLabels));
+  updateAdvancedLabels();
+
+  function refreshUI() {
+    $("speakerNum").textContent = String(currentSpeaker);
+    $("speakerTotal").textContent = String(speakersTotal);
+    $("takeNum").textContent = String(currentTake);
+    $("takeTotal").textContent = String(takesPerSpeaker);
+    setPill($("speakerPill"), `Speaker ${currentSpeaker}/${speakersTotal}`);
+  }
+
+  // -------------------- mic lifecycle --------------------
+  async function ensureMic() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Microphone not available here. Use https:// (or http://localhost) to record.");
+    }
+    if (stream) return;
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    requestAnimationFrame(meterLoop);
+  }
+
+  async function stopMicNow() {
+    isRunning = false;
+    capturing = false;
+
+    const proc = window.__mw_proc;
+    if (proc) {
+      try { proc.disconnect(); } catch {}
+      try { source && source.disconnect(proc); } catch {}
+      window.__mw_proc = null;
+    }
+
+    if (stream) {
+      try { stream.getTracks().forEach(t => t.stop()); } catch {}
+      stream = null;
+    }
+
+    if (audioCtx) {
+      try { await audioCtx.close(); } catch {}
+      audioCtx = null;
+    }
+
+    analyser = null;
+    source = null;
+
+    $("meterFill").style.width = "0%";
+    $("meterText").textContent = "Mic stopped";
+  }
+
+  function meterLoop() {
+    if (!analyser) {
+      requestAnimationFrame(meterLoop);
+      return;
+    }
+
+    const data = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(data);
+
+    let sumSq = 0;
+    for (let i=0;i<data.length;i++){
+      const v = (data[i] - 128) / 128;
+      sumSq += v*v;
+    }
+    const rms = Math.sqrt(sumSq / data.length);
+    const pct = Math.min(100, Math.max(0, rms * 600));
+    $("meterFill").style.width = pct + "%";
+    $("meterText").textContent = `Mic level (rms=${rms.toFixed(3)})`;
+
+    if (isRunning) recorderTick(rms);
+
+    requestAnimationFrame(meterLoop);
+  }
+
+  // -------------------- recording state machine --------------------
+  function recorderTick(rms) {
+    const now = performance.now();
+
+    if (!capturing) {
+      if (rms >= startThreshold()) startCapture();
+      return;
+    }
+
+    if (rms < startThreshold() * 0.65) {
+      if (silenceStart === null) silenceStart = now;
+      const silentFor = now - silenceStart;
+      if (silentFor >= silenceStopMs()) {
+        const dur = now - startedAt;
+        if (dur >= minTakeMs()) stopCaptureAndUpload();
+        else silenceStart = now;
+      }
+    } else {
+      silenceStart = null;
+    }
+  }
+
+  async function startCapture() {
+    capturing = true;
+    startedAt = performance.now();
+    silenceStart = null;
+    floatChunks = [];
+
+    setPill($("takeState"), "Recording…", "warn");
+
+    const proc = audioCtx.createScriptProcessor(frameSize, 1, 1);
+    source.connect(proc);
+    proc.connect(audioCtx.destination);
+
+    proc.onaudioprocess = (ev) => {
+      if (!capturing) return;
+      const chan = ev.inputBuffer.getChannelData(0);
+      floatChunks.push(new Float32Array(chan));
+    };
+
+    window.__mw_proc = proc;
+  }
+
+  async function stopCaptureAndUpload() {
+    capturing = false;
+    setPill($("takeState"), "Processing…");
+
+    const proc = window.__mw_proc;
+    if (proc) {
+      try { proc.disconnect(); } catch {}
+      try { source.disconnect(proc); } catch {}
+      window.__mw_proc = null;
+    }
+
+    currentTake += 1;
+    refreshUI();
+
+    let totalLen = 0;
+    for (const c of floatChunks) totalLen += c.length;
+    const merged = new Float32Array(totalLen);
+    let off = 0;
+    for (const c of floatChunks) { merged.set(c, off); off += c.length; }
+
+    const wavBlob = await floatToWav16kMono(merged, audioCtx.sampleRate);
+
+    try {
+      setPill($("status"), `Uploading speaker ${currentSpeaker} take ${currentTake}…`, "warn");
+
+      const fd = new FormData();
+      fd.append("speaker_index", String(currentSpeaker));
+      fd.append("take_index", String(currentTake));
+      fd.append("file", wavBlob, `take_${String(currentTake).padStart(2,"0")}.wav`);
+
+      await api("/api/upload_take", { method:"POST", body: fd });
+
+      $("takesList").textContent = `Saved ${currentTake}/${takesPerSpeaker} takes for speaker ${currentSpeaker}/${speakersTotal}`;
+      setPill($("status"), `Saved speaker ${currentSpeaker} take ${currentTake}/${takesPerSpeaker}`, "ok");
+
+      if (currentTake >= takesPerSpeaker) {
+        if (currentSpeaker >= speakersTotal) {
+          setPill($("takeState"), "Done", "ok");
+          setPill($("speakerState"), "All speakers done ✅", "ok");
+          setPill($("status"), "All takes recorded ✅", "ok");
+
+          await stopMicNow();
+          await autoStartTraining();
+          return;
+        }
+
+        currentSpeaker += 1;
+        currentTake = 0;
+        refreshUI();
+
+        setPill($("speakerState"), `Speaker ${currentSpeaker - 1} complete ✅`, "ok");
+        setPill($("takeState"), "Paused", "warn");
+        setPill($("status"), `Ready for speaker ${currentSpeaker}. Click Begin recording.`, "warn");
+
+        isRunning = false;
+        $("beginBtn").disabled = false;
+
+        await stopMicNow();
+        return;
+      }
+
+      setPill($("speakerState"), `Speaker ${currentSpeaker}/${speakersTotal}`);
+      setPill($("takeState"), "Listening…", "ok");
+
+    } catch (e) {
+      console.error(e);
+      setPill($("status"), "Upload failed", "err");
+      setPill($("takeState"), "Error", "err");
+      isRunning = false;
+      $("beginBtn").disabled = false;
+      alert("Upload failed: " + e.message);
+    }
+  }
+
+  // -------------------- WAV encoding helpers --------------------
+  async function floatToWav16kMono(float32, srcRate) {
+    const buf = audioCtx.createBuffer(1, float32.length, srcRate);
+    buf.copyToChannel(float32, 0);
+
+    const targetRate = 16000;
+    const targetLen = Math.max(1, Math.round(float32.length * targetRate / srcRate));
+    const offline = new OfflineAudioContext(1, targetLen, targetRate);
+
+    const src = offline.createBufferSource();
+    src.buffer = buf;
+    src.connect(offline.destination);
+    src.start(0);
+
+    const rendered = await offline.startRendering();
+    const data = rendered.getChannelData(0);
+
+    const wav = encodeWavPCM16(data, targetRate);
+    return new Blob([wav], { type: "audio/wav" });
+  }
+
+  function encodeWavPCM16(float32, sampleRate) {
+    const numSamples = float32.length;
+    const buffer = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buffer);
+
+    function writeString(offset, str) {
+      for (let i=0;i<str.length;i++) view.setUint8(offset+i, str.charCodeAt(i));
+    }
+
+    writeString(0, "RIFF");
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeString(8, "WAVE");
+
+    writeString(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+
+    writeString(36, "data");
+    view.setUint32(40, numSamples * 2, true);
+
+    let offset = 44;
+    for (let i=0;i<numSamples;i++) {
+      let s = Math.max(-1, Math.min(1, float32[i]));
+      const v = s < 0 ? s * 0x8000 : s * 0x7fff;
+      view.setInt16(offset, v, true);
+      offset += 2;
+    }
+    return buffer;
+  }
+
+  // -------------------- training (manual + auto) --------------------
+  async function startTrainingWithPrompt(auto=false) {
+    const sess = await api("/api/session", { method: "GET" });
+    const takesReceived = sess.takes_received || 0;
+    const total = (sess.speakers_total || 1) * (sess.takes_per_speaker || 10);
+
+    let allowNoPersonal = false;
+
+    if (takesReceived === 0) {
+      const ok = confirm(
+        `No personal voice samples recorded (0/${total}).\n\nTrain anyway WITHOUT personal voices?`
+      );
+      if (!ok) return;
+      allowNoPersonal = true;
+    }
+
+    // lock UI immediately
+    $("trainBtn").disabled = true;
+    $("beginBtn").disabled = true;
+    $("resetBtn").disabled = true;
+
+    setPill($("status"), auto ? "Auto-starting training…" : "Preparing training environment…", "warn");
+
+    // Reset log state for a fresh run
+    trainingPollAbort = false;
+    logBuffer = "";
+    lastChunk = "";
+    seenAnyOutput = false;
+
+    const logEl = $("trainLog");
+    logEl.textContent = "(preparing…)\n";
+
+    try {
+      // Kick off training first
+      await api("/api/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allow_no_personal: allowNoPersonal })
+      });
+
+      // Only start polling AFTER training was successfully kicked off
+      if (!trainingPollRunning) {
+        trainingPollRunning = true;
+        pollTrainingTail();
+      }
+
+      setPill($("status"), "Training running…", "warn");
+    } catch (e) {
+      $("trainBtn").disabled = false;
+      $("resetBtn").disabled = false;
+      $("beginBtn").disabled = false;
+      trainingPollAbort = true;
+      trainingPollRunning = false;
+      throw e;
+    }
+  }
+
+  async function autoStartTraining() {
+    try {
+      await startTrainingWithPrompt(true);
+    } catch (e) {
+      console.error(e);
+      setPill($("status"), "Auto-train failed", "err");
+      alert("Auto-start training failed: " + e.message);
+    }
+  }
+
+  $("trainBtn").addEventListener("click", async () => {
+    try {
+      await startTrainingWithPrompt(false);
+    } catch (e) {
+      alert("Train failed: " + e.message);
+      setPill($("status"), "Train failed", "err");
+    }
+  });
+
+  async function pollTrainingTail() {
+    const logEl = $("trainLog");
+
+    for (;;) {
+      if (trainingPollAbort) {
+        trainingPollRunning = false;
+        break;
+      }
+
+      try {
+        const st = await api(`/api/train_status?ts=${Date.now()}`, { method:"GET", cache:"no-store" });
+        const tr = st.training || {};
+
+        // NOTE: this assumes /api/train_status returns NEW output chunks (not full tail snapshots)
+        const chunkRaw = tr.log_text || "";
+        const chunk = chunkRaw; // keep exact newlines from server
+
+        if (chunk) {
+          // wipe placeholder once
+          if (!seenAnyOutput) {
+            logEl.textContent = "";
+            logBuffer = "";
+            lastChunk = "";
+            seenAnyOutput = true;
+          }
+
+          // simple de-dupe: if server repeats the same chunk, skip it
+          if (chunk !== lastChunk) {
+            lastChunk = chunk;
+            logBuffer += chunk;
+            appendLogAutoScroll(logEl, chunk);
+          }
+        } else {
+          // before first output, show waiting message but do NOT overwrite later scrollback
+          if (!seenAnyOutput) {
+            if (!logEl.textContent || logEl.textContent.includes("(no training") || logEl.textContent.startsWith("(preparing…")) {
+              logEl.textContent = "Waiting for training output…\n";
+            }
+          }
+        }
+
+        const exitCodeIsSet = (tr.exit_code !== null && tr.exit_code !== undefined);
+
+        if (!tr.running && exitCodeIsSet) {
+          $("trainBtn").disabled = false;
+          $("resetBtn").disabled = false;
+          $("beginBtn").disabled = false;
+
+          if (tr.exit_code === 0) setPill($("status"), "Training finished ✅", "ok");
+          else setPill($("status"), `Training ended (exit=${tr.exit_code})`, "err");
+
+          trainingPollRunning = false;
+          break;
+        }
+      } catch (e) {
+        // ignore transient polling errors
+      }
+
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+
+  // -------------------- session + UI wiring --------------------
+  $("ttsBtn").addEventListener("click", () => {
+    const phrase = ($("phrase").value || "").trim();
+    if (!phrase) return;
+    const u = new SpeechSynthesisUtterance(phrase);
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  });
+
+  $("startSessionBtn").addEventListener("click", async () => {
+    const phrase = ($("phrase").value || "").trim();
+    if (!phrase) { alert("Enter a wake word phrase first."); return; }
+
+    speakersTotal = parseInt($("speakersTotal").value || "1", 10);
+    takesPerSpeaker = parseInt($("takesPerSpeaker").value || "10", 10);
+
+    try {
+      setPill($("sessionPill"), "Starting…", "warn");
+      const data = await api("/api/start_session", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ phrase, speakers_total: speakersTotal, takes_per_speaker: takesPerSpeaker })
+      });
+
+      session = data;
+
+      currentSpeaker = 1;
+      currentTake = 0;
+
+      $("takesList").textContent = "";
+      $("trainLog").textContent = "(no training started)";
+
+      // Stop any previous poll loop cleanly
+      trainingPollAbort = true;
+      trainingPollRunning = false;
+      logBuffer = "";
+      lastChunk = "";
+      seenAnyOutput = false;
+
+      refreshUI();
+
+      await stopMicNow();
+
+      setPill($("sessionPill"), `Session: ${data.safe_word}`, "ok");
+      $("beginBtn").disabled = false;
+      $("resetBtn").disabled = false;
+      $("trainBtn").disabled = false;
+      $("ttsBtn").disabled = false;
+
+      setPill($("status"), "Ready", "ok");
+      setPill($("speakerState"), "Waiting");
+      setPill($("takeState"), "Not recording");
+    } catch (e) {
+      console.error(e);
+      setPill($("sessionPill"), "Session failed", "err");
+      alert("Start session failed: " + e.message);
+    } finally {
+      // allow a new poll loop to start later
+      trainingPollAbort = false;
+    }
+  });
+
+  $("resetBtn").addEventListener("click", async () => {
+    try {
+      await api("/api/reset_recordings", {method:"POST"});
+      currentSpeaker = 1;
+      currentTake = 0;
+      $("takesList").textContent = "";
+      refreshUI();
+      setPill($("status"), "Recordings reset", "ok");
+    } catch (e) {
+      alert("Reset failed: " + e.message);
+    }
+  });
+
+  $("beginBtn").addEventListener("click", async () => {
+    if (!session) { alert("Start a session first."); return; }
+    try {
+      await ensureMic();
+    } catch (e) {
+      alert("Mic permission failed: " + e.message);
+      return;
+    }
+
+    $("takesList").textContent = "";
+    refreshUI();
+
+    isRunning = true;
+    $("beginBtn").disabled = true;
+
+    setPill($("speakerState"), `Speaker ${currentSpeaker}/${speakersTotal}`);
+    setPill($("status"), "Listening… say the wake word now", "ok");
+    setPill($("takeState"), "Listening…", "ok");
+  });
+</script>
+</body>
+</html>
