@@ -152,8 +152,18 @@ sed -i \
 
 # Insert/remove personal block
 if [ "${HAS_PERSONAL}" = "true" ]; then
-  # Insert directly after the wakeword feature block (matches your notebook: insert(1, ...))
-  perl -0777 -i -pe 's/__PERSONAL_FEATURE_MARKER__/\n- features_dir: '"${PERSONAL_FEATURES_DIR}"'\n  penalty_weight: 1.0\n  sampling_weight: 3.0\n  truncation_strategy: truncate_start\n  truth: true\n  type: mmap\n/g' "${YAML_PATH}"
+  # Insert directly after the wakeword feature block (matches notebook: insert(1, ...))
+  personal_block="$(cat <<EOF
+- features_dir: ${PERSONAL_FEATURES_DIR}
+  penalty_weight: 1.0
+  sampling_weight: 3.0
+  truncation_strategy: truncate_start
+  truth: true
+  type: mmap
+EOF
+)"
+
+  perl -0777 -i -pe "s#__PERSONAL_FEATURE_MARKER__#${personal_block}#g" "${YAML_PATH}"
 else
   # Remove marker line entirely
   sed -i -e "/__PERSONAL_FEATURE_MARKER__/d" "${YAML_PATH}"
