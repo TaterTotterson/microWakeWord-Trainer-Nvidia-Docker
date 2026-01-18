@@ -60,43 +60,57 @@ check_directories() {
 check_directories ${WORK_DIR}/wake_word_samples_augmented \
     ${TRAINING_DS}/negative_datasets/{speech,dinner_party,no_speech,dinner_party_eval}
 
+# Personal features are optional, but if present they MUST have /training
+PERSONAL_FEATURES_DIR="${WORK_DIR}/personal_augmented_features"
+HAS_PERSONAL="false"
+if [ -d "${PERSONAL_FEATURES_DIR}/training" ] ; then
+  HAS_PERSONAL="true"
+  echo "✅ Found personal features: ${PERSONAL_FEATURES_DIR}/training (will weight sampling_weight=3.0)"
+else
+  echo "ℹ️  No personal features found at ${PERSONAL_FEATURES_DIR}/training (continuing without personal weighting)"
+fi
+
 cd "${WORK_DIR}"
 
 echo "===== Starting ${TRAINING_STEPS} training steps ====="
-
 START_TS=$EPOCHSECONDS
 
 mkdir -p "${WORK_DIR}/trained_models" || :
-cat <<EOF >"${WORK_DIR}/trained_models/training_parameters.yaml"
+
+# We write a YAML with a marker, then splice personal feature block in if it exists.
+YAML_PATH="${WORK_DIR}/trained_models/training_parameters.yaml"
+
+cat <<'EOF' > "${YAML_PATH}"
 batch_size: 16
 clip_duration_ms: 1500
 eval_step_interval: 500
 features:
-- features_dir: ${WORK_DIR}/wake_word_samples_augmented
+- features_dir: __WAKEWORD_FEATURES__
   penalty_weight: 1.0
   sampling_weight: 2.0
   truncation_strategy: truncate_start
   truth: true
   type: mmap
-- features_dir: ${TRAINING_DS}/negative_datasets/speech
+__PERSONAL_FEATURE_MARKER__
+- features_dir: __NEG_SPEECH__
   penalty_weight: 1.0
   sampling_weight: 12.0
   truncation_strategy: random
   truth: false
   type: mmap
-- features_dir: ${TRAINING_DS}/negative_datasets/dinner_party
+- features_dir: __NEG_DINNER__
   penalty_weight: 1.0
   sampling_weight: 12.0
   truncation_strategy: random
   truth: false
   type: mmap
-- features_dir: ${TRAINING_DS}/negative_datasets/no_speech
+- features_dir: __NEG_NOSPEECH__
   penalty_weight: 1.0
   sampling_weight: 5.0
   truncation_strategy: random
   truth: false
   type: mmap
-- features_dir: ${TRAINING_DS}/negative_datasets/dinner_party_eval
+- features_dir: __NEG_DINNER_EVAL__
   penalty_weight: 1.0
   sampling_weight: 0.0
   truncation_strategy: split
@@ -119,25 +133,46 @@ time_mask_count:
 - 0
 time_mask_max_size:
 - 0
-train_dir: ${WORK_DIR}/trained_models/wakeword
+train_dir: __TRAIN_DIR__
 training_steps:
-- ${TRAINING_STEPS}
+- __TRAINING_STEPS__
 window_step_ms: 10
-
 EOF
+
+# Replace placeholders (portable)
+sed -i \
+  -e "s|__WAKEWORD_FEATURES__|${WORK_DIR}/wake_word_samples_augmented|g" \
+  -e "s|__NEG_SPEECH__|${TRAINING_DS}/negative_datasets/speech|g" \
+  -e "s|__NEG_DINNER__|${TRAINING_DS}/negative_datasets/dinner_party|g" \
+  -e "s|__NEG_NOSPEECH__|${TRAINING_DS}/negative_datasets/no_speech|g" \
+  -e "s|__NEG_DINNER_EVAL__|${TRAINING_DS}/negative_datasets/dinner_party_eval|g" \
+  -e "s|__TRAIN_DIR__|${WORK_DIR}/trained_models/wakeword|g" \
+  -e "s|__TRAINING_STEPS__|${TRAINING_STEPS}|g" \
+  "${YAML_PATH}"
+
+# Insert/remove personal block
+if [ "${HAS_PERSONAL}" = "true" ]; then
+  # Insert directly after the wakeword feature block (matches your notebook: insert(1, ...))
+  perl -0777 -i -pe 's/__PERSONAL_FEATURE_MARKER__/\n- features_dir: '"${PERSONAL_FEATURES_DIR}"'\n  penalty_weight: 1.0\n  sampling_weight: 3.0\n  truncation_strategy: truncate_start\n  truth: true\n  type: mmap\n/g' "${YAML_PATH}"
+else
+  # Remove marker line entirely
+  sed -i -e "/__PERSONAL_FEATURE_MARKER__/d" "${YAML_PATH}"
+fi
 
 echo "   Wrote training_parameters.yaml"
 rm -rf "${WORK_DIR}/trained_models/wakeword"
 
-wake_word_filename="${WAKE_WORD//[ \`~\!\$&*$begin:math:text$$end:math:text$\{\}$begin:math:display$$end:math:display$\|\;\'\"<>.?\/]/_}"
+wake_word_filename="$(
+  echo "${WAKE_WORD}" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9]+/_/g; s/^_+//; s/_+$//'
+)"
+[ -n "${wake_word_filename}" ] || wake_word_filename="wakeword"
+
 OUTPUT_DIR="${DATA_DIR}/output/$(date +'%Y-%m-%d-%H-%M-%S')-${wake_word_filename}-${SAMPLES}-${TRAINING_STEPS}"
 mkdir -p "${OUTPUT_DIR}/logs" || :
-
 TRAIN_LOG="${OUTPUT_DIR}/logs/training.log"
 
-# ------------------------------------------------------------------
-# Training args (same as before)
-# ------------------------------------------------------------------
 TRAIN_ARGS=(
   -m microwakeword.model_train_eval
   --training_config "${WORK_DIR}/trained_models/training_parameters.yaml"
@@ -159,10 +194,6 @@ TRAIN_ARGS=(
   --stride 2
 )
 
-# ------------------------------------------------------------------
-# GPU failure markers that should trigger CPU fallback
-# (OOM + known GPU runtime/copy/init failures)
-# ------------------------------------------------------------------
 GPU_FALLBACK_MARKERS=(
   "resourceexhaustederror"
   "resource exhausted"
@@ -189,7 +220,6 @@ run_attempt() {
   echo "→ ${PYTHON_BIN:-python} ${TRAIN_ARGS[*]}"
   echo
 
-  # stream everything except validation minibatch spam
   "${PYTHON_BIN:-python}" "${TRAIN_ARGS[@]}" 2>&1 \
     | tr '\r' '\n' \
     | stdbuf -i0 -o0 sed -r -e "/^Validation Batch/d" \
@@ -199,20 +229,17 @@ run_attempt() {
   return ${PIPESTATUS[0]}
 }
 
-# ---- Common TF env (mirrors your notebook) ----
 export TF_CPP_MIN_LOG_LEVEL="${TF_CPP_MIN_LOG_LEVEL:-2}"
 export TF_XLA_FLAGS="${TF_XLA_FLAGS:---tf_xla_auto_jit=0}"
 export NVIDIA_TF32_OVERRIDE="${NVIDIA_TF32_OVERRIDE:-1}"
 export TF_FORCE_GPU_ALLOW_GROWTH="${TF_FORCE_GPU_ALLOW_GROWTH:-true}"
 export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
 
-# Attempt 1: GPU
 if run_attempt "Attempt 1/2: GPU training (allow_growth + cuda_malloc_async)" ; then
   echo "✅ Training complete (GPU path)."
 else
   echo "⚠️  GPU attempt failed. Checking whether this looks like a GPU/OOM/runtime failure…"
 
-  # Check log for GPU/OOM/runtime markers
   log_lc="$(tr '[:upper:]' '[:lower:]' < "${TRAIN_LOG}" || true)"
   looks_like_gpu_fail="false"
   for m in "${GPU_FALLBACK_MARKERS[@]}"; do
@@ -225,7 +252,6 @@ else
   if [ "${looks_like_gpu_fail}" = "true" ]; then
     echo "↪️  Detected GPU/OOM/runtime failure markers. Falling back to CPU."
 
-    # Attempt 2: CPU (hide GPU completely)
     export CUDA_VISIBLE_DEVICES=""
     unset TF_GPU_ALLOCATOR
     if run_attempt "Attempt 2/2: CPU fallback (CUDA_VISIBLE_DEVICES='')" ; then
@@ -256,7 +282,6 @@ echo "   Full log: ${TRAIN_LOG}"
 
 tflite_filename="${wake_word_filename}.tflite"
 tflite_path="${OUTPUT_DIR}/${tflite_filename}"
-
 cp "${source_path}" "${tflite_path}"
 
 json_path="${OUTPUT_DIR}/${wake_word_filename}.json"
