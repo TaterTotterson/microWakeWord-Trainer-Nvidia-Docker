@@ -86,6 +86,7 @@ personal_samples/
   speaker02_take01.wav
   ...
 ```
+
 ---
 
 ## 🧠 Training Behavior (Important Notes)
