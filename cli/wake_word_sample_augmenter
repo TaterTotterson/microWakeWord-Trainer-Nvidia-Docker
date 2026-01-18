@@ -206,7 +206,10 @@ def generate_feature_set(input_wav_dir: str, out_root_dir: str, label: str):
     for split, cfg in split_cfg.items():
         out_dir = out_root / split
         out_dir.mkdir(parents=True, exist_ok=True)
+
         print(f"   Augmenting {split} ({label})")
+        print("   Sit tight this can take awhile ...")
+        print()
 
         spectros = SpectrogramGeneration(
             clips=clips,
@@ -229,7 +232,7 @@ def generate_feature_set(input_wav_dir: str, out_root_dir: str, label: str):
 
         print(f"      {split} augmentation complete ({label})")
 
-    print(f"✅ Features ready: {out_root_dir}/*/wakeword_mmap")
+    print(f"\n✅ Features ready: {out_root_dir}/*/wakeword_mmap\n")
     return True
 
 # Wake word generated/TTS features (existing behavior)
