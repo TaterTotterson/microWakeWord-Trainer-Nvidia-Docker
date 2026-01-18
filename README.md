@@ -64,6 +64,30 @@ Training itself works fine remotely — only recording requires local microphone
 
 ---
 
+### 🎙️ Recording Flow
+
+1. Enter your wake word
+2. Test pronunciation with **Test TTS**
+3. Choose:
+   - Number of speakers (e.g. family members)
+   - Takes per speaker (default: 10)
+4. Click **Begin recording**
+5. Speak naturally — recording:
+   - Starts when you talk
+   - Stops automatically after silence
+6. Repeat for each speaker
+
+Files are saved automatically to:
+
+```
+personal_samples/
+  speaker01_take01.wav
+  speaker01_take02.wav
+  speaker02_take01.wav
+  ...
+```
+---
+
 ## 🧠 Training Behavior (Important Notes)
 
 ### ⏬ First training run
