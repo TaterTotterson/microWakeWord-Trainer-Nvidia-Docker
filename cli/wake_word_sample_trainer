@@ -204,22 +204,6 @@ TRAIN_ARGS=(
   --stride 2
 )
 
-GPU_FALLBACK_MARKERS=(
-  "resourceexhaustederror"
-  "resource exhausted"
-  "oom"
-  "out of memory"
-  "cuda_error_out_of_memory"
-  "failed to allocate"
-  "cudnn"
-  "cublas"
-  "internalerror: cuda"
-  "failed call to cuinit"
-  "dst tensor is not initialized"
-  "failed copying input tensor"
-  "_eagerconst"
-)
-
 run_attempt() {
   local label="$1"
   shift
@@ -239,8 +223,11 @@ run_attempt() {
   return ${PIPESTATUS[0]}
 }
 
+DEFAULT_XLA_FLAGS="--tf_xla_auto_jit=0 --xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found --xla_gpu_cuda_data_dir=${DATA_DIR}/cuda"
+DEFAULT_XLA_RUNTIME_FLAGS="--xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found --xla_gpu_cuda_data_dir=${DATA_DIR}/cuda"
 export TF_CPP_MIN_LOG_LEVEL="${TF_CPP_MIN_LOG_LEVEL:-2}"
-export TF_XLA_FLAGS="${TF_XLA_FLAGS:---tf_xla_auto_jit=0}"
+export TF_XLA_FLAGS="${TF_XLA_FLAGS:+${TF_XLA_FLAGS} }${DEFAULT_XLA_FLAGS}"
+export XLA_FLAGS="${XLA_FLAGS:+${XLA_FLAGS} }${DEFAULT_XLA_RUNTIME_FLAGS}"
 export NVIDIA_TF32_OVERRIDE="${NVIDIA_TF32_OVERRIDE:-1}"
 export TF_FORCE_GPU_ALLOW_GROWTH="${TF_FORCE_GPU_ALLOW_GROWTH:-true}"
 export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
@@ -248,30 +235,14 @@ export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
 if run_attempt "Attempt 1/2: GPU training (allow_growth + cuda_malloc_async)" ; then
   echo "✅ Training complete (GPU path)."
 else
-  echo "⚠️  GPU attempt failed. Checking whether this looks like a GPU/OOM/runtime failure…"
+  echo "⚠️  GPU attempt failed. Falling back to CPU."
 
-  log_lc="$(tr '[:upper:]' '[:lower:]' < "${TRAIN_LOG}" || true)"
-  looks_like_gpu_fail="false"
-  for m in "${GPU_FALLBACK_MARKERS[@]}"; do
-    if echo "${log_lc}" | grep -qF "${m}"; then
-      looks_like_gpu_fail="true"
-      break
-    fi
-  done
-
-  if [ "${looks_like_gpu_fail}" = "true" ]; then
-    echo "↪️  Detected GPU/OOM/runtime failure markers. Falling back to CPU."
-
-    export CUDA_VISIBLE_DEVICES=""
-    unset TF_GPU_ALLOCATOR
-    if run_attempt "Attempt 2/2: CPU fallback (CUDA_VISIBLE_DEVICES='')" ; then
-      echo "✅ Training complete (CPU fallback)."
-    else
-      echo "❌ Training failed on BOTH GPU and CPU. See: ${TRAIN_LOG}" >&2
-      exit 1
-    fi
+  export CUDA_VISIBLE_DEVICES=""
+  unset TF_GPU_ALLOCATOR
+  if run_attempt "Attempt 2/2: CPU fallback (CUDA_VISIBLE_DEVICES='')" ; then
+    echo "✅ Training complete (CPU fallback)."
   else
-    echo "❌ Training failed (does not look GPU/OOM/runtime). See: ${TRAIN_LOG}" >&2
+    echo "❌ Training failed on BOTH GPU and CPU. See: ${TRAIN_LOG}" >&2
     exit 1
   fi
 fi
