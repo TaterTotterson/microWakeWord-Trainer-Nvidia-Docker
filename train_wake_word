@@ -70,7 +70,10 @@ START_TS=$EPOCHSECONDS
 export TF_CPP_MIN_LOG_LEVEL=9
 export TF_FORCE_GPU_ALLOW_GROWTH=true
 export TF_GPU_ALLOCATOR=cuda_malloc_async
-export TF_XLA_FLAGS="--tf_xla_auto_jit=0"
+DEFAULT_TF_XLA_FLAGS="--tf_xla_auto_jit=0"
+DEFAULT_XLA_RUNTIME_FLAGS="--xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found --xla_gpu_cuda_data_dir=${DATA_DIR}/cuda"
+export TF_XLA_FLAGS="${TF_XLA_FLAGS:+${TF_XLA_FLAGS} }${DEFAULT_TF_XLA_FLAGS}"
+export XLA_FLAGS="${XLA_FLAGS:+${XLA_FLAGS} }${DEFAULT_XLA_RUNTIME_FLAGS}"
 export NVIDIA_TF32_OVERRIDE=1
 export TF_CUDNN_WORKSPACE_LIMIT_IN_MB=512
 export GLOG_minloglevel=2
