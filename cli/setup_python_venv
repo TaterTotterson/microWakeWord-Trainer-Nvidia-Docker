@@ -178,24 +178,31 @@ echo "   ===== Installing keras ====="
 # keras 3.13 has "issues" so we need to back down to 3.12.
 pip_install "keras==3.12.0"
 
-CUDA_DATA_DIR="${DATA_DIR}/cuda"
-LIBDEVICE_DIR="${CUDA_DATA_DIR}/nvvm/libdevice"
-mkdir -p "${LIBDEVICE_DIR}"
-TRITON_LIBDEVICE="$(
-    python - <<'PY'
-import glob
-import sys
+# -----------------------------------------------------------------------------
+# Optional CUDA data dir (GPU-only)
+# Some stacks expect a CUDA "nvvm/libdevice" tree. We create one in /data/cuda
+# and link Triton's libdevice if it exists. This is safe and does NOT enable
+# any extra XLA flags by itself.
+# -----------------------------------------------------------------------------
+if ${GPU} ; then
+    CUDA_DATA_DIR="${DATA_DIR}/cuda"
+    LIBDEVICE_DIR="${CUDA_DATA_DIR}/nvvm/libdevice"
+    mkdir -p "${LIBDEVICE_DIR}"
 
+    TRITON_LIBDEVICE="$(
+        python - <<'PY'
+import glob
 paths = glob.glob("**/site-packages/triton/backends/nvidia/lib/libdevice.10.bc", recursive=True)
 print(paths[0] if paths else "", end="")
 PY
-)"
+    )"
 
-if [ -n "${TRITON_LIBDEVICE}" ] ; then
-    ln -sf "${TRITON_LIBDEVICE}" "${LIBDEVICE_DIR}/libdevice.10.bc"
-    echo "   Linked Triton libdevice.10.bc to ${LIBDEVICE_DIR}"
-else
-    echo "   ⚠️  Triton libdevice.10.bc not found; XLA may require --xla_gpu_cuda_data_dir"
+    if [ -n "${TRITON_LIBDEVICE}" ] ; then
+        ln -sf "${TRITON_LIBDEVICE}" "${LIBDEVICE_DIR}/libdevice.10.bc"
+        echo "   Linked Triton libdevice.10.bc to ${LIBDEVICE_DIR}"
+    else
+        echo "   ℹ️  Triton libdevice.10.bc not found (ok)"
+    fi
 fi
 
 "${PROGDIR}/test_python" --data-dir="${DATA_DIR}"
