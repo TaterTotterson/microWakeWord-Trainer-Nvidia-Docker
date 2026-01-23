@@ -12,7 +12,7 @@ No Jupyter notebooks required. No manual cell execution. Just record your voice 
 <img width="100" height="44" alt="unraid_logo_black-339076895" src="https://github.com/user-attachments/assets/87351bed-3321-4a43-924f-fecf2e4e700f" />
 
 **microWakeWord_Trainer-Nvidia** is available in the **Unraid Community Apps** store.
-Intall directly from the Unraid App Store with a one-click template.
+Install directly from the Unraid App Store with a one-click template.
 
 ### 🚀 Docker
 
