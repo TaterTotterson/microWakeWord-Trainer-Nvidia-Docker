@@ -19,7 +19,7 @@ Install directly from the Unraid App Store with a one-click template.
 <img width="100" height="56" alt="unraid_logo_black-339076895" src="https://github.com/user-attachments/assets/bf959585-ae13-4b4d-ae62-4202a850d35a" />
 
 
-### 1️⃣ Pull the Docker Image
+### Pull the Docker Image
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:latest
@@ -27,7 +27,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 
 ---
 
-### 2️⃣ Run the Container
+### Run the Container
 
 ```bash
 docker run -d \
@@ -44,7 +44,7 @@ docker run -d \
 
 ---
 
-### 3️⃣ Open the Recorder WebUI
+### Open the Recorder WebUI
 
 Open your browser and go to:
 
