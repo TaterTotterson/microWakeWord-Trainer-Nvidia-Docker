@@ -30,7 +30,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 ### 2️⃣ Run the Container
 
 ```bash
-docker run --rm -it \
+docker run -d \
   --gpus all \
   -p 8888:8888 \
   -v $(pwd):/data \
