@@ -178,6 +178,12 @@
       </div>
 
       <div class="row" style="margin-top:10px;">
+        <label class="muted">Language
+          <select id="language" style="padding:10px 12px;font-size:15px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.35);color:var(--text);outline:none;">
+            <option value="en" selected>English (en)</option>
+            <option value="nl">Dutch (nl)</option>
+          </select>
+        </label>
         <label class="muted">Speakers
           <input id="speakersTotal" type="number" min="1" max="10" value="1" />
         </label>
@@ -727,13 +733,14 @@
 
     speakersTotal = parseInt($("speakersTotal").value || "1", 10);
     takesPerSpeaker = parseInt($("takesPerSpeaker").value || "10", 10);
+    const language = $("language").value || "en";
 
     try {
       setPill($("sessionPill"), "Starting…", "warn");
       const data = await api("/api/start_session", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ phrase, speakers_total: speakersTotal, takes_per_speaker: takesPerSpeaker })
+        body: JSON.stringify({ phrase, speakers_total: speakersTotal, takes_per_speaker: takesPerSpeaker, language })
       });
 
       session = data;
@@ -755,7 +762,7 @@
 
       await stopMicNow();
 
-      setPill($("sessionPill"), `Session: ${data.safe_word}`, "ok");
+      setPill($("sessionPill"), `Session: ${data.safe_word} (${data.language || "en"})`, "ok");
       $("beginBtn").disabled = false;
       $("resetBtn").disabled = false;
       $("trainBtn").disabled = false;
