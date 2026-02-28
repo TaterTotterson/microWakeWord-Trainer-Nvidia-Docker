@@ -5,7 +5,7 @@ PROGPATH=$(realpath "$0")
 PROGDIR=$(dirname "${PROGPATH}")
 CLIDIR="${PROGDIR}/cli"
 
-KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir )
+KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir language )
 source "${CLIDIR}/shell.functions"
 WAKE_WORD=${POSITIONAL_ARGS[0]}
 
@@ -18,6 +18,7 @@ if [ "${HELP}" == "true" ] || [ -z "${WAKE_WORD}" ] ; then
     cat <<EOF >&2
 Usage: train_wake_word [ --samples=<samples> ] [ --batch-size=<batch_size> ]
                        [ --training-steps=<steps> ] [ --cleanup-work-dir ]
+                       [ --language=<lang> ]
                        <wake_word> [ <wake_word_title> ]
 
 Options:
@@ -34,6 +35,9 @@ Options:
 
 --cleanup-work-dir:   Delete the /data/work directory after successful training.
                       Default: false
+
+--language:           Language for TTS voice selection (e.g. "en", "nl").
+                      Default: ${DEFAULT_LANGUAGE}
 
 <wake_word>           The word to train spelled phonetically.
                       Required.
@@ -88,6 +92,7 @@ export GRPC_VERBOSITY=ERROR
 "${CLIDIR}/wake_word_sample_generator" \
     --samples=${SAMPLES} \
     --batch-size=${BATCH_SIZE} \
+    --language="${LANGUAGE}" \
     --data-dir="${DATA_DIR}" "${WAKE_WORD}"
 
 POST_GEN_TS=$EPOCHSECONDS

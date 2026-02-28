@@ -4,7 +4,7 @@ set -e
 PROGPATH=$(realpath "$0")
 PROGDIR=$(dirname "${PROGPATH}")
 
-KNOWN_ARGS=( samples batch-size data-dir )
+KNOWN_ARGS=( samples batch-size data-dir language )
 source "${PROGDIR}/shell.functions"
 WAKE_WORD="${POSITIONAL_ARGS[0]}"
 
@@ -15,7 +15,8 @@ fi
 
 if [ "${HELP}" == "true" ] || [ -z "${WAKE_WORD}" ] ; then
     cat <<EOF >&2
-Usage: $0 [ --samples=<samples> ] [ --batch-size=<batch_size> ] <wake_word>
+Usage: $0 [ --samples=<samples> ] [ --batch-size=<batch_size> ]
+          [ --language=<lang> ] <wake_word>
 
 --samples:            The number of samples to generate for the wake word.
                       Default: ${DEFAULT_SAMPLES}
@@ -23,6 +24,12 @@ Usage: $0 [ --samples=<samples> ] [ --batch-size=<batch_size> ] <wake_word>
 --batch-size:         How many samples should be generated at a time.  The more
                       samples, the more memory is needed.
                       Default: ${DEFAULT_BATCH_SIZE}
+
+--language:           Language for TTS voice selection.
+                      "en" uses the multi-speaker LibriTTS-R generator.
+                      Other languages (e.g. "nl") use single-speaker ONNX
+                      voices and cycle between them for variety.
+                      Default: ${DEFAULT_LANGUAGE}
 
 <wake_word>           The word to generate samples for.
                       Required.
@@ -40,21 +47,60 @@ cd "${WORK_DIR}"
 
 PSG="${DATA_DIR}/tools/piper-sample-generator"
 MODELS_DIR="${PSG}/models"
-MODEL_NAME=en_US-libritts_r-medium.pt
-MODEL_FILE="${MODELS_DIR}/${MODEL_NAME}"
+VOICES_DIR="${PSG}/voices"
 SAMPLES_DIR="${WORK_DIR}/wake_word_samples"
 
 mkdir -p "${SAMPLES_DIR}" || :
 
+# ---------------------------------------------------------------------------
+# Build the --model argument(s) based on language
+# ---------------------------------------------------------------------------
+declare -a MODEL_ARGS=()
+MODEL_TAG=""
+
+if [ "${LANGUAGE}" == "en" ] ; then
+    # English: use the multi-speaker LibriTTS-R generator (.pt)
+    MODEL_NAME="en_US-libritts_r-medium.pt"
+    MODEL_FILE="${MODELS_DIR}/${MODEL_NAME}"
+    if [ ! -f "${MODEL_FILE}" ] ; then
+        echo "ERROR: English model ${MODEL_FILE} not found. Run setup_python_venv first." >&2
+        exit 1
+    fi
+    MODEL_ARGS=( --model "${MODEL_FILE}" )
+    MODEL_TAG="${MODEL_NAME}"
+else
+    # Non-English: find all ONNX voices matching the language prefix
+    # e.g. LANGUAGE=nl matches nl_NL-pim-medium.onnx, nl_BE-nathalie-medium.onnx, etc.
+    shopt -s nullglob
+    voice_files=( "${VOICES_DIR}/${LANGUAGE}"_*.onnx )
+    shopt -u nullglob
+
+    if [ ${#voice_files[@]} -eq 0 ] ; then
+        echo "ERROR: No ONNX voice files found for language '${LANGUAGE}' in ${VOICES_DIR}/" >&2
+        echo "       Expected files matching: ${LANGUAGE}_*.onnx" >&2
+        echo "       Run setup_python_venv to download voice models." >&2
+        exit 1
+    fi
+
+    echo "   Using ${#voice_files[@]} voice(s) for language '${LANGUAGE}':"
+    MODEL_TAG="${LANGUAGE}"
+    for vf in "${voice_files[@]}" ; do
+        vname="$(basename "${vf}")"
+        echo "      - ${vname}"
+        MODEL_ARGS+=( --model "${vf}" )
+        MODEL_TAG="${MODEL_TAG}+${vname}"
+    done
+fi
+
 REGENERATE=false
 
 if [ "${SAMPLES}" -eq 1 ] ; then
-    echo "===== Generating ${SAMPLES} sample of '${WAKE_WORD}' ====="
-    wake_word_filename="${WAKE_WORD//[ \`~\!\$&*\(\)\{\}\[\]\|\;\'\"<>.?\/]/_}"
+    echo "===== Generating ${SAMPLES} sample of '${WAKE_WORD}' (language=${LANGUAGE}) ====="
+    wake_word_filename="${WAKE_WORD//[ \`~\!@#\$%^&*\(\)\{\}\[\]\|\;\'\"<>.?\/]/_}"
 
     mkdir -p "${WORK_DIR}/test_sample" || :
     "${PSG}/generate_samples.py" "${WAKE_WORD}" \
-        --model "${MODEL_FILE}" \
+        "${MODEL_ARGS[@]}" \
         --max-samples ${SAMPLES} \
         --batch-size ${BATCH_SIZE} \
         --output-dir "${WORK_DIR}/test_sample" \
@@ -65,9 +111,9 @@ if [ "${SAMPLES}" -eq 1 ] ; then
     exit 0
 fi
 
-grep -q "${WAKE_WORD}:${SAMPLES}:${MODEL_NAME}" "${WORK_DIR}/last_wake_word" &>/dev/null || REGENERATE=true
+grep -q "${WAKE_WORD}:${SAMPLES}:${MODEL_TAG}" "${WORK_DIR}/last_wake_word" &>/dev/null || REGENERATE=true
 
-# Double check that the number of existing samples matches SAMPLES"
+# Double check that the number of existing samples matches SAMPLES
 existing_samples=$(find "${SAMPLES_DIR}" -name '*.wav' | wc -l)
 [ "${existing_samples}" -eq "${SAMPLES}" ] || REGENERATE=true
 
@@ -79,7 +125,7 @@ if ! ${REGENERATE} ; then
     exit 0
 fi
 
-echo -e "\n===== Generating ${SAMPLES} wake word samples in batches of ${BATCH_SIZE}  ====="
+echo -e "\n===== Generating ${SAMPLES} wake word samples in batches of ${BATCH_SIZE} (language=${LANGUAGE}) ====="
 export TF_CPP_MIN_LOG_LEVEL=9
 export TF_FORCE_GPU_ALLOW_GROWTH=true
 export TF_GPU_ALLOCATOR=cuda_malloc_async
@@ -93,7 +139,7 @@ echo "   Generating samples"
 rm -rf "${SAMPLES_DIR}" || :
 mkdir -p "${SAMPLES_DIR}" || :
 "${PSG}/generate_samples.py" "${WAKE_WORD}" \
-    --model "${MODEL_FILE}" \
+    "${MODEL_ARGS[@]}" \
     --max-samples ${SAMPLES} \
     --batch-size ${BATCH_SIZE} \
     --output-dir "${SAMPLES_DIR}" 2>&1 | sed -r -e "s/(DEBUG|INFO):__main__:/      /g"
@@ -103,8 +149,7 @@ if [ "${generated_files}" -ne "${SAMPLES}" ] ; then
     echo "ERROR:  only generated ${generated_files} files" >&2
     exit 1
 fi
-END_TS=$(date +%s.%N)
-echo "${WAKE_WORD}:${SAMPLES}:${MODEL_NAME}" > "${WORK_DIR}/last_wake_word"
+echo "${WAKE_WORD}:${SAMPLES}:${MODEL_TAG}" > "${WORK_DIR}/last_wake_word"
 echo
 END_TS=$EPOCHSECONDS
 print_elapsed_time "${START_TS}" "${END_TS}" "Generated ${SAMPLES} wake word samples."

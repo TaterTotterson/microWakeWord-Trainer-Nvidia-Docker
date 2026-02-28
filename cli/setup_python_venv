@@ -157,6 +157,10 @@ pip_install -e "${PSG}"
 git -C tools/piper-sample-generator clean -fd &>/dev/null
 
 MODELS_DIR="${PSG}/models"
+VOICES_DIR="${PSG}/voices"
+mkdir -p "${VOICES_DIR}"
+
+# --- English generator model (multi-speaker, used with --language=en) ---
 MODEL_NAME="en_US-libritts_r-medium.pt"
 MODEL_FILE="${MODELS_DIR}/${MODEL_NAME}"
 MODEL_URL="https://github.com/rhasspy/piper-sample-generator/releases/download/v2.0.0/${MODEL_NAME}"
@@ -169,6 +173,30 @@ if [ ! -f "${MODEL_FILE}.json" ] ; then
     echo "      Downloading ${MODEL_NAME}.json for piper-sample-generator"
     curl -sfL "${MODEL_URL}.json" -o "${MODEL_FILE}.json"
 fi
+
+# --- Dutch ONNX voices (single-speaker, used with --language=nl) ---
+# Working Dutch voices: pim, ronnie (nl_NL) and nathalie (nl_BE).
+# nl_NL-mls-medium is intentionally excluded (known Piper issue: outputs gibberish).
+HF_VOICES="https://huggingface.co/rhasspy/piper-voices/resolve/main"
+declare -a NL_VOICES=(
+    "nl/nl_NL/pim/medium/nl_NL-pim-medium"
+    "nl/nl_NL/ronnie/medium/nl_NL-ronnie-medium"
+    "nl/nl_BE/nathalie/medium/nl_BE-nathalie-medium"
+)
+echo "   ===== Checking Dutch Piper voices ====="
+for voice_path in "${NL_VOICES[@]}" ; do
+    voice_name="$(basename "${voice_path}")"
+    onnx_file="${VOICES_DIR}/${voice_name}.onnx"
+    json_file="${VOICES_DIR}/${voice_name}.onnx.json"
+    if [ ! -f "${onnx_file}" ] ; then
+        echo "      Downloading ${voice_name}.onnx"
+        curl -sfL "${HF_VOICES}/${voice_path}.onnx?download=true" -o "${onnx_file}"
+    fi
+    if [ ! -f "${json_file}" ] ; then
+        echo "      Downloading ${voice_name}.onnx.json"
+        curl -sfL "${HF_VOICES}/${voice_path}.onnx.json?download=true" -o "${json_file}"
+    fi
+done
 
 ${GPU} && onnxgpu='-gpu[cuda]' || onnxgpu=""
 echo "   ===== Installing onnxruntime${onnxgpu} ====="

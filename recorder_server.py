@@ -35,6 +35,8 @@ TRAIN_CMD = os.environ.get(
     f"source '{DATA_DIR}/.venv/bin/activate' && train_wake_word --data-dir '{DATA_DIR}'"
 )
 
+DEFAULT_LANGUAGE = os.environ.get("MWW_LANGUAGE", "en")
+
 TAKES_PER_SPEAKER_DEFAULT = int(os.environ.get("REC_TAKES_PER_SPEAKER", "10"))
 SPEAKERS_TOTAL_DEFAULT = int(os.environ.get("REC_SPEAKERS_TOTAL", "1"))
 
@@ -60,6 +62,7 @@ def safe_name(raw: str) -> str:
 STATE: Dict[str, Any] = {
     "raw_phrase": None,
     "safe_word": None,
+    "language": DEFAULT_LANGUAGE,
 
     "speakers_total": SPEAKERS_TOTAL_DEFAULT,
     "takes_per_speaker": TAKES_PER_SPEAKER_DEFAULT,
@@ -372,6 +375,7 @@ def _normalize_output_artifacts(safe_word: str, log_path: Path) -> None:
 def _run_training_background(safe_word: str, allow_no_personal: bool):
     with STATE_LOCK:
         raw_phrase = STATE.get("raw_phrase") or ""
+        language = STATE.get("language") or DEFAULT_LANGUAGE
 
     wake_word_title = _title_from_phrase(raw_phrase)
 
@@ -403,9 +407,9 @@ def _run_training_background(safe_word: str, allow_no_personal: bool):
         _ensure_training_datasets(log_path)
 
         if wake_word_title:
-            cmd_str = f"{TRAIN_CMD} '{safe_word}' '{wake_word_title}'"
+            cmd_str = f"{TRAIN_CMD} --language='{language}' '{safe_word}' '{wake_word_title}'"
         else:
-            cmd_str = f"{TRAIN_CMD} '{safe_word}'"
+            cmd_str = f"{TRAIN_CMD} --language='{language}' '{safe_word}'"
 
         env = os.environ.copy()
         env["MWW_ALLOW_NO_PERSONAL"] = "true" if allow_no_personal else "false"
@@ -470,6 +474,7 @@ def start_session(payload: Dict[str, Any]):
 
     speakers_total = int(payload.get("speakers_total") or SPEAKERS_TOTAL_DEFAULT)
     takes_per_speaker = int(payload.get("takes_per_speaker") or TAKES_PER_SPEAKER_DEFAULT)
+    language = (payload.get("language") or DEFAULT_LANGUAGE).strip().lower()
 
     speakers_total = max(1, min(10, speakers_total))
     takes_per_speaker = max(1, min(50, takes_per_speaker))
@@ -477,6 +482,7 @@ def start_session(payload: Dict[str, Any]):
     with STATE_LOCK:
         STATE["raw_phrase"] = raw
         STATE["safe_word"] = safe
+        STATE["language"] = language
         STATE["speakers_total"] = speakers_total
         STATE["takes_per_speaker"] = takes_per_speaker
         STATE["takes_received"] = 0
@@ -491,6 +497,7 @@ def start_session(payload: Dict[str, Any]):
         "ok": True,
         "raw_phrase": raw,
         "safe_word": safe,
+        "language": language,
         "speakers_total": speakers_total,
         "takes_per_speaker": takes_per_speaker,
         "takes_total": speakers_total * takes_per_speaker,
@@ -506,6 +513,7 @@ def get_session():
             "ok": True,
             "raw_phrase": STATE["raw_phrase"],
             "safe_word": STATE["safe_word"],
+            "language": STATE["language"],
             "speakers_total": STATE["speakers_total"],
             "takes_per_speaker": STATE["takes_per_speaker"],
             "takes_received": STATE["takes_received"],
