@@ -24,6 +24,13 @@ Options:
 
 --verbose: Print the detailed "pip install" output.
 
+Environment overrides:
+MWW_TF_SPEC:           Full TensorFlow package spec (e.g. "tf-nightly[and-cuda]"
+                       or "tensorflow[and-cuda]==2.20.0").
+MWW_TENSORBOARD_SPEC:  Comma-separated TensorBoard package specs.
+                       Example: "tensorboard==2.20.0,tensorboard-data-server==0.7.2"
+MWW_KERAS_SPEC:        Keras package spec to install explicitly.
+
 EOF
     exit 1
 fi
@@ -45,6 +52,24 @@ cd "${DATA_DIR}"
 }
 
 "${GPU}" || export CUDA_VISIBLE_DEVICES=-1
+
+detect_gpu_compute_capability() {
+    if command -v nvidia-smi >/dev/null 2>&1 ; then
+        nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null \
+            | head -n 1 \
+            | tr -d '[:space:]'
+    fi
+}
+
+GPU_COMPUTE_CAPABILITY=""
+IS_BLACKWELL=false
+if ${GPU} ; then
+    GPU_COMPUTE_CAPABILITY="$(detect_gpu_compute_capability || true)"
+    case "${GPU_COMPUTE_CAPABILITY}" in
+        12.*) IS_BLACKWELL=true ;;
+    esac
+    ${IS_BLACKWELL} && echo "   Blackwell GPU detected (compute capability ${GPU_COMPUTE_CAPABILITY})"
+fi
 
 VENV="${DATA_DIR}/.venv"
 [ -n "${VIRTUAL_ENV}" ] && deactivate
@@ -127,9 +152,34 @@ echo "   ===== Installing common requirements ====="
 pip_install -r "${ROOTDIR}/requirements.txt"
 
 ${GPU} && tfgpu='[and-cuda]' || tfgpu=""
-echo "   ===== Installing Tensorflow${tfgpu} ====="
-pip_install ai_edge_litert "tensorflow${tfgpu}==2.20.0" "tensorboard==2.20.0" \
-    "tensorboard-data-server==0.7.2"
+declare -a default_tensorboard_specs=()
+
+if ${GPU} && ${IS_BLACKWELL} ; then
+    # Blackwell path: prefer nightly TF while upstream stable wheels catch up.
+    DEFAULT_TF_SPEC="tf-nightly${tfgpu}"
+    # Let tf-nightly resolve a compatible TensorBoard dependency by default.
+    default_tensorboard_specs=()
+else
+    DEFAULT_TF_SPEC="tensorflow${tfgpu}==2.20.0"
+    default_tensorboard_specs=( "tensorboard==2.20.0" "tensorboard-data-server==0.7.2" )
+fi
+
+TF_SPEC="${MWW_TF_SPEC:-${DEFAULT_TF_SPEC}}"
+declare -a tf_install_specs=( ai_edge_litert "${TF_SPEC}" )
+
+if [ -n "${MWW_TENSORBOARD_SPEC:-}" ] ; then
+    IFS=',' read -r -a user_tb_specs <<< "${MWW_TENSORBOARD_SPEC}"
+    for tb_spec in "${user_tb_specs[@]}" ; do
+        tb_spec="${tb_spec#"${tb_spec%%[![:space:]]*}"}"
+        tb_spec="${tb_spec%"${tb_spec##*[![:space:]]}"}"
+        [ -n "${tb_spec}" ] && tf_install_specs+=( "${tb_spec}" )
+    done
+else
+    tf_install_specs+=( "${default_tensorboard_specs[@]}" )
+fi
+
+echo "   ===== Installing TensorFlow stack (${TF_SPEC}) ====="
+pip_install "${tf_install_specs[@]}"
 
 ${GPU} && torchgpu='--index-url https://download.pytorch.org/whl/cu129' || torchgpu=""
 echo "   ===== Installing torch and torchaudio ${torchgpu:+[cuda]} ====="
@@ -203,8 +253,15 @@ echo "   ===== Installing onnxruntime${onnxgpu} ====="
 pip_install "onnxruntime${onnxgpu}>=1.16.0"
 
 echo "   ===== Installing keras ====="
-# keras 3.13 has "issues" so we need to back down to 3.12.
-pip_install "keras==3.12.0"
+# Default: keep the known-good pin with stable TF 2.20.
+# For tf-nightly/custom TF specs, skip this pin unless explicitly requested.
+if [ -n "${MWW_KERAS_SPEC:-}" ] ; then
+    pip_install "${MWW_KERAS_SPEC}"
+elif [ -n "${MWW_TF_SPEC:-}" ] || [[ "${TF_SPEC}" == tf-nightly* ]] ; then
+    echo "   Skipping explicit keras pin for ${TF_SPEC} (set MWW_KERAS_SPEC to force one)."
+else
+    pip_install "keras==3.12.0"
+fi
 
 # -----------------------------------------------------------------------------
 # Optional CUDA data dir (GPU-only)

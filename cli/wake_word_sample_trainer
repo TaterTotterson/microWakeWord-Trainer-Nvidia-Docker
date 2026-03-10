@@ -51,23 +51,46 @@ fi
 # shellcheck source=/dev/null
 source "${DATA_DIR}/.venv/bin/activate"
 
-# --- WSL2 GPU visibility fix (venv sometimes doesn't inherit WSL driver path) ---
-# Keep a copy so we can restore/preserve on fallback if desired.
+# Keep copies so we can restore/preserve across retries and fallback.
 ORIG_XLA_FLAGS="${XLA_FLAGS:-}"
+ORIG_TF_XLA_FLAGS="${TF_XLA_FLAGS:-}"
 
-if [ -d /usr/lib/wsl/lib ]; then
-  export LD_LIBRARY_PATH="/usr/lib/wsl/lib:${LD_LIBRARY_PATH:-}"
-  echo "ℹ️  WSL2 detected: LD_LIBRARY_PATH+=/usr/lib/wsl/lib"
+normalize_bool() {
+  case "${1,,}" in
+    1|true|yes|on) echo "true" ;;
+    *) echo "false" ;;
+  esac
+}
 
-  # Blackwell / PTXAS workaround: only apply on WSL *and* only if user didn't set XLA_FLAGS
+detect_gpu_compute_capability() {
+  if command -v nvidia-smi >/dev/null 2>&1; then
+    nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null \
+      | head -n 1 \
+      | tr -d '[:space:]'
+  fi
+}
+
+GPU_COMPUTE_CAPABILITY="$(detect_gpu_compute_capability)"
+IS_BLACKWELL="false"
+case "${GPU_COMPUTE_CAPABILITY}" in
+  12.*) IS_BLACKWELL="true" ;;
+esac
+
+ALLOW_CPU_FALLBACK_DEFAULT="true"
+ALLOW_CPU_FALLBACK="$(normalize_bool "${MWW_ALLOW_CPU_FALLBACK:-${ALLOW_CPU_FALLBACK_DEFAULT}}")"
+
+if [ "${IS_BLACKWELL}" = "true" ]; then
+  echo "ℹ️  Blackwell GPU detected (compute capability ${GPU_COMPUTE_CAPABILITY})."
+  echo "ℹ️  Using GPU compatibility retries; CPU fallback is ${ALLOW_CPU_FALLBACK} (override with MWW_ALLOW_CPU_FALLBACK=true|false)."
+
+  # Force driver PTX fallback when XLA needs ptxas.
   if [ -z "${XLA_FLAGS:-}" ]; then
     export XLA_FLAGS="--xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found"
-    echo "ℹ️  WSL2: setting XLA_FLAGS=${XLA_FLAGS}"
+    echo "ℹ️  Setting XLA_FLAGS=${XLA_FLAGS}"
   else
     echo "ℹ️  Using user-provided XLA_FLAGS=${XLA_FLAGS}"
   fi
 fi
-# -----------------------------------------------------------------------------
 
 check_directories() {
     for d in "$@" ; do
@@ -226,6 +249,8 @@ GPU_FALLBACK_MARKERS=(
   "oom"
   "out of memory"
   "cuda_error_out_of_memory"
+  "cuda_error_invalid_handle"
+  "culaunchkernel"
   "failed to allocate"
   "cudnn"
   "cublas"
@@ -255,52 +280,104 @@ run_attempt() {
   return ${PIPESTATUS[0]}
 }
 
+is_gpu_runtime_failure() {
+  local log_lc m
+  log_lc="$(tr '[:upper:]' '[:lower:]' < "${TRAIN_LOG}" || true)"
+
+  for m in "${GPU_FALLBACK_MARKERS[@]}"; do
+    if echo "${log_lc}" | grep -qF "${m}"; then
+      return 0
+    fi
+  done
+
+  # Catch unlisted TF GPU runtime failures (common on newer architectures).
+  if echo "${log_lc}" | grep -qF "device:gpu:0" \
+      && echo "${log_lc}" | grep -qF "internalerror"; then
+    return 0
+  fi
+
+  return 1
+}
+
 # --------- ENV (keep compatible; DO NOT add unsupported XLA flags) ----------
 export TF_CPP_MIN_LOG_LEVEL="${TF_CPP_MIN_LOG_LEVEL:-2}"
 export TF_XLA_FLAGS="${TF_XLA_FLAGS:---tf_xla_auto_jit=0}"
 
 export NVIDIA_TF32_OVERRIDE="${NVIDIA_TF32_OVERRIDE:-1}"
 export TF_FORCE_GPU_ALLOW_GROWTH="${TF_FORCE_GPU_ALLOW_GROWTH:-true}"
-export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
+if [ "${IS_BLACKWELL}" = "true" ]; then
+  # TF 2.20 + Blackwell is often unstable with cuda_malloc_async.
+  unset TF_GPU_ALLOCATOR
+else
+  export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
+fi
 
-if run_attempt "Attempt 1/2: GPU training (allow_growth + cuda_malloc_async)" ; then
+TRAINING_DONE="false"
+
+if run_attempt "Attempt 1/3: GPU training (default runtime profile)" ; then
   echo "✅ Training complete (GPU path)."
+  TRAINING_DONE="true"
 else
   echo "⚠️  GPU attempt failed. Checking whether this looks like a GPU/OOM/runtime failure…"
 
-  log_lc="$(tr '[:upper:]' '[:lower:]' < "${TRAIN_LOG}" || true)"
-  looks_like_gpu_fail="false"
-  for m in "${GPU_FALLBACK_MARKERS[@]}"; do
-    if echo "${log_lc}" | grep -qF "${m}"; then
-      looks_like_gpu_fail="true"
-      break
-    fi
-  done
+  if ! is_gpu_runtime_failure; then
+    echo "❌ Training failed (does not look GPU/OOM/runtime). See: ${TRAIN_LOG}" >&2
+    exit 1
+  fi
 
-  if [ "${looks_like_gpu_fail}" = "true" ]; then
-    echo "↪️  Detected GPU/OOM/runtime failure markers. Falling back to CPU."
+  if [ "${IS_BLACKWELL}" = "true" ]; then
+    echo "↪️  Retrying on GPU with Blackwell compatibility profile (BFC allocator + driver PTX fallback)."
+
+    unset TF_GPU_ALLOCATOR
+    export TF_XLA_FLAGS="${ORIG_TF_XLA_FLAGS:---tf_xla_auto_jit=0}"
+    if run_attempt "Attempt 2/3: GPU training (Blackwell compatibility profile)" ; then
+      echo "✅ Training complete (GPU Blackwell compatibility profile)."
+      TRAINING_DONE="true"
+    else
+      if is_gpu_runtime_failure; then
+        echo "↪️  Retrying on GPU with minimal runtime knobs (no TF_XLA_FLAGS)."
+
+        unset TF_GPU_ALLOCATOR
+        unset TF_XLA_FLAGS
+        if run_attempt "Attempt 3/3: GPU training (Blackwell minimal runtime profile)" ; then
+          echo "✅ Training complete (GPU Blackwell minimal profile)."
+          TRAINING_DONE="true"
+        fi
+      fi
+    fi
+  fi
+fi
+
+if [ "${TRAINING_DONE}" != "true" ]; then
+  if ! is_gpu_runtime_failure; then
+    echo "❌ Training failed (does not look GPU/OOM/runtime). See: ${TRAIN_LOG}" >&2
+    exit 1
+  fi
+
+  if [ "${ALLOW_CPU_FALLBACK}" = "true" ]; then
+    echo "↪️  Detected GPU runtime failure markers. Falling back to CPU (MWW_ALLOW_CPU_FALLBACK=true)."
 
     export CUDA_VISIBLE_DEVICES=""
     unset TF_GPU_ALLOCATOR
-
-    # CPU attempt should not inherit GPU/XLA runtime knobs
     unset TF_XLA_FLAGS
 
-    # Optional: clear XLA_FLAGS for CPU (usually irrelevant). If user had set it, restore.
+    # CPU attempt should not inherit GPU-specific XLA flags.
     if [ -n "${ORIG_XLA_FLAGS}" ]; then
       export XLA_FLAGS="${ORIG_XLA_FLAGS}"
     else
       unset XLA_FLAGS
     fi
 
-    if run_attempt "Attempt 2/2: CPU fallback (CUDA_VISIBLE_DEVICES='')" ; then
+    if run_attempt "CPU fallback: training (CUDA_VISIBLE_DEVICES='')" ; then
       echo "✅ Training complete (CPU fallback)."
     else
-      echo "❌ Training failed on BOTH GPU and CPU. See: ${TRAIN_LOG}" >&2
+      echo "❌ Training failed on both GPU retries and CPU fallback. See: ${TRAIN_LOG}" >&2
       exit 1
     fi
   else
-    echo "❌ Training failed (does not look GPU/OOM/runtime). See: ${TRAIN_LOG}" >&2
+    echo "❌ GPU training failed after compatibility retries. CPU fallback is disabled." >&2
+    echo "   To allow CPU fallback, set MWW_ALLOW_CPU_FALLBACK=true." >&2
+    echo "   See: ${TRAIN_LOG}" >&2
     exit 1
   fi
 fi

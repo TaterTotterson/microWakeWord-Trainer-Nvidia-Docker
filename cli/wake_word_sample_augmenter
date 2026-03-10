@@ -23,6 +23,8 @@ parser.add_argument("--personal-output-dir", type=str, help="Personal features o
 parser.add_argument("--mit-rirs-16k-dir", type=str, help="MIT RIR input directory. Default: <data-dir>/training_datasets/mit_rirs_16k", required=False)
 parser.add_argument("--fma-16k-dir", type=str, help="FMA input directory. Default: <data-dir>/training_datasets/fma_16k", required=False)
 parser.add_argument("--audioset-16k-dir", type=str, help="Audioset input directory. Default: <data-dir>/training_datasets/audioset_16k", required=False)
+parser.add_argument("--wham-16k-dir", type=str, help="WHAM input directory. Default: <data-dir>/training_datasets/wham_16k", required=False)
+parser.add_argument("--chime-16k-dir", type=str, help="CHiME input directory. Default: <data-dir>/training_datasets/chime_16k", required=False)
 
 try:
     args = parser.parse_args()
@@ -71,6 +73,16 @@ if not args.audioset_16k_dir:
 else:
     args.audioset_16k_dir = os.path.realpath(args.audioset_16k_dir)
 
+if not args.wham_16k_dir:
+    args.wham_16k_dir = os.path.join(args.data_dir, "training_datasets", "wham_16k")
+else:
+    args.wham_16k_dir = os.path.realpath(args.wham_16k_dir)
+
+if not args.chime_16k_dir:
+    args.chime_16k_dir = os.path.join(args.data_dir, "training_datasets", "chime_16k")
+else:
+    args.chime_16k_dir = os.path.realpath(args.chime_16k_dir)
+
 def validate_directories(paths):
     for path in paths:
         if not os.path.exists(path):
@@ -78,7 +90,15 @@ def validate_directories(paths):
             return False
     return True
 
-required = [work_dir, args.input_dir, args.mit_rirs_16k_dir, args.fma_16k_dir, args.audioset_16k_dir]
+required = [
+    work_dir,
+    args.input_dir,
+    args.mit_rirs_16k_dir,
+    args.wham_16k_dir,
+    args.chime_16k_dir,
+    args.fma_16k_dir,
+    args.audioset_16k_dir,
+]
 if not validate_directories(required):
     parser.print_help()
     sys.exit(1)
@@ -117,7 +137,12 @@ from microwakeword.audio.spectrograms import SpectrogramGeneration
 START_TIME = datetime.now(timezone.utc).replace(microsecond=0)
 
 impulse_paths = [args.mit_rirs_16k_dir]
-background_paths = [args.fma_16k_dir, args.audioset_16k_dir]
+background_paths = [
+    args.wham_16k_dir,
+    args.chime_16k_dir,
+    args.fma_16k_dir,
+    args.audioset_16k_dir,
+]
 
 augmenter = Augmentation(
     augmentation_duration_s=3.2,

@@ -61,5 +61,15 @@ echo -e "\n===== Setting up Training Datasets =====\n"
     --cleanup-intermediate-files="${CLEANUP_INTERMEDIATE_FILES}" \
     --data-dir="${DATA_DIR}"
 
+"${PROGDIR}/setup_wham" \
+    --cleanup-archives="${CLEANUP_ARCHIVES}" \
+    --cleanup-intermediate-files="${CLEANUP_INTERMEDIATE_FILES}" \
+    --data-dir="${DATA_DIR}"
+
+"${PROGDIR}/setup_chime" \
+    --cleanup-archives="${CLEANUP_ARCHIVES}" \
+    --cleanup-intermediate-files="${CLEANUP_INTERMEDIATE_FILES}" \
+    --data-dir="${DATA_DIR}"
+
 END_TS=$EPOCHSECONDS
 print_elapsed_time "${START_TS}" "${END_TS}" "Training dataset setup"
