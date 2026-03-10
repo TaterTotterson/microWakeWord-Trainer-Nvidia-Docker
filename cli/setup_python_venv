@@ -72,7 +72,14 @@ if ${GPU} ; then
 fi
 
 VENV="${DATA_DIR}/.venv"
-[ -n "${VIRTUAL_ENV}" ] && deactivate
+if [ -n "${VIRTUAL_ENV:-}" ] && [ "${VIRTUAL_ENV}" != "${VENV}" ] ; then
+    if command -v deactivate >/dev/null 2>&1 ; then
+        deactivate || :
+    else
+        # Recorder process can inherit VIRTUAL_ENV without the shell function.
+        unset VIRTUAL_ENV
+    fi
+fi
 
 if [ -n "${PYTHON}" ] ; then
     PYTHONS=( "${PYTHON}" )

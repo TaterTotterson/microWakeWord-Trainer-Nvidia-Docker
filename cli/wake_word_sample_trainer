@@ -82,14 +82,14 @@ ALLOW_CPU_FALLBACK="$(normalize_bool "${MWW_ALLOW_CPU_FALLBACK:-${ALLOW_CPU_FALL
 if [ "${IS_BLACKWELL}" = "true" ]; then
   echo "ℹ️  Blackwell GPU detected (compute capability ${GPU_COMPUTE_CAPABILITY})."
   echo "ℹ️  Using GPU compatibility retries; CPU fallback is ${ALLOW_CPU_FALLBACK} (override with MWW_ALLOW_CPU_FALLBACK=true|false)."
+fi
 
-  # Force driver PTX fallback when XLA needs ptxas.
-  if [ -z "${XLA_FLAGS:-}" ]; then
-    export XLA_FLAGS="--xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found"
-    echo "ℹ️  Setting XLA_FLAGS=${XLA_FLAGS}"
-  else
-    echo "ℹ️  Using user-provided XLA_FLAGS=${XLA_FLAGS}"
-  fi
+# Enable driver-side PTX JIT fallback when ptxas/nvlink are unavailable.
+if [ -z "${XLA_FLAGS:-}" ]; then
+  export XLA_FLAGS="--xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found"
+  echo "ℹ️  Setting XLA_FLAGS=${XLA_FLAGS}"
+else
+  echo "ℹ️  Using user-provided XLA_FLAGS=${XLA_FLAGS}"
 fi
 
 check_directories() {
@@ -251,6 +251,9 @@ GPU_FALLBACK_MARKERS=(
   "cuda_error_out_of_memory"
   "cuda_error_invalid_handle"
   "culaunchkernel"
+  "no ptx compilation provider is available"
+  "couldn't find a suitable version of ptxas"
+  "couldn't find a suitable version of nvlink"
   "failed to allocate"
   "cudnn"
   "cublas"

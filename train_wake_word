@@ -98,12 +98,13 @@ export TF_XLA_FLAGS="${TF_XLA_FLAGS:---tf_xla_auto_jit=0}"
 if ${IS_BLACKWELL} ; then
     # TF 2.20 + Blackwell is often unstable with cuda_malloc_async.
     unset TF_GPU_ALLOCATOR
-    [ -z "${XLA_FLAGS:-}" ] && export XLA_FLAGS="--xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found"
     echo "ℹ️  Blackwell detected (compute capability ${GPU_COMPUTE_CAPABILITY}): using compatibility GPU defaults."
 else
     export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
-    unset XLA_FLAGS
 fi
+
+# Enable driver-side PTX JIT fallback when ptxas/nvlink are unavailable.
+[ -z "${XLA_FLAGS:-}" ] && export XLA_FLAGS="--xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found"
 
 export NVIDIA_TF32_OVERRIDE=1
 export TF_CUDNN_WORKSPACE_LIMIT_IN_MB=512
