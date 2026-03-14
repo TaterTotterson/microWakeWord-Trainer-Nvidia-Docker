@@ -204,10 +204,21 @@ pip_install -e "${MWW}"
 
 echo "   ===== Checking piper-sample-generator ====="
 PSG="${DATA_DIR}/tools/piper-sample-generator"
+PSG_GITHUB_ROOT="https://github.com/TaterTotterson/piper-sample-generator"
+RECLONE_PSG=false
 if [ ! -d "${PSG}" ] || [ -n "$(git -C "${PSG}" status --porcelain)" ] ; then
+    RECLONE_PSG=true
+else
+    PSG_ORIGIN_URL="$(git -C "${PSG}" remote get-url origin 2>/dev/null || true)"
+    if [[ "${PSG_ORIGIN_URL}" != *"TaterTotterson/piper-sample-generator"* ]] ; then
+        RECLONE_PSG=true
+    fi
+fi
+
+if ${RECLONE_PSG} ; then
     rm -rf "${PSG}" || :
     echo "   Cloning piper-sample-generator to ${DATA_DIR}/tools"
-    git clone https://github.com/rhasspy/piper-sample-generator "${PSG}" &>/dev/null
+    git clone "${PSG_GITHUB_ROOT}" "${PSG}" &>/dev/null
 fi
 echo "   Installing piper-sample-generator"
 pip_install -e "${PSG}"
@@ -220,7 +231,7 @@ mkdir -p "${VOICES_DIR}"
 # --- English generator model (multi-speaker, used with --language=en) ---
 MODEL_NAME="en_US-libritts_r-medium.pt"
 MODEL_FILE="${MODELS_DIR}/${MODEL_NAME}"
-MODEL_URL="https://github.com/rhasspy/piper-sample-generator/releases/download/v2.0.0/${MODEL_NAME}"
+MODEL_URL="${PSG_GITHUB_ROOT}/releases/download/v2.0.0/${MODEL_NAME}"
 if [ ! -f "${MODEL_FILE}" ] ; then
     echo "      Downloading ${MODEL_NAME} for piper-sample-generator"
     curl -sfL "${MODEL_URL}" -o "${MODEL_FILE}"
