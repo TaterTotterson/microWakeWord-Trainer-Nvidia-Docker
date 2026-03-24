@@ -98,6 +98,9 @@ fi
 #    . /etc/bash_completion
 #fi
 
+# Add CLI scripts and training tools to PATH
+export PATH="/root/mww-scripts/cli:/root/mww-scripts:${PATH}"
+
 if [ -f /data/.bashrc ]; then
     . /data/.bashrc
 fi
@@ -133,3 +136,19 @@ EOF
 
 fi
 alias venv='[ -d /data/.venv ] && source /data/.venv/bin/activate || echo "/data/.venv does not exist yet"'
+
+cat <<-'EOF'
+
+    microWakeWord Trainer (CLI)
+    ===========================
+    Commands:
+      train_wake_word <wake_word>  - Run full training pipeline
+      setup_python_venv            - Set up Python environment
+      setup_training_datasets      - Download training datasets
+      cudainfo                     - Show GPU information
+      system_summary               - Show system stats
+
+    Personal voice samples: place .wav files in /data/personal_samples/
+    GitHub push: set GITHUB_TOKEN and GITHUB_REPO env vars
+
+EOF

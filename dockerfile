@@ -1,5 +1,5 @@
-# Base
-FROM ubuntu:24.04
+# Base — CUDA runtime for GPU support on RunPod and similar platforms
+FROM nvidia/cuda:12.9.0-runtime-ubuntu24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -10,20 +10,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /data
 
-# Recorder port
-EXPOSE 8789
-
 # Script root
 WORKDIR /root/mww-scripts
 
 # Bash environment
 COPY --chown=root:root --chmod=0755 .bashrc /root/
 
-# Root-level entrypoints
+# Root-level scripts
 COPY --chown=root:root --chmod=0755 \
     train_wake_word \
-    run_recorder.sh \
-    recorder_server.py \
+    entrypoint.sh \
+    github_push.sh \
     requirements.txt \
     /root/mww-scripts/
 
@@ -33,8 +30,6 @@ COPY --chown=root:root cli/ /root/mww-scripts/cli/
 # Make all CLI scripts executable (avoids "Permission denied")
 RUN chmod -R a+x /root/mww-scripts/cli
 
-# Static UI for recorder
-COPY --chown=root:root --chmod=0644 static/index.html /root/mww-scripts/static/index.html
-
-# recorder server
-CMD ["/bin/bash", "-lc", "/root/mww-scripts/run_recorder.sh"]
+# No args = interactive bash shell; "train <wake_word>" = full pipeline
+ENTRYPOINT ["/root/mww-scripts/entrypoint.sh"]
+CMD ["/bin/bash", "-l"]
