@@ -19,6 +19,7 @@ COPY --chown=root:root --chmod=0755 .bashrc /root/
 # Root-level scripts
 COPY --chown=root:root --chmod=0755 \
     train_wake_word \
+    setup \
     entrypoint.sh \
     github_push.sh \
     requirements.txt \

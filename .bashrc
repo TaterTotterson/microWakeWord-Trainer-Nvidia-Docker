@@ -141,12 +141,13 @@ cat <<-'EOF'
 
     microWakeWord Trainer (CLI)
     ===========================
-    Commands:
-      train_wake_word <wake_word>  - Run full training pipeline
-      setup_python_venv            - Set up Python environment
-      setup_training_datasets      - Download training datasets
-      cudainfo                     - Show GPU information
-      system_summary               - Show system stats
+    Getting started:
+      1. setup                         - Install venv + download datasets (run once)
+      2. train_wake_word <wake_word>   - Train a wake word model
+
+    Other commands:
+      cudainfo                         - Show GPU information
+      system_summary                   - Show system stats
 
     Personal voice samples: place .wav files in /data/personal_samples/
     GitHub push: set GITHUB_TOKEN and GITHUB_REPO env vars

@@ -1,0 +1,55 @@
+#!/bin/bash
+set -e
+
+PROGPATH="$(realpath "$0")"
+PROGDIR="$(dirname "${PROGPATH}")"
+CLIDIR="${PROGDIR}/cli"
+
+KNOWN_ARGS=( data-dir )
+source "${CLIDIR}/shell.functions"
+
+if [ ${#UNKNOWN_ARGS[@]} -gt 0 ] ; then
+    echo "Unknown argument(s): ${UNKNOWN_ARGS[*]}" >&2
+    HELP=true
+fi
+
+if [ "${HELP}" == "true" ] ; then
+    cat <<EOF >&2
+Usage: setup [ --data-dir=<path> ]
+
+Sets up the training environment:
+  1. Creates the Python virtual environment (TensorFlow, PyTorch, etc.)
+  2. Downloads training datasets (~50GB on first run)
+
+Run this once before training. Subsequent runs skip already-completed steps.
+
+Options:
+--data-dir:   Root data directory.  Default: ${DATA_DIR}
+
+EOF
+    exit 1
+fi
+
+echo "================================================================================"
+echo "===== microWakeWord Trainer Setup ====="
+echo "================================================================================"
+echo
+
+# Phase 1: Python venv
+echo "===== Phase 1/2: Python virtual environment ====="
+if [ -f "${DATA_DIR}/.venv/bin/activate" ]; then
+    echo "Python venv already exists at ${DATA_DIR}/.venv — skipping."
+else
+    "${CLIDIR}/setup_python_venv" --data-dir="${DATA_DIR}"
+fi
+echo
+
+# Phase 2: Training datasets
+echo "===== Phase 2/2: Training datasets ====="
+"${CLIDIR}/setup_training_datasets" --data-dir="${DATA_DIR}"
+echo
+
+echo "================================================================================"
+echo "Setup complete! You can now train with:"
+echo "  train_wake_word \"hey jarvis\""
+echo "================================================================================"

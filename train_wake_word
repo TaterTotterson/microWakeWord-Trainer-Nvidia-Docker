@@ -51,10 +51,17 @@ EOF
 fi
 
 # shellcheck source=/dev/null
+if [ ! -f "${DATA_DIR}/.venv/bin/activate" ]; then
+    echo "Python venv not found at ${DATA_DIR}/.venv — run 'setup' first." >&2
+    exit 1
+fi
 source "${DATA_DIR}/.venv/bin/activate"
 
 cd "${DATA_DIR}"
 mkdir -p "${DATA_DIR}/work" || :
+
+# Ensure training datasets are present (idempotent — skips already-downloaded sets)
+"${CLIDIR}/setup_training_datasets" --data-dir="${DATA_DIR}"
 
 [ ${#POSITIONAL_ARGS} -eq 2 ] && WAKE_WORD_TITLE="${POSITIONAL_ARGS[1]}" || :
 
@@ -165,3 +172,6 @@ print_elapsed_time --no-separators "${POST_AUGMENT_TS}" "${END_TS}" "${TRAINING_
 python -c $'msg="="*54 ; print(f"{msg:>80s}")'
 print_elapsed_time --no-separators "${START_TS}" "${END_TS}" "Total"
 python -c $'print(f"{\'=\' * 80}")'
+
+# Push trained model to GitHub (if configured via GITHUB_TOKEN + GITHUB_REPO)
+"${PROGDIR}/github_push.sh" || true
