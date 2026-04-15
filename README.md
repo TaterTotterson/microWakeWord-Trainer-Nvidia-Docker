@@ -1,5 +1,6 @@
 <div align="center">
   <h1>microWakeWord NVIDIA Docker Trainer UI</h1>
+  <img width="800" alt="Screenshot 2026-04-14 at 11 02 06 PM" src="https://github.com/user-attachments/assets/694f4cb7-e4d8-4e2b-80ec-b40fb41cbfff" />
 </div>
 
 Train custom microWakeWord models in Docker with:
