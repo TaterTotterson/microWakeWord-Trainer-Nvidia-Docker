@@ -1,6 +1,6 @@
 <div align="center">
   <h1>🎙️ microWakeWord Nvidia Trainer & Recorder</h1>
-  <img width="1002" height="593" alt="Screenshot 2026-01-18 at 8 13 35 AM" src="https://github.com/user-attachments/assets/e1411d8a-8638-4df8-992b-09a46c6e5ddc" />
+  <img width="1002" height="593" alt="Screenshot 2026-01-18 at 8 13 35 AM" src="https://github.com/user-attachments/assets/57e25705-04ae-434e-ba2b-21c4f87d9044" />
 </div>
 
 Train **microWakeWord** detection models using a simple **web-based recorder + trainer UI**, packaged in a Docker container.
