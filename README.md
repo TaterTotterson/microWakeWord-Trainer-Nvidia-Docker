@@ -1,25 +1,19 @@
 <div align="center">
-  <h1>🎙️ microWakeWord Nvidia Trainer</h1>
-  <img src="https://github.com/user-attachments/assets/57e25705-04ae-434e-ba2b-21c4f87d9044" width="800" />
+  <h1>microWakeWord NVIDIA Docker Trainer UI</h1>
 </div>
 
-Train **microWakeWord** detection models using a simple **web-based recorder + trainer UI**, packaged in a Docker container.
+Train custom microWakeWord models in Docker with:
 
-No Jupyter notebooks required. No manual cell execution. Just record your voice (optional) and train.
+- uploaded personal voice samples
+- automatically generated Piper TTS samples
+- a browser-based trainer UI
+- live training logs in a popup console
 
----
-
-<img width="100" height="44" alt="unraid_logo_black-339076895" src="https://github.com/user-attachments/assets/87351bed-3321-4a43-924f-fecf2e4e700f" />
-
-**microWakeWord_Trainer-Nvidia** is available in the **Unraid Community Apps** store.
-Install directly from the Unraid App Store with a one-click template.
+This project no longer records audio in the browser. The UI is now upload-first: users add their own audio files, the app validates or converts them, and training runs from the same page.
 
 ---
 
-<img width="100" height="56" alt="unraid_logo_black-339076895" src="https://github.com/user-attachments/assets/bf959585-ae13-4b4d-ae62-4202a850d35a" />
-
-
-### Pull the Docker Image
+## Docker Image
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:latest
@@ -27,7 +21,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 
 ---
 
-### Run the Container
+## Run The Container
 
 ```bash
 docker run -d \
@@ -37,133 +31,143 @@ docker run -d \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-**What these flags do:**
-- `--gpus all` → Enables GPU acceleration  
-- `-p 8888:8888` → Exposes the Recorder + Trainer WebUI  
-- `-v $(pwd):/data` → Persists all models, datasets, and cache  
+What these flags do:
 
----
+- `--gpus all` enables GPU acceleration
+- `-p 8888:8888` exposes the trainer UI
+- `-v $(pwd):/data` persists models, downloaded voices, datasets, and personal samples
 
-### Open the Recorder WebUI
-
-Open your browser and go to:
-
-👉 **http://localhost:8888**
-
-You’ll see the **microWakeWord Recorder & Trainer UI**.
-
----
-
-## 🎤 Recording Voice Samples (Optional)
-
-Personal voice recordings are **optional**.
-
-- You may **record your own voice** for better accuracy  
-- Or simply **click “Train” without recording anything**
-
-If no recordings are present, training will proceed using **synthetic TTS samples only**.
-
-### Remote systems (important)
-If you are running this on a **remote PC / server**, browser-based recording will not work unless:
-- You use a **reverse proxy** (HTTPS + mic permissions), **or**
-- You access the UI via **localhost** on the same machine
-
-Training itself works fine remotely — only recording requires local microphone access.
-
----
-
-### 🎙️ Recording Flow
-
-1. Enter your wake word
-2. Test pronunciation with **Test TTS**
-3. Choose:
-   - Number of speakers (e.g. family members)
-   - Takes per speaker (default: 10)
-4. Click **Begin recording**
-5. Speak naturally — recording:
-   - Starts when you talk
-   - Stops automatically after silence
-6. Repeat for each speaker
-
-Files are saved automatically to:
-
-```
-personal_samples/
-  speaker01_take01.wav
-  speaker01_take02.wav
-  speaker02_take01.wav
-  ...
-```
-
----
-
-## 🧠 Training Behavior (Important Notes)
-
-### ⏬ First training run
-The **first time you click Train**, the system will download **large training datasets** (background noise, speech corpora, etc.).
-
-- This can take **several minutes**
-- This happens **only once**
-- Data is cached inside `/data`
-
-You **will NOT need to download these again** unless you delete `/data`.
-
----
-
-### 🔁 Re-training is safe and incremental
-
-- You can train **multiple wake words** back-to-back
-- You do **NOT** need to clear any folders between runs
-- Old models are preserved in timestamped output directories
-- All required cleanup and reuse logic is handled automatically
-
----
-
-## 📦 Output Files
-
-When training completes, you’ll get:
-- `<wake_word>.tflite` – quantized streaming model  
-- `<wake_word>.json` – ESPHome-compatible metadata  
-
-Both are saved under:
+Then open:
 
 ```text
-/data/output/
+http://localhost:8888
 ```
 
-Each run is placed in its own timestamped folder.
+---
+
+## What The UI Does
+
+- Start a wake word session
+- Test TTS pronunciation
+- Upload one or many personal samples
+- Normalize uploads to `16 kHz / mono / 16-bit PCM WAV`
+- Train with or without personal samples
+- Show a popup console with live progress and logs
+
+Personal samples are optional. If none are uploaded, the trainer can still proceed with TTS-only data after confirmation.
 
 ---
 
-## 🎤 Optional: Personal Voice Samples (Advanced)
+## Personal Samples
 
-If you record personal samples:
-- They are automatically augmented
-- They are **up-weighted during training**
-- This significantly improves real-world accuracy
+Accepted upload formats include:
 
-No configuration required — detection is automatic.
+- WAV
+- MP3
+- M4A
+- FLAC
+- OGG
+- AAC
+- OPUS
+- WEBM
+
+The backend validates or converts uploads with `ffmpeg` and stores the normalized files in:
+
+```text
+/data/personal_samples/
+```
+
+Notes:
+
+- starting a new session does not clear personal samples
+- use the `Clear personal samples` button if you want to wipe them
+- any uploaded personal samples are automatically included in training
 
 ---
 
-## 🔄 Resetting Everything (Optional)
+## Language Support
 
-If you want a **completely clean slate**:
+The language selector is dynamic.
 
-Delete the /data folder
+- `en` is always available
+- non-English languages are populated from Piper voice metadata
+- when you train with a non-English language, the backend downloads all Piper ONNX voices for that selected language only
+- it does not pre-download every language
+- already-downloaded voices are reused on later runs
 
-Then restart the container.
+English stays on its existing dedicated generator model path. Non-English languages use the selected language's ONNX Piper voices.
 
-⚠️ This will:
-- Remove cached datasets
-- Require re-downloading training data
-- Delete trained models
+If the Piper catalog is unavailable, already-installed local voices can still be used.
 
 ---
 
-## 🙌 Credits
+## Training Behavior
 
-Built on top of the excellent  
-**https://github.com/kahrendt/microWakeWord**
+1. Enter the wake word
+2. Optionally test pronunciation
+3. Optionally upload personal samples
+4. Click `Start training`
+5. Watch the popup console for:
+   - selected-language voice downloads when needed
+   - sample generation progress
+   - dataset setup
+   - training progress and completion
 
-Huge thanks to the original authors ❤️
+The `Open console` button lets you reopen the log window after closing it.
+
+---
+
+## First Run Notes
+
+The first real training run may download large training assets into `/data`, such as:
+
+- Piper voices for the selected language
+- training datasets and background data
+- Python training environment dependencies
+
+These are reused later unless you delete `/data`.
+
+---
+
+## Output Files
+
+Successful runs produce:
+
+```text
+/data/output/<wake_word>.tflite
+/data/output/<wake_word>.json
+```
+
+If those files already exist, the trainer creates timestamped backups before replacing them.
+
+---
+
+## Resetting Everything
+
+If you want a clean slate, stop the container and remove the contents of your mounted `/data` directory.
+
+That will remove:
+
+- personal samples
+- downloaded Piper voices
+- cached datasets
+- training environments
+- trained models
+
+---
+
+## Notes
+
+- browser microphone recording has been removed
+- personal samples are optional
+- the server module is now `trainer_server.py`
+- the launcher script is still named `run_recorder.sh` for compatibility
+
+---
+
+## Credits
+
+Built on top of:
+
+- [microWakeWord](https://github.com/kahrendt/microWakeWord)
+- [piper-sample-generator](https://github.com/rhasspy/piper-sample-generator)
