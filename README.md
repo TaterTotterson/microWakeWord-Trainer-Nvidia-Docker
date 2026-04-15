@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🎙️ microWakeWord Nvidia Trainer & Recorder</h1>
+  <h1>🎙️ microWakeWord Nvidia Trainer</h1>
   <img src="https://github.com/user-attachments/assets/57e25705-04ae-434e-ba2b-21c4f87d9044" width="800" />
 </div>
 
