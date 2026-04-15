@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /data
 
-# Recorder port
+# Trainer UI port
 EXPOSE 8789
 
 # Script root
@@ -23,7 +23,7 @@ COPY --chown=root:root --chmod=0755 .bashrc /root/
 COPY --chown=root:root --chmod=0755 \
     train_wake_word \
     run_recorder.sh \
-    recorder_server.py \
+    trainer_server.py \
     requirements.txt \
     /root/mww-scripts/
 
@@ -33,8 +33,8 @@ COPY --chown=root:root cli/ /root/mww-scripts/cli/
 # Make all CLI scripts executable (avoids "Permission denied")
 RUN chmod -R a+x /root/mww-scripts/cli
 
-# Static UI for recorder
+# Static UI for trainer
 COPY --chown=root:root --chmod=0644 static/index.html /root/mww-scripts/static/index.html
 
-# recorder server
+# trainer server
 CMD ["/bin/bash", "-lc", "/root/mww-scripts/run_recorder.sh"]

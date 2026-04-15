@@ -3,71 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>microWakeWord Recorder</title>
+  <title>microWakeWord Personal Samples</title>
   <style>
     :root{
       --bg: #070709;
-      --panel: rgba(18, 18, 22, 0.78);
-      --panel2: rgba(24, 24, 30, 0.86);
-      --text: #e9e9ee;
-      --muted: #a2a2ad;
-      --line: rgba(255,255,255,0.10);
+      --panel: rgba(18, 18, 22, 0.8);
+      --panel2: rgba(24, 24, 30, 0.88);
+      --text: #ececf1;
+      --muted: #a9a9b3;
+      --line: rgba(255,255,255,0.1);
       --orange: #ff8a2a;
-      --orange2:#ffb066;
-      --ok:#38d39f;
+      --orange2:#ffc07f;
+      --ok:#39d4a0;
       --warn:#ffb020;
-      --err:#ff4a4a;
-      --shadow: 0 18px 50px rgba(0,0,0,0.45);
-      --radius: 16px;
+      --err:#ff5757;
+      --shadow: 0 20px 54px rgba(0,0,0,0.45);
+      --radius: 18px;
     }
 
+    * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
       color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
         radial-gradient(900px 500px at 12% 6%, rgba(255, 138, 42, 0.12), transparent 55%),
-        radial-gradient(700px 420px at 80% 14%, rgba(255, 176, 102, 0.09), transparent 60%),
-        radial-gradient(800px 600px at 50% 100%, rgba(255, 138, 42, 0.06), transparent 55%),
-        linear-gradient(180deg, #050506 0%, #09090d 100%);
+        radial-gradient(720px 420px at 82% 14%, rgba(255, 192, 127, 0.1), transparent 60%),
+        radial-gradient(820px 620px at 50% 100%, rgba(255, 138, 42, 0.06), transparent 55%),
+        linear-gradient(180deg, #050506 0%, #0b0b11 100%);
     }
 
-    .wrap { max-width: 940px; margin: 0 auto; padding: 26px 18px 42px; }
-
-    h2 { margin: 0 0 8px; font-size: 22px; letter-spacing: 0.2px; }
-    p { margin: 0 0 14px; color: var(--muted); line-height: 1.45; }
-
-    .topbar {
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 12px; margin-bottom: 14px;
-    }
-
-    .brand { display:flex; align-items:center; gap:10px; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 18px 42px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap: 12px; margin-bottom: 14px; }
+    .brand { display:flex; align-items:center; gap:12px; }
     .logo {
-      width: 38px; height: 38px; border-radius: 12px;
+      width: 42px; height: 42px; border-radius: 14px;
+      border: 1px solid rgba(255,138,42,0.3);
       background:
-        radial-gradient(circle at 30% 30%, rgba(255,176,102,0.55), rgba(255,138,42,0.25) 45%, rgba(0,0,0,0) 72%),
+        radial-gradient(circle at 30% 30%, rgba(255,176,102,0.52), rgba(255,138,42,0.24) 44%, rgba(0,0,0,0) 72%),
         linear-gradient(180deg, rgba(255,138,42,0.22), rgba(255,138,42,0.06));
-      border: 1px solid rgba(255,138,42,0.30);
-      box-shadow: 0 10px 28px rgba(255,138,42,0.08);
+      box-shadow: 0 12px 30px rgba(255,138,42,0.1);
     }
 
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    h1 { margin: 0 0 8px; font-size: 24px; letter-spacing: 0.2px; }
+    h3 { margin: 0 0 10px; font-size: 18px; }
+    p { margin: 0 0 14px; color: var(--muted); line-height: 1.5; }
 
     .card {
       border: 1px solid var(--line);
       background: linear-gradient(180deg, var(--panel), var(--panel2));
       border-radius: var(--radius);
-      padding: 16px;
+      padding: 18px;
       margin-top: 14px;
       box-shadow: var(--shadow);
       backdrop-filter: blur(8px);
     }
 
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .space { justify-content: space-between; }
+    .stack { display: grid; gap: 12px; }
     .muted { color: var(--muted); }
 
-    input[type="text"], input[type="number"]{
+    input[type="text"],
+    input[type="number"],
+    select {
       padding: 11px 12px;
       font-size: 15px;
       border-radius: 12px;
@@ -77,8 +77,8 @@
       outline: none;
     }
     input[type="text"] { width: 420px; max-width: 100%; }
-    input[type="number"] { width: 120px; }
-    input::placeholder { color: rgba(233,233,238,0.35); }
+    input[type="number"] { width: 132px; }
+    input::placeholder { color: rgba(236,236,241,0.36); }
 
     button {
       padding: 10px 14px;
@@ -90,69 +90,246 @@
       color: var(--text);
       transition: transform 0.04s ease, border-color .15s ease, background .15s ease;
     }
-    button:hover { border-color: rgba(255,138,42,0.35); background: rgba(255,255,255,0.08); }
+    button:hover { border-color: rgba(255,138,42,0.36); background: rgba(255,255,255,0.08); }
     button:active { transform: translateY(1px); }
     button:disabled { opacity: 0.45; cursor: not-allowed; }
 
     .primary {
-      border-color: rgba(255,138,42,0.40);
+      border-color: rgba(255,138,42,0.42);
       background: linear-gradient(180deg, rgba(255,138,42,0.24), rgba(255,138,42,0.12));
     }
-    .primary:hover { border-color: rgba(255,138,42,0.65); }
 
     .pill {
       display:inline-block;
       padding: 4px 10px;
       border-radius: 999px;
       background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.1);
       color: var(--muted);
       font-size: 12px;
     }
-    .pill.ok   { color: var(--ok); border-color: rgba(56,211,159,0.25); background: rgba(56,211,159,0.08); }
+    .pill.ok   { color: var(--ok); border-color: rgba(57,212,160,0.25); background: rgba(57,212,160,0.08); }
     .pill.warn { color: var(--warn); border-color: rgba(255,176,32,0.25); background: rgba(255,176,32,0.08); }
-    .pill.err  { color: var(--err); border-color: rgba(255,74,74,0.25); background: rgba(255,74,74,0.08); }
+    .pill.err  { color: var(--err); border-color: rgba(255,87,87,0.25); background: rgba(255,87,87,0.08); }
 
-    details { margin-top: 10px; }
-    summary { cursor: pointer; color: var(--orange2); }
-    summary:hover { color: var(--orange); }
+    .statGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .stat {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+    .stat .label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .stat .value { font-size: 24px; font-weight: 700; }
 
-    label { display:flex; gap:10px; align-items:center; }
-    input[type="range"] { width: 240px; }
+    .dropzone {
+      display: grid;
+      gap: 10px;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px dashed rgba(255,192,127,0.32);
+      background:
+        linear-gradient(180deg, rgba(255,138,42,0.08), rgba(255,138,42,0.04)),
+        rgba(255,255,255,0.02);
+    }
 
-    .meter {
-      height: 10px;
-      background: rgba(255,255,255,0.08);
+    input[type="file"] {
+      width: 100%;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .progressShell {
+      width: 100%;
+      height: 16px;
       border-radius: 999px;
       overflow: hidden;
-      width: 280px;
-      border: 1px solid rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.08);
     }
-    .meter > div {
-      height: 10px;
+    .progressFill {
+      height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, rgba(255,138,42,0.55), rgba(255,176,102,0.85));
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(255,138,42,0.88), rgba(255,192,127,0.94));
+      box-shadow: inset 0 0 18px rgba(255,255,255,0.18);
+      transition: width 0.18s ease;
     }
 
-    pre {
-      background: rgba(0,0,0,0.55);
-      color: #e6e6ea;
-      padding: 12px;
-      border-radius: 14px;
+    .fileList {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .fileItem {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+    .fileMeta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .consoleOverlay {
+      position: fixed;
+      inset: 0;
+      padding: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(4, 5, 10, 0.5);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      z-index: 50;
+    }
+
+    .consoleOverlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .consoleWindow {
+      width: min(1040px, calc(100vw - 36px));
+      height: min(76vh, 760px);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(180deg, rgba(17, 20, 28, 0.78), rgba(8, 10, 16, 0.92)),
+        rgba(8, 10, 16, 0.75);
+      box-shadow: 0 28px 84px rgba(0,0,0,0.58);
+      backdrop-filter: blur(18px) saturate(1.12);
+      transform-origin: center;
+    }
+
+    .trainAction {
+      display: flex;
+      justify-content: center;
+      margin-top: 6px;
+    }
+
+    .trainAction .primary {
+      min-width: min(320px, 100%);
+    }
+
+    .trainFooter {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .consoleWindow.wobble {
+      animation: consoleWobble 560ms cubic-bezier(0.22, 0.85, 0.25, 1);
+    }
+
+    .consoleHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .consoleTitle {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .consoleHint {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .consoleLog {
       overflow: auto;
-      max-height: 300px;
-      border: 1px solid rgba(255,255,255,0.10);
+      min-height: 0;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(6, 9, 14, 0.9), rgba(4, 6, 10, 0.96)),
+        rgba(0,0,0,0.65);
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .consoleLine {
       white-space: pre-wrap;
       word-break: break-word;
+      color: #d8e2f1;
     }
 
-    .big { font-size: 16px; }
+    .consoleLine + .consoleLine {
+      margin-top: 2px;
+    }
 
-    .divider {
-      height: 1px;
-      width: 100%;
-      background: rgba(255,255,255,0.10);
-      margin: 12px 0;
+    .consoleMuted { color: #93a0b5; }
+    .consoleText { color: #d8e2f1; }
+    .consoleCmd { color: #89d4ff; }
+    .consoleWarn { color: #ffc46f; }
+    .consoleErr { color: #ff8f8f; }
+    .consoleOk { color: #6ee0af; }
+    .consoleSection { color: #ffd89b; font-weight: 600; letter-spacing: 0.02em; }
+
+    @keyframes consoleWobble {
+      0%   { transform: translateY(24px) scale(0.93) rotate(-1.2deg); }
+      34%  { transform: translateY(-6px) scale(1.02) rotate(0.85deg); }
+      58%  { transform: translateY(2px) scale(0.99) rotate(-0.45deg); }
+      78%  { transform: translateY(-1px) scale(1.01) rotate(0.2deg); }
+      100% { transform: translateY(0) scale(1) rotate(0deg); }
+    }
+
+    @media (max-width: 720px) {
+      .wrap { padding: 18px 14px 30px; }
+      input[type="text"] { width: 100%; }
+      .fileItem { align-items: flex-start; flex-direction: column; }
+      .consoleOverlay { padding: 12px; }
+      .consoleWindow {
+        width: 100%;
+        height: min(82vh, 760px);
+        padding: 14px;
+      }
+      .consoleHeader {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .trainFooter {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .trainAction .primary,
+      .trainFooter button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -163,92 +340,109 @@
       <div class="brand">
         <div class="logo"></div>
         <div>
-          <h2>🎙️ microWakeWord Personal Recorder</h2>
-          <p class="muted">Enter a wake word, test TTS pronunciation, then record takes. Recording starts when you speak and stops after silence.</p>
+          <h1>microWakeWord Personal Samples</h1>
+          <p>Start a session, upload your own recorded voice samples, and the app will validate or convert them into the training format used by the existing pipeline.</p>
         </div>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card stack">
       <div class="row">
         <input id="phrase" type="text" placeholder='e.g. "tater totterson"' />
         <button id="startSessionBtn" class="primary">Start session</button>
-        <button id="ttsBtn" disabled>🔊 Test TTS</button>
+        <button id="ttsBtn" disabled>Test TTS</button>
         <span id="sessionPill" class="pill">No session</span>
       </div>
 
-      <div class="row" style="margin-top:10px;">
+      <div class="row">
         <label class="muted">Language
-          <select id="language" style="padding:10px 12px;font-size:15px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.35);color:var(--text);outline:none;">
+          <select id="language">
             <option value="en" selected>English (en)</option>
-            <option value="nl">Dutch (nl)</option>
           </select>
         </label>
-        <label class="muted">Speakers
-          <input id="speakersTotal" type="number" min="1" max="10" value="1" />
-        </label>
-        <label class="muted">Takes / speaker
-          <input id="takesPerSpeaker" type="number" min="1" max="50" value="10" />
-        </label>
-        <span id="speakerPill" class="pill">Speaker: -</span>
       </div>
-
-      <details>
-        <summary>Advanced (if it’s too sensitive / not sensitive enough)</summary>
-        <div style="margin-top:10px;">
-          <label>
-            Start sensitivity
-            <input id="startThresh" type="range" min="0.005" max="0.08" step="0.001" value="0.02" />
-            <span id="startThreshVal" class="muted"></span>
-          </label>
-          <label>
-            Silence stop (ms)
-            <input id="silenceMs" type="range" min="300" max="2000" step="50" value="900" />
-            <span id="silenceMsVal" class="muted"></span>
-          </label>
-          <label>
-            Min take length (ms)
-            <input id="minTakeMs" type="range" min="300" max="2000" step="50" value="650" />
-            <span id="minTakeMsVal" class="muted"></span>
-          </label>
-        </div>
-      </details>
     </div>
 
-    <div class="card">
-      <div class="row">
-        <button id="beginBtn" disabled class="primary">🎬 Begin recording</button>
-        <button id="resetBtn" disabled>🧹 Reset recordings</button>
-        <button id="trainBtn" disabled>🧠 Start training</button>
+    <div class="card stack">
+      <div class="row space">
+        <div>
+          <h3>Optional Personal Samples</h3>
+          <p>Personal samples are optional. You can train with TTS only, or upload your own audio here and it will be saved into <code>personal_samples/</code> as 16 kHz mono 16-bit PCM WAV.</p>
+        </div>
         <span id="status" class="pill">Idle</span>
       </div>
 
-      <div style="margin-top:12px;" class="row">
-        <div class="meter"><div id="meterFill"></div></div>
-        <span class="muted" id="meterText">Mic level</span>
+      <div class="dropzone">
+        <div>
+          <strong>Select one or many files</strong>
+          <p class="muted" style="margin-top:6px;">WAV, MP3, M4A, FLAC, OGG, AAC, OPUS, and WEBM are all fine when ffmpeg is available. Files already in the correct format are kept as-is.</p>
+        </div>
+        <input id="sampleFiles" type="file" accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg,.aac,.webm,.opus" multiple />
+        <span id="selectedPill" class="pill">No files selected</span>
       </div>
 
-      <div class="divider"></div>
+      <div class="row">
+        <button id="uploadBtn" class="primary" disabled>Upload selected samples</button>
+        <button id="clearBtn" disabled>Clear personal samples</button>
+      </div>
 
-      <p class="big">
-        Speaker: <b id="speakerNum">-</b> / <b id="speakerTotal">-</b>
-        <span id="speakerState" class="pill">Waiting</span>
-      </p>
+      <div class="stack">
+        <div class="row space">
+          <strong id="progressLabel">No upload in progress</strong>
+          <span id="progressPct" class="muted">0%</span>
+        </div>
+        <div class="progressShell">
+          <div id="progressFill" class="progressFill"></div>
+        </div>
+        <div id="progressDetail" class="muted">When you upload, each file is checked and converted only if needed before it is written into <code>personal_samples/</code>.</div>
+      </div>
 
-      <p class="big">
-        Take: <b id="takeNum">0</b> / <b id="takeTotal">10</b>
-        <span id="takeState" class="pill">Not recording</span>
-      </p>
+      <div class="statGrid">
+        <div class="stat">
+          <span class="label">Uploaded</span>
+          <span class="value" id="uploadedCount">0</span>
+        </div>
+        <div class="stat">
+          <span class="label">Training Format</span>
+          <span class="value" style="font-size:18px;">16 kHz / mono / 16-bit WAV</span>
+        </div>
+      </div>
+      <div class="trainAction">
+        <button id="trainBtn" class="primary" disabled>Start training</button>
+      </div>
+      <div class="trainFooter">
+        <span id="trainState" class="pill">Not started</span>
+        <button id="openConsoleBtn" disabled>Open console</button>
+      </div>
+    </div>
+  </div>
 
-      <div id="takesList" class="muted"></div>
-
-      <h4 style="margin-top: 18px; margin-bottom: 10px;">Training log</h4>
-      <pre id="trainLog">(no training started)</pre>
+  <div id="consoleOverlay" class="consoleOverlay" aria-hidden="true">
+    <div id="consoleWindow" class="consoleWindow" role="dialog" aria-modal="true" aria-labelledby="consoleTitle">
+      <div class="consoleHeader">
+        <div>
+          <h3 id="consoleTitle" class="consoleTitle">Training Console</h3>
+          <p class="consoleHint">Live training output appears here with color-coded console styling.</p>
+        </div>
+        <button id="closeConsoleBtn">Close</button>
+      </div>
+      <div id="trainLog" class="consoleLog" aria-live="polite">
+        <div class="consoleLine consoleMuted">(no training started)</div>
+      </div>
     </div>
   </div>
 
 <script>
   const $ = (id) => document.getElementById(id);
+
+  const uiState = {
+    session: null,
+    training: null,
+    availableLanguages: [],
+    selectedFiles: [],
+    uploadBusy: false,
+    trainingPoller: null,
+  };
 
   function setPill(el, text, cls) {
     el.className = "pill " + (cls || "");
@@ -256,563 +450,474 @@
   }
 
   async function api(path, opts) {
-    opts = opts || {};
-    // Always try to avoid cache for polling endpoints
-    if (!opts.cache) opts.cache = "no-store";
-
     const res = await fetch(path, opts);
     const ct = res.headers.get("content-type") || "";
     const data = ct.includes("application/json") ? await res.json() : await res.text();
-    if (!res.ok) {
-      const err = (typeof data === "string") ? { error: data } : (data || {});
-      const msg = err.error || err.message || JSON.stringify(err);
-      const e = new Error(msg);
-      e.details = err;
-      throw e;
-    }
+    if (!res.ok) throw new Error(typeof data === "string" ? data : (data.error || JSON.stringify(data)));
     return data;
   }
 
-  // -------------------- log auto-scroll (sticky to bottom) --------------------
   function isNearBottom(el, px = 40) {
     return (el.scrollHeight - el.scrollTop - el.clientHeight) <= px;
   }
 
-  function setLogTextAutoScroll(el, text) {
+  function setConsoleLogAutoScroll(el, text) {
     const stick = isNearBottom(el);
-    el.textContent = text || "";
-    if (stick) el.scrollTop = el.scrollHeight;
-  }
-  // --------------------------------------------------------------------------
-
-  let session = null;
-  let isRunning = false;
-
-  let stream = null;
-  let audioCtx = null;
-  let analyser = null;
-  let source = null;
-
-  let capturing = false;
-  let startedAt = 0;
-  let silenceStart = null;
-  let floatChunks = [];
-  let frameSize = 2048;
-
-  let currentSpeaker = 1;
-  let speakersTotal = 1;
-
-  let currentTake = 0;
-  let takesPerSpeaker = 10;
-
-  // --- training poll (append mode; scrollback works) ---
-  let trainingPollRunning = false;
-  let trainingPollAbort = false;
-
-  let logBuffer = "";          // full text we’ve shown in the browser
-  let lastChunk = "";          // last chunk we received (for de-dupe)
-  let seenAnyOutput = false;
-
-  function appendLogAutoScroll(el, chunk) {
-    if (!chunk) return;
-    const stick = isNearBottom(el);
-    el.textContent += chunk;
+    el.innerHTML = renderConsoleHtml(text);
     if (stick) el.scrollTop = el.scrollHeight;
   }
 
-  function startThreshold() { return parseFloat($("startThresh").value); }
-  function silenceStopMs() { return parseInt($("silenceMs").value, 10); }
-  function minTakeMs() { return parseInt($("minTakeMs").value, 10); }
-
-  function updateAdvancedLabels() {
-    $("startThreshVal").textContent = startThreshold().toFixed(3);
-    $("silenceMsVal").textContent = silenceStopMs() + "ms";
-    $("minTakeMsVal").textContent = minTakeMs() + "ms";
-  }
-  ["startThresh","silenceMs","minTakeMs"].forEach(id => $(id).addEventListener("input", updateAdvancedLabels));
-  updateAdvancedLabels();
-
-  function refreshUI() {
-    $("speakerNum").textContent = String(currentSpeaker);
-    $("speakerTotal").textContent = String(speakersTotal);
-    $("takeNum").textContent = String(currentTake);
-    $("takeTotal").textContent = String(takesPerSpeaker);
-    setPill($("speakerPill"), `Speaker ${currentSpeaker}/${speakersTotal}`);
+  function describeFormat(info) {
+    if (!info) return "unknown format";
+    if (!info.sample_rate) return (info.container || "unknown").toUpperCase();
+    const channels = info.channels === 1 ? "mono" : `${info.channels} ch`;
+    return `${info.sample_rate} Hz, ${channels}, ${info.sample_width_bits || "?"}-bit`;
   }
 
-  // -------------------- mic lifecycle --------------------
-  async function ensureMic() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error("Microphone not available here. Use https:// (or http://localhost) to record.");
-    }
-    if (stream) return;
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 2048;
-    source = audioCtx.createMediaStreamSource(stream);
-    source.connect(analyser);
-    requestAnimationFrame(meterLoop);
+  function updateProgress(fraction, label, detail) {
+    const clamped = Math.max(0, Math.min(1, Number.isFinite(fraction) ? fraction : 0));
+    $("progressFill").style.width = `${(clamped * 100).toFixed(1)}%`;
+    $("progressPct").textContent = `${Math.round(clamped * 100)}%`;
+    $("progressLabel").textContent = label || "No upload in progress";
+    $("progressDetail").textContent = detail || "";
   }
 
-  async function stopMicNow() {
-    isRunning = false;
-    capturing = false;
-
-    const proc = window.__mw_proc;
-    if (proc) {
-      try { proc.disconnect(); } catch {}
-      try { source && source.disconnect(proc); } catch {}
-      window.__mw_proc = null;
-    }
-
-    if (stream) {
-      try { stream.getTracks().forEach(t => t.stop()); } catch {}
-      stream = null;
-    }
-
-    if (audioCtx) {
-      try { await audioCtx.close(); } catch {}
-      audioCtx = null;
-    }
-
-    analyser = null;
-    source = null;
-
-    $("meterFill").style.width = "0%";
-    $("meterText").textContent = "Mic stopped";
+  function escapeHtml(text) {
+    return String(text || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
   }
 
-  function meterLoop() {
-    if (!analyser) {
-      requestAnimationFrame(meterLoop);
-      return;
-    }
+  function consoleLineClass(line) {
+    const trimmed = String(line || "").trim();
+    const lower = trimmed.toLowerCase();
 
-    const data = new Uint8Array(analyser.fftSize);
-    analyser.getByteTimeDomainData(data);
-
-    let sumSq = 0;
-    for (let i=0;i<data.length;i++){
-      const v = (data[i] - 128) / 128;
-      sumSq += v*v;
-    }
-    const rms = Math.sqrt(sumSq / data.length);
-    const pct = Math.min(100, Math.max(0, rms * 600));
-    $("meterFill").style.width = pct + "%";
-    $("meterText").textContent = `Mic level (rms=${rms.toFixed(3)})`;
-
-    if (isRunning) recorderTick(rms);
-
-    requestAnimationFrame(meterLoop);
+    if (!trimmed) return "consoleMuted";
+    if (trimmed.startsWith("→")) return "consoleCmd";
+    if (/^={3,}/.test(trimmed) || trimmed.includes("=====")) return "consoleSection";
+    if (trimmed.includes("✗") || lower.includes("traceback") || lower.includes("error") || lower.includes("failed") || lower.includes("crashed")) return "consoleErr";
+    if (trimmed.includes("✅") || trimmed.includes("✓") || lower.includes("finished") || lower.includes("success")) return "consoleOk";
+    if (trimmed.includes("⚠") || lower.includes("warning")) return "consoleWarn";
+    return "consoleText";
   }
 
-  // -------------------- recording state machine --------------------
-  function recorderTick(rms) {
-    const now = performance.now();
+  function renderConsoleHtml(text) {
+    const content = String(text || "(no training started)");
+    return content.split("\n").map((line) => {
+      const safe = line ? escapeHtml(line) : "&nbsp;";
+      return `<div class="consoleLine ${consoleLineClass(line)}">${safe}</div>`;
+    }).join("");
+  }
 
-    if (!capturing) {
-      if (rms >= startThreshold()) startCapture();
-      return;
+  function openConsole(wobble = true) {
+    $("consoleOverlay").classList.add("open");
+    $("consoleOverlay").setAttribute("aria-hidden", "false");
+    if (wobble) {
+      const win = $("consoleWindow");
+      win.classList.remove("wobble");
+      void win.offsetWidth;
+      win.classList.add("wobble");
+    }
+  }
+
+  function closeConsole() {
+    $("consoleOverlay").classList.remove("open");
+    $("consoleOverlay").setAttribute("aria-hidden", "true");
+  }
+
+  function renderSelectedFiles() {
+    const files = uiState.selectedFiles;
+    $("selectedPill").textContent = files.length
+      ? `${files.length} file${files.length === 1 ? "" : "s"} selected`
+      : "No files selected";
+  }
+
+  function renderLanguageOptions(languages, preferredLanguage) {
+    const select = $("language");
+    const current = preferredLanguage || select.value || "en";
+    const items = Array.isArray(languages) && languages.length
+      ? languages
+      : [{ code: "en", label: "English (en)" }];
+
+    uiState.availableLanguages = items;
+    select.innerHTML = items.map((item) => {
+      const code = String(item.code || "").trim().toLowerCase();
+      const label = String(item.label || code || "Language");
+      return `<option value="${escapeHtml(code)}">${escapeHtml(label)}</option>`;
+    }).join("");
+
+    const availableCodes = new Set(items.map((item) => String(item.code || "").trim().toLowerCase()).filter(Boolean));
+    select.value = availableCodes.has(current) ? current : (items[0]?.code || "en");
+  }
+
+  function syncButtons() {
+    const hasSession = Boolean(uiState.session?.safe_word);
+    const training = uiState.training || {};
+    const hasPhrase = Boolean(($("phrase").value || "").trim());
+    const hasSelected = uiState.selectedFiles.length > 0;
+    const sampleCount = Number(uiState.session?.takes_received || 0);
+    const hasConsole = Boolean(training.running || training.exit_code !== null || (training.log_lines || []).length);
+
+    $("ttsBtn").disabled = !hasPhrase || uiState.uploadBusy;
+    $("uploadBtn").disabled = !hasSession || !hasSelected || uiState.uploadBusy;
+    $("clearBtn").disabled = sampleCount === 0 || uiState.uploadBusy;
+    $("openConsoleBtn").disabled = !hasConsole;
+    $("trainBtn").disabled = !hasSession || uiState.uploadBusy || Boolean(training.running);
+    $("startSessionBtn").disabled = uiState.uploadBusy;
+  }
+
+  function refreshSessionUI(session) {
+    uiState.session = session;
+    renderLanguageOptions(session?.available_languages || uiState.availableLanguages, session?.language);
+
+    if (session?.raw_phrase) {
+      $("phrase").value = session.raw_phrase;
     }
 
-    if (rms < startThreshold() * 0.65) {
-      if (silenceStart === null) silenceStart = now;
-      const silentFor = now - silenceStart;
-      if (silentFor >= silenceStopMs()) {
-        const dur = now - startedAt;
-        if (dur >= minTakeMs()) stopCaptureAndUpload();
-        else silenceStart = now;
+    const uploaded = Number(session?.takes_received || 0);
+    $("uploadedCount").textContent = String(uploaded);
+    uiState.training = session?.training || uiState.training;
+
+    if (session?.safe_word) {
+      setPill($("sessionPill"), `Session: ${session.safe_word} (${session.language || "en"})`, "ok");
+      if (!uiState.uploadBusy) {
+        setPill($("status"), uploaded ? `Ready with ${uploaded} sample${uploaded === 1 ? "" : "s"}` : "Ready to upload", uploaded ? "ok" : "warn");
       }
     } else {
-      silenceStart = null;
-    }
-  }
-
-  async function startCapture() {
-    capturing = true;
-    startedAt = performance.now();
-    silenceStart = null;
-    floatChunks = [];
-
-    setPill($("takeState"), "Recording…", "warn");
-
-    const proc = audioCtx.createScriptProcessor(frameSize, 1, 1);
-    source.connect(proc);
-    proc.connect(audioCtx.destination);
-
-    proc.onaudioprocess = (ev) => {
-      if (!capturing) return;
-      const chan = ev.inputBuffer.getChannelData(0);
-      floatChunks.push(new Float32Array(chan));
-    };
-
-    window.__mw_proc = proc;
-  }
-
-  async function stopCaptureAndUpload() {
-    capturing = false;
-    setPill($("takeState"), "Processing…");
-
-    const proc = window.__mw_proc;
-    if (proc) {
-      try { proc.disconnect(); } catch {}
-      try { source.disconnect(proc); } catch {}
-      window.__mw_proc = null;
+      setPill($("sessionPill"), "No session");
+      if (!uiState.uploadBusy) {
+        setPill($("status"), uploaded ? `${uploaded} sample${uploaded === 1 ? "" : "s"} waiting on disk` : "Idle");
+      }
     }
 
-    currentTake += 1;
-    refreshUI();
+    syncButtons();
+  }
 
-    let totalLen = 0;
-    for (const c of floatChunks) totalLen += c.length;
-    const merged = new Float32Array(totalLen);
-    let off = 0;
-    for (const c of floatChunks) { merged.set(c, off); off += c.length; }
+  async function refreshSession() {
+    const session = await api("/api/session", { method: "GET" });
+    refreshSessionUI(session);
+    return session;
+  }
 
-    const wavBlob = await floatToWav16kMono(merged, audioCtx.sampleRate);
+  function uploadOneFile(file, index, total) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      const base = index / total;
+      const span = 1 / total;
 
-    try {
-      setPill($("status"), `Uploading speaker ${currentSpeaker} take ${currentTake}…`, "warn");
+      formData.append("file", file, file.name);
 
-      const fd = new FormData();
-      fd.append("speaker_index", String(currentSpeaker));
-      fd.append("take_index", String(currentTake));
-      fd.append("file", wavBlob, `take_${String(currentTake).padStart(2,"0")}.wav`);
+      xhr.open("POST", "/api/upload_personal_sample");
+      xhr.responseType = "json";
 
-      await api("/api/upload_take", { method:"POST", body: fd });
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
+        const ratio = event.total ? event.loaded / event.total : 0;
+        updateProgress(
+          base + (ratio * span * 0.68),
+          `Uploading ${file.name} (${index + 1}/${total})`,
+          "Sending the file to the server."
+        );
+      };
 
-      $("takesList").textContent = `Saved ${currentTake}/${takesPerSpeaker} takes for speaker ${currentSpeaker}/${speakersTotal}`;
-      setPill($("status"), `Saved speaker ${currentSpeaker} take ${currentTake}/${takesPerSpeaker}`, "ok");
+      xhr.upload.onload = () => {
+        updateProgress(
+          base + (span * 0.74),
+          `Checking ${file.name}`,
+          "Inspecting the incoming audio format."
+        );
+      };
 
-      if (currentTake >= takesPerSpeaker) {
-        if (currentSpeaker >= speakersTotal) {
-          setPill($("takeState"), "Done", "ok");
-          setPill($("speakerState"), "All speakers done ✅", "ok");
-          setPill($("status"), "All takes recorded ✅", "ok");
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState >= 2) {
+          updateProgress(
+            base + (span * 0.9),
+            `Normalizing ${file.name}`,
+            "Converting to 16 kHz mono 16-bit PCM WAV if needed."
+          );
+        }
+      };
 
-          await stopMicNow();
-          await autoStartTraining();
+      xhr.onload = () => {
+        const data = xhr.response || (() => {
+          try { return JSON.parse(xhr.responseText || "{}"); } catch { return null; }
+        })();
+
+        if (xhr.status >= 200 && xhr.status < 300 && data) {
+          updateProgress(
+            base + span,
+            data.converted ? `Converted ${file.name}` : `Validated ${file.name}`,
+            `${data.saved_as} saved into personal_samples.`
+          );
+          resolve(data);
           return;
         }
 
-        currentSpeaker += 1;
-        currentTake = 0;
-        refreshUI();
+        const errorMessage = data && data.error ? data.error : `Upload failed for ${file.name}`;
+        reject(new Error(errorMessage));
+      };
 
-        setPill($("speakerState"), `Speaker ${currentSpeaker - 1} complete ✅`, "ok");
-        setPill($("takeState"), "Paused", "warn");
-        setPill($("status"), `Ready for speaker ${currentSpeaker}. Click Begin recording.`, "warn");
+      xhr.onerror = () => reject(new Error(`Upload failed for ${file.name}`));
+      xhr.send(formData);
+    });
+  }
 
-        isRunning = false;
-        $("beginBtn").disabled = false;
+  async function uploadSelectedFiles() {
+    if (!uiState.session?.safe_word) {
+      alert("Start a session first.");
+      return;
+    }
+    if (!uiState.selectedFiles.length) {
+      alert("Choose one or more audio files first.");
+      return;
+    }
 
-        await stopMicNow();
-        return;
+    uiState.uploadBusy = true;
+    syncButtons();
+    setPill($("status"), "Uploading samples...", "warn");
+
+    try {
+      const files = [...uiState.selectedFiles];
+      let convertedCount = 0;
+      let validatedCount = 0;
+      for (let i = 0; i < files.length; i += 1) {
+        const file = files[i];
+        const result = await uploadOneFile(file, i, files.length);
+        if (result.converted) convertedCount += 1;
+        else validatedCount += 1;
       }
 
-      setPill($("speakerState"), `Speaker ${currentSpeaker}/${speakersTotal}`);
-      setPill($("takeState"), "Listening…", "ok");
+      uiState.selectedFiles = [];
+      $("sampleFiles").value = "";
+      renderSelectedFiles();
 
-    } catch (e) {
-      console.error(e);
+      const session = await refreshSession();
+      const uploaded = Number(session?.takes_received || 0);
+      setPill($("status"), `Uploaded ${uploaded} sample${uploaded === 1 ? "" : "s"}`, "ok");
+      const parts = [];
+      if (convertedCount) parts.push(`${convertedCount} converted successfully`);
+      if (validatedCount) parts.push(`${validatedCount} already in the correct format`);
+      const summary = parts.length ? parts.join(", ") : "Files processed successfully";
+      updateProgress(1, "Upload and conversion complete", `${summary}. Saved to personal_samples.`);
+    } catch (error) {
       setPill($("status"), "Upload failed", "err");
-      setPill($("takeState"), "Error", "err");
-      isRunning = false;
-      $("beginBtn").disabled = false;
-      alert("Upload failed: " + e.message);
+      updateProgress(0, "Upload failed", error.message);
+      alert(error.message);
+    } finally {
+      uiState.uploadBusy = false;
+      syncButtons();
     }
   }
 
-  // -------------------- WAV encoding helpers --------------------
-  async function floatToWav16kMono(float32, srcRate) {
-    const buf = audioCtx.createBuffer(1, float32.length, srcRate);
-    buf.copyToChannel(float32, 0);
-
-    const targetRate = 16000;
-    const targetLen = Math.max(1, Math.round(float32.length * targetRate / srcRate));
-    const offline = new OfflineAudioContext(1, targetLen, targetRate);
-
-    const src = offline.createBufferSource();
-    src.buffer = buf;
-    src.connect(offline.destination);
-    src.start(0);
-
-    const rendered = await offline.startRendering();
-    const data = rendered.getChannelData(0);
-
-    const wav = encodeWavPCM16(data, targetRate);
-    return new Blob([wav], { type: "audio/wav" });
-  }
-
-  function encodeWavPCM16(float32, sampleRate) {
-    const numSamples = float32.length;
-    const buffer = new ArrayBuffer(44 + numSamples * 2);
-    const view = new DataView(buffer);
-
-    function writeString(offset, str) {
-      for (let i=0;i<str.length;i++) view.setUint8(offset+i, str.charCodeAt(i));
-    }
-
-    writeString(0, "RIFF");
-    view.setUint32(4, 36 + numSamples * 2, true);
-    writeString(8, "WAVE");
-
-    writeString(12, "fmt ");
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-
-    writeString(36, "data");
-    view.setUint32(40, numSamples * 2, true);
-
-    let offset = 44;
-    for (let i=0;i<numSamples;i++) {
-      let s = Math.max(-1, Math.min(1, float32[i]));
-      const v = s < 0 ? s * 0x8000 : s * 0x7fff;
-      view.setInt16(offset, v, true);
-      offset += 2;
-    }
-    return buffer;
-  }
-
-  // -------------------- training (manual + auto) --------------------
-  async function startTrainingWithPrompt(auto=false) {
-    const sess = await api("/api/session", { method: "GET" });
-    const takesReceived = sess.takes_received || 0;
-    const total = (sess.speakers_total || 1) * (sess.takes_per_speaker || 10);
+  async function startTrainingWithPrompt() {
+    const session = await refreshSession();
+    const uploaded = Number(session?.takes_received || 0);
 
     let allowNoPersonal = false;
-
-    if (takesReceived === 0) {
+    if (uploaded === 0) {
       const ok = confirm(
-        `No personal voice samples recorded (0/${total}).\n\nTrain anyway WITHOUT personal voices?`
+        `No personal voice samples were uploaded yet.\n\nTrain anyway without personal voices?`
       );
-      if (!ok) return;
+      if (!ok) {
+        setPill($("status"), "Training canceled", "warn");
+        return;
+      }
       allowNoPersonal = true;
     }
 
-    // lock UI immediately
-    $("trainBtn").disabled = true;
-    $("beginBtn").disabled = true;
-    $("resetBtn").disabled = true;
+    uiState.training = { running: true, exit_code: null, log_lines: [] };
+    setConsoleLogAutoScroll($("trainLog"), "===== Training Console =====\nWaiting for training output...");
+    openConsole(true);
+    syncButtons();
+    setPill($("status"), "Starting training...", "warn");
+    setPill($("trainState"), "Training running", "warn");
 
-    setPill($("status"), auto ? "Auto-starting training…" : "Preparing training environment…", "warn");
+    await api("/api/train", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ allow_no_personal: allowNoPersonal }),
+    });
 
-    // Reset log state for a fresh run
-    trainingPollAbort = false;
-    logBuffer = "";
-    lastChunk = "";
-    seenAnyOutput = false;
+    pollTraining();
+  }
 
-    const logEl = $("trainLog");
-    logEl.textContent = "(preparing…)\n";
+  async function pollTraining() {
+    if (uiState.trainingPoller) return;
+    uiState.trainingPoller = true;
 
     try {
-      // Kick off training first
-      await api("/api/train", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allow_no_personal: allowNoPersonal })
-      });
+      const logEl = $("trainLog");
 
-      // Only start polling AFTER training was successfully kicked off
-      if (!trainingPollRunning) {
-        trainingPollRunning = true;
-        pollTrainingTail();
+      for (;;) {
+        try {
+          const status = await api("/api/train_status", { method: "GET" });
+          const training = status.training || {};
+          uiState.training = training;
+          const lines = training.log_lines || [];
+          const text = lines.length ? lines.join("\n") : "(no output yet)";
+          setConsoleLogAutoScroll(logEl, text);
+          syncButtons();
+
+          if (training.running) {
+            setPill($("status"), "Training running...", "warn");
+            setPill($("trainState"), "Training running", "warn");
+          } else {
+            if (training.exit_code === 0) {
+              setPill($("status"), "Training finished", "ok");
+              setPill($("trainState"), "Training finished", "ok");
+            } else if (training.exit_code !== null) {
+              setPill($("status"), `Training ended (exit=${training.exit_code})`, "err");
+              setPill($("trainState"), `Exit ${training.exit_code}`, "err");
+            } else {
+              setPill($("trainState"), "Not started");
+            }
+            break;
+          }
+        } catch (_) {}
+
+        await new Promise((resolve) => setTimeout(resolve, 1500));
       }
-
-      setPill($("status"), "Training running…", "warn");
-    } catch (e) {
-      $("trainBtn").disabled = false;
-      $("resetBtn").disabled = false;
-      $("beginBtn").disabled = false;
-      trainingPollAbort = true;
-      trainingPollRunning = false;
-      throw e;
+    } finally {
+      uiState.trainingPoller = null;
     }
   }
 
-  async function autoStartTraining() {
-    try {
-      await startTrainingWithPrompt(true);
-    } catch (e) {
-      console.error(e);
-      setPill($("status"), "Auto-train failed", "err");
-      alert("Auto-start training failed: " + e.message);
-    }
-  }
+  $("phrase").addEventListener("input", syncButtons);
 
-  $("trainBtn").addEventListener("click", async () => {
-    try {
-      await startTrainingWithPrompt(false);
-    } catch (e) {
-      alert("Train failed: " + e.message);
-      setPill($("status"), "Train failed", "err");
+  $("sampleFiles").addEventListener("change", () => {
+    uiState.selectedFiles = Array.from($("sampleFiles").files || []);
+    renderSelectedFiles();
+    syncButtons();
+  });
+
+  $("openConsoleBtn").addEventListener("click", () => {
+    openConsole(true);
+  });
+
+  $("closeConsoleBtn").addEventListener("click", () => {
+    closeConsole();
+  });
+
+  $("consoleOverlay").addEventListener("click", (event) => {
+    if (event.target === $("consoleOverlay")) {
+      closeConsole();
     }
   });
 
-  async function pollTrainingTail() {
-    const logEl = $("trainLog");
-
-    for (;;) {
-      if (trainingPollAbort) {
-        trainingPollRunning = false;
-        break;
-      }
-
-      try {
-        const st = await api(`/api/train_status?ts=${Date.now()}`, { method:"GET", cache:"no-store" });
-        const tr = st.training || {};
-
-        // NOTE: this assumes /api/train_status returns NEW output chunks (not full tail snapshots)
-        const chunkRaw = tr.log_text || "";
-        const chunk = chunkRaw; // keep exact newlines from server
-
-        if (chunk) {
-          // wipe placeholder once
-          if (!seenAnyOutput) {
-            logEl.textContent = "";
-            logBuffer = "";
-            lastChunk = "";
-            seenAnyOutput = true;
-          }
-
-          // simple de-dupe: if server repeats the same chunk, skip it
-          if (chunk !== lastChunk) {
-            lastChunk = chunk;
-            logBuffer += chunk;
-            appendLogAutoScroll(logEl, chunk);
-          }
-        } else {
-          // before first output, show waiting message but do NOT overwrite later scrollback
-          if (!seenAnyOutput) {
-            if (!logEl.textContent || logEl.textContent.includes("(no training") || logEl.textContent.startsWith("(preparing…")) {
-              logEl.textContent = "Waiting for training output…\n";
-            }
-          }
-        }
-
-        const exitCodeIsSet = (tr.exit_code !== null && tr.exit_code !== undefined);
-
-        if (!tr.running && exitCodeIsSet) {
-          $("trainBtn").disabled = false;
-          $("resetBtn").disabled = false;
-          $("beginBtn").disabled = false;
-
-          if (tr.exit_code === 0) setPill($("status"), "Training finished ✅", "ok");
-          else setPill($("status"), `Training ended (exit=${tr.exit_code})`, "err");
-
-          trainingPollRunning = false;
-          break;
-        }
-      } catch (e) {
-        // ignore transient polling errors
-      }
-
-      await new Promise(r => setTimeout(r, 1000));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeConsole();
     }
-  }
+  });
 
-  // -------------------- session + UI wiring --------------------
   $("ttsBtn").addEventListener("click", () => {
     const phrase = ($("phrase").value || "").trim();
     if (!phrase) return;
-    const u = new SpeechSynthesisUtterance(phrase);
+
+    const language = ($("language").value || "en").trim().toLowerCase();
+    const utterance = new SpeechSynthesisUtterance(phrase);
+    utterance.lang = language;
     speechSynthesis.cancel();
-    speechSynthesis.speak(u);
+    speechSynthesis.speak(utterance);
   });
 
   $("startSessionBtn").addEventListener("click", async () => {
     const phrase = ($("phrase").value || "").trim();
-    if (!phrase) { alert("Enter a wake word phrase first."); return; }
-
-    speakersTotal = parseInt($("speakersTotal").value || "1", 10);
-    takesPerSpeaker = parseInt($("takesPerSpeaker").value || "10", 10);
-    const language = $("language").value || "en";
-
-    try {
-      setPill($("sessionPill"), "Starting…", "warn");
-      const data = await api("/api/start_session", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ phrase, speakers_total: speakersTotal, takes_per_speaker: takesPerSpeaker, language })
-      });
-
-      session = data;
-
-      currentSpeaker = 1;
-      currentTake = 0;
-
-      $("takesList").textContent = "";
-      $("trainLog").textContent = "(no training started)";
-
-      // Stop any previous poll loop cleanly
-      trainingPollAbort = true;
-      trainingPollRunning = false;
-      logBuffer = "";
-      lastChunk = "";
-      seenAnyOutput = false;
-
-      refreshUI();
-
-      await stopMicNow();
-
-      setPill($("sessionPill"), `Session: ${data.safe_word} (${data.language || "en"})`, "ok");
-      $("beginBtn").disabled = false;
-      $("resetBtn").disabled = false;
-      $("trainBtn").disabled = false;
-      $("ttsBtn").disabled = false;
-
-      setPill($("status"), "Ready", "ok");
-      setPill($("speakerState"), "Waiting");
-      setPill($("takeState"), "Not recording");
-    } catch (e) {
-      console.error(e);
-      setPill($("sessionPill"), "Session failed", "err");
-      alert("Start session failed: " + e.message);
-    } finally {
-      // allow a new poll loop to start later
-      trainingPollAbort = false;
-    }
-  });
-
-  $("resetBtn").addEventListener("click", async () => {
-    try {
-      await api("/api/reset_recordings", {method:"POST"});
-      currentSpeaker = 1;
-      currentTake = 0;
-      $("takesList").textContent = "";
-      refreshUI();
-      setPill($("status"), "Recordings reset", "ok");
-    } catch (e) {
-      alert("Reset failed: " + e.message);
-    }
-  });
-
-  $("beginBtn").addEventListener("click", async () => {
-    if (!session) { alert("Start a session first."); return; }
-    try {
-      await ensureMic();
-    } catch (e) {
-      alert("Mic permission failed: " + e.message);
+    if (!phrase) {
+      alert("Enter a wake word phrase first.");
       return;
     }
 
-    $("takesList").textContent = "";
-    refreshUI();
+    const language = ($("language").value || "en").trim().toLowerCase();
 
-    isRunning = true;
-    $("beginBtn").disabled = true;
+    try {
+      setPill($("sessionPill"), "Starting...", "warn");
+      const session = await api("/api/start_session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phrase,
+          language,
+        }),
+      });
 
-    setPill($("speakerState"), `Speaker ${currentSpeaker}/${speakersTotal}`);
-    setPill($("status"), "Listening… say the wake word now", "ok");
-    setPill($("takeState"), "Listening…", "ok");
+      refreshSessionUI(session);
+      updateProgress(0, "No upload in progress", "Choose files and upload when you are ready.");
+    } catch (error) {
+      setPill($("sessionPill"), "Session failed", "err");
+      setPill($("status"), "Session failed", "err");
+      alert("Start session failed: " + error.message);
+    }
   });
+
+  $("uploadBtn").addEventListener("click", uploadSelectedFiles);
+
+  $("clearBtn").addEventListener("click", async () => {
+    const count = Number(uiState.session?.takes_received || 0);
+    const ok = confirm(`Clear ${count} personal sample${count === 1 ? "" : "s"} from personal_samples?`);
+    if (!ok) return;
+
+    try {
+      uiState.uploadBusy = true;
+      syncButtons();
+      setPill($("status"), "Clearing samples...", "warn");
+      updateProgress(0, "Clearing personal samples", "Removing saved WAV files from personal_samples.");
+      await api("/api/reset_recordings", { method: "POST" });
+      await refreshSession();
+      updateProgress(0, "No upload in progress", "personal_samples is empty.");
+      setPill($("status"), "Personal samples cleared", "ok");
+    } catch (error) {
+      setPill($("status"), "Clear failed", "err");
+      alert("Clear failed: " + error.message);
+    } finally {
+      uiState.uploadBusy = false;
+      syncButtons();
+    }
+  });
+
+  $("trainBtn").addEventListener("click", async () => {
+    try {
+      await startTrainingWithPrompt();
+    } catch (error) {
+      uiState.training = { running: false, exit_code: 1, log_lines: [String(error.message || error)] };
+      setConsoleLogAutoScroll($("trainLog"), String(error.message || error));
+      openConsole(true);
+      syncButtons();
+      setPill($("status"), "Train failed", "err");
+      setPill($("trainState"), "Start failed", "err");
+      alert("Train failed: " + error.message);
+    }
+  });
+
+  async function bootstrap() {
+    renderSelectedFiles();
+    updateProgress(0, "No upload in progress", "Choose files and upload when you are ready.");
+
+    try {
+      await refreshSession();
+
+      const trainStatus = await api("/api/train_status", { method: "GET" });
+      const training = trainStatus.training || {};
+      uiState.training = training;
+      if ((training.log_lines || []).length) {
+        setConsoleLogAutoScroll($("trainLog"), training.log_lines.join("\n"));
+      }
+      if (training.running) {
+        setPill($("trainState"), "Training running", "warn");
+        openConsole(false);
+        pollTraining();
+      } else if (training.exit_code === 0) {
+        setPill($("trainState"), "Training finished", "ok");
+      } else if (training.exit_code !== null) {
+        setPill($("trainState"), `Exit ${training.exit_code}`, "err");
+      }
+      syncButtons();
+    } catch (_) {}
+  }
+
+  bootstrap();
 </script>
 </body>
 </html>

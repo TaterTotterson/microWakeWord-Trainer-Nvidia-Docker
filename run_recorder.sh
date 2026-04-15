@@ -18,7 +18,7 @@ FASTAPI_VERSION="${REC_FASTAPI_VERSION:-0.115.6}"
 UVICORN_VERSION="${REC_UVICORN_VERSION:-0.30.6}"
 PY_MULTIPART_VERSION="${REC_PY_MULTIPART_VERSION:-0.0.9}"
 
-echo "microWakeWord Recorder (Docker)"
+echo "microWakeWord Trainer UI (Docker)"
 echo "-> ROOTDIR:  ${ROOTDIR}"
 echo "-> DATA_DIR: ${DATA_DIR}"
 echo "-> URL:      http://localhost:${PORT}/"
@@ -26,10 +26,10 @@ echo "-> URL:      http://localhost:${PORT}/"
 mkdir -p "${DATA_DIR}"
 
 # -----------------------------
-# Recorder venv (separate)
+# Trainer UI venv (separate)
 # -----------------------------
 if [[ ! -x "${PY}" ]]; then
-  echo "Creating recorder venv: ${VENV_DIR}"
+  echo "Creating trainer UI venv: ${VENV_DIR}"
   python3 -m venv "${VENV_DIR}"
 fi
 
@@ -37,7 +37,7 @@ fi
 source "${VENV_DIR}/bin/activate"
 
 if [[ ! -f "${PIN_FILE}" ]]; then
-  echo "Installing pinned recorder deps"
+  echo "Installing pinned trainer UI deps"
   ${PIP} install -U pip setuptools wheel
   ${PIP} install \
     "fastapi==${FASTAPI_VERSION}" \
@@ -45,20 +45,20 @@ if [[ ! -f "${PIN_FILE}" ]]; then
     "python-multipart==${PY_MULTIPART_VERSION}"
   touch "${PIN_FILE}"
 else
-  echo "Reusing existing recorder venv (no upgrades)"
+  echo "Reusing existing trainer UI venv (no upgrades)"
 fi
 
 # -----------------------------
-# Recorder server env
+# Trainer server env
 # -----------------------------
 export DATA_DIR="${DATA_DIR}"
 export STATIC_DIR="${ROOTDIR}/static"
 export PERSONAL_DIR="${DATA_DIR}/personal_samples"
 
-# IMPORTANT: leave training venv creation to /api/train inside recorder_server.py
+# IMPORTANT: leave training venv creation to /api/train inside trainer_server.py
 # but still set TRAIN_CMD so the server knows how to invoke training once ready
 export TRAIN_CMD="source '${DATA_DIR}/.venv/bin/activate' && train_wake_word --data-dir='${DATA_DIR}'"
 
 echo "Launching uvicorn on ${HOST}:${PORT}"
 cd "${ROOTDIR}"
-exec "${VENV_DIR}/bin/uvicorn" recorder_server:app --host "${HOST}" --port "${PORT}"
+exec "${VENV_DIR}/bin/uvicorn" trainer_server:app --host "${HOST}" --port "${PORT}"

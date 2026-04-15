@@ -138,11 +138,16 @@ export GRPC_VERBOSITY=ERROR
 echo "   Generating samples"
 rm -rf "${SAMPLES_DIR}" || :
 mkdir -p "${SAMPLES_DIR}" || :
-"${PSG}/generate_samples.py" "${WAKE_WORD}" \
+python "${PROGDIR}/run_generator_with_progress.py" \
+    --generator "${PSG}/generate_samples.py" \
+    --output-dir "${SAMPLES_DIR}" \
+    --max-samples ${SAMPLES} \
+    -- \
+    "${WAKE_WORD}" \
     "${MODEL_ARGS[@]}" \
     --max-samples ${SAMPLES} \
     --batch-size ${BATCH_SIZE} \
-    --output-dir "${SAMPLES_DIR}" 2>&1 | sed -r -e "s/(DEBUG|INFO):__main__:/      /g"
+    --output-dir "${SAMPLES_DIR}"
 
 generated_files=$(find "${SAMPLES_DIR}" -name '*.wav' | wc -l)
 if [ "${generated_files}" -ne "${SAMPLES}" ] ; then
