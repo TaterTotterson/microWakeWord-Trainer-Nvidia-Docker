@@ -42,6 +42,12 @@ PIPER_VOICES_ROOT_URL = os.environ.get(
     "https://huggingface.co/rhasspy/piper-voices/resolve/main",
 )
 PIPER_CATALOG_CACHE_TTL_SECONDS = int(os.environ.get("PIPER_CATALOG_CACHE_TTL_SECONDS", "900"))
+PIPER_CATALOG_CACHE_FILE = Path(
+    os.environ.get(
+        "PIPER_CATALOG_CACHE_FILE",
+        str(ROOT_DIR / ".cache" / "piper_voices_catalog.json"),
+    )
+).resolve()
 
 DATASET_CLEANUP_ARCHIVES = os.environ.get("REC_DATASET_CLEANUP_ARCHIVES", "false").lower() in ("1", "true", "yes", "y")
 DATASET_CLEANUP_INTERMEDIATE = os.environ.get("REC_DATASET_CLEANUP_INTERMEDIATE_FILES", "false").lower() in ("1", "true", "yes", "y")
@@ -177,6 +183,27 @@ def _fetch_piper_catalog() -> Optional[Dict[str, Any]]:
     return data if isinstance(data, dict) else None
 
 
+def _read_cached_piper_catalog_file() -> Optional[Dict[str, Any]]:
+    try:
+        if not PIPER_CATALOG_CACHE_FILE.exists():
+            return None
+        data = json.loads(PIPER_CATALOG_CACHE_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def _write_cached_piper_catalog_file(data: Dict[str, Any]):
+    try:
+        PIPER_CATALOG_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        PIPER_CATALOG_CACHE_FILE.write_text(
+            json.dumps(data, ensure_ascii=True),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+
 def _load_piper_catalog() -> Optional[Dict[str, Any]]:
     now = time.time()
     with PIPER_CATALOG_LOCK:
@@ -184,6 +211,8 @@ def _load_piper_catalog() -> Optional[Dict[str, Any]]:
         fetched_at = float(PIPER_CATALOG_CACHE.get("fetched_at") or 0.0)
         if cached is not None and (now - fetched_at) < PIPER_CATALOG_CACHE_TTL_SECONDS:
             return cached
+
+    disk_cached = _read_cached_piper_catalog_file()
 
     try:
         fresh = _fetch_piper_catalog()
@@ -194,9 +223,15 @@ def _load_piper_catalog() -> Optional[Dict[str, Any]]:
         if fresh is not None:
             PIPER_CATALOG_CACHE["entries"] = fresh
             PIPER_CATALOG_CACHE["fetched_at"] = now
+            _write_cached_piper_catalog_file(fresh)
             return fresh
-        if PIPER_CATALOG_CACHE.get("entries") is None:
-            PIPER_CATALOG_CACHE["entries"] = {}
+        if PIPER_CATALOG_CACHE.get("entries") is not None:
+            return PIPER_CATALOG_CACHE.get("entries")
+        if disk_cached is not None:
+            PIPER_CATALOG_CACHE["entries"] = disk_cached
+            PIPER_CATALOG_CACHE["fetched_at"] = now
+            return disk_cached
+        PIPER_CATALOG_CACHE["entries"] = {}
         PIPER_CATALOG_CACHE["fetched_at"] = now
         return PIPER_CATALOG_CACHE.get("entries")
 

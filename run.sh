@@ -8,7 +8,7 @@ DATA_DIR="${DATA_DIR:-/data}"
 HOST="${REC_HOST:-0.0.0.0}"
 PORT="${REC_PORT:-8888}"
 
-# Keep recorder deps separate from training venv
+# Keep trainer UI deps separate from the training venv
 VENV_DIR="${DATA_DIR}/.recorder-venv"
 PY="${VENV_DIR}/bin/python"
 PIP="${PY} -m pip"

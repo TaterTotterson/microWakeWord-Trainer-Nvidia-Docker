@@ -162,7 +162,7 @@ That will remove:
 - browser microphone recording has been removed
 - personal samples are optional
 - the server module is now `trainer_server.py`
-- the launcher script is still named `run_recorder.sh` for compatibility
+- the launcher script is now `run.sh`
 
 ---
 

@@ -27,8 +27,11 @@ cd "${DATA_DIR}/training_datasets"
 
 echo "***** Checking FMA *****"
 
-AUDIO_URL="https://huggingface.co/datasets/mchl914/fma_xsmall/resolve/main/fma_xs.zip"
-AUDIO_ZIPFILE="fma_xs.zip"
+AUDIO_URLS=(
+    "https://os.unil.cloud.switch.ch/fma/fma_small.zip"
+    "https://huggingface.co/datasets/mchl914/fma_xsmall/resolve/main/fma_xs.zip"
+)
+AUDIO_ZIPFILE="fma_small.zip"
 AUDIO_ZIP="./downloads/${AUDIO_ZIPFILE}"
 AUDIO_DIR="fma"
 mkdir -p "${AUDIO_DIR}" || :
@@ -81,6 +84,52 @@ EOF
 
 }
 
+extract_zip_with_python() {
+    local zip_path="$1"
+    local dest_dir="$2"
+
+    "${DATA_DIR}/.venv/bin/python" - "${zip_path}" "${dest_dir}" <<-'EOF'
+import sys
+import zipfile
+from pathlib import Path
+from tqdm import tqdm
+
+zip_path = Path(sys.argv[1])
+dest_dir = Path(sys.argv[2])
+
+if (not zip_path.exists()) or zip_path.stat().st_size == 0:
+    raise SystemExit(f"Archive missing or empty: {zip_path}")
+
+with zipfile.ZipFile(zip_path, "r") as zf:
+    members = zf.infolist()
+    size_gb = zip_path.stat().st_size / (1024 ** 3)
+    print(f"   Extracting {zip_path.name} ({len(members)} entries, {size_gb:.1f} GiB)...")
+    for member in tqdm(members, desc="   FMA zip extract", unit="file"):
+        zf.extract(member, dest_dir)
+EOF
+}
+
+download_with_fallbacks() {
+    local output="$1"
+    shift
+    local urls=( "$@" )
+    local rc=1
+
+    for url in "${urls[@]}" ; do
+        for attempt in 1 2 3 4 ; do
+            curl -sfL "${url}" -o "${output}" && [ -s "${output}" ] && return 0
+            rc=$?
+            rm -f "${output}" || :
+            if [ "${attempt}" -lt 4 ] ; then
+                echo "   Retry ${attempt}/3 after download failure"
+                sleep $(( attempt * 2 ))
+            fi
+        done
+    done
+
+    return "${rc}"
+}
+
 expected_filecount=${filecounts[${AUDIO_ZIPFILE}]}
 actual_filecount=$(find ${AUDIO16K_DIR} -name '*.wav' 2>/dev/null | wc -l) || :
 write_filecount=false
@@ -92,13 +141,16 @@ else
     if [ "${actual_filecount}" -eq 0 ] || [ "${actual_filecount}" -ne "${expected_filecount}" ] ; then
         if [ ! -f "${AUDIO_ZIP}" ]  ; then
             echo "   Downloading ${AUDIO_ZIPFILE}"
-            curl -sfL "${AUDIO_URL}" -o "${AUDIO_ZIP}"
+            download_with_fallbacks "${AUDIO_ZIP}" "${AUDIO_URLS[@]}" || {
+                echo "   Failed to download ${AUDIO_ZIPFILE} from all configured sources." >&2
+                exit 1
+            }
         fi
 
         rm -rf "${AUDIO_DIR}" || :
         mkdir "${AUDIO_DIR}"
-        echo "   Unzipping ${AUDIO_ZIPFILE}"
-        unzip -q -d "${AUDIO_DIR}" "${AUDIO_ZIP}"
+        echo "   Extracting ${AUDIO_ZIPFILE}"
+        extract_zip_with_python "${AUDIO_ZIP}" "${AUDIO_DIR}"
     fi
     if "${CLEANUP_ARCHIVES}" && [ -f "${AUDIO_ZIP}" ] ; then
         echo "   Cleaning up ${AUDIO_ZIPFILE}"
@@ -128,4 +180,3 @@ fi
 
 echo "   FMA complete"
 exit 0
-

@@ -22,7 +22,7 @@ COPY --chown=root:root --chmod=0755 .bashrc /root/
 # Root-level entrypoints
 COPY --chown=root:root --chmod=0755 \
     train_wake_word \
-    run_recorder.sh \
+    run.sh \
     trainer_server.py \
     requirements.txt \
     /root/mww-scripts/
@@ -37,4 +37,4 @@ RUN chmod -R a+x /root/mww-scripts/cli
 COPY --chown=root:root --chmod=0644 static/index.html /root/mww-scripts/static/index.html
 
 # trainer server
-CMD ["/bin/bash", "-lc", "/root/mww-scripts/run_recorder.sh"]
+CMD ["/bin/bash", "-lc", "/root/mww-scripts/run.sh"]
