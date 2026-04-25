@@ -23,6 +23,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 docker run -d \
   --gpus all \
   --network host \
+  -e REC_PORT=8789 \
   -v $(pwd):/data \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
@@ -31,6 +32,7 @@ The flags:
 
 - `--gpus all` enables GPU acceleration.
 - `--network host` lets the container receive mDNS/zeroconf traffic for ESPHome auto-detect.
+- `-e REC_PORT=8789` sets the trainer web UI and captured-audio port. Change this value if `8789` is already in use.
 - `-v $(pwd):/data` persists models, downloaded voices, datasets, samples, and firmware caches.
 
 Host networking is recommended for the Firmware tab's mDNS device discovery. Manual IP flashing and captured-audio uploads can still work without host networking if the trainer port is reachable, but auto-detect may not see devices from Docker bridge networking.
@@ -40,6 +42,8 @@ Open:
 ```text
 http://localhost:8789
 ```
+
+If you change `REC_PORT`, open that port instead and use the same port in the ESPHome `Trainer App URL`.
 
 ---
 
