@@ -18,6 +18,8 @@ parser.add_argument("--output-dir", type=str, help="Wake word output dir. Defaul
 # Personal inputs/outputs (NEW)
 parser.add_argument("--personal-dir", type=str, help="Personal WAV dir. Default: <data-dir>/personal_samples", required=False)
 parser.add_argument("--personal-output-dir", type=str, help="Personal features output dir. Default: <data-dir>/work/personal_augmented_features", required=False)
+parser.add_argument("--negative-dir", type=str, help="Reviewed negative WAV dir. Default: <data-dir>/negative_samples", required=False)
+parser.add_argument("--negative-output-dir", type=str, help="Reviewed negative features output dir. Default: <data-dir>/work/reviewed_negative_features", required=False)
 
 # Dataset dirs
 parser.add_argument("--mit-rirs-16k-dir", type=str, help="MIT RIR input directory. Default: <data-dir>/training_datasets/mit_rirs_16k", required=False)
@@ -56,6 +58,17 @@ if not args.personal_output_dir:
     args.personal_output_dir = os.path.join(work_dir, "personal_augmented_features")
 else:
     args.personal_output_dir = os.path.realpath(args.personal_output_dir)
+
+# Reviewed negative defaults
+if not args.negative_dir:
+    args.negative_dir = os.path.join(args.data_dir, "negative_samples")
+else:
+    args.negative_dir = os.path.realpath(args.negative_dir)
+
+if not args.negative_output_dir:
+    args.negative_output_dir = os.path.join(work_dir, "reviewed_negative_features")
+else:
+    args.negative_output_dir = os.path.realpath(args.negative_output_dir)
 
 # Dataset defaults
 if not args.mit_rirs_16k_dir:
@@ -205,7 +218,7 @@ def bind_wav_generator(clips_obj: Clips, wav_dir: str):
 
     clips_obj.audio_generator = types.MethodType(audio_generator_from_wavs, clips_obj)
 
-def generate_feature_set(input_wav_dir: str, out_root_dir: str, label: str):
+def generate_feature_set(input_wav_dir: str, out_root_dir: str, label: str, *, remove_silence: bool = True):
     files = glob.glob(os.path.join(input_wav_dir, "*.wav"))
     if not files:
         print(f"ℹ️  No WAVs found for {label} in: {input_wav_dir} (skipping)")
@@ -218,7 +231,7 @@ def generate_feature_set(input_wav_dir: str, out_root_dir: str, label: str):
         input_directory=input_wav_dir,
         file_pattern="*.wav",
         max_clip_duration_s=5,
-        remove_silence=True,
+        remove_silence=remove_silence,
         random_split_seed=10,
         split_count=0.1,
     )
@@ -263,8 +276,11 @@ def generate_feature_set(input_wav_dir: str, out_root_dir: str, label: str):
 # Wake word generated/TTS features (existing behavior)
 generate_feature_set(args.input_dir, args.output_dir, "generated")
 
-# Personal features (NEW)
+# Personal features
 generate_feature_set(args.personal_dir, args.personal_output_dir, "personal")
+
+# Reviewed false-positive / hard-negative features
+generate_feature_set(args.negative_dir, args.negative_output_dir, "reviewed negatives", remove_silence=False)
 
 END_TIME = datetime.now(timezone.utc).replace(microsecond=0)
 et = END_TIME - START_TIME

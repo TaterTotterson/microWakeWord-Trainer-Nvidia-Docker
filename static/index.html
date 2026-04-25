@@ -67,6 +67,7 @@
 
     input[type="text"],
     input[type="number"],
+    input[type="password"],
     select {
       padding: 11px 12px;
       font-size: 15px;
@@ -77,6 +78,7 @@
       outline: none;
     }
     input[type="text"] { width: 420px; max-width: 100%; }
+    input[type="password"] { width: 260px; max-width: 100%; }
     input[type="number"] { width: 132px; }
     input::placeholder { color: rgba(236,236,241,0.36); }
 
@@ -191,6 +193,489 @@
       font-size: 13px;
     }
 
+    .field {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .field strong {
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+    }
+
+    .firmwareGrid {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(160px, 220px) minmax(220px, 280px);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .firmwareHero {
+      position: relative;
+      overflow: hidden;
+      min-height: 176px;
+      background:
+        radial-gradient(520px 220px at 88% 0%, rgba(255,192,127,0.16), transparent 62%),
+        linear-gradient(135deg, rgba(255,138,42,0.12), rgba(255,255,255,0.035) 44%, rgba(255,255,255,0.02));
+    }
+
+    .firmwareHero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -120px auto;
+      width: 280px;
+      height: 280px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,192,127,0.12);
+      background: radial-gradient(circle, rgba(255,138,42,0.12), transparent 66%);
+      pointer-events: none;
+    }
+
+    .firmwareHero > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .firmwareKicker {
+      color: var(--orange2);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .firmwareHero h3 {
+      font-size: clamp(24px, 4vw, 34px);
+      margin-bottom: 8px;
+    }
+
+    .firmwareHero p {
+      max-width: 680px;
+      margin-bottom: 0;
+    }
+
+    .firmwareSteps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .firmwareStepChip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.2);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .firmwareStepChip b {
+      color: var(--orange2);
+      font-weight: 700;
+    }
+
+    .firmwareLayout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .firmwarePanel {
+      margin-top: 0;
+    }
+
+    .firmwarePanelHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 2px;
+    }
+
+    .firmwarePanelTitle {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .firmwareStepBadge {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 11px;
+      border: 1px solid rgba(255,138,42,0.36);
+      background: rgba(255,138,42,0.12);
+      color: var(--orange2);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .firmwarePanel h3 {
+      margin-bottom: 4px;
+    }
+
+    .firmwarePanel p {
+      margin-bottom: 0;
+      font-size: 13px;
+    }
+
+    .firmwareTargetGrid {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(120px, 160px);
+      gap: 12px;
+      align-items: end;
+    }
+
+    .firmwareFields {
+      margin-top: 4px;
+    }
+
+    .firmwareSettingsSection {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.022)),
+        rgba(255,255,255,0.02);
+    }
+
+    .firmwareSettingsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .readOnlyValue {
+      min-height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,192,127,0.18);
+      background:
+        linear-gradient(180deg, rgba(255,138,42,0.08), rgba(255,255,255,0.025)),
+        rgba(0,0,0,0.24);
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .readOnlyValue::after {
+      content: "Locked";
+      flex: 0 0 auto;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,192,127,0.22);
+      color: var(--orange2);
+      background: rgba(255,138,42,0.08);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .firmwareActionsPanel {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      margin-top: 0;
+      border-color: rgba(255,138,42,0.16);
+      background:
+        linear-gradient(135deg, rgba(255,138,42,0.1), rgba(255,255,255,0.035)),
+        var(--panel2);
+    }
+
+    .firmwareActions {
+      justify-content: flex-end;
+    }
+
+    .studioHero {
+      position: relative;
+      overflow: hidden;
+      min-height: 176px;
+      background:
+        radial-gradient(520px 220px at 88% 0%, rgba(255,192,127,0.16), transparent 62%),
+        linear-gradient(135deg, rgba(255,138,42,0.12), rgba(255,255,255,0.035) 44%, rgba(255,255,255,0.02));
+    }
+
+    .studioHero.trainerHero {
+      background:
+        radial-gradient(560px 240px at 88% 0%, rgba(255,192,127,0.15), transparent 62%),
+        radial-gradient(360px 220px at 4% 92%, rgba(57,212,160,0.08), transparent 64%),
+        linear-gradient(135deg, rgba(255,138,42,0.12), rgba(255,255,255,0.035) 44%, rgba(255,255,255,0.02));
+    }
+
+    .studioHero.captureHero {
+      background:
+        radial-gradient(540px 220px at 84% 0%, rgba(137,212,255,0.12), transparent 62%),
+        radial-gradient(420px 260px at 0% 88%, rgba(255,138,42,0.1), transparent 66%),
+        linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,138,42,0.06) 46%, rgba(255,255,255,0.02));
+    }
+
+    .studioHero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -120px auto;
+      width: 280px;
+      height: 280px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,192,127,0.12);
+      background: radial-gradient(circle, rgba(255,138,42,0.12), transparent 66%);
+      pointer-events: none;
+    }
+
+    .studioHero > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .studioKicker {
+      color: var(--orange2);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .studioHero h3 {
+      font-size: clamp(24px, 4vw, 34px);
+      margin-bottom: 8px;
+    }
+
+    .studioHero p {
+      max-width: 700px;
+      margin-bottom: 0;
+    }
+
+    .studioSteps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .studioStepChip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.2);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .studioStepChip b {
+      color: var(--orange2);
+      font-weight: 700;
+    }
+
+    .studioPanel {
+      margin-top: 0;
+    }
+
+    .studioPanelHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .studioPanelTitle {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .studioStepBadge {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 11px;
+      border: 1px solid rgba(255,138,42,0.36);
+      background: rgba(255,138,42,0.12);
+      color: var(--orange2);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .studioPanel h3 {
+      margin-bottom: 4px;
+    }
+
+    .studioPanel p,
+    .studioActionsPanel p {
+      margin-bottom: 0;
+      font-size: 13px;
+    }
+
+    .phraseGrid {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(180px, 240px) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .phraseActions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .sampleProgressCard {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)),
+        rgba(255,255,255,0.02);
+    }
+
+    .studioActionsPanel {
+      display: grid;
+      gap: 16px;
+      margin-top: 0;
+      border-color: rgba(255,138,42,0.16);
+      background:
+        linear-gradient(135deg, rgba(255,138,42,0.1), rgba(255,255,255,0.035)),
+        var(--panel2);
+    }
+
+    .capturedControlPanel {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .capturedActions {
+      justify-content: flex-end;
+    }
+
+    .sampleLibraryHeader {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .sampleTypeTabs {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .sampleTypeBtn {
+      min-width: 124px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: transparent;
+    }
+
+    .sampleTypeBtn.active {
+      border-color: rgba(255,138,42,0.42);
+      background: rgba(255,138,42,0.16);
+      color: var(--orange2);
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 4px 0 0;
+    }
+
+    .tabBtn {
+      min-width: 140px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .tabBtn.active {
+      border-color: rgba(255,138,42,0.42);
+      background: linear-gradient(180deg, rgba(255,138,42,0.2), rgba(255,138,42,0.08));
+      color: var(--orange2);
+    }
+
+    .viewStack[hidden] {
+      display: none !important;
+    }
+
+    .capturedList {
+      display: grid;
+      gap: 12px;
+    }
+
+    .captureCard {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .captureTitle {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .captureSubtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .audioPlayer {
+      width: 100%;
+      border-radius: 12px;
+    }
+
+    .captureActions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .emptyState {
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px dashed rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+    }
+
     .consoleOverlay {
       position: fixed;
       inset: 0;
@@ -201,13 +686,15 @@
       background: rgba(4, 5, 10, 0.5);
       backdrop-filter: blur(10px);
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
-      transition: opacity 0.18s ease;
-      z-index: 50;
+      transition: opacity 0.18s ease, visibility 0.18s ease;
+      z-index: 10000;
     }
 
     .consoleOverlay.open {
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
     }
 
@@ -292,6 +779,157 @@
       margin-top: 2px;
     }
 
+    .firmwareLogModal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.64);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      z-index: 12000;
+    }
+
+    .firmwareLogModal.active {
+      visibility: visible;
+      pointer-events: auto;
+      animation: firmwareLogBackdropIn 280ms ease-out both;
+    }
+
+    .firmwareLogDialog {
+      width: min(1320px, 98vw);
+      height: min(94vh, 1040px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(180deg, rgba(17, 20, 28, 0.88), rgba(8, 10, 16, 0.96)),
+        rgba(8, 10, 16, 0.88);
+      box-shadow: 0 28px 84px rgba(0,0,0,0.58);
+      backdrop-filter: blur(18px) saturate(1.12);
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(14px) scale(0.97);
+    }
+
+    .firmwareLogModal.active .firmwareLogDialog {
+      animation: firmwareLogDialogIn 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .firmwareLogHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .firmwareLogTitle {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .firmwareLogMeta {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .firmwareLogStatus {
+      color: #b7c7e6;
+      font-size: 13px;
+    }
+
+    .firmwareLogConsole {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      border: 1px solid rgba(255,138,42,0.22);
+      border-radius: 16px;
+      padding: 12px 14px;
+      background:
+        linear-gradient(180deg, rgba(15, 18, 25, 0.98), rgba(10, 12, 18, 0.98)),
+        radial-gradient(circle at top, rgba(255,138,42,0.08), transparent 40%);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -1px 0 rgba(0,0,0,0.35);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #dbe8ff;
+    }
+
+    .firmwareLogLine {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 2px 0;
+    }
+
+    .firmwareLogLevel {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 58px;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      border: 1px solid rgba(255,255,255,0.12);
+      white-space: nowrap;
+    }
+
+    .firmwareLogMessage {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .firmwareLogLine.tone-info .firmwareLogLevel {
+      background: rgba(70, 120, 255, 0.16);
+      border-color: rgba(108, 152, 255, 0.28);
+      color: #bdd3ff;
+    }
+
+    .firmwareLogLine.tone-warn .firmwareLogLevel {
+      background: rgba(245, 167, 36, 0.14);
+      border-color: rgba(245, 167, 36, 0.32);
+      color: #ffd696;
+    }
+
+    .firmwareLogLine.tone-error .firmwareLogLevel {
+      background: rgba(226, 76, 76, 0.15);
+      border-color: rgba(255, 111, 111, 0.34);
+      color: #ffc1c1;
+    }
+
+    .firmwareLogLine.tone-debug .firmwareLogLevel {
+      background: rgba(92, 214, 178, 0.14);
+      border-color: rgba(92, 214, 178, 0.28);
+      color: #bffff0;
+    }
+
+    .firmwareLogEmpty {
+      color: var(--muted);
+    }
+
+    @keyframes firmwareLogBackdropIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes firmwareLogDialogIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.97); }
+      62% { transform: translateY(-3px) scale(1.01); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
     .consoleMuted { color: #93a0b5; }
     .consoleText { color: #d8e2f1; }
     .consoleCmd { color: #89d4ff; }
@@ -312,11 +950,62 @@
       .wrap { padding: 18px 14px 30px; }
       input[type="text"] { width: 100%; }
       .fileItem { align-items: flex-start; flex-direction: column; }
+      .firmwareGrid { grid-template-columns: 1fr; }
+      .firmwareLayout,
+      .firmwareTargetGrid,
+      .firmwareActionsPanel {
+        grid-template-columns: 1fr;
+      }
+      .firmwareActions {
+        justify-content: stretch;
+      }
+      .firmwareActions button {
+        width: 100%;
+      }
+      .studioPanelHeader,
+      .capturedControlPanel {
+        grid-template-columns: 1fr;
+      }
+      .studioPanelHeader,
+      .capturedControlPanel {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .phraseGrid {
+        grid-template-columns: 1fr;
+      }
+      .phraseActions,
+      .capturedActions {
+        justify-content: stretch;
+      }
+      .phraseActions button,
+      .capturedActions button {
+        width: 100%;
+      }
+      .sampleLibraryHeader {
+        grid-template-columns: 1fr;
+      }
       .consoleOverlay { padding: 12px; }
       .consoleWindow {
         width: 100%;
         height: min(82vh, 760px);
         padding: 14px;
+      }
+      .firmwareLogModal {
+        padding: 12px;
+      }
+      .firmwareLogDialog {
+        width: 100%;
+        height: 88vh;
+        padding: 14px;
+      }
+      .firmwareLogHeader {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .firmwareLogLine {
+        grid-template-columns: 1fr;
+        gap: 4px;
       }
       .consoleHeader {
         flex-direction: column;
@@ -340,80 +1029,342 @@
       <div class="brand">
         <div class="logo"></div>
         <div>
-          <h1>microWakeWord Personal Samples</h1>
-          <p>Start a session, upload your own recorded voice samples, and the app will validate or convert them into the training format used by the existing pipeline.</p>
+          <h1>microWakeWord Trainer Studio</h1>
+          <p>Train wake words, review captured clips, and flash ESPHome firmware from one local workspace.</p>
         </div>
       </div>
     </div>
 
-    <div class="card stack">
-      <div class="row">
-        <input id="phrase" type="text" placeholder='e.g. "tater totterson"' />
-        <button id="startSessionBtn" class="primary">Start session</button>
-        <button id="ttsBtn" disabled>Test TTS</button>
-        <span id="sessionPill" class="pill">No session</span>
-      </div>
-
-      <div class="row">
-        <label class="muted">Language
-          <select id="language">
-            <option value="en" selected>English (en)</option>
-          </select>
-        </label>
-      </div>
+    <div class="tabs">
+      <button id="tabTrainer" class="tabBtn active" type="button">Trainer</button>
+      <button id="tabCaptured" class="tabBtn" type="button">Captured Audio</button>
+      <button id="tabSamples" class="tabBtn" type="button">Samples</button>
+      <button id="tabFirmware" class="tabBtn" type="button">Firmware</button>
     </div>
 
-    <div class="card stack">
-      <div class="row space">
-        <div>
-          <h3>Optional Personal Samples</h3>
-          <p>Personal samples are optional. You can train with TTS only, or upload your own audio here and it will be saved into <code>personal_samples/</code> as 16 kHz mono 16-bit PCM WAV.</p>
-        </div>
-        <span id="status" class="pill">Idle</span>
-      </div>
-
-      <div class="dropzone">
-        <div>
-          <strong>Select one or many files</strong>
-          <p class="muted" style="margin-top:6px;">WAV, MP3, M4A, FLAC, OGG, AAC, OPUS, and WEBM are all fine when ffmpeg is available. Files already in the correct format are kept as-is.</p>
-        </div>
-        <input id="sampleFiles" type="file" accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg,.aac,.webm,.opus" multiple />
-        <span id="selectedPill" class="pill">No files selected</span>
-      </div>
-
-      <div class="row">
-        <button id="uploadBtn" class="primary" disabled>Upload selected samples</button>
-        <button id="clearBtn" disabled>Clear personal samples</button>
-      </div>
-
-      <div class="stack">
+    <div id="trainerView" class="viewStack stack">
+      <div class="card studioHero trainerHero">
         <div class="row space">
-          <strong id="progressLabel">No upload in progress</strong>
-          <span id="progressPct" class="muted">0%</span>
+          <div>
+            <div class="studioKicker">Training Studio</div>
+            <h3>Build a Personal Wake Word</h3>
+            <p>Start with a phrase, review your positive and negative sample counts, then launch the training pipeline with a live console so every step is visible.</p>
+            <div class="studioSteps" aria-label="Training steps">
+              <span class="studioStepChip"><b>1</b> Phrase + voice</span>
+              <span class="studioStepChip"><b>2</b> Review sample counts</span>
+              <span class="studioStepChip"><b>3</b> Train model</span>
+            </div>
+          </div>
         </div>
-        <div class="progressShell">
-          <div id="progressFill" class="progressFill"></div>
-        </div>
-        <div id="progressDetail" class="muted">When you upload, each file is checked and converted only if needed before it is written into <code>personal_samples/</code>.</div>
       </div>
 
-      <div class="statGrid">
-        <div class="stat">
-          <span class="label">Uploaded</span>
-          <span class="value" id="uploadedCount">0</span>
+      <section class="card studioPanel stack">
+        <div class="studioPanelHeader">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">1</span>
+            <div>
+              <h3>Phrase + Voice</h3>
+              <p>Name the wake phrase and choose the language/voice set used to generate training audio.</p>
+            </div>
+          </div>
+          <span id="sessionPill" class="pill">No session</span>
         </div>
-        <div class="stat">
-          <span class="label">Training Format</span>
-          <span class="value" style="font-size:18px;">16 kHz / mono / 16-bit WAV</span>
+
+        <div class="phraseGrid">
+          <label class="field">
+            <strong>Wake Phrase</strong>
+            <input id="phrase" type="text" placeholder='e.g. "tater totterson"' />
+          </label>
+          <label class="field">
+            <strong>Language</strong>
+            <select id="language">
+              <option value="en" selected>English (en)</option>
+            </select>
+          </label>
+          <div class="phraseActions">
+            <button id="startSessionBtn" class="primary">Start session</button>
+            <button id="ttsBtn" disabled>Test TTS</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card studioActionsPanel">
+        <div class="studioPanelHeader">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">2</span>
+            <div>
+              <h3>Train Wake Word</h3>
+              <p>Device-captured positives and reviewed negatives are used when present. Manual samples are managed from the Samples tab.</p>
+            </div>
+          </div>
+          <span id="trainState" class="pill">Not started</span>
+        </div>
+        <div class="statGrid">
+          <div class="stat">
+            <span class="label">Positive Samples</span>
+            <span class="value" id="positiveSampleCount">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Negative Samples</span>
+            <span class="value" id="negativeTrainingCount">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Training Format</span>
+            <span class="value" style="font-size:18px;">16 kHz / mono / 16-bit WAV</span>
+          </div>
+        </div>
+        <div class="trainAction">
+          <button id="trainBtn" class="primary" disabled>Start training</button>
+        </div>
+        <div class="trainFooter">
+          <span class="muted">The training console opens automatically when a run starts.</span>
+          <button id="openConsoleBtn" disabled>Open console</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="capturedView" class="viewStack stack" hidden>
+      <div class="card studioHero captureHero">
+        <div class="row space">
+          <div>
+            <div class="studioKicker">Capture Review</div>
+            <h3>Captured Audio</h3>
+            <p>Listen to clips sent by your sats, turn good wake-word examples into personal samples, and save false positives as negatives for the next training run.</p>
+            <div class="studioSteps" aria-label="Captured audio review steps">
+              <span class="studioStepChip"><b>1</b> Review inbox</span>
+              <span class="studioStepChip"><b>2</b> Listen + sort</span>
+              <span class="studioStepChip"><b>3</b> Retrain smarter</span>
+            </div>
+          </div>
+          <span id="capturedStatus" class="pill">Inbox idle</span>
         </div>
       </div>
-      <div class="trainAction">
-        <button id="trainBtn" class="primary" disabled>Start training</button>
+
+      <section class="card studioPanel stack">
+        <div class="capturedControlPanel">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">1</span>
+            <div>
+              <h3>Review Queue</h3>
+              <p>Refresh clips from the trainer inbox and keep an eye on how many reviewed negatives and personal samples are ready.</p>
+            </div>
+          </div>
+          <div class="row capturedActions">
+            <button id="refreshCapturedBtn" type="button">Refresh inbox</button>
+          </div>
+        </div>
+
+        <div class="statGrid">
+          <div class="stat">
+            <span class="label">Inbox</span>
+            <span class="value" id="capturedCount">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Reviewed Negatives</span>
+            <span class="value" id="negativeCount">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Personal Samples</span>
+            <span class="value" id="capturedPersonalCount">0</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card studioPanel stack">
+        <div class="studioPanelHeader">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">2</span>
+            <div>
+              <h3>Listen + Sort</h3>
+              <p>Approve strong wake-word clips into personal samples, or mark false positives as reviewed negatives.</p>
+            </div>
+          </div>
+        </div>
+        <div id="capturedList" class="capturedList">
+          <div class="emptyState">No captured audio yet.</div>
+        </div>
+      </section>
+    </div>
+
+    <div id="samplesView" class="viewStack stack" hidden>
+      <div class="card studioHero captureHero">
+        <div class="row space">
+          <div>
+            <div class="studioKicker">Sample Library</div>
+            <h3>Current Training Samples</h3>
+            <p>Listen to saved positive and negative samples, remove anything that does not belong, or manually import seed recordings when you need a starting point.</p>
+            <div class="studioSteps" aria-label="Sample library steps">
+              <span class="studioStepChip"><b>1</b> Review positives</span>
+              <span class="studioStepChip"><b>2</b> Review negatives</span>
+              <span class="studioStepChip"><b>3</b> Optional import</span>
+            </div>
+          </div>
+          <span id="status" class="pill">Samples idle</span>
+        </div>
       </div>
-      <div class="trainFooter">
-        <span id="trainState" class="pill">Not started</span>
-        <button id="openConsoleBtn" disabled>Open console</button>
+
+      <section class="card studioPanel stack">
+        <div class="sampleLibraryHeader">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">1</span>
+            <div>
+              <h3>Saved Samples</h3>
+              <p>Personal samples are positive examples. Negative samples are false wakes and hard negatives.</p>
+            </div>
+          </div>
+          <div class="sampleTypeTabs" aria-label="Sample type tabs">
+            <button id="sampleTabPersonal" class="sampleTypeBtn active" type="button">Personal <span id="samplePersonalCount">0</span></button>
+            <button id="sampleTabNegative" class="sampleTypeBtn" type="button">Negative <span id="sampleNegativeCount">0</span></button>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="refreshSamplesBtn" type="button">Refresh samples</button>
+          <button id="clearBtn" type="button" disabled>Clear personal samples</button>
+          <button id="clearNegativeBtn" type="button" disabled>Clear negative samples</button>
+        </div>
+
+        <div id="sampleLibraryList" class="capturedList">
+          <div class="emptyState">No samples saved yet.</div>
+        </div>
+      </section>
+
+      <section class="card studioPanel stack">
+        <div class="studioPanelHeader">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">2</span>
+            <div>
+              <h3>Manual Sample Import</h3>
+              <p>Optional backup path for seeding positives before your device has captured enough real wake audio.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropzone">
+          <div>
+            <strong>Select one or many files</strong>
+            <p class="muted" style="margin-top:6px;">WAV, MP3, M4A, FLAC, OGG, AAC, OPUS, and WEBM are all fine when ffmpeg is available. Files are converted into <code>personal_samples/</code>.</p>
+          </div>
+          <input id="sampleFiles" type="file" accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg,.aac,.webm,.opus" multiple />
+          <span id="selectedPill" class="pill">No files selected</span>
+        </div>
+
+        <div class="row">
+          <button id="uploadBtn" class="primary" disabled>Upload selected samples</button>
+        </div>
+
+        <div class="sampleProgressCard stack">
+          <div class="row space">
+            <strong id="progressLabel">No upload in progress</strong>
+            <span id="progressPct" class="muted">0%</span>
+          </div>
+          <div class="progressShell">
+            <div id="progressFill" class="progressFill"></div>
+          </div>
+          <div id="progressDetail" class="muted">When you upload, each file is checked and converted only if needed before it is written into <code>personal_samples/</code>.</div>
+        </div>
+      </section>
+    </div>
+
+    <div id="firmwareView" class="viewStack stack" hidden>
+      <div class="card firmwareHero">
+        <div class="row space">
+          <div>
+            <div class="firmwareKicker">Firmware Studio</div>
+            <h3>ESPHome Firmware Flasher</h3>
+            <p>Build a <code>microWakeWords</code> ESPHome firmware template and flash it to a sat over OTA. Auto-detect is best effort; if the device does not show up, enter its IP or hostname manually.</p>
+            <div class="firmwareSteps" aria-label="Firmware flashing steps">
+              <span class="firmwareStepChip"><b>1</b> Pick firmware</span>
+              <span class="firmwareStepChip"><b>2</b> Select target</span>
+              <span class="firmwareStepChip"><b>3</b> Review settings</span>
+              <span class="firmwareStepChip"><b>4</b> Build + flash</span>
+            </div>
+          </div>
+          <span id="firmwareStatus" class="pill">Flasher idle</span>
+        </div>
       </div>
+
+      <div class="firmwareLayout">
+        <section class="card firmwarePanel stack">
+          <div class="firmwarePanelHeader">
+            <div class="firmwarePanelTitle">
+              <span class="firmwareStepBadge">1</span>
+              <div>
+                <h3>Firmware YAML</h3>
+                <p>Choose the VoicePE or Sat1 YAML to build from the shared firmware repo.</p>
+              </div>
+            </div>
+          </div>
+          <label class="field">
+            <strong>YAML File</strong>
+            <select id="firmwareTemplate">
+              <option value="">Loading templates...</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="card firmwarePanel stack">
+          <div class="firmwarePanelHeader">
+            <div class="firmwarePanelTitle">
+              <span class="firmwareStepBadge">2</span>
+              <div>
+                <h3>Target Device</h3>
+                <p>Auto-detect a device or enter the OTA target manually.</p>
+              </div>
+            </div>
+            <span id="firmwareDetectStatus" class="pill">Not scanned</span>
+          </div>
+          <div class="row">
+            <button id="refreshFirmwareBtn" type="button">Auto-detect ESPHome devices</button>
+          </div>
+          <div class="firmwareTargetGrid">
+            <label class="field">
+              <strong>Detected Device</strong>
+              <select id="firmwareDeviceSelect">
+                <option value="">No devices scanned yet</option>
+              </select>
+            </label>
+            <label class="field">
+              <strong>Device IP or Hostname</strong>
+              <input id="firmwareHost" type="text" placeholder="e.g. 10.4.20.139 or tatervpe.local" />
+            </label>
+            <label class="field">
+              <strong>OTA Port</strong>
+              <input id="firmwarePort" type="number" min="1" max="65535" value="3232" />
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <section class="card firmwarePanel stack">
+        <div class="firmwarePanelHeader">
+          <div class="firmwarePanelTitle">
+            <span class="firmwareStepBadge">3</span>
+            <div>
+              <h3>Device Settings</h3>
+              <p>These values come from the selected YAML substitutions and are saved for the next flash.</p>
+            </div>
+          </div>
+        </div>
+        <div id="firmwareFields" class="firmwareFields stack">
+          <div class="emptyState">Firmware template settings will appear here.</div>
+        </div>
+      </section>
+
+      <section class="card firmwareActionsPanel">
+        <div class="firmwarePanelTitle">
+          <span class="firmwareStepBadge">4</span>
+          <div>
+            <h3>Build + Flash</h3>
+            <p>The ESPHome output opens in the console so you can follow build, upload, and reboot progress.</p>
+          </div>
+        </div>
+        <div class="row firmwareActions">
+          <button id="flashFirmwareBtn" class="primary" type="button" disabled>Build + Flash firmware</button>
+          <button id="cleanFirmwareBtn" type="button">Clean build files</button>
+          <button id="openFirmwareConsoleBtn" type="button">Open firmware console</button>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -422,12 +1373,28 @@
       <div class="consoleHeader">
         <div>
           <h3 id="consoleTitle" class="consoleTitle">Training Console</h3>
-          <p class="consoleHint">Live training output appears here with color-coded console styling.</p>
+          <p id="consoleHint" class="consoleHint">Live training output appears here with color-coded console styling.</p>
         </div>
         <button id="closeConsoleBtn">Close</button>
       </div>
       <div id="trainLog" class="consoleLog" aria-live="polite">
         <div class="consoleLine consoleMuted">(no training started)</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="firmwareLogModal" class="firmwareLogModal" aria-hidden="true">
+    <div id="firmwareLogDialog" class="firmwareLogDialog" role="dialog" aria-modal="true" aria-labelledby="firmwareLogTitle">
+      <div class="firmwareLogHeader">
+        <div>
+          <h3 id="firmwareLogTitle" class="firmwareLogTitle">Firmware Build + Flash</h3>
+          <p id="firmwareLogMeta" class="firmwareLogMeta">ESPHome output will appear here.</p>
+        </div>
+        <button id="closeFirmwareLogBtn" type="button">Close</button>
+      </div>
+      <div id="firmwareLogStatus" class="firmwareLogStatus">Waiting for firmware output...</div>
+      <div id="firmwareLogConsole" class="firmwareLogConsole" role="log" aria-live="polite" aria-label="Firmware build and flash log">
+        <div class="firmwareLogEmpty">No firmware flash started yet.</div>
       </div>
     </div>
   </div>
@@ -440,13 +1407,33 @@
     training: null,
     availableLanguages: [],
     selectedFiles: [],
+    captured: { items: [], captured_count: 0, negative_count: 0, personal_count: 0 },
+    samples: { personal: [], negative: [], personal_count: 0, negative_count: 0, activeBucket: "personal" },
+    firmware: { devices: [], templates: [], flashing: null, logLines: [], activeTemplateKey: "" },
     uploadBusy: false,
+    reviewBusy: false,
+    firmwareBusy: false,
     trainingPoller: null,
+    firmwarePoller: null,
+    activeView: "trainer",
   };
+  let firmwareProfileSaveTimer = null;
 
   function setPill(el, text, cls) {
     el.className = "pill " + (cls || "");
     el.textContent = text;
+  }
+
+  function setActiveView(view) {
+    uiState.activeView = ["captured", "samples", "firmware"].includes(view) ? view : "trainer";
+    $("trainerView").hidden = uiState.activeView !== "trainer";
+    $("capturedView").hidden = uiState.activeView !== "captured";
+    $("samplesView").hidden = uiState.activeView !== "samples";
+    $("firmwareView").hidden = uiState.activeView !== "firmware";
+    $("tabTrainer").classList.toggle("active", uiState.activeView === "trainer");
+    $("tabCaptured").classList.toggle("active", uiState.activeView === "captured");
+    $("tabSamples").classList.toggle("active", uiState.activeView === "samples");
+    $("tabFirmware").classList.toggle("active", uiState.activeView === "firmware");
   }
 
   async function api(path, opts) {
@@ -489,6 +1476,183 @@
       .replaceAll(">", "&gt;");
   }
 
+  function escapeAttr(text) {
+    return escapeHtml(text).replaceAll('"', "&quot;");
+  }
+
+  function formatTimestamp(value) {
+    if (!value) return "";
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleString();
+  }
+
+  function captureBadge(item) {
+    if (item.blocked_by_vad) return { label: "Blocked by VAD", cls: "warn" };
+    const eventType = String(item?.event_type || "").toLowerCase();
+    if (eventType.includes("close")) return { label: item.capture_label || "Close miss", cls: "warn" };
+    if (eventType.includes("false")) return { label: item.capture_label || "False trigger", cls: "err" };
+    if (eventType.includes("wake") || eventType.includes("detect")) return { label: item.capture_label || "Wake trigger", cls: "ok" };
+    return { label: item.capture_label || "Captured", cls: "" };
+  }
+
+  function renderCapturedItems(payload) {
+    const data = payload || { items: [], captured_count: 0, negative_count: 0, personal_count: 0 };
+    uiState.captured = data;
+
+    $("capturedCount").textContent = String(Number(data.captured_count || 0));
+    $("negativeCount").textContent = String(Number(data.negative_count || 0));
+    $("capturedPersonalCount").textContent = String(Number(data.personal_count || uiState.session?.takes_received || 0));
+    if (!Number.isFinite(Number(uiState.samples?.negative_count))) {
+      uiState.samples.negative_count = Number(data.negative_count || 0);
+    }
+    if (!Number.isFinite(Number(uiState.samples?.personal_count))) {
+      uiState.samples.personal_count = Number(data.personal_count || uiState.session?.takes_received || 0);
+    }
+    updateTrainingSampleCounts();
+
+    const items = Array.isArray(data.items) ? data.items : [];
+    if (!items.length) {
+      $("capturedList").innerHTML = `<div class="emptyState">No captured audio yet. When the sats start sending clips, they will show up here for review.</div>`;
+      return;
+    }
+
+    $("capturedList").innerHTML = items.map((item) => {
+      const badge = captureBadge(item);
+      const meta = [];
+      if (item.source_device) meta.push(`<span class="pill">${escapeHtml(item.source_device)}</span>`);
+      if (item.wake_word) meta.push(`<span class="pill">${escapeHtml(item.wake_word)}</span>`);
+      if (item.max_probability !== null && item.max_probability !== undefined) meta.push(`<span class="pill">max ${escapeHtml(item.max_probability)}</span>`);
+      if (item.average_probability !== null && item.average_probability !== undefined) meta.push(`<span class="pill">avg ${escapeHtml(item.average_probability)}</span>`);
+      const formatSummary = item.final_format ? describeFormat(item.final_format) : "16 kHz, mono, 16-bit";
+      const when = formatTimestamp(item.captured_at || item.received_at);
+      const actionDisabled = uiState.reviewBusy ? "disabled" : "";
+      return `
+        <div class="captureCard">
+          <div class="row space">
+            <div>
+              <p class="captureTitle">${escapeHtml(item.original_name || item.saved_as)}</p>
+              <p class="captureSubtitle">
+                ${when ? `Captured ${escapeHtml(when)}.` : "Captured clip."}
+                ${escapeHtml(item.message || "")}
+              </p>
+            </div>
+            <span class="pill ${badge.cls}">${escapeHtml(badge.label)}</span>
+          </div>
+          <div class="fileMeta">${meta.join("") || `<span class="muted">No metadata attached</span>`}</div>
+          <audio class="audioPlayer" controls preload="none" src="${escapeHtml(item.audio_url || `/api/audio/captured/${encodeURIComponent(item.saved_as)}`)}"></audio>
+          <div class="muted">Stored as ${escapeHtml(item.saved_as)} · ${escapeHtml(formatSummary)}</div>
+          <div class="captureActions">
+            <button type="button" data-action="approve_personal" data-name="${escapeHtml(item.saved_as)}" ${actionDisabled}>Add to personal samples</button>
+            <button type="button" data-action="mark_negative" data-name="${escapeHtml(item.saved_as)}" ${actionDisabled}>Mark negative</button>
+            <button type="button" data-action="discard" data-name="${escapeHtml(item.saved_as)}" ${actionDisabled}>Discard</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function refreshCapturedAudio() {
+    const data = await api("/api/captured_audio", { method: "GET" });
+    renderCapturedItems(data);
+    setPill($("capturedStatus"), data.captured_count ? `${data.captured_count} clip${data.captured_count === 1 ? "" : "s"} waiting` : "Inbox idle", data.captured_count ? "warn" : "");
+    syncButtons();
+    return data;
+  }
+
+  function updateTrainingSampleCounts() {
+    const personalCount = Number(uiState.samples?.personal_count ?? uiState.session?.takes_received ?? 0);
+    const negativeCount = Number(uiState.samples?.negative_count ?? uiState.captured?.negative_count ?? 0);
+    $("positiveSampleCount").textContent = String(personalCount);
+    $("negativeTrainingCount").textContent = String(negativeCount);
+    $("capturedPersonalCount").textContent = String(personalCount);
+    $("negativeCount").textContent = String(negativeCount);
+    $("samplePersonalCount").textContent = String(personalCount);
+    $("sampleNegativeCount").textContent = String(negativeCount);
+  }
+
+  function renderSampleLibrary(payload) {
+    const data = payload || { personal: [], negative: [], personal_count: 0, negative_count: 0 };
+    uiState.samples = {
+      ...uiState.samples,
+      ...data,
+      personal: Array.isArray(data.personal) ? data.personal : [],
+      negative: Array.isArray(data.negative) ? data.negative : [],
+    };
+    updateTrainingSampleCounts();
+
+    const activeBucket = uiState.samples.activeBucket === "negative" ? "negative" : "personal";
+    $("sampleTabPersonal").classList.toggle("active", activeBucket === "personal");
+    $("sampleTabNegative").classList.toggle("active", activeBucket === "negative");
+
+    const items = activeBucket === "negative" ? uiState.samples.negative : uiState.samples.personal;
+    const label = activeBucket === "negative" ? "negative" : "personal";
+    if (!items.length) {
+      $("sampleLibraryList").innerHTML = `<div class="emptyState">No ${label} samples saved yet.</div>`;
+      return;
+    }
+
+    $("sampleLibraryList").innerHTML = items.map((item) => {
+      const when = formatTimestamp(item.reviewed_at || item.received_at || item.created_at);
+      const formatSummary = item.final_format ? describeFormat(item.final_format) : "16 kHz, mono, 16-bit";
+      const badge = activeBucket === "negative" ? { label: "Negative", cls: "err" } : { label: "Positive", cls: "ok" };
+      const subtitleParts = [];
+      if (item.original_name && item.original_name !== item.saved_as) subtitleParts.push(`From ${item.original_name}`);
+      if (when) subtitleParts.push(`Saved ${when}`);
+      if (item.message) subtitleParts.push(item.message);
+      return `
+        <div class="captureCard">
+          <div class="row space">
+            <div>
+              <p class="captureTitle">${escapeHtml(item.saved_as)}</p>
+              <p class="captureSubtitle">${escapeHtml(subtitleParts.join(" · ") || "Saved training sample.")}</p>
+            </div>
+            <span class="pill ${badge.cls}">${badge.label}</span>
+          </div>
+          <audio class="audioPlayer" controls preload="none" src="${escapeAttr(item.audio_url || `/api/audio/${activeBucket}/${encodeURIComponent(item.saved_as)}`)}"></audio>
+          <div class="muted">Stored in ${activeBucket === "negative" ? "negative_samples" : "personal_samples"} · ${escapeHtml(formatSummary)}</div>
+          <div class="captureActions">
+            <button type="button" data-sample-remove="${escapeAttr(item.saved_as)}" data-bucket="${escapeAttr(activeBucket)}" ${uiState.reviewBusy ? "disabled" : ""}>Remove sample</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function refreshSamples() {
+    const data = await api("/api/samples", { method: "GET" });
+    renderSampleLibrary(data);
+    syncButtons();
+    return data;
+  }
+
+  function setSampleBucket(bucket) {
+    uiState.samples.activeBucket = bucket === "negative" ? "negative" : "personal";
+    renderSampleLibrary(uiState.samples);
+    syncButtons();
+  }
+
+  async function removeSample(bucket, fileName) {
+    if (!bucket || !fileName) return;
+    const ok = confirm(`Remove ${fileName} from ${bucket === "negative" ? "negative_samples" : "personal_samples"}?`);
+    if (!ok) return;
+
+    try {
+      uiState.reviewBusy = true;
+      setPill($("status"), "Removing sample...", "warn");
+      syncButtons();
+      const data = await api(`/api/samples/${encodeURIComponent(bucket)}/${encodeURIComponent(fileName)}`, { method: "DELETE" });
+      renderSampleLibrary(data);
+      await refreshSession();
+      setPill($("status"), "Sample removed", "ok");
+    } catch (error) {
+      setPill($("status"), "Remove failed", "err");
+      alert(error.message);
+    } finally {
+      uiState.reviewBusy = false;
+      syncButtons();
+    }
+  }
+
   function consoleLineClass(line) {
     const trimmed = String(line || "").trim();
     const lower = trimmed.toLowerCase();
@@ -510,15 +1674,129 @@
     }).join("");
   }
 
-  function openConsole(wobble = true) {
-    $("consoleOverlay").classList.add("open");
-    $("consoleOverlay").setAttribute("aria-hidden", "false");
+  function setConsoleMode(title, hint) {
+    $("consoleTitle").textContent = title || "Training Console";
+    $("consoleHint").textContent = hint || "Live output appears here with color-coded console styling.";
+  }
+
+  function openConsole(wobble = true, title = "Training Console", hint = "Live training output appears here with color-coded console styling.") {
+    setConsoleMode(title, hint);
+    const overlay = $("consoleOverlay");
+    const win = $("consoleWindow");
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden", "false");
+    win.setAttribute("tabindex", "-1");
+    try {
+      win.focus({ preventScroll: true });
+    } catch (_) {
+      win.focus();
+    }
     if (wobble) {
-      const win = $("consoleWindow");
       win.classList.remove("wobble");
       void win.offsetWidth;
       win.classList.add("wobble");
     }
+  }
+
+  function firmwareLogTone(line) {
+    const text = String(line || "").trim();
+    const lower = text.toLowerCase();
+    const bracketMatch = text.match(/^\[[^\]]+\]\[([A-Z])\]/);
+    const token = bracketMatch?.[1] || "";
+    if (token === "E" || text.includes("✗") || lower.includes("traceback") || lower.includes("error") || lower.includes("failed") || lower.includes("crashed")) {
+      return "error";
+    }
+    if (token === "W" || text.includes("⚠") || lower.includes("warning") || lower.includes("warn")) {
+      return "warn";
+    }
+    if (token === "D" || token === "V" || lower.includes("[debug]")) {
+      return "debug";
+    }
+    return "info";
+  }
+
+  function firmwareLogLevel(line) {
+    const tone = firmwareLogTone(line);
+    if (tone === "error") return "ERROR";
+    if (tone === "warn") return "WARN";
+    if (tone === "debug") return "DEBUG";
+    return "INFO";
+  }
+
+  function renderFirmwareLogLines(lines, reset = true) {
+    const consoleEl = $("firmwareLogConsole");
+    const rows = Array.isArray(lines) ? lines.filter((line) => String(line || "").trim()) : [];
+    const shouldStick = reset || isNearBottom(consoleEl, 28);
+    if (reset) {
+      consoleEl.innerHTML = "";
+    }
+    if (!rows.length) {
+      consoleEl.innerHTML = `<div class="firmwareLogEmpty">Waiting for ESPHome build output...</div>`;
+    } else {
+      consoleEl.innerHTML = rows.map((line) => {
+        const tone = firmwareLogTone(line);
+        return `
+          <div class="firmwareLogLine tone-${tone}">
+            <span class="firmwareLogLevel">${firmwareLogLevel(line)}</span>
+            <span class="firmwareLogMessage">${escapeHtml(line)}</span>
+          </div>
+        `;
+      }).join("");
+    }
+    if (shouldStick) {
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+  }
+
+  function setFirmwareLogStatus(text) {
+    $("firmwareLogStatus").textContent = String(text || "Waiting for firmware output...").trim() || "Waiting for firmware output...";
+  }
+
+  function openFirmwareConsole(wobble = true, text = null, statusText = "") {
+    const template = selectedFirmwareTemplate();
+    const host = ($("firmwareHost").value || "").trim();
+    const port = ($("firmwarePort").value || "3232").trim();
+    $("firmwareLogTitle").textContent = "Firmware Build + Flash";
+    $("firmwareLogMeta").textContent = [
+      template?.label || template?.value || "Firmware",
+      host ? `${host}:${port || "3232"}` : "",
+    ].filter(Boolean).join(" • ") || "ESPHome output will appear here.";
+    if (text !== null) {
+      renderFirmwareLogLines(String(text).split("\n"), true);
+    } else {
+      renderFirmwareLogLines(uiState.firmware.logLines || [], true);
+    }
+    setFirmwareLogStatus(statusText || "ESPHome build, upload, and flash output appears here.");
+    const modal = $("firmwareLogModal");
+    const dialog = $("firmwareLogDialog");
+    modal.classList.add("active");
+    modal.setAttribute("aria-hidden", "false");
+    dialog.setAttribute("tabindex", "-1");
+    try {
+      dialog.focus({ preventScroll: true });
+    } catch (_) {
+      dialog.focus();
+    }
+    if (wobble) {
+      dialog.style.animation = "none";
+      void dialog.offsetWidth;
+      dialog.style.animation = "";
+    }
+  }
+
+  function closeFirmwareConsole() {
+    $("firmwareLogModal").classList.remove("active");
+    $("firmwareLogModal").setAttribute("aria-hidden", "true");
+  }
+
+  function waitForPaint() {
+    return new Promise((resolve) => {
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => resolve());
+      } else {
+        setTimeout(resolve, 0);
+      }
+    });
   }
 
   function closeConsole() {
@@ -531,6 +1809,359 @@
     $("selectedPill").textContent = files.length
       ? `${files.length} file${files.length === 1 ? "" : "s"} selected`
       : "No files selected";
+  }
+
+  function renderFirmwareDevices(devices, message) {
+    const list = Array.isArray(devices) ? devices : [];
+    uiState.firmware.devices = list;
+
+    if (!list.length) {
+      $("firmwareDeviceSelect").innerHTML = `<option value="">No devices detected</option>`;
+      setPill($("firmwareDetectStatus"), message || "No devices detected", "warn");
+      return;
+    }
+
+    $("firmwareDeviceSelect").innerHTML = [
+      `<option value="">Choose detected device...</option>`,
+      ...list.map((device, index) => {
+        const label = `${device.name || device.host} (${device.host}:${device.port || 3232})`;
+        return `<option value="${index}">${escapeHtml(label)}</option>`;
+      }),
+    ].join("");
+
+    setPill($("firmwareDetectStatus"), `${list.length} detected`, "ok");
+    if (!($("firmwareHost").value || "").trim()) {
+      $("firmwareDeviceSelect").value = "0";
+      applySelectedFirmwareDevice();
+    }
+  }
+
+  async function refreshFirmwareDevices() {
+    setPill($("firmwareDetectStatus"), "Scanning mDNS...", "warn");
+    const data = await api("/api/firmware/devices", { method: "GET" });
+    renderFirmwareDevices(data.devices, data.message);
+    syncButtons();
+    return data;
+  }
+
+  function applySelectedFirmwareDevice() {
+    const indexText = $("firmwareDeviceSelect").value;
+    if (indexText === "") return;
+    const device = uiState.firmware.devices[Number(indexText)];
+    if (!device) return;
+    $("firmwareHost").value = device.host || "";
+    $("firmwarePort").value = device.port || 3232;
+    syncButtons();
+    scheduleFirmwareProfileSave();
+  }
+
+  function selectedFirmwareTemplate() {
+    const key = $("firmwareTemplate").value;
+    const match = (uiState.firmware.templates || []).find((item) => String(item.value || "") === key);
+    if (match) return match;
+    if (!key) return null;
+    const label = $("firmwareTemplate").selectedOptions?.[0]?.textContent || key;
+    return { value: key, label };
+  }
+
+  function applyFirmwareTemplateTarget(template = selectedFirmwareTemplate()) {
+    if (!template) return;
+    if (template.target_host) {
+      $("firmwareHost").value = template.target_host;
+    }
+    if (template.target_port) {
+      $("firmwarePort").value = template.target_port;
+    }
+  }
+
+  function renderFirmwareTemplates(payload) {
+    const templates = Array.isArray(payload?.templates) ? payload.templates : [];
+    const previousTemplateKey = $("firmwareTemplate").value || uiState.firmware.activeTemplateKey || "";
+    uiState.firmware.templates = templates;
+    $("firmwareTemplate").innerHTML = templates.length
+      ? templates.map((item) => `<option value="${escapeAttr(item.value)}">${escapeHtml(item.label || item.value)}</option>`).join("")
+      : `<option value="">No firmware templates found</option>`;
+    if (previousTemplateKey && templates.some((item) => String(item.value || "") === previousTemplateKey)) {
+      $("firmwareTemplate").value = previousTemplateKey;
+    } else if (payload?.active_template_key) {
+      $("firmwareTemplate").value = payload.active_template_key;
+    }
+    uiState.firmware.activeTemplateKey = $("firmwareTemplate").value;
+    renderFirmwareFields();
+    applyFirmwareTemplateTarget();
+  }
+
+  function renderFirmwareFields() {
+    const template = selectedFirmwareTemplate();
+    const fields = Array.isArray(template?.fields) ? template.fields : [];
+    if (!fields.length) {
+      $("firmwareFields").innerHTML = `<div class="emptyState">No editable settings were found for this firmware template. You can continue with the selected template and target device.</div>`;
+      return;
+    }
+
+    const groups = new Map();
+    fields.forEach((field) => {
+      const section = String(field.section || "Firmware");
+      if (!groups.has(section)) groups.set(section, []);
+      groups.get(section).push(field);
+    });
+
+    $("firmwareFields").innerHTML = Array.from(groups.entries()).map(([section, rows]) => `
+      <section class="firmwareSettingsSection">
+        <div class="row space">
+          <h3 style="margin:0;">${escapeHtml(section)}</h3>
+        </div>
+        <div class="firmwareSettingsGrid">
+          ${rows.map((field) => renderFirmwareField(field)).join("")}
+        </div>
+      </section>
+    `).join("");
+  }
+
+  function renderFirmwareField(field) {
+    const key = String(field.key || "");
+    const label = String(field.label || key || "Value");
+    const type = String(field.type || "text");
+    const value = field.value ?? "";
+    const placeholder = field.placeholder ? ` placeholder="${escapeAttr(field.placeholder)}"` : "";
+    const description = field.description ? `<span class="muted">${escapeHtml(field.description)}</span>` : "";
+    const options = Array.isArray(field.options) ? field.options : [];
+    if (field.read_only) {
+      return `
+        <label class="field">
+          <strong>${escapeHtml(label)}</strong>
+          <span class="readOnlyValue">${escapeHtml(value || "(from YAML)")}</span>
+          ${description}
+        </label>
+      `;
+    }
+    if (type === "wake_word_select") {
+      const optionHtml = options.length
+        ? options.map((option) => {
+            const optionValue = String(option.key || "");
+            const selected = optionValue && optionValue === String(value || "") ? " selected" : "";
+            return `
+              <option value="${escapeAttr(optionValue)}"${selected}
+                data-wake-word-name="${escapeAttr(option.wake_word_name || optionValue)}"
+                data-wake-word-url="${escapeAttr(option.json_url || "")}">
+                ${escapeHtml(option.label || optionValue)}
+              </option>
+            `;
+          }).join("")
+        : "";
+      return `
+        <label class="field">
+          <strong>${escapeHtml(label)}</strong>
+          <select data-firmware-field="${escapeAttr(key)}" data-wake-word-select ${options.length ? "" : "disabled"}>
+            <option value="">${escapeHtml(placeholder || "Choose a trained wake word...")}</option>
+            ${optionHtml}
+          </select>
+          ${description}
+        </label>
+      `;
+    }
+    if (type === "checkbox") {
+      return `
+        <label class="field">
+          <strong>${escapeHtml(label)}</strong>
+          <span class="row">
+            <input data-firmware-field="${escapeAttr(key)}" type="checkbox" ${value ? "checked" : ""} style="width:auto;" />
+            <span class="muted">Enabled</span>
+          </span>
+          ${description}
+        </label>
+      `;
+    }
+    return `
+      <label class="field">
+        <strong>${escapeHtml(label)}</strong>
+        <input data-firmware-field="${escapeAttr(key)}" type="${type === "password" ? "password" : "text"}" value="${escapeAttr(value)}"${placeholder} autocomplete="off" />
+        ${description}
+      </label>
+    `;
+  }
+
+  function applyWakeWordSelection(select) {
+    const option = select?.selectedOptions?.[0];
+    if (!option || !select.value) return;
+    const wakeWordName = option.dataset.wakeWordName || "";
+    const wakeWordUrl = option.dataset.wakeWordUrl || "";
+    const nameInput = document.querySelector('[data-firmware-field="wake_word_name"]');
+    const urlInput = document.querySelector('[data-firmware-field="wake_word_model_url"]');
+    if (nameInput && wakeWordName) {
+      nameInput.value = wakeWordName;
+    }
+    if (urlInput && wakeWordUrl) {
+      urlInput.value = wakeWordUrl;
+    }
+    setPill($("firmwareStatus"), "Wake word selected", "ok");
+    scheduleFirmwareProfileSave();
+    syncButtons();
+  }
+
+  async function refreshFirmwareTemplates() {
+    const data = await api("/api/firmware/templates", { method: "GET" });
+    renderFirmwareTemplates(data);
+    if (Array.isArray(data.warnings) && data.warnings.length) {
+      setPill($("firmwareStatus"), "Template warning", "warn");
+    }
+    syncButtons();
+    return data;
+  }
+
+  function collectFirmwareValues() {
+    const values = {};
+    document.querySelectorAll("[data-firmware-field]").forEach((field) => {
+      const key = String(field.dataset.firmwareField || "");
+      if (!key) return;
+      if (field instanceof HTMLInputElement && field.type === "checkbox") {
+        values[key] = field.checked;
+      } else {
+        values[key] = field.value || "";
+      }
+    });
+    return values;
+  }
+
+  async function saveFirmwareProfileNow({ templateKey = null, quiet = false } = {}) {
+    const key = String(templateKey || $("firmwareTemplate").value || "").trim();
+    if (!key) return null;
+    const values = collectFirmwareValues();
+    values.__target_host = ($("firmwareHost").value || "").trim();
+    values.__target_port = ($("firmwarePort").value || "3232").trim();
+    const result = await api("/api/firmware/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ template_key: key, values }),
+    });
+    if (!quiet && !uiState.firmwareBusy) {
+      setPill($("firmwareStatus"), "Settings saved", "ok");
+    }
+    return result;
+  }
+
+  function scheduleFirmwareProfileSave() {
+    if (firmwareProfileSaveTimer) {
+      clearTimeout(firmwareProfileSaveTimer);
+    }
+    firmwareProfileSaveTimer = setTimeout(async () => {
+      firmwareProfileSaveTimer = null;
+      try {
+        await saveFirmwareProfileNow({ quiet: false });
+      } catch (error) {
+        if (!uiState.firmwareBusy) {
+          setPill($("firmwareStatus"), "Settings save failed", "warn");
+        }
+      }
+    }, 550);
+  }
+
+  function flushFirmwareProfileSave(templateKey = null) {
+    if (firmwareProfileSaveTimer) {
+      clearTimeout(firmwareProfileSaveTimer);
+      firmwareProfileSaveTimer = null;
+    }
+    return saveFirmwareProfileNow({ templateKey, quiet: true }).catch(() => null);
+  }
+
+  async function startFirmwareFlash() {
+    const host = ($("firmwareHost").value || "").trim();
+    const port = ($("firmwarePort").value || "3232").trim();
+    const template = selectedFirmwareTemplate();
+    if (!template) {
+      alert("Choose a firmware template first.");
+      return;
+    }
+    if (!host) {
+      alert("Enter the device IP or hostname first.");
+      return;
+    }
+
+    const ok = confirm(`Build and flash ${template.label || template.value} firmware to ${host}:${port || "3232"}?\n\nMake sure this is the correct device before continuing.`);
+    if (!ok) return;
+
+    uiState.firmwareBusy = true;
+    uiState.firmware.logLines = [
+      "===== Firmware Build + Flash Console =====",
+      `→ Target: ${host}:${port || "3232"}`,
+      "→ Contacting trainer server to start the build...",
+    ];
+    setPill($("firmwareStatus"), "Starting build + flash...", "warn");
+    openFirmwareConsole(true, uiState.firmware.logLines.join("\n"), "Starting firmware build + flash...");
+    syncButtons();
+    await flushFirmwareProfileSave();
+    await waitForPaint();
+
+    try {
+      const status = await api("/api/firmware/build_flash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          template_key: template.value,
+          host,
+          port: port || "3232",
+          values: collectFirmwareValues(),
+        }),
+      });
+      uiState.firmware.flashing = status;
+      uiState.firmware.logLines = (status.log_lines || []).length
+        ? status.log_lines
+        : [...uiState.firmware.logLines, "✓ Build session started. Waiting for ESPHome output..."];
+      openFirmwareConsole(false, uiState.firmware.logLines.join("\n") || "(waiting for flash output)", status.message || "Firmware session started.");
+      pollFirmwareFlash(status.session_id);
+    } catch (error) {
+      uiState.firmwareBusy = false;
+      setPill($("firmwareStatus"), "Flash failed to start", "err");
+      uiState.firmware.logLines = [String(error.message || error)];
+      openFirmwareConsole(false, uiState.firmware.logLines.join("\n"), "Firmware flash failed to start.");
+      syncButtons();
+      alert("Flash failed to start: " + error.message);
+    }
+  }
+
+  async function pollFirmwareFlash(sessionId) {
+    if (uiState.firmwarePoller || !sessionId) return;
+    uiState.firmwarePoller = true;
+
+    try {
+      for (;;) {
+        const status = await api(`/api/firmware/flash_status/${encodeURIComponent(sessionId)}`, { method: "GET" });
+        uiState.firmware.flashing = status;
+        const lines = status.log_lines || [];
+        uiState.firmware.logLines = lines;
+        renderFirmwareLogLines(lines.length ? lines : ["(waiting for flash output)"], true);
+
+        if (status.running) {
+          setPill($("firmwareStatus"), status.message || "Firmware build + flash running", "warn");
+          setFirmwareLogStatus(status.message || "Firmware build + flash running.");
+        } else {
+          uiState.firmwareBusy = false;
+          if (status.exit_code === 0) {
+            setPill($("firmwareStatus"), "Firmware flashed successfully", "ok");
+            setFirmwareLogStatus("Firmware flashed successfully.");
+          } else {
+            setPill($("firmwareStatus"), `Firmware build + flash failed (${status.exit_code})`, "err");
+            setFirmwareLogStatus(`Firmware build + flash failed (${status.exit_code}).`);
+          }
+          syncButtons();
+          break;
+        }
+
+        syncButtons();
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+      }
+    } catch (error) {
+      uiState.firmwareBusy = false;
+      setPill($("firmwareStatus"), "Flash status lost", "err");
+      uiState.firmware.logLines = [
+        ...(uiState.firmware.logLines || []),
+        `✗ Flash status lost: ${error.message || error}`,
+      ];
+      openFirmwareConsole(false, uiState.firmware.logLines.join("\n"), "Firmware status polling failed.");
+      syncButtons();
+    } finally {
+      uiState.firmwarePoller = null;
+    }
   }
 
   function renderLanguageOptions(languages, preferredLanguage) {
@@ -556,15 +2187,25 @@
     const training = uiState.training || {};
     const hasPhrase = Boolean(($("phrase").value || "").trim());
     const hasSelected = uiState.selectedFiles.length > 0;
-    const sampleCount = Number(uiState.session?.takes_received || 0);
+    const sampleCount = Number(uiState.samples?.personal_count ?? uiState.session?.takes_received ?? 0);
     const hasConsole = Boolean(training.running || training.exit_code !== null || (training.log_lines || []).length);
+    const negativeCount = Number(uiState.samples?.negative_count ?? uiState.captured?.negative_count ?? 0);
+    const firmwareHost = ($("firmwareHost").value || "").trim();
+    const firmwareTemplate = ($("firmwareTemplate").value || "").trim();
 
     $("ttsBtn").disabled = !hasPhrase || uiState.uploadBusy;
     $("uploadBtn").disabled = !hasSession || !hasSelected || uiState.uploadBusy;
-    $("clearBtn").disabled = sampleCount === 0 || uiState.uploadBusy;
+    $("clearBtn").disabled = sampleCount === 0 || uiState.uploadBusy || uiState.reviewBusy;
     $("openConsoleBtn").disabled = !hasConsole;
     $("trainBtn").disabled = !hasSession || uiState.uploadBusy || Boolean(training.running);
     $("startSessionBtn").disabled = uiState.uploadBusy;
+    $("refreshCapturedBtn").disabled = uiState.reviewBusy;
+    $("clearNegativeBtn").disabled = uiState.reviewBusy || negativeCount === 0;
+    $("refreshSamplesBtn").disabled = uiState.reviewBusy || uiState.uploadBusy;
+    $("refreshFirmwareBtn").disabled = uiState.firmwareBusy;
+    $("cleanFirmwareBtn").disabled = uiState.firmwareBusy;
+    $("openFirmwareConsoleBtn").disabled = false;
+    $("flashFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareHost || !firmwareTemplate;
   }
 
   function refreshSessionUI(session) {
@@ -576,7 +2217,10 @@
     }
 
     const uploaded = Number(session?.takes_received || 0);
-    $("uploadedCount").textContent = String(uploaded);
+    if (!Number.isFinite(Number(uiState.samples?.personal_count))) {
+      uiState.samples.personal_count = uploaded;
+    }
+    updateTrainingSampleCounts();
     uiState.training = session?.training || uiState.training;
 
     if (session?.safe_word) {
@@ -693,7 +2337,7 @@
       $("sampleFiles").value = "";
       renderSelectedFiles();
 
-      const session = await refreshSession();
+      const [session] = await Promise.all([refreshSession(), refreshSamples()]);
       const uploaded = Number(session?.takes_received || 0);
       setPill($("status"), `Uploaded ${uploaded} sample${uploaded === 1 ? "" : "s"}`, "ok");
       const parts = [];
@@ -711,14 +2355,46 @@
     }
   }
 
+  async function handleCapturedAction(fileName, action) {
+    if (!fileName || !action) return;
+    if (action === "discard") {
+      const ok = confirm(`Discard ${fileName} from the captured-audio inbox?`);
+      if (!ok) return;
+    }
+
+    uiState.reviewBusy = true;
+    setPill($("capturedStatus"), "Applying review action...", "warn");
+    syncButtons();
+
+    try {
+      await api(`/api/captured_audio/${encodeURIComponent(fileName)}/${action}`, { method: "POST" });
+      await Promise.all([refreshSession(), refreshCapturedAudio(), refreshSamples()]);
+
+      if (action === "approve_personal") {
+        setPill($("capturedStatus"), "Moved into personal samples", "ok");
+        setPill($("status"), "Captured clip added to personal samples", "ok");
+      } else if (action === "mark_negative") {
+        setPill($("capturedStatus"), "Moved into reviewed negatives", "ok");
+      } else {
+        setPill($("capturedStatus"), "Captured clip discarded", "");
+      }
+    } catch (error) {
+      setPill($("capturedStatus"), "Review action failed", "err");
+      alert(error.message);
+    } finally {
+      uiState.reviewBusy = false;
+      syncButtons();
+    }
+  }
+
   async function startTrainingWithPrompt() {
-    const session = await refreshSession();
-    const uploaded = Number(session?.takes_received || 0);
+    const [session, samples] = await Promise.all([refreshSession(), refreshSamples()]);
+    const uploaded = Number(samples?.personal_count ?? session?.takes_received ?? 0);
 
     let allowNoPersonal = false;
     if (uploaded === 0) {
       const ok = confirm(
-        `No personal voice samples were uploaded yet.\n\nTrain anyway without personal voices?`
+        `No positive samples are saved yet.\n\nTrain anyway without personal voices?`
       );
       if (!ok) {
         setPill($("status"), "Training canceled", "warn");
@@ -729,7 +2405,7 @@
 
     uiState.training = { running: true, exit_code: null, log_lines: [] };
     setConsoleLogAutoScroll($("trainLog"), "===== Training Console =====\nWaiting for training output...");
-    openConsole(true);
+    openConsole(true, "Training Console", "Live training output appears here with color-coded console styling.");
     syncButtons();
     setPill($("status"), "Starting training...", "warn");
     setPill($("trainState"), "Training running", "warn");
@@ -785,6 +2461,30 @@
   }
 
   $("phrase").addEventListener("input", syncButtons);
+  $("tabTrainer").addEventListener("click", () => setActiveView("trainer"));
+  $("tabCaptured").addEventListener("click", () => setActiveView("captured"));
+  $("tabSamples").addEventListener("click", () => {
+    setActiveView("samples");
+    refreshSamples().catch((error) => {
+      setPill($("status"), "Sample refresh failed", "err");
+      alert("Sample refresh failed: " + error.message);
+    });
+  });
+  $("tabFirmware").addEventListener("click", () => {
+    setActiveView("firmware");
+    refreshFirmwareTemplates().catch((error) => {
+      setPill($("firmwareStatus"), "Templates failed", "err");
+      uiState.firmware.logLines = [`Template load failed: ${error.message}`];
+      setConsoleLogAutoScroll($("trainLog"), uiState.firmware.logLines.join("\n"));
+    });
+    if (!uiState.firmware.devices.length) {
+      refreshFirmwareDevices().catch((error) => {
+        setPill($("firmwareDetectStatus"), "Scan failed", "err");
+        uiState.firmware.logLines = [`Device scan failed: ${error.message}`];
+        setConsoleLogAutoScroll($("trainLog"), uiState.firmware.logLines.join("\n"));
+      });
+    }
+  });
 
   $("sampleFiles").addEventListener("change", () => {
     uiState.selectedFiles = Array.from($("sampleFiles").files || []);
@@ -792,12 +2492,77 @@
     syncButtons();
   });
 
+  $("firmwareHost").addEventListener("input", () => {
+    syncButtons();
+    scheduleFirmwareProfileSave();
+  });
+  $("firmwarePort").addEventListener("input", () => {
+    syncButtons();
+    scheduleFirmwareProfileSave();
+  });
+  $("firmwareTemplate").addEventListener("change", () => {
+    flushFirmwareProfileSave(uiState.firmware.activeTemplateKey);
+    uiState.firmware.activeTemplateKey = $("firmwareTemplate").value;
+    renderFirmwareFields();
+    applyFirmwareTemplateTarget();
+    syncButtons();
+  });
+  $("firmwareFields").addEventListener("input", () => {
+    syncButtons();
+    scheduleFirmwareProfileSave();
+  });
+  $("firmwareFields").addEventListener("change", (event) => {
+    const select = event.target.closest("select[data-wake-word-select]");
+    if (select) {
+      applyWakeWordSelection(select);
+      return;
+    }
+    syncButtons();
+    scheduleFirmwareProfileSave();
+  });
+  $("firmwareDeviceSelect").addEventListener("change", applySelectedFirmwareDevice);
+  $("refreshFirmwareBtn").addEventListener("click", async () => {
+    try {
+      await refreshFirmwareDevices();
+    } catch (error) {
+      setPill($("firmwareDetectStatus"), "Scan failed", "err");
+      alert("Device scan failed: " + error.message);
+    }
+  });
+  $("flashFirmwareBtn").addEventListener("click", startFirmwareFlash);
+  $("cleanFirmwareBtn").addEventListener("click", async () => {
+    try {
+      setPill($("firmwareStatus"), "Cleaning build files...", "warn");
+      const result = await api("/api/firmware/clean", { method: "POST" });
+      setPill($("firmwareStatus"), result.message || "Build files cleaned", "ok");
+    } catch (error) {
+      setPill($("firmwareStatus"), "Clean failed", "err");
+      alert("Clean failed: " + error.message);
+    } finally {
+      syncButtons();
+    }
+  });
+  $("openFirmwareConsoleBtn").addEventListener("click", () => {
+    openFirmwareConsole(true, (uiState.firmware.logLines || []).join("\n") || "(no firmware flash started)", uiState.firmwareBusy ? "Firmware build + flash running." : "No active firmware flash.");
+  });
+
   $("openConsoleBtn").addEventListener("click", () => {
-    openConsole(true);
+    setConsoleLogAutoScroll($("trainLog"), (uiState.training?.log_lines || []).join("\n") || "(no training started)");
+    openConsole(true, "Training Console", "Live training output appears here with color-coded console styling.");
   });
 
   $("closeConsoleBtn").addEventListener("click", () => {
     closeConsole();
+  });
+
+  $("closeFirmwareLogBtn").addEventListener("click", () => {
+    closeFirmwareConsole();
+  });
+
+  $("firmwareLogModal").addEventListener("click", (event) => {
+    if (event.target === $("firmwareLogModal")) {
+      closeFirmwareConsole();
+    }
   });
 
   $("consoleOverlay").addEventListener("click", (event) => {
@@ -809,6 +2574,7 @@
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeConsole();
+      closeFirmwareConsole();
     }
   });
 
@@ -853,9 +2619,60 @@
   });
 
   $("uploadBtn").addEventListener("click", uploadSelectedFiles);
+  $("refreshSamplesBtn").addEventListener("click", async () => {
+    try {
+      await refreshSamples();
+      setPill($("status"), "Samples refreshed", "ok");
+    } catch (error) {
+      setPill($("status"), "Sample refresh failed", "err");
+      alert("Sample refresh failed: " + error.message);
+    }
+  });
+  $("sampleTabPersonal").addEventListener("click", () => setSampleBucket("personal"));
+  $("sampleTabNegative").addEventListener("click", () => setSampleBucket("negative"));
+  $("sampleLibraryList").addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-sample-remove][data-bucket]");
+    if (!button) return;
+    await removeSample(button.dataset.bucket, button.dataset.sampleRemove);
+  });
+  $("refreshCapturedBtn").addEventListener("click", async () => {
+    try {
+      await refreshCapturedAudio();
+    } catch (error) {
+      setPill($("capturedStatus"), "Refresh failed", "err");
+      alert("Refresh failed: " + error.message);
+    }
+  });
+
+  $("clearNegativeBtn").addEventListener("click", async () => {
+    const count = Number(uiState.samples?.negative_count ?? uiState.captured?.negative_count ?? 0);
+    const ok = confirm(`Clear ${count} reviewed negative sample${count === 1 ? "" : "s"} from negative_samples?`);
+    if (!ok) return;
+
+    try {
+      uiState.reviewBusy = true;
+      setPill($("status"), "Clearing negative samples...", "warn");
+      syncButtons();
+      await api("/api/reset_negative_samples", { method: "POST" });
+      await Promise.all([refreshCapturedAudio(), refreshSamples()]);
+      setPill($("status"), "Negative samples cleared", "ok");
+    } catch (error) {
+      setPill($("status"), "Clear failed", "err");
+      alert("Clear failed: " + error.message);
+    } finally {
+      uiState.reviewBusy = false;
+      syncButtons();
+    }
+  });
+
+  $("capturedList").addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-action][data-name]");
+    if (!button) return;
+    await handleCapturedAction(button.dataset.name, button.dataset.action);
+  });
 
   $("clearBtn").addEventListener("click", async () => {
-    const count = Number(uiState.session?.takes_received || 0);
+    const count = Number(uiState.samples?.personal_count ?? uiState.session?.takes_received ?? 0);
     const ok = confirm(`Clear ${count} personal sample${count === 1 ? "" : "s"} from personal_samples?`);
     if (!ok) return;
 
@@ -865,7 +2682,7 @@
       setPill($("status"), "Clearing samples...", "warn");
       updateProgress(0, "Clearing personal samples", "Removing saved WAV files from personal_samples.");
       await api("/api/reset_recordings", { method: "POST" });
-      await refreshSession();
+      await Promise.all([refreshSession(), refreshSamples()]);
       updateProgress(0, "No upload in progress", "personal_samples is empty.");
       setPill($("status"), "Personal samples cleared", "ok");
     } catch (error) {
@@ -883,7 +2700,7 @@
     } catch (error) {
       uiState.training = { running: false, exit_code: 1, log_lines: [String(error.message || error)] };
       setConsoleLogAutoScroll($("trainLog"), String(error.message || error));
-      openConsole(true);
+      openConsole(true, "Training Console", "Live training output appears here with color-coded console styling.");
       syncButtons();
       setPill($("status"), "Train failed", "err");
       setPill($("trainState"), "Start failed", "err");
@@ -892,12 +2709,24 @@
   });
 
   async function bootstrap() {
+    setActiveView("trainer");
     renderSelectedFiles();
     updateProgress(0, "No upload in progress", "Choose files and upload when you are ready.");
 
     try {
       await refreshSession();
+      await refreshSamples();
+      await refreshCapturedAudio();
+    } catch (_) {}
 
+    try {
+      await refreshFirmwareTemplates();
+    } catch (error) {
+      setPill($("firmwareStatus"), "Templates failed", "err");
+      uiState.firmware.logLines = [`Template load failed: ${error.message}`];
+    }
+
+    try {
       const trainStatus = await api("/api/train_status", { method: "GET" });
       const training = trainStatus.training || {};
       uiState.training = training;
@@ -906,7 +2735,7 @@
       }
       if (training.running) {
         setPill($("trainState"), "Training running", "warn");
-        openConsole(false);
+        openConsole(false, "Training Console", "Live training output appears here with color-coded console styling.");
         pollTraining();
       } else if (training.exit_code === 0) {
         setPill($("trainState"), "Training finished", "ok");

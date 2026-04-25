@@ -150,6 +150,7 @@ if ${CLEANUP_WORK_DIR} ; then
       "${DATA_DIR}/work/wake_word_samples" \
       "${DATA_DIR}/work/wake_word_samples_augmented" \
       "${DATA_DIR}/work/personal_augmented_features" \
+      "${DATA_DIR}/work/reviewed_negative_features" \
       "${DATA_DIR}/work/last_wake_word" || :
 fi
 
