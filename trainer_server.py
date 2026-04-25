@@ -2012,6 +2012,12 @@ def _run_firmware_build_flash_background(session_id: str):
                     "Tip: PlatformIO's ESP-IDF Python environment crashed while installing dependencies. "
                     "Run Clean Build Files once, then retry the flash.",
                 )
+            if "pioarduino/registry" in joined_lines and "ninja-" in joined_lines and "status code '502'" in joined_lines:
+                _append_firmware_log(
+                    session_id,
+                    "Tip: GitHub returned a 502 while PlatformIO was downloading Ninja. "
+                    "This is an upstream package download failure; retry the build in a few minutes.",
+                )
             _append_firmware_log(session_id, f"✗ Firmware build + flash failed (exit_code={rc})")
         with FIRMWARE_LOCK:
             live = FIRMWARE_SESSIONS.get(session_id)
