@@ -1931,6 +1931,21 @@ def _run_firmware_build_flash_background(session_id: str):
         template_key = str(session.get("template_key") or "")
         values = session.get("values") if isinstance(session.get("values"), dict) else {}
 
+    if shutil.which("patch") is None:
+        _append_firmware_log(session_id, "✗ Firmware build cannot start: required system command 'patch' was not found.")
+        _append_firmware_log(
+            session_id,
+            "Tip: rebuild the Nvidia Docker image so it includes the patch utility required by ESP-IDF micro-opus.",
+        )
+        with FIRMWARE_LOCK:
+            live = FIRMWARE_SESSIONS.get(session_id)
+            if isinstance(live, dict):
+                live["running"] = False
+                live["exit_code"] = 997
+                live["finished_at"] = datetime.now(timezone.utc).isoformat()
+                live["message"] = "Firmware build dependency missing: patch."
+        return
+
     try:
         config_path, _normalized = _render_firmware_config(template_key, values, host, session_id)
     except Exception as exc:
