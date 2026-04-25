@@ -1,7 +1,12 @@
-<div align="center">
-  <h1>microWakeWord NVIDIA Docker Trainer UI</h1>
-  <img width="800" alt="microWakeWord NVIDIA trainer screenshot" src="https://github.com/user-attachments/assets/694f4cb7-e4d8-4e2b-80ec-b40fb41cbfff" />
-</div>
+<p align="center">
+  <img 
+    src="https://github.com/user-attachments/assets/cfcb4fe2-93c5-4e58-b90d-ca2ffce310d1" 
+    width="300"
+  />
+</p>
+<h3 align="center">
+  <a href="https://taterassistant.com">taterassistant.com</a>
+</h3>
 
 Train custom microWakeWord models in Docker with NVIDIA/CUDA acceleration, generated Piper samples, device-captured samples, reviewed false-wake negatives, live training logs, and ESPHome firmware flashing.
 
