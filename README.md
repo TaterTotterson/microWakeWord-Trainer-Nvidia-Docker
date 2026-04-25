@@ -22,7 +22,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 ```bash
 docker run -d \
   --gpus all \
-  -p 8789:8789 \
+  --network host \
   -v $(pwd):/data \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
@@ -30,8 +30,10 @@ docker run -d \
 The flags:
 
 - `--gpus all` enables GPU acceleration.
-- `-p 8789:8789` exposes the trainer UI and captured-audio endpoint.
+- `--network host` lets the container receive mDNS/zeroconf traffic for ESPHome auto-detect.
 - `-v $(pwd):/data` persists models, downloaded voices, datasets, samples, and firmware caches.
+
+Host networking is recommended for the Firmware tab's mDNS device discovery. Manual IP flashing and captured-audio uploads can still work without host networking if the trainer port is reachable, but auto-detect may not see devices from Docker bridge networking.
 
 Open:
 
@@ -171,7 +173,7 @@ The `Firmware` tab builds and flashes Tater firmware for supported ESPHome sats.
 
 - Downloads the latest firmware YAML templates from `TaterTotterson/microWakeWords` on GitHub.
 - Lets you choose `VoicePE` or `Satellite1`.
-- Auto-detects ESPHome devices with mDNS when available.
+- Auto-detects ESPHome devices with mDNS when the container is running with host networking.
 - Allows manual IP or hostname entry if discovery does not find the device.
 - Saves firmware form values so you do not re-enter sounds and URLs every run.
 - Lists locally trained wake words from `/data/trained_wake_words/` for easy model selection.
