@@ -1618,6 +1618,12 @@
     }).join("");
   }
 
+  function rerenderReviewLists() {
+    renderCapturedItems(uiState.captured);
+    renderSampleLibrary(uiState.samples);
+    syncButtons();
+  }
+
   async function refreshSamples() {
     const data = await api("/api/samples", { method: "GET" });
     renderSampleLibrary(data);
@@ -1649,7 +1655,7 @@
       alert(error.message);
     } finally {
       uiState.reviewBusy = false;
-      syncButtons();
+      rerenderReviewLists();
     }
   }
 
@@ -2383,7 +2389,7 @@
       alert(error.message);
     } finally {
       uiState.reviewBusy = false;
-      syncButtons();
+      rerenderReviewLists();
     }
   }
 
@@ -2661,7 +2667,7 @@
       alert("Clear failed: " + error.message);
     } finally {
       uiState.reviewBusy = false;
-      syncButtons();
+      rerenderReviewLists();
     }
   });
 
