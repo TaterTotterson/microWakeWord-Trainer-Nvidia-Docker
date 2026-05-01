@@ -2222,6 +2222,10 @@
         values[key] = field.value || "";
       }
     });
+    const wakeSoundChoice = String(values.wake_sound_catalog || "").trim();
+    if (wakeSoundChoice && wakeSoundChoice !== "__custom__") {
+      values.wake_word_triggered_sound_file = wakeSoundChoice;
+    }
     return values;
   }
 
@@ -2299,6 +2303,10 @@
     if (!host) {
       alert("Enter the device IP or hostname first.");
       return;
+    }
+    const wakeSoundSelect = document.querySelector("select[data-wake-sound-select]");
+    if (wakeSoundSelect instanceof HTMLSelectElement) {
+      syncRenderedWakeSoundSelection({ fromPicker: true });
     }
 
     const ok = confirm(`Build and flash ${template.label || template.value} firmware to ${host}:${port || "3232"}?\n\nMake sure this is the correct device before continuing.`);

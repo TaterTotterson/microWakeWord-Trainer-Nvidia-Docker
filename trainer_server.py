@@ -2191,7 +2191,7 @@ def _run_firmware_build_flash_background(session_id: str):
         return
 
     try:
-        config_path, _normalized, build_path = _render_firmware_config(template_key, values, host, session_id, port)
+        config_path, normalized, build_path = _render_firmware_config(template_key, values, host, session_id, port)
     except Exception as exc:
         _append_firmware_log(session_id, f"✗ Failed to prepare firmware config: {exc}")
         with FIRMWARE_LOCK:
@@ -2219,6 +2219,8 @@ def _run_firmware_build_flash_background(session_id: str):
     _append_firmware_log(session_id, f"→ Device: {host}:{port}")
     _append_firmware_log(session_id, f"→ Config: {config_path}")
     _append_firmware_log(session_id, f"→ Build cache: {build_path}")
+    if normalized.get("wake_word_triggered_sound_file"):
+        _append_firmware_log(session_id, f"→ Wake sound: {normalized['wake_word_triggered_sound_file']}")
     _append_firmware_log(session_id, "→ Running: " + " ".join(command))
 
     try:
