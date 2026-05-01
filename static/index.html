@@ -1938,7 +1938,16 @@
       groups.get(section).push(field);
     });
 
-    $("firmwareFields").innerHTML = Array.from(groups.entries()).map(([section, rows]) => `
+    const orderedGroups = Array.from(groups.entries());
+    const wakeSoundIndex = orderedGroups.findIndex(([section]) => section === "Wake Sound");
+    const microWakeWordIndex = orderedGroups.findIndex(([section]) => section === "Micro Wake Word");
+    if (wakeSoundIndex >= 0 && microWakeWordIndex >= 0 && wakeSoundIndex !== microWakeWordIndex + 1) {
+      const [wakeSoundGroup] = orderedGroups.splice(wakeSoundIndex, 1);
+      const targetIndex = orderedGroups.findIndex(([section]) => section === "Micro Wake Word");
+      orderedGroups.splice(targetIndex + 1, 0, wakeSoundGroup);
+    }
+
+    $("firmwareFields").innerHTML = orderedGroups.map(([section, rows]) => `
       <section class="firmwareSettingsSection">
         <div class="row space">
           <h3 style="margin:0;">${escapeHtml(section)}</h3>
