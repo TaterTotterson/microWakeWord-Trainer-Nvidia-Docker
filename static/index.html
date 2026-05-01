@@ -1037,9 +1037,9 @@
 
     <div class="tabs">
       <button id="tabTrainer" class="tabBtn active" type="button">Trainer</button>
+      <button id="tabFirmware" class="tabBtn" type="button">Firmware</button>
       <button id="tabCaptured" class="tabBtn" type="button">Captured Audio</button>
       <button id="tabSamples" class="tabBtn" type="button">Samples</button>
-      <button id="tabFirmware" class="tabBtn" type="button">Firmware</button>
     </div>
 
     <div id="trainerView" class="viewStack stack">
@@ -1418,6 +1418,7 @@
     activeView: "trainer",
   };
   let firmwareProfileSaveTimer = null;
+  let firmwareProfileReloadTimer = null;
 
   function setPill(el, text, cls) {
     el.className = "pill " + (cls || "");
@@ -1838,7 +1839,10 @@
     setPill($("firmwareDetectStatus"), `${list.length} detected`, "ok");
     if (!($("firmwareHost").value || "").trim()) {
       $("firmwareDeviceSelect").value = "0";
-      applySelectedFirmwareDevice();
+      applySelectedFirmwareDevice().catch((error) => {
+        setPill($("firmwareStatus"), "Device settings failed", "warn");
+        console.warn("Device settings load failed", error);
+      });
     }
   }
 
@@ -1850,15 +1854,20 @@
     return data;
   }
 
-  function applySelectedFirmwareDevice() {
+  async function applySelectedFirmwareDevice() {
     const indexText = $("firmwareDeviceSelect").value;
     if (indexText === "") return;
     const device = uiState.firmware.devices[Number(indexText)];
     if (!device) return;
+    await flushFirmwareProfileSave();
     $("firmwareHost").value = device.host || "";
     $("firmwarePort").value = device.port || 3232;
+    setPill($("firmwareStatus"), "Loading device settings...", "warn");
+    const data = await refreshFirmwareTemplates();
+    if (!Array.isArray(data?.warnings) || !data.warnings.length) {
+      setPill($("firmwareStatus"), "Device settings loaded", "ok");
+    }
     syncButtons();
-    scheduleFirmwareProfileSave();
   }
 
   function selectedFirmwareTemplate() {
@@ -1922,6 +1931,7 @@
         </div>
       </section>
     `).join("");
+    syncRenderedWakeWordSelection();
   }
 
   function renderFirmwareField(field) {
@@ -1987,7 +1997,14 @@
     `;
   }
 
-  function applyWakeWordSelection(select) {
+  function syncRenderedWakeWordSelection() {
+    const select = document.querySelector("select[data-wake-word-select]");
+    if (select && select.value) {
+      applyWakeWordSelection(select, { silent: true });
+    }
+  }
+
+  function applyWakeWordSelection(select, options = {}) {
     const option = select?.selectedOptions?.[0];
     if (!option || !select.value) return;
     const wakeWordName = option.dataset.wakeWordName || "";
@@ -2000,13 +2017,25 @@
     if (urlInput && wakeWordUrl) {
       urlInput.value = wakeWordUrl;
     }
-    setPill($("firmwareStatus"), "Wake word selected", "ok");
-    scheduleFirmwareProfileSave();
+    if (!options.silent) {
+      setPill($("firmwareStatus"), "Wake word selected", "ok");
+      scheduleFirmwareProfileSave();
+    }
     syncButtons();
   }
 
+  function firmwareTemplateQuery() {
+    const params = new URLSearchParams();
+    const host = ($("firmwareHost").value || "").trim();
+    const port = ($("firmwarePort").value || "3232").trim();
+    if (host) params.set("target_host", host);
+    if (port) params.set("target_port", port);
+    const query = params.toString();
+    return query ? `?${query}` : "";
+  }
+
   async function refreshFirmwareTemplates() {
-    const data = await api("/api/firmware/templates", { method: "GET" });
+    const data = await api(`/api/firmware/templates${firmwareTemplateQuery()}`, { method: "GET" });
     renderFirmwareTemplates(data);
     if (Array.isArray(data.warnings) && data.warnings.length) {
       setPill($("firmwareStatus"), "Template warning", "warn");
@@ -2062,10 +2091,32 @@
     }, 550);
   }
 
+  function scheduleFirmwareProfileReload() {
+    if (firmwareProfileSaveTimer) {
+      clearTimeout(firmwareProfileSaveTimer);
+      firmwareProfileSaveTimer = null;
+    }
+    if (firmwareProfileReloadTimer) {
+      clearTimeout(firmwareProfileReloadTimer);
+    }
+    firmwareProfileReloadTimer = setTimeout(async () => {
+      firmwareProfileReloadTimer = null;
+      try {
+        await refreshFirmwareTemplates();
+      } catch (error) {
+        setPill($("firmwareStatus"), "Device settings failed", "warn");
+      }
+    }, 650);
+  }
+
   function flushFirmwareProfileSave(templateKey = null) {
     if (firmwareProfileSaveTimer) {
       clearTimeout(firmwareProfileSaveTimer);
       firmwareProfileSaveTimer = null;
+    }
+    if (firmwareProfileReloadTimer) {
+      clearTimeout(firmwareProfileReloadTimer);
+      firmwareProfileReloadTimer = null;
     }
     return saveFirmwareProfileNow({ templateKey, quiet: true }).catch(() => null);
   }
@@ -2500,11 +2551,11 @@
 
   $("firmwareHost").addEventListener("input", () => {
     syncButtons();
-    scheduleFirmwareProfileSave();
+    scheduleFirmwareProfileReload();
   });
   $("firmwarePort").addEventListener("input", () => {
     syncButtons();
-    scheduleFirmwareProfileSave();
+    scheduleFirmwareProfileReload();
   });
   $("firmwareTemplate").addEventListener("change", () => {
     flushFirmwareProfileSave(uiState.firmware.activeTemplateKey);
@@ -2526,7 +2577,12 @@
     syncButtons();
     scheduleFirmwareProfileSave();
   });
-  $("firmwareDeviceSelect").addEventListener("change", applySelectedFirmwareDevice);
+  $("firmwareDeviceSelect").addEventListener("change", () => {
+    applySelectedFirmwareDevice().catch((error) => {
+      setPill($("firmwareStatus"), "Device settings failed", "warn");
+      alert("Device settings failed: " + error.message);
+    });
+  });
   $("refreshFirmwareBtn").addEventListener("click", async () => {
     try {
       await refreshFirmwareDevices();
