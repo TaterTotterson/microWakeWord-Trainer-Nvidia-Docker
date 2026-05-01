@@ -1618,6 +1618,26 @@ def _firmware_profile_key_for_target(raw_host: Any = "", raw_port: Any = "") -> 
     return f"device:{host}:{port}" if host else ""
 
 
+def _firmware_cache_slug(*parts: Any) -> str:
+    raw = "__".join(str(part or "").strip() for part in parts if str(part or "").strip())
+    slug = re.sub(r"[^A-Za-z0-9_.-]+", "_", raw).strip("._-")
+    return (slug[:96] or "default").lower()
+
+
+def _firmware_build_cache_path(template_key: str, normalized: Dict[str, str], host: str, port: Any = None) -> Path:
+    normalized_host, normalized_port = _firmware_profile_target(host, port)
+    template_slug = _firmware_cache_slug(template_key, "template")
+    device_identity = (
+        normalized.get("device_name")
+        or normalized.get("friendly_name")
+        or normalized.get("name")
+        or normalized_host
+        or "device"
+    )
+    target_slug = _firmware_cache_slug(device_identity, normalized_host, normalized_port)
+    return FIRMWARE_CACHE_DIR / "builds" / template_slug / target_slug
+
+
 def _load_firmware_profile(template_key: str, profile_key: str = "") -> Dict[str, str]:
     profiles = _load_firmware_profiles()
     profile = profiles.get(profile_key) if profile_key else None
@@ -1889,7 +1909,7 @@ def _render_firmware_config(
     host: str,
     session_id: str,
     port: Any = None,
-) -> tuple[Path, Dict[str, str]]:
+) -> tuple[Path, Dict[str, str], Path]:
     profile_key = _firmware_profile_key_for_target(host, port)
     ctx = _load_firmware_template_context(template_key, profile_key)
     spec = ctx["spec"]
@@ -1938,9 +1958,10 @@ def _render_firmware_config(
 
     config = copy.deepcopy(ctx["template_doc"])
     config["substitutions"] = {key: str(normalized.get(key, "")) for key in substitutions.keys()}
+    build_path = _firmware_build_cache_path(str(spec.get("key") or template_key), normalized, host, port)
     esphome_block = config.get("esphome") if isinstance(config.get("esphome"), dict) else None
     if isinstance(esphome_block, dict):
-        esphome_block["build_path"] = str(FIRMWARE_CACHE_DIR / "builds" / session_id / str(spec.get("key") or template_key))
+        esphome_block["build_path"] = str(build_path)
         config["esphome"] = esphome_block
 
     session_dir = FIRMWARE_CACHE_DIR / "configs" / session_id
@@ -1952,7 +1973,7 @@ def _render_firmware_config(
         normalized["__target_host"] = normalized_host
         normalized["__target_port"] = normalized_port
     _save_firmware_profile(profile_key or str(spec.get("key") or template_key), normalized)
-    return config_path, normalized
+    return config_path, normalized, build_path
 
 
 def _firmware_session_payload(session_id: str) -> Dict[str, Any]:
@@ -2170,7 +2191,7 @@ def _run_firmware_build_flash_background(session_id: str):
         return
 
     try:
-        config_path, _normalized = _render_firmware_config(template_key, values, host, session_id, port)
+        config_path, _normalized, build_path = _render_firmware_config(template_key, values, host, session_id, port)
     except Exception as exc:
         _append_firmware_log(session_id, f"✗ Failed to prepare firmware config: {exc}")
         with FIRMWARE_LOCK:
@@ -2197,6 +2218,7 @@ def _run_firmware_build_flash_background(session_id: str):
     _append_firmware_log(session_id, f"→ Template: {template_key}")
     _append_firmware_log(session_id, f"→ Device: {host}:{port}")
     _append_firmware_log(session_id, f"→ Config: {config_path}")
+    _append_firmware_log(session_id, f"→ Build cache: {build_path}")
     _append_firmware_log(session_id, "→ Running: " + " ".join(command))
 
     try:
