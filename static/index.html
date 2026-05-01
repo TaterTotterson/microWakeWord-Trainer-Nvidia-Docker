@@ -363,6 +363,20 @@
       align-items: end;
     }
 
+    .wakeSoundPreviewRow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-self: end;
+      padding-bottom: 2px;
+    }
+
+    .wakeSoundPreviewStatus {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .readOnlyValue {
       min-height: 43px;
       display: flex;
@@ -1419,6 +1433,8 @@
   };
   let firmwareProfileSaveTimer = null;
   let firmwareProfileReloadTimer = null;
+  let wakeSoundPreviewAudio = null;
+  let wakeSoundPreviewButton = null;
 
   function setPill(el, text, cls) {
     el.className = "pill " + (cls || "");
@@ -1907,6 +1923,7 @@
   }
 
   function renderFirmwareFields() {
+    resetWakeSoundPreview();
     const template = selectedFirmwareTemplate();
     const fields = Array.isArray(template?.fields) ? template.fields : [];
     if (!fields.length) {
@@ -1928,10 +1945,12 @@
         </div>
         <div class="firmwareSettingsGrid">
           ${rows.map((field) => renderFirmwareField(field)).join("")}
+          ${section === "Wake Sound" ? renderWakeSoundPreviewControl() : ""}
         </div>
       </section>
     `).join("");
     syncRenderedWakeWordSelection();
+    syncRenderedWakeSoundSelection();
   }
 
   function renderFirmwareField(field) {
@@ -1976,6 +1995,28 @@
         </label>
       `;
     }
+    if (type === "wake_sound_select") {
+      const optionHtml = options.length
+        ? options.map((option) => {
+            const optionValue = String(option.value || "");
+            const selected = optionValue && optionValue === String(value || "") ? " selected" : "";
+            return `
+              <option value="${escapeAttr(optionValue)}"${selected}>
+                ${escapeHtml(option.label || optionValue)}
+              </option>
+            `;
+          }).join("")
+        : "";
+      return `
+        <label class="field">
+          <strong>${escapeHtml(label)}</strong>
+          <select data-firmware-field="${escapeAttr(key)}" data-wake-sound-select ${options.length ? "" : "disabled"}>
+            ${optionHtml || `<option value="__custom__">Custom URL</option>`}
+          </select>
+          ${description}
+        </label>
+      `;
+    }
     if (type === "checkbox") {
       return `
         <label class="field">
@@ -1994,6 +2035,15 @@
         <input data-firmware-field="${escapeAttr(key)}" type="${type === "password" ? "password" : "text"}" value="${escapeAttr(value)}"${placeholder} autocomplete="off" />
         ${description}
       </label>
+    `;
+  }
+
+  function renderWakeSoundPreviewControl() {
+    return `
+      <div class="wakeSoundPreviewRow">
+        <button type="button" data-wake-sound-preview>Play Selected Sound</button>
+        <span class="wakeSoundPreviewStatus" data-wake-sound-preview-status></span>
+      </div>
     `;
   }
 
@@ -2022,6 +2072,114 @@
       scheduleFirmwareProfileSave();
     }
     syncButtons();
+  }
+
+  function syncRenderedWakeSoundSelection({ fromPicker = false } = {}) {
+    const select = document.querySelector("select[data-wake-sound-select]");
+    const urlInput = document.querySelector('[data-firmware-field="wake_word_triggered_sound_file"]');
+    if (!(select instanceof HTMLSelectElement) || !(urlInput instanceof HTMLInputElement)) return;
+    if (fromPicker) {
+      const selectedUrl = String(select.value || "").trim();
+      if (selectedUrl && selectedUrl !== "__custom__") {
+        urlInput.value = selectedUrl;
+      }
+      return;
+    }
+    const currentUrl = String(urlInput.value || "").trim();
+    const optionValues = Array.from(select.options).map((option) => String(option.value || "").trim());
+    if (currentUrl && optionValues.includes(currentUrl)) {
+      select.value = currentUrl;
+    } else if (optionValues.includes("__custom__")) {
+      select.value = "__custom__";
+    }
+  }
+
+  function applyWakeSoundSelection(select, options = {}) {
+    syncRenderedWakeSoundSelection({ fromPicker: true });
+    if (!options.silent) {
+      setPill($("firmwareStatus"), "Wake sound selected", "ok");
+      scheduleFirmwareProfileSave();
+    }
+    syncButtons();
+  }
+
+  function resetWakeSoundPreview(message = "") {
+    if (wakeSoundPreviewAudio instanceof HTMLAudioElement) {
+      try {
+        wakeSoundPreviewAudio.pause();
+        wakeSoundPreviewAudio.currentTime = 0;
+      } catch (_error) {
+        // Browser cleanup can fail if the media element is already gone.
+      }
+    }
+    if (wakeSoundPreviewButton instanceof HTMLButtonElement && document.body.contains(wakeSoundPreviewButton)) {
+      wakeSoundPreviewButton.disabled = false;
+      wakeSoundPreviewButton.textContent = "Play Selected Sound";
+      const section = wakeSoundPreviewButton.closest(".firmwareSettingsSection");
+      const status = section?.querySelector?.("[data-wake-sound-preview-status]");
+      if (status instanceof HTMLElement) {
+        status.textContent = message;
+      }
+    }
+    wakeSoundPreviewAudio = null;
+    wakeSoundPreviewButton = null;
+  }
+
+  function getWakeSoundPreviewUrl() {
+    const urlInput = document.querySelector('[data-firmware-field="wake_word_triggered_sound_file"]');
+    const picker = document.querySelector("select[data-wake-sound-select]");
+    const urlValue = String(urlInput instanceof HTMLInputElement ? urlInput.value || "" : "").trim();
+    if (urlValue) return urlValue;
+    const pickerValue = String(picker instanceof HTMLSelectElement ? picker.value || "" : "").trim();
+    return pickerValue && pickerValue !== "__custom__" ? pickerValue : "";
+  }
+
+  async function handleWakeSoundPreview(button) {
+    const status = button.closest(".firmwareSettingsSection")?.querySelector?.("[data-wake-sound-preview-status]");
+    if (wakeSoundPreviewAudio instanceof HTMLAudioElement && wakeSoundPreviewButton === button && !wakeSoundPreviewAudio.paused) {
+      resetWakeSoundPreview("Stopped.");
+      return;
+    }
+
+    const url = getWakeSoundPreviewUrl();
+    if (!url) {
+      if (status instanceof HTMLElement) status.textContent = "Choose a wake sound or enter a URL first.";
+      return;
+    }
+
+    resetWakeSoundPreview();
+    const audio = new Audio(url);
+    audio.preload = "auto";
+    wakeSoundPreviewAudio = audio;
+    wakeSoundPreviewButton = button;
+    button.disabled = true;
+    button.textContent = "Loading...";
+    if (status instanceof HTMLElement) status.textContent = "Loading preview...";
+
+    const finish = (message) => {
+      if (wakeSoundPreviewAudio !== audio) return;
+      if (button instanceof HTMLButtonElement && document.body.contains(button)) {
+        button.disabled = false;
+        button.textContent = "Play Selected Sound";
+      }
+      if (status instanceof HTMLElement) status.textContent = message;
+      wakeSoundPreviewAudio = null;
+      wakeSoundPreviewButton = null;
+    };
+
+    audio.addEventListener("ended", () => finish("Finished."));
+    audio.addEventListener("error", () => finish("Could not play this wake sound."));
+
+    try {
+      await audio.play();
+      if (wakeSoundPreviewAudio === audio) {
+        button.disabled = false;
+        button.textContent = "Stop";
+        if (status instanceof HTMLElement) status.textContent = "Playing...";
+      }
+    } catch (error) {
+      finish("Playback blocked or unavailable.");
+    }
   }
 
   function firmwareTemplateQuery() {
@@ -2564,14 +2722,34 @@
     applyFirmwareTemplateTarget();
     syncButtons();
   });
-  $("firmwareFields").addEventListener("input", () => {
+  $("firmwareFields").addEventListener("input", (event) => {
+    if (event.target?.matches?.('[data-firmware-field="wake_word_triggered_sound_file"]')) {
+      resetWakeSoundPreview();
+      syncRenderedWakeSoundSelection();
+    }
     syncButtons();
     scheduleFirmwareProfileSave();
+  });
+  $("firmwareFields").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-wake-sound-preview]");
+    if (!button) return;
+    handleWakeSoundPreview(button).catch(() => {
+      const status = button.closest(".firmwareSettingsSection")?.querySelector?.("[data-wake-sound-preview-status]");
+      if (status instanceof HTMLElement) {
+        status.textContent = "Preview failed.";
+      }
+    });
   });
   $("firmwareFields").addEventListener("change", (event) => {
     const select = event.target.closest("select[data-wake-word-select]");
     if (select) {
       applyWakeWordSelection(select);
+      return;
+    }
+    const wakeSoundSelect = event.target.closest("select[data-wake-sound-select]");
+    if (wakeSoundSelect) {
+      resetWakeSoundPreview();
+      applyWakeSoundSelection(wakeSoundSelect);
       return;
     }
     syncButtons();

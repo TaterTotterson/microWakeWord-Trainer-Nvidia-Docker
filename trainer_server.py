@@ -85,12 +85,16 @@ FIRMWARE_MAX_LOG_LINES = int(os.environ.get("FIRMWARE_MAX_LOG_LINES", "500"))
 FIRMWARE_GITHUB_OWNER = os.environ.get("FIRMWARE_GITHUB_OWNER", "TaterTotterson")
 FIRMWARE_GITHUB_REPO = os.environ.get("FIRMWARE_GITHUB_REPO", "microWakeWords")
 FIRMWARE_GITHUB_REF = os.environ.get("FIRMWARE_GITHUB_REF", "main")
+WAKE_SOUND_CATALOG_CACHE_TTL_SECONDS = int(os.environ.get("WAKE_SOUND_CATALOG_CACHE_TTL_SECONDS", "600"))
 FIRMWARE_PLATFORMIO_DIR = FIRMWARE_CACHE_DIR / "platformio"
 FIRMWARE_HOME_DIR = FIRMWARE_CACHE_DIR / "home"
 FIRMWARE_XDG_CACHE_DIR = FIRMWARE_CACHE_DIR / "cache"
 FIRMWARE_PROFILE_FILE = Path(
     os.environ.get("FIRMWARE_PROFILE_FILE", str(FIRMWARE_CACHE_DIR / "profiles.json"))
 ).resolve()
+WAKE_SOUND_MANIFEST_PATHS = ("wake_sound_manifest.json", "wake-sound-manifest.json")
+WAKE_SOUND_CATALOG_CACHE: Dict[str, Any] = {"ts": 0.0, "payload": {}}
+WAKE_SOUND_CATALOG_LOCK = threading.Lock()
 TRAIN_LOG_TAIL_LINES = int(os.environ.get("REC_TRAIN_LOG_TAIL_LINES", "400"))
 TRAIN_LOG_MAX_BYTES = int(os.environ.get("REC_TRAIN_LOG_MAX_BYTES", str(512 * 1024)))
 
@@ -1449,6 +1453,93 @@ def _load_firmware_template_text(spec: Dict[str, Any]) -> tuple[str, str]:
         raise RuntimeError(f"Could not download firmware template from {url}: {exc}") from exc
 
 
+def _wake_sound_label_from_slug(slug: str) -> str:
+    text = str(slug or "").strip()
+    if not text:
+        return "Wake Sound"
+    return re.sub(r"[_\-.]+", " ", text).strip().title() or "Wake Sound"
+
+
+def _wake_sound_entries_from_manifest(payload: Any) -> List[Dict[str, str]]:
+    rows: List[Any] = []
+    if isinstance(payload, list):
+        rows = list(payload)
+    elif isinstance(payload, dict):
+        for key in ("entries", "wake_sounds", "sounds", "audio", "items"):
+            candidate = payload.get(key)
+            if isinstance(candidate, list):
+                rows = list(candidate)
+                break
+
+    entries: List[Dict[str, str]] = []
+    seen = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        url = str(
+            row.get("url")
+            or row.get("download_url")
+            or row.get("audio_url")
+            or row.get("sound_url")
+            or row.get("wake_sound_url")
+            or row.get("wake_word_triggered_sound_file")
+            or ""
+        ).strip()
+        path = str(row.get("path") or "").strip()
+        if not url and path:
+            url = _firmware_raw_url(path)
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        slug = str(row.get("slug") or row.get("name") or row.get("key") or Path(path or url).stem).strip()
+        entries.append(
+            {
+                "value": url,
+                "label": str(row.get("label") or row.get("title") or _wake_sound_label_from_slug(slug)).strip(),
+            }
+        )
+    return sorted(entries, key=lambda item: (item["label"].lower(), item["value"]))
+
+
+def _load_wake_sound_catalog() -> Dict[str, Any]:
+    now = time.time()
+    with WAKE_SOUND_CATALOG_LOCK:
+        cached_ts = float(WAKE_SOUND_CATALOG_CACHE.get("ts") or 0.0)
+        cached_payload = WAKE_SOUND_CATALOG_CACHE.get("payload")
+        if isinstance(cached_payload, dict) and (now - cached_ts) < WAKE_SOUND_CATALOG_CACHE_TTL_SECONDS:
+            return copy.deepcopy(cached_payload)
+
+    warnings: List[str] = []
+    for manifest_path in WAKE_SOUND_MANIFEST_PATHS:
+        manifest_url = _firmware_raw_url(manifest_path)
+        try:
+            payload = json.loads(_fetch_text_url(manifest_url, timeout=20))
+            entries = _wake_sound_entries_from_manifest(payload)
+            if entries:
+                catalog = {"entries": entries, "warning": "", "source_label": manifest_url}
+                with WAKE_SOUND_CATALOG_LOCK:
+                    WAKE_SOUND_CATALOG_CACHE["ts"] = now
+                    WAKE_SOUND_CATALOG_CACHE["payload"] = copy.deepcopy(catalog)
+                return catalog
+        except Exception as exc:
+            warnings.append(f"{manifest_path}: {exc}")
+
+    catalog = {
+        "entries": [],
+        "warning": warnings[0] if warnings else "Wake sound catalog unavailable.",
+        "source_label": "",
+    }
+    with WAKE_SOUND_CATALOG_LOCK:
+        WAKE_SOUND_CATALOG_CACHE["ts"] = now
+        WAKE_SOUND_CATALOG_CACHE["payload"] = copy.deepcopy(catalog)
+    return catalog
+
+
+def _wake_sound_picker_options(catalog: Dict[str, Any]) -> List[Dict[str, str]]:
+    entries = catalog.get("entries") if isinstance(catalog.get("entries"), list) else []
+    return [{"value": "__custom__", "label": "Custom URL"}, *[dict(row) for row in entries if isinstance(row, dict)]]
+
+
 def _extract_substitution_sections(raw_text: str) -> Dict[str, str]:
     section_map: Dict[str, str] = {}
     in_substitutions = False
@@ -1582,6 +1673,11 @@ def _normalize_firmware_profile_update(template_key: str, values: Dict[str, Any]
     wake_word_choice = str(values.get("wake_word_choice") or "").strip()
     if wake_word_choice:
         normalized["wake_word_choice"] = wake_word_choice
+    wake_sound_choice = str(values.get("wake_sound_catalog") or "").strip()
+    if wake_sound_choice:
+        normalized["wake_sound_catalog"] = wake_sound_choice
+        if wake_sound_choice != "__custom__" and "wake_word_triggered_sound_file" in substitutions:
+            normalized["wake_word_triggered_sound_file"] = wake_sound_choice
 
     target_host = str(values.get("__target_host") or "").strip()
     target_port = str(values.get("__target_port") or "").strip()
@@ -1657,9 +1753,11 @@ def _firmware_template_fields(template_key: str, base_url: str = "", profile_key
         fixed_keys.add(identity_key)
     hidden_keys = {"ha_voice_ip"} | set(spec.get("auto_keys") or set())
     trained_wake_words = _list_trained_wake_words(base_url)
+    wake_sound_catalog = _load_wake_sound_catalog()
     selected_wake_word_row = _selected_trained_wake_word(trained_wake_words, profile, ctx["substitutions"])
     selected_wake_word = str(selected_wake_word_row.get("key") or "") if selected_wake_word_row else ""
     wake_picker_added = False
+    wake_sound_picker_added = False
 
     for key, raw_value in ctx["substitutions"].items():
         key_text = str(key or "").strip()
@@ -1684,6 +1782,35 @@ def _firmware_template_fields(template_key: str, base_url: str = "", profile_key
                 }
             )
             wake_picker_added = True
+
+        if key_text == "wake_word_triggered_sound_file" and not wake_sound_picker_added:
+            wake_sound_entries = wake_sound_catalog.get("entries") if isinstance(wake_sound_catalog.get("entries"), list) else []
+            current_sound_url = str(profile.get(key_text) or _template_default_string(raw_value) or "").strip()
+            saved_sound_choice = str(profile.get("wake_sound_catalog") or "").strip()
+            available_sound_urls = {str(row.get("value") or "") for row in wake_sound_entries if isinstance(row, dict)}
+            if saved_sound_choice in available_sound_urls or saved_sound_choice == "__custom__":
+                picker_value = saved_sound_choice
+            else:
+                picker_value = current_sound_url if current_sound_url in available_sound_urls else "__custom__"
+            description = (
+                f"Choose from {len(wake_sound_entries)} prebuilt wake sounds, or leave this on Custom URL and paste your own audio URL below."
+                if wake_sound_entries
+                else "Prebuilt wake-sound catalog is unavailable right now. You can still paste any custom audio URL below."
+            )
+            if wake_sound_catalog.get("warning") and not wake_sound_entries:
+                description = f"{description} {wake_sound_catalog['warning']}".strip()
+            fields.append(
+                {
+                    "key": "wake_sound_catalog",
+                    "label": "Prebuilt Wake Sound",
+                    "type": "wake_sound_select",
+                    "value": picker_value,
+                    "options": _wake_sound_picker_options(wake_sound_catalog),
+                    "description": description,
+                    "section": "Wake Sound",
+                }
+            )
+            wake_sound_picker_added = True
 
         default = _template_default_string(raw_value)
         saved = str(profile.get(key_text) or "")
@@ -1716,8 +1843,13 @@ def _firmware_template_fields(template_key: str, base_url: str = "", profile_key
             if selected_wake_word_row:
                 value = str(selected_wake_word_row.get("wake_word_name") or selected_wake_word_row.get("key") or "")
             placeholder = "hey_tater"
+        elif key_text == "wake_word_triggered_sound_file":
+            placeholder = "https://.../wake-sound.mp3"
+            description = "Pick a prebuilt wake sound above or paste any custom audio URL."
         section = ctx["sections"].get(key_text) or "Firmware"
-        if key_text in {"wake_word_name", "wake_word_model_url"}:
+        if key_text == "wake_word_triggered_sound_file":
+            section = "Wake Sound"
+        elif key_text in {"wake_word_name", "wake_word_model_url"}:
             section = "Micro Wake Word"
         elif key_text.endswith("_sound_file"):
             section = "Sounds"
@@ -1788,6 +1920,9 @@ def _render_firmware_config(
             normalized[key_text] = str(raw_value if raw_value is not None else "").strip() or _template_default_string(
                 substitutions.get(key_text)
             )
+    wake_sound_choice = str(values.get("wake_sound_catalog") or "").strip()
+    if wake_sound_choice and wake_sound_choice != "__custom__" and "wake_word_triggered_sound_file" in substitutions:
+        normalized["wake_word_triggered_sound_file"] = wake_sound_choice
 
     missing = []
     if not normalized.get("wifi_ssid"):
