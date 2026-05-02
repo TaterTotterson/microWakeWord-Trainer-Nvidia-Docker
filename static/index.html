@@ -1356,9 +1356,10 @@
             <span class="firmwareStepBadge">3</span>
             <div>
               <h3>Device Settings</h3>
-              <p>These values come from the selected YAML substitutions and are saved for the next flash.</p>
+              <p>Each build fetches the latest YAML, then applies the saved substitutions for this target device.</p>
             </div>
           </div>
+          <button id="saveFirmwareSettingsBtn" type="button">Save settings</button>
         </div>
         <div id="firmwareFields" class="firmwareFields stack">
           <div class="emptyState">Firmware template settings will appear here.</div>
@@ -2435,6 +2436,7 @@
     $("clearNegativeBtn").disabled = uiState.reviewBusy || negativeCount === 0;
     $("refreshSamplesBtn").disabled = uiState.reviewBusy || uiState.uploadBusy;
     $("refreshFirmwareBtn").disabled = uiState.firmwareBusy;
+    $("saveFirmwareSettingsBtn").disabled = uiState.firmwareBusy || !firmwareHost || !firmwareTemplate;
     $("cleanFirmwareBtn").disabled = uiState.firmwareBusy;
     $("openFirmwareConsoleBtn").disabled = false;
     $("flashFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareHost || !firmwareTemplate;
@@ -2787,6 +2789,28 @@
     }
   });
   $("flashFirmwareBtn").addEventListener("click", startFirmwareFlash);
+  $("saveFirmwareSettingsBtn").addEventListener("click", async () => {
+    const host = ($("firmwareHost").value || "").trim();
+    const template = ($("firmwareTemplate").value || "").trim();
+    if (!template) {
+      alert("Choose a firmware template first.");
+      return;
+    }
+    if (!host) {
+      alert("Enter the device IP or hostname first so settings can be saved for this device.");
+      return;
+    }
+    try {
+      setPill($("firmwareStatus"), "Saving device settings...", "warn");
+      await saveFirmwareProfileNow({ quiet: true });
+      setPill($("firmwareStatus"), "Device settings saved", "ok");
+    } catch (error) {
+      setPill($("firmwareStatus"), "Settings save failed", "err");
+      alert("Settings save failed: " + error.message);
+    } finally {
+      syncButtons();
+    }
+  });
   $("cleanFirmwareBtn").addEventListener("click", async () => {
     try {
       setPill($("firmwareStatus"), "Cleaning build files...", "warn");

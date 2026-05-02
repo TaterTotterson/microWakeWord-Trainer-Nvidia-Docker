@@ -89,6 +89,7 @@ WAKE_SOUND_CATALOG_CACHE_TTL_SECONDS = int(os.environ.get("WAKE_SOUND_CATALOG_CA
 FIRMWARE_PLATFORMIO_DIR = FIRMWARE_CACHE_DIR / "platformio"
 FIRMWARE_HOME_DIR = FIRMWARE_CACHE_DIR / "home"
 FIRMWARE_XDG_CACHE_DIR = FIRMWARE_CACHE_DIR / "cache"
+FIRMWARE_ESPHOME_DATA_DIR = FIRMWARE_CACHE_DIR / "esphome_data"
 FIRMWARE_PROFILE_FILE = Path(
     os.environ.get("FIRMWARE_PROFILE_FILE", str(FIRMWARE_CACHE_DIR / "profiles.json"))
 ).resolve()
@@ -1985,7 +1986,7 @@ def _render_firmware_config(
 
     session_dir = FIRMWARE_CACHE_DIR / "configs" / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
-    config_path = session_dir / f"{str(spec.get('key') or template_key)}.yaml"
+    config_path = session_dir / f"{build_path.parent.name}__{build_path.name}.yaml"
     config_path.write_text(yaml.dump(config, Dumper=_FirmwareYamlDumper, sort_keys=False, allow_unicode=True), encoding="utf-8")
     normalized_host, normalized_port = _firmware_profile_target(host, port)
     if normalized_host:
@@ -2042,11 +2043,13 @@ def _firmware_runner_env(*, include_esphome_pythonpath: bool = False) -> Dict[st
     FIRMWARE_HOME_DIR.mkdir(parents=True, exist_ok=True)
     FIRMWARE_XDG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     FIRMWARE_PLATFORMIO_DIR.mkdir(parents=True, exist_ok=True)
+    FIRMWARE_ESPHOME_DATA_DIR.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
     env["PYTHONUNBUFFERED"] = "1"
     env["HOME"] = str(FIRMWARE_HOME_DIR)
     env["XDG_CACHE_HOME"] = str(FIRMWARE_XDG_CACHE_DIR)
+    env["ESPHOME_DATA_DIR"] = str(FIRMWARE_ESPHOME_DATA_DIR)
     env["PLATFORMIO_CORE_DIR"] = str(FIRMWARE_PLATFORMIO_DIR)
     env["PLATFORMIO_CACHE_DIR"] = str(FIRMWARE_PLATFORMIO_DIR / "cache")
     if include_esphome_pythonpath:
@@ -2900,7 +2903,7 @@ def firmware_clean():
         return JSONResponse({"ok": False, "error": f"Wait for active firmware session(s) to finish: {', '.join(active[:3])}."}, status_code=400)
 
     removed = []
-    for child in ("configs", "builds", "platformio", "home", "cache"):
+    for child in ("configs", "builds", "platformio", "home", "cache", "esphome_data"):
         path = FIRMWARE_CACHE_DIR / child
         if path.exists():
             shutil.rmtree(path, ignore_errors=True)
