@@ -1624,11 +1624,23 @@ def _firmware_cache_slug(*parts: Any) -> str:
     return (slug[:96] or "default").lower()
 
 
-def _firmware_build_cache_path(template_key: str, normalized: Dict[str, str], host: str, port: Any = None) -> Path:
+def _firmware_build_cache_path(
+    template_key: str,
+    normalized: Dict[str, str],
+    host: str,
+    port: Any = None,
+    identity_key: str = "",
+    friendly_key: str = "",
+) -> Path:
     normalized_host, normalized_port = _firmware_profile_target(host, port)
     template_slug = _firmware_cache_slug(template_key, "template")
+    identity_key = str(identity_key or "").strip()
+    friendly_key = str(friendly_key or "").strip()
     device_identity = (
-        normalized.get("device_name")
+        (normalized.get(identity_key) if identity_key else "")
+        or (normalized.get(friendly_key) if friendly_key else "")
+        or normalized.get("node_name")
+        or normalized.get("device_name")
         or normalized.get("friendly_name")
         or normalized.get("name")
         or normalized_host
@@ -1958,7 +1970,14 @@ def _render_firmware_config(
 
     config = copy.deepcopy(ctx["template_doc"])
     config["substitutions"] = {key: str(normalized.get(key, "")) for key in substitutions.keys()}
-    build_path = _firmware_build_cache_path(str(spec.get("key") or template_key), normalized, host, port)
+    build_path = _firmware_build_cache_path(
+        str(spec.get("key") or template_key),
+        normalized,
+        host,
+        port,
+        str(spec.get("identity_key") or ""),
+        str(spec.get("friendly_key") or ""),
+    )
     esphome_block = config.get("esphome") if isinstance(config.get("esphome"), dict) else None
     if isinstance(esphome_block, dict):
         esphome_block["build_path"] = str(build_path)
