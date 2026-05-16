@@ -16,7 +16,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: tatertotterson/microwakeword-trainer-nvidia-docker
+  IMAGE_NAME: tatertotterson/microwakeword
 
 jobs:
   docker:
