@@ -622,6 +622,67 @@
       color: var(--orange2);
     }
 
+    .paginationControls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 12px 0;
+    }
+
+    .paginationControls .pageBtn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text, #fff);
+      cursor: pointer;
+    }
+
+    .paginationControls .pageBtn:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    .paginationControls .pageInfo {
+      font-size: 13px;
+      color: var(--muted, #888);
+    }
+
+    .paginationControls .pageJump {
+      font-size: 13px;
+      color: var(--muted, #888);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .paginationControls .pageInput {
+      width: 40px;
+      padding: 4px 6px;
+      font-size: 13px;
+      text-align: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 4px;
+      color: var(--text, #fff);
+    }
+
+    .paginationControls .pageJumpBtn {
+      padding: 4px 10px;
+      font-size: 13px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      color: var(--text, #fff);
+      cursor: pointer;
+    }
+
+    .paginationControls .pageJumpBtn:hover {
+      background: rgba(255,255,255,0.18);
+    }
+
     .tabs {
       display: flex;
       flex-wrap: wrap;
@@ -960,6 +1021,78 @@
       100% { transform: translateY(0) scale(1) rotate(0deg); }
     }
 
+    .trimOverlay {
+      position: fixed; inset: 0; padding: 22px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(4,5,10,0.6); backdrop-filter: blur(10px);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity 0.18s ease, visibility 0.18s ease;
+      z-index: 11000;
+    }
+    .trimOverlay.open { opacity: 1; visibility: visible; pointer-events: auto; }
+
+    .trimDialog {
+      width: min(960px, calc(100vw - 36px));
+      max-height: min(90vh, 900px);
+      display: grid; grid-template-rows: auto 1fr auto auto auto; gap: 12px;
+      padding: 18px; border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(180deg, rgba(17,20,28,0.82), rgba(8,10,16,0.94));
+      box-shadow: 0 28px 84px rgba(0,0,0,0.58);
+      backdrop-filter: blur(18px) saturate(1.12);
+    }
+    .trimHeader { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .trimTitle { margin: 0; font-size: 18px; }
+    .trimHint { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+
+    .trimCanvasWrap {
+      position: relative; width: 100%; min-height: 120px;
+      border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.4); overflow: hidden;
+    }
+    .trimCanvas { width: 100%; height: 100%; display: block; }
+
+    .trimHandle {
+      position: absolute; top: 0; width: 48px; height: 100%;
+      cursor: ew-resize; pointer-events: auto; touch-action: none;
+      transform: translateX(-50%);
+    }
+    .trimHandle::after {
+      content: ''; position: absolute; top: 10%; bottom: 10%; left: 50%;
+      transform: translateX(-50%); width: 3px; border-radius: 2px;
+      background: var(--orange); box-shadow: 0 0 6px rgba(255,138,42,0.5);
+    }
+    .trimHandle::before {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%); width: 10px; height: 24px;
+      border-radius: 5px; border: 1px solid rgba(255,138,42,0.5);
+      background: rgba(255,138,42,0.15);
+    }
+
+    .trimTimeInfo {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; font-size: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .trimSeparator { color: var(--muted); }
+    .trimVadInfo { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .trimActions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .trimActions button { flex: 1; min-width: 120px; }
+
+    .pill.trimBadge {
+      color: #89d4ff;
+      border-color: rgba(137,212,255,0.25);
+      background: rgba(137,212,255,0.08);
+    }
+    .trimBtn {
+      border-color: rgba(255,138,42,0.3);
+      background: rgba(255,138,42,0.1);
+    }
+    .trimBtn:hover {
+      border-color: rgba(255,138,42,0.5);
+      background: rgba(255,138,42,0.18);
+    }
+
     @media (max-width: 720px) {
       .wrap { padding: 18px 14px 30px; }
       input[type="text"] { width: 100%; }
@@ -1033,6 +1166,15 @@
       .trainFooter button {
         width: 100%;
       }
+      .trimOverlay { padding: 8px; }
+      .trimDialog {
+        width: 100%; height: 96vh;
+        padding: 14px; grid-template-rows: auto 1fr auto auto auto;
+      }
+      .trimCanvasWrap { min-height: 100px; }
+      .trimHeader { flex-direction: column; align-items: stretch; }
+      .trimActions { flex-direction: column; }
+      .trimActions button { width: 100%; min-width: unset; }
     }
   </style>
 </head>
@@ -1218,7 +1360,7 @@
       </div>
 
       <section class="card studioPanel stack">
-        <div class="sampleLibraryHeader">
+        <div id="sampleLibraryHeader" class="sampleLibraryHeader">
           <div class="studioPanelTitle">
             <span class="studioStepBadge">1</span>
             <div>
@@ -1241,6 +1383,7 @@
         <div id="sampleLibraryList" class="capturedList">
           <div class="emptyState">No samples saved yet.</div>
         </div>
+        <div id="samplePagination"></div>
       </section>
 
       <section class="card studioPanel stack">
@@ -1414,6 +1557,40 @@
     </div>
   </div>
 
+  <div id="trimOverlay" class="trimOverlay" aria-hidden="true">
+    <div id="trimDialog" class="trimDialog" role="dialog" aria-modal="true">
+      <div class="trimHeader">
+        <div>
+          <h3 id="trimTitle" class="trimTitle">Trim Audio</h3>
+          <p id="trimHint" class="trimHint">Drag the handles to select a region, then save as a new sample.</p>
+        </div>
+        <button id="closeTrimBtn" type="button">Close</button>
+      </div>
+      <div class="trimCanvasWrap">
+        <canvas id="trimCanvas" class="trimCanvas"></canvas>
+        <div id="trimStartHandle" class="trimHandle" data-handle="start"></div>
+        <div id="trimEndHandle" class="trimHandle" data-handle="end"></div>
+      </div>
+      <div class="trimTimeInfo">
+        <span id="trimStartTime">0.00s</span>
+        <span class="trimSeparator">--</span>
+        <span id="trimEndTime">0.00s</span>
+        <span class="trimSeparator">|</span>
+        <span id="trimDuration">Duration: 0.00s</span>
+      </div>
+      <div id="trimVadInfo" class="trimVadInfo">
+        <span class="pill ok">VAD detected speech</span>
+        <span id="trimVadSegments" class="muted"></span>
+      </div>
+      <div class="trimActions">
+        <button id="trimPlayBtn" type="button">Play selection</button>
+        <button id="trimSelectFirstVadBtn" type="button">Select first VAD</button>
+        <button id="trimSaveBtn" class="primary" type="button">Save Trim</button>
+        <button id="trimCancelBtn" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   const $ = (id) => document.getElementById(id);
 
@@ -1423,7 +1600,7 @@
     availableLanguages: [],
     selectedFiles: [],
     captured: { items: [], captured_count: 0, negative_count: 0, personal_count: 0 },
-    samples: { personal: [], negative: [], personal_count: 0, negative_count: 0, activeBucket: "personal" },
+    samples: { personal: [], negative: [], personal_count: 0, negative_count: 0, activeBucket: "personal", pages: { personal: 0, negative: 0 } },
     firmware: { devices: [], templates: [], flashing: null, logLines: [], activeTemplateKey: "" },
     uploadBusy: false,
     reviewBusy: false,
@@ -1432,10 +1609,273 @@
     firmwarePoller: null,
     activeView: "trainer",
   };
+  const SAMPLE_PAGE_SIZE = 50;
   let firmwareProfileSaveTimer = null;
   let firmwareProfileReloadTimer = null;
   let wakeSoundPreviewAudio = null;
   let wakeSoundPreviewButton = null;
+
+  // --- Trim Waveform Module ---
+  const TrimWaveform = {
+      audioBuffer: null,
+      duration: 0,
+      startRatio: 0,
+      endRatio: 1,
+      vadSegments: [],
+      isDragging: null,
+
+      async init(bucket, fileName) {
+          const audioUrl = `/api/audio/${encodeURIComponent(bucket)}/${encodeURIComponent(fileName)}`;
+          const resp = await fetch(audioUrl);
+          const arrayBuf = await resp.arrayBuffer();
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.audioBuffer = await ctx.decodeAudioData(arrayBuf);
+          this.duration = this.audioBuffer.duration;
+          ctx.close();
+
+          try {
+              const vadData = await api(
+                  `/api/samples/${encodeURIComponent(bucket)}/${encodeURIComponent(fileName)}/vad`,
+                  { method: 'POST' }
+              );
+              this.vadSegments = vadData.segments || [];
+          } catch (e) {
+              console.warn('VAD failed:', e);
+              this.vadSegments = [];
+          }
+
+          this.startRatio = 0;
+          this.endRatio = 1;
+          if (this.vadSegments.length > 0) {
+              this.startRatio = this.vadSegments[0].start / this.duration;
+              this.endRatio = this.vadSegments[0].end / this.duration;
+          }
+          return { duration: this.duration, vadCount: this.vadSegments.length };
+      },
+
+      draw() {
+          const canvas = $('trimCanvas');
+          if (!canvas || !this.audioBuffer) return;
+          const dpr = window.devicePixelRatio || 1;
+          const rect = canvas.getBoundingClientRect();
+          canvas.width = rect.width * dpr;
+          canvas.height = rect.height * dpr;
+          const ctx = canvas.getContext('2d');
+          ctx.scale(dpr, dpr);
+          const w = rect.width, h = rect.height, mid = h / 2;
+          ctx.clearRect(0, 0, w, h);
+
+          // Full waveform (dim)
+          const data = this.audioBuffer.getChannelData(0);
+          const step = Math.max(1, Math.floor(data.length / w));
+          ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let i = 0; i < w; i++) {
+              let mn = 1, mx = -1;
+              for (let j = 0; j < step; j++) {
+                  const v = data[i * step + j] || 0;
+                  if (v < mn) mn = v;
+                  if (v > mx) mx = v;
+              }
+              ctx.moveTo(i, mid + mn * mid * 0.9);
+              ctx.lineTo(i, mid + mx * mid * 0.9);
+          }
+          ctx.stroke();
+
+          // Selection waveform (bright)
+          const selStartPx = this.startRatio * w;
+          const selEndPx = this.endRatio * w;
+          ctx.strokeStyle = 'rgba(255,138,42,0.7)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          for (let i = Math.floor(selStartPx); i <= Math.floor(selEndPx); i++) {
+              let mn = 1, mx = -1;
+              for (let j = 0; j < step; j++) {
+                  const v = data[i * step + j] || 0;
+                  if (v < mn) mn = v;
+                  if (v > mx) mx = v;
+              }
+              ctx.moveTo(i, mid + mn * mid * 0.9);
+              ctx.lineTo(i, mid + mx * mid * 0.9);
+          }
+          ctx.stroke();
+
+          // Dim areas outside selection
+          ctx.fillStyle = 'rgba(0,0,0,0.45)';
+          ctx.fillRect(0, 0, selStartPx, h);
+          ctx.fillRect(selEndPx, 0, w - selEndPx, h);
+
+          // VAD segment markers (green lines)
+          this.vadSegments.forEach(seg => {
+              const x = (seg.start / this.duration) * w;
+              ctx.strokeStyle = 'rgba(57,212,160,0.4)';
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(x, 0);
+              ctx.lineTo(x, h);
+              ctx.stroke();
+          });
+
+          // Update handle positions
+          $('trimStartHandle').style.left = (this.startRatio * 100) + '%';
+          $('trimEndHandle').style.left = (this.endRatio * 100) + '%';
+      },
+
+      getStartTime() { return this.startRatio * this.duration; },
+      getEndTime() { return this.endRatio * this.duration; },
+      setStartSeconds(s) {
+          this.startRatio = Math.max(0, Math.min(s / this.duration, this.endRatio - 0.001));
+          this.draw(); updateTrimTimeDisplay();
+      },
+      setEndSeconds(s) {
+          this.endRatio = Math.min(1, Math.max(s / this.duration, this.startRatio + 0.001));
+          this.draw(); updateTrimTimeDisplay();
+      },
+
+      playSelection() {
+          if (!this.audioBuffer) return;
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const src = audioCtx.createBufferSource();
+          src.buffer = this.audioBuffer;
+          src.start(0, this.getStartTime(), this.getEndTime() - this.getStartTime());
+          src.connect(audioCtx.destination);
+          src.onended = () => audioCtx.close();
+      },
+
+      async getTrimmedWavBlob() {
+          const buf = this.audioBuffer;
+          const startSample = Math.floor(this.getStartTime() * buf.sampleRate);
+          const endSample = Math.min(Math.floor(this.getEndTime() * buf.sampleRate), buf.length);
+          const numSamples = endSample - startSample;
+          const targetRate = 16000;
+
+          let pcmFloat32;
+          if (buf.sampleRate === targetRate) {
+              pcmFloat32 = buf.getChannelData(0).slice(startSample, endSample);
+          } else {
+              const offlineCtx = new OfflineAudioContext(1, numSamples * (targetRate / buf.sampleRate) | 0, targetRate);
+              const src = offlineCtx.createBufferSource();
+              src.buffer = buf;
+              src.start(0, this.getStartTime(), this.getEndTime() - this.getStartTime());
+              src.connect(offlineCtx.destination);
+              const rendered = await offlineCtx.startRendering();
+              pcmFloat32 = rendered.getChannelData(0);
+          }
+
+          const int16 = new Int16Array(pcmFloat32.length);
+          for (let i = 0; i < pcmFloat32.length; i++) {
+              int16[i] = Math.max(-32768, Math.min(32767, Math.round(pcmFloat32[i] * 32767)));
+          }
+
+          const dataSize = int16.length * 2;
+          const wavSize = 36 + dataSize;
+          const wavBuf = new ArrayBuffer(44 + dataSize);
+          const view = new DataView(wavBuf);
+          view.setUint32(0, 0x52494646, false);
+          view.setUint32(4, wavSize, true);
+          view.setUint32(8, 0x57415645, false);
+          view.setUint32(12, 0x666d7420, false);
+          view.setUint32(16, 16, true);
+          view.setUint16(20, 1, true);
+          view.setUint16(22, 1, true);
+          view.setUint32(24, targetRate, true);
+          view.setUint32(28, targetRate * 2, true);
+          view.setUint16(32, 2, true);
+          view.setUint16(34, 16, true);
+          view.setUint32(36, 0x64617461, false);
+          view.setUint32(40, dataSize, true);
+          for (let i = 0; i < int16.length; i++) {
+              view.setInt16(44 + i * 2, int16[i], true);
+          }
+          return new Blob([wavBuf], { type: 'audio/wav' });
+      },
+
+      onPointerDown(handleType, e) {
+          this.isDragging = handleType;
+          e.preventDefault();
+      },
+      onPointerMove(e) {
+          if (!this.isDragging) return;
+          e.preventDefault();
+          const canvas = $('trimCanvas');
+          const rect = canvas.getBoundingClientRect();
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          let ratio = (clientX - rect.left) / rect.width;
+          ratio = Math.max(0, Math.min(1, ratio));
+          if (this.isDragging === 'start') {
+              this.startRatio = Math.max(0, Math.min(ratio, this.endRatio - 0.002));
+          } else {
+              this.endRatio = Math.min(1, Math.max(ratio, this.startRatio + 0.002));
+          }
+          this.draw();
+          updateTrimTimeDisplay();
+      },
+      onPointerUp() { this.isDragging = null; },
+
+      destroy() {
+          this.audioBuffer = null;
+          this.vadSegments = [];
+          this.isDragging = null;
+      }
+  };
+
+  // --- Trim Modal Functions ---
+  let trimBucket = null;
+  let trimFileName = null;
+
+  async function openTrimModal(bucket, fileName) {
+      trimBucket = bucket;
+      trimFileName = fileName;
+      const overlay = $('trimOverlay');
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      $('trimHint').textContent = 'Loading audio...';
+      $('trimSaveBtn').disabled = true;
+      $('trimPlayBtn').disabled = true;
+
+      try {
+          const info = await TrimWaveform.init(bucket, fileName);
+          $('trimHint').textContent = `Drag the handles to select a region, then save as a new sample. Duration: ${info.duration.toFixed(2)}s`;
+          $('trimSaveBtn').disabled = false;
+          $('trimPlayBtn').disabled = false;
+
+          if (info.vadCount > 0) {
+              $('trimVadInfo').style.display = 'flex';
+              $('trimVadSegments').textContent = `${info.vadCount} speech segment${info.vadCount > 1 ? 's' : ''} detected (first auto-selected)`;
+          } else {
+              $('trimVadInfo').style.display = 'none';
+          }
+
+          requestAnimationFrame(() => {
+              TrimWaveform.draw();
+              updateTrimTimeDisplay();
+          });
+      } catch (e) {
+          $('trimHint').textContent = 'Failed to load audio: ' + e.message;
+          alert('Failed to load audio for trimming: ' + e.message);
+          closeTrimModal();
+      }
+  }
+
+  function closeTrimModal() {
+      $('trimOverlay').classList.remove('open');
+      $('trimOverlay').setAttribute('aria-hidden', 'true');
+      $('trimSaveBtn').disabled = false;
+      $('trimSaveBtn').textContent = 'Save Trim';
+      $('trimPlayBtn').disabled = false;
+      TrimWaveform.destroy();
+      trimBucket = null;
+      trimFileName = null;
+  }
+
+  function updateTrimTimeDisplay() {
+      const start = TrimWaveform.getStartTime();
+      const end = TrimWaveform.getEndTime();
+      $('trimStartTime').textContent = start.toFixed(2) + 's';
+      $('trimEndTime').textContent = end.toFixed(2) + 's';
+      $('trimDuration').textContent = 'Duration: ' + (end - start).toFixed(2) + 's';
+  }
 
   function setPill(el, text, cls) {
     el.className = "pill " + (cls || "");
@@ -1588,6 +2028,43 @@
     $("sampleNegativeCount").textContent = String(negativeCount);
   }
 
+  function buildSampleCardHtml(item, bucket) {
+    const when = formatTimestamp(item.reviewed_at || item.received_at || item.created_at);
+    const formatSummary = item.final_format ? describeFormat(item.final_format) : "16 kHz, mono, 16-bit";
+    const badge = bucket === "negative" ? { label: "Negative", cls: "err" } : { label: "Positive", cls: "ok" };
+    let trimBadgeHtml = '';
+    if (item.trimmed) {
+        trimBadgeHtml = `<span class="pill trimBadge">Trimmed from ${escapeHtml(item.source_file || '')}</span>`;
+    }
+    const subtitleParts = [];
+    if (item.original_name && item.original_name !== item.saved_as) subtitleParts.push(`From ${item.original_name}`);
+    if (when) subtitleParts.push(`Saved ${when}`);
+    if (item.message) subtitleParts.push(item.message);
+    let revertBtn = '';
+    if (item.trimmed) {
+        revertBtn = `<button type="button" data-sample-revert="${escapeAttr(item.saved_as)}" data-bucket="${escapeAttr(bucket)}">Revert</button>`;
+    }
+    return `
+      <div class="captureCard">
+        <div class="row space">
+          <div>
+            <p class="captureTitle">${escapeHtml(item.saved_as)}</p>
+            <p class="captureSubtitle">${escapeHtml(subtitleParts.join(" · ") || "Saved training sample.")}</p>
+          </div>
+          <span class="pill ${badge.cls}">${badge.label}</span>
+          ${trimBadgeHtml}
+        </div>
+        <audio class="audioPlayer" controls preload="none" src="${escapeAttr(item.audio_url || `/api/audio/${bucket}/${encodeURIComponent(item.saved_as)}`)}?t=${encodeURIComponent(item.created_at || '')}"></audio>
+        <div class="muted">Stored in ${bucket === "negative" ? "negative_samples" : "personal_samples"} · ${escapeHtml(formatSummary)}</div>
+        <div class="captureActions">
+          ${revertBtn}
+          <button type="button" data-sample-trim="${escapeAttr(item.saved_as)}" data-bucket="${escapeAttr(bucket)}" class="trimBtn">Trim</button>
+          <button type="button" data-sample-remove="${escapeAttr(item.saved_as)}" data-bucket="${escapeAttr(bucket)}" ${uiState.reviewBusy ? "disabled" : ""}>Remove sample</button>
+        </div>
+      </div>
+    `;
+  }
+
   function renderSampleLibrary(payload) {
     const data = payload || { personal: [], negative: [], personal_count: 0, negative_count: 0 };
     uiState.samples = {
@@ -1606,34 +2083,36 @@
     const label = activeBucket === "negative" ? "negative" : "personal";
     if (!items.length) {
       $("sampleLibraryList").innerHTML = `<div class="emptyState">No ${label} samples saved yet.</div>`;
+      $("samplePagination").innerHTML = "";
       return;
     }
 
-    $("sampleLibraryList").innerHTML = items.map((item) => {
-      const when = formatTimestamp(item.reviewed_at || item.received_at || item.created_at);
-      const formatSummary = item.final_format ? describeFormat(item.final_format) : "16 kHz, mono, 16-bit";
-      const badge = activeBucket === "negative" ? { label: "Negative", cls: "err" } : { label: "Positive", cls: "ok" };
-      const subtitleParts = [];
-      if (item.original_name && item.original_name !== item.saved_as) subtitleParts.push(`From ${item.original_name}`);
-      if (when) subtitleParts.push(`Saved ${when}`);
-      if (item.message) subtitleParts.push(item.message);
-      return `
-        <div class="captureCard">
-          <div class="row space">
-            <div>
-              <p class="captureTitle">${escapeHtml(item.saved_as)}</p>
-              <p class="captureSubtitle">${escapeHtml(subtitleParts.join(" · ") || "Saved training sample.")}</p>
-            </div>
-            <span class="pill ${badge.cls}">${badge.label}</span>
-          </div>
-          <audio class="audioPlayer" controls preload="none" src="${escapeAttr(item.audio_url || `/api/audio/${activeBucket}/${encodeURIComponent(item.saved_as)}`)}"></audio>
-          <div class="muted">Stored in ${activeBucket === "negative" ? "negative_samples" : "personal_samples"} · ${escapeHtml(formatSummary)}</div>
-          <div class="captureActions">
-            <button type="button" data-sample-remove="${escapeAttr(item.saved_as)}" data-bucket="${escapeAttr(activeBucket)}" ${uiState.reviewBusy ? "disabled" : ""}>Remove sample</button>
-          </div>
+    // Paginate
+    const pages = uiState.samples.pages || { personal: 0, negative: 0 };
+    let page = pages[activeBucket] || 0;
+    const totalPages = Math.ceil(items.length / SAMPLE_PAGE_SIZE);
+    if (page >= totalPages) page = Math.max(totalPages - 1, 0);
+    const start = page * SAMPLE_PAGE_SIZE;
+    const pageItems = items.slice(start, start + SAMPLE_PAGE_SIZE);
+
+    $("sampleLibraryList").innerHTML = pageItems.map((item) => buildSampleCardHtml(item, activeBucket)).join("");
+
+    // Pagination controls
+    const pagination = $("samplePagination");
+    if (totalPages > 1) {
+      const prevDisabled = page === 0 ? "disabled" : "";
+      const nextDisabled = page >= totalPages - 1 ? "disabled" : "";
+      pagination.innerHTML = `
+        <div class="paginationControls">
+          <button type="button" ${prevDisabled} class="pageBtn" data-page="prev">‹ Prev</button>
+          <span class="pageInfo">${page + 1} / ${totalPages} (${items.length} total)</span>
+          <span class="pageJump">Go to page <input type="number" min="1" max="${totalPages}" value="${page + 1}" class="pageInput" data-total="${totalPages}"> <button type="button" class="pageJumpBtn">Go</button></span>
+          <button type="button" ${nextDisabled} class="pageBtn" data-page="next">Next ›</button>
         </div>
       `;
-    }).join("");
+    } else {
+      pagination.innerHTML = "";
+    }
   }
 
   function rerenderReviewLists() {
@@ -1664,8 +2143,8 @@
       uiState.reviewBusy = true;
       setPill($("status"), "Removing sample...", "warn");
       syncButtons();
-      const data = await api(`/api/samples/${encodeURIComponent(bucket)}/${encodeURIComponent(fileName)}`, { method: "DELETE" });
-      renderSampleLibrary(data);
+      await api(`/api/samples/${encodeURIComponent(bucket)}/${encodeURIComponent(fileName)}`, { method: "DELETE" });
+      await refreshSamples();
       await refreshSession();
       setPill($("status"), "Sample removed", "ok");
     } catch (error) {
@@ -1673,7 +2152,6 @@
       alert(error.message);
     } finally {
       uiState.reviewBusy = false;
-      rerenderReviewLists();
     }
   }
 
@@ -2911,7 +3389,65 @@
   });
   $("sampleTabPersonal").addEventListener("click", () => setSampleBucket("personal"));
   $("sampleTabNegative").addEventListener("click", () => setSampleBucket("negative"));
+  function navigateToSamplePage(page) {
+    const header = document.getElementById("sampleLibraryHeader");
+    const topY = header.getBoundingClientRect().top + window.scrollY;
+    const activeBucket = uiState.samples.activeBucket === "negative" ? "negative" : "personal";
+    const pages = uiState.samples.pages || { personal: 0, negative: 0 };
+    pages[activeBucket] = page;
+    uiState.samples.pages = pages;
+    renderSampleLibrary(uiState.samples);
+    syncButtons();
+    window.scrollTo(0, topY);
+  }
+  $("samplePagination").addEventListener("click", (event) => {
+    const btn = event.target.closest(".pageBtn[data-page]");
+    if (btn) {
+      btn.blur();
+      const activeBucket = uiState.samples.activeBucket === "negative" ? "negative" : "personal";
+      const pages = uiState.samples.pages || { personal: 0, negative: 0 };
+      let page = pages[activeBucket] || 0;
+      if (btn.dataset.page === "prev") page = Math.max(page - 1, 0);
+      else if (btn.dataset.page === "next") page = Math.min(page + 1, 999);
+      navigateToSamplePage(page);
+      return;
+    }
+    const jumpBtn = event.target.closest(".pageJumpBtn");
+    if (jumpBtn) {
+      const input = jumpBtn.parentElement.querySelector(".pageInput");
+      const totalPages = parseInt(input.dataset.total) || 1;
+      let page = parseInt(input.value) - 1;
+      if (isNaN(page) || page < 0) page = 0;
+      if (page >= totalPages) page = totalPages - 1;
+      input.blur();
+      navigateToSamplePage(page);
+    }
+  });
   $("sampleLibraryList").addEventListener("click", async (event) => {
+    // Revert trimmed sample
+    const revertBtn = event.target.closest("button[data-sample-revert][data-bucket]");
+    if (revertBtn) {
+        const ok = confirm(`Revert ${revertBtn.dataset.sampleRevert} to the original (pre-trim) version?`);
+        if (!ok) return;
+        try {
+            const form = new FormData();
+            form.append('bucket', revertBtn.dataset.bucket);
+            form.append('file_name', revertBtn.dataset.sampleRevert);
+            const result = await api('/api/samples/revert', { method: 'POST', body: form });
+            await refreshSamples();
+            setPill($("status"), result.message || 'Reverted', 'ok');
+        } catch (err) {
+            alert('Revert failed: ' + err.message);
+        }
+        return;
+    }
+    // Open trim modal
+    const trimBtn = event.target.closest("button[data-sample-trim][data-bucket]");
+    if (trimBtn) {
+        openTrimModal(trimBtn.dataset.bucket, trimBtn.dataset.sampleTrim);
+        return;
+    }
+    // Remove sample
     const button = event.target.closest("button[data-sample-remove][data-bucket]");
     if (!button) return;
     await removeSample(button.dataset.bucket, button.dataset.sampleRemove);
@@ -3026,6 +3562,66 @@
       syncButtons();
     } catch (_) {}
   }
+
+  // --- Trim Modal Event Listeners ---
+  $("closeTrimBtn").addEventListener('click', closeTrimModal);
+  $("trimCancelBtn").addEventListener('click', closeTrimModal);
+  $("trimOverlay").addEventListener('click', (e) => {
+      if (e.target === $("trimOverlay")) closeTrimModal();
+  });
+  $("trimPlayBtn").addEventListener('click', () => TrimWaveform.playSelection());
+  $("trimSelectFirstVadBtn").addEventListener('click', () => {
+      if (TrimWaveform.vadSegments.length > 0) {
+          const seg = TrimWaveform.vadSegments[0];
+          TrimWaveform.setStartSeconds(seg.start);
+          TrimWaveform.setEndSeconds(seg.end);
+      }
+  });
+
+  $("trimSaveBtn").addEventListener('click', async () => {
+      const start = TrimWaveform.getStartTime();
+      const end = TrimWaveform.getEndTime();
+      $("trimSaveBtn").disabled = true;
+      $("trimSaveBtn").textContent = 'Saving...';
+
+      try {
+          const blob = await TrimWaveform.getTrimmedWavBlob();
+          const form = new FormData();
+          form.append('file', blob, 'trimmed.wav');
+          form.append('bucket', trimBucket);
+          form.append('source_file', trimFileName);
+          form.append('start_time', start.toFixed(3));
+          form.append('end_time', end.toFixed(3));
+
+          const result = await api('/api/samples/trim', {
+              method: 'POST',
+              body: form,
+          });
+
+          closeTrimModal();
+          await refreshSamples();
+          setPill($("status"), result.message || 'Trim saved', 'ok');
+      } catch (e) {
+          alert('Trim failed: ' + e.message);
+          $("trimSaveBtn").disabled = false;
+          $("trimSaveBtn").textContent = 'Save Trim';
+      }
+  });
+
+  // Handle drag (mouse + touch)
+  $("trimStartHandle").addEventListener('mousedown', (e) => TrimWaveform.onPointerDown('start', e));
+  $("trimEndHandle").addEventListener('mousedown', (e) => TrimWaveform.onPointerDown('end', e));
+  $("trimStartHandle").addEventListener('touchstart', (e) => TrimWaveform.onPointerDown('start', e), { passive: false });
+  $("trimEndHandle").addEventListener('touchstart', (e) => TrimWaveform.onPointerDown('end', e), { passive: false });
+  document.addEventListener('mousemove', (e) => TrimWaveform.onPointerMove(e));
+  document.addEventListener('touchmove', (e) => TrimWaveform.onPointerMove(e), { passive: false });
+  document.addEventListener('mouseup', () => TrimWaveform.onPointerUp());
+  document.addEventListener('touchend', () => TrimWaveform.onPointerUp());
+
+  // Redraw waveform on window resize
+  window.addEventListener('resize', () => {
+      if ($('trimOverlay').classList.contains('open')) TrimWaveform.draw();
+  });
 
   bootstrap();
 </script>
