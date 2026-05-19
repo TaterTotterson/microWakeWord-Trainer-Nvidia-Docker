@@ -286,6 +286,86 @@
       font-weight: 700;
     }
 
+    .runtimeWakeWordCard {
+      border-color: rgba(57,212,160,0.22);
+      background:
+        linear-gradient(135deg, rgba(57,212,160,0.09), rgba(255,138,42,0.08)),
+        var(--panel2);
+    }
+
+    .runtimeWakeWordHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .runtimeWakeWordTitle {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .runtimeWakeWordBadge {
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      min-width: 68px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(57,212,160,0.34);
+      background: rgba(57,212,160,0.1);
+      color: var(--ok);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .runtimeWakeWordTitle h3 {
+      margin-bottom: 5px;
+    }
+
+    .runtimeWakeWordTitle p {
+      max-width: 760px;
+      margin-bottom: 0;
+      font-size: 13px;
+    }
+
+    .runtimeWakeWordLinks {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .runtimeWakeWordItem {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .runtimeWakeWordItem strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .runtimeWakeWordUrl {
+      display: block;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .runtimeWakeWordItem button {
+      white-space: nowrap;
+    }
+
     .firmwareLayout {
       display: grid;
       grid-template-columns: 1fr;
@@ -1109,6 +1189,17 @@
       .firmwareActions button {
         width: 100%;
       }
+      .runtimeWakeWordHeader,
+      .runtimeWakeWordTitle {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .runtimeWakeWordItem {
+        grid-template-columns: 1fr;
+      }
+      .runtimeWakeWordItem button {
+        width: 100%;
+      }
       .studioPanelHeader,
       .capturedControlPanel {
         grid-template-columns: 1fr;
@@ -1441,6 +1532,23 @@
         </div>
       </div>
 
+      <div class="card runtimeWakeWordCard">
+        <div class="runtimeWakeWordHeader">
+          <div class="runtimeWakeWordTitle">
+            <span class="runtimeWakeWordBadge">3.0.3+</span>
+            <div>
+              <div class="firmwareKicker">Live Model Switching</div>
+              <h3>Tater firmware 3.0.3 or higher can swap wake words live</h3>
+              <p>No reflash is needed after training. Copy a trained wake word JSON URL below and paste it into your satellite's Home Assistant <code>microWakeWord Model URL</code> entity.</p>
+            </div>
+          </div>
+          <span class="pill ok">No reflash needed</span>
+        </div>
+        <div id="runtimeWakeWordLinks" class="runtimeWakeWordLinks">
+          <div class="emptyState">Train a wake word first, then its live model URL will appear here.</div>
+        </div>
+      </div>
+
       <div class="firmwareLayout">
         <section class="card firmwarePanel stack">
           <div class="firmwarePanelHeader">
@@ -1601,7 +1709,7 @@
     selectedFiles: [],
     captured: { items: [], captured_count: 0, negative_count: 0, personal_count: 0 },
     samples: { personal: [], negative: [], personal_count: 0, negative_count: 0, activeBucket: "personal", pages: { personal: 0, negative: 0 } },
-    firmware: { devices: [], templates: [], flashing: null, logLines: [], activeTemplateKey: "" },
+    firmware: { devices: [], templates: [], wakeWords: [], flashing: null, logLines: [], activeTemplateKey: "" },
     uploadBusy: false,
     reviewBusy: false,
     firmwareBusy: false,
@@ -2388,6 +2496,8 @@
     const templates = Array.isArray(payload?.templates) ? payload.templates : [];
     const previousTemplateKey = $("firmwareTemplate").value || uiState.firmware.activeTemplateKey || "";
     uiState.firmware.templates = templates;
+    uiState.firmware.wakeWords = Array.isArray(payload?.wake_words) ? payload.wake_words : [];
+    renderRuntimeWakeWordLinks();
     $("firmwareTemplate").innerHTML = templates.length
       ? templates.map((item) => `<option value="${escapeAttr(item.value)}">${escapeHtml(item.label || item.value)}</option>`).join("")
       : `<option value="">No firmware templates found</option>`;
@@ -2399,6 +2509,52 @@
     uiState.firmware.activeTemplateKey = $("firmwareTemplate").value;
     renderFirmwareFields();
     applyFirmwareTemplateTarget();
+  }
+
+  function renderRuntimeWakeWordLinks() {
+    const container = $("runtimeWakeWordLinks");
+    if (!container) return;
+    const wakeWords = Array.isArray(uiState.firmware.wakeWords) ? uiState.firmware.wakeWords : [];
+    const rows = wakeWords
+      .map((item) => ({
+        label: String(item.label || item.wake_word || item.wake_word_name || item.key || "Trained wake word"),
+        url: String(item.json_url || "").trim(),
+      }))
+      .filter((item) => item.url);
+
+    if (!rows.length) {
+      container.innerHTML = `<div class="emptyState">Train a wake word first, then its live model URL will appear here.</div>`;
+      return;
+    }
+
+    container.innerHTML = rows.map((item) => `
+      <div class="runtimeWakeWordItem">
+        <div>
+          <strong>${escapeHtml(item.label)}</strong>
+          <a class="runtimeWakeWordUrl" href="${escapeAttr(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.url)}</a>
+        </div>
+        <button type="button" data-runtime-wake-url="${escapeAttr(item.url)}">Copy URL</button>
+      </div>
+    `).join("");
+  }
+
+  async function copyTextToClipboard(text) {
+    const value = String(text || "");
+    if (!value) return false;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    return copied;
   }
 
   function renderFirmwareFields() {
@@ -3195,6 +3351,25 @@
         uiState.firmware.logLines = [`Device scan failed: ${error.message}`];
         setConsoleLogAutoScroll($("trainLog"), uiState.firmware.logLines.join("\n"));
       });
+    }
+  });
+
+  $("runtimeWakeWordLinks").addEventListener("click", async (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest("[data-runtime-wake-url]");
+    if (!(button instanceof HTMLButtonElement)) return;
+    try {
+      const copied = await copyTextToClipboard(button.dataset.runtimeWakeUrl || "");
+      if (!copied) throw new Error("Clipboard unavailable");
+      const previousText = button.textContent || "Copy URL";
+      button.textContent = "Copied";
+      setPill($("firmwareStatus"), "Model URL copied", "ok");
+      setTimeout(() => {
+        button.textContent = previousText;
+      }, 1200);
+    } catch (error) {
+      setPill($("firmwareStatus"), "Copy failed", "warn");
+      alert("Copy failed: " + error.message);
     }
   });
 
