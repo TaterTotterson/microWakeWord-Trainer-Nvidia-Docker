@@ -119,6 +119,33 @@ FIRMWARE_TEMPLATE_SPECS = (
         "fixed_keys": {"node_name"},
         "auto_keys": {"ha_voice_ip"},
     },
+    {
+        "key": "respeaker_lite",
+        "label": "ReSpeaker Lite (respeakerLite-TaterTimer.yaml)",
+        "path": "respeakerLite-TaterTimer.yaml",
+        "identity_key": "device_name",
+        "friendly_key": "friendly_name",
+        "fixed_keys": {"device_name"},
+        "auto_keys": {"ha_voice_ip"},
+    },
+    {
+        "key": "koala",
+        "label": "Koala Satellite (koala-TaterTimer.yaml)",
+        "path": "koala-TaterTimer.yaml",
+        "identity_key": "device_name",
+        "friendly_key": "friendly_name",
+        "fixed_keys": {"device_name"},
+        "auto_keys": {"ha_voice_ip"},
+    },
+    {
+        "key": "respeaker_xvf3800",
+        "label": "ReSpeaker XVF3800 (respeakerXVF3800-TaterTimer.yaml)",
+        "path": "respeakerXVF3800-TaterTimer.yaml",
+        "identity_key": "device_name",
+        "friendly_key": "friendly_name",
+        "fixed_keys": {"device_name"},
+        "auto_keys": {"ha_voice_ip"},
+    },
 )
 
 app = FastAPI(title="microWakeWord Personal Samples")
