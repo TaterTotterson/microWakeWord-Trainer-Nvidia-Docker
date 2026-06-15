@@ -1519,13 +1519,13 @@
         <div class="row space">
           <div>
             <div class="firmwareKicker">Firmware Studio</div>
-            <h3>ESPHome Firmware Flasher</h3>
-            <p>Build a <code>microWakeWords</code> ESPHome firmware template and flash it to a sat over OTA. Auto-detect is best effort; if the device does not show up, enter its IP or hostname manually.</p>
+            <h3>Prebuilt Tater Firmware Flasher</h3>
+            <p>Flash only for firmware updates. If this is a new satellite or it is not already on Tater firmware <code>3.0.3</code> or newer, do one USB flash first, then use this tab for fast OTA updates.</p>
             <div class="firmwareSteps" aria-label="Firmware flashing steps">
               <span class="firmwareStepChip"><b>1</b> Pick firmware</span>
               <span class="firmwareStepChip"><b>2</b> Select target</span>
-              <span class="firmwareStepChip"><b>3</b> Review settings</span>
-              <span class="firmwareStepChip"><b>4</b> Build + flash</span>
+              <span class="firmwareStepChip"><b>3</b> Verify image</span>
+              <span class="firmwareStepChip"><b>4</b> Flash OTA</span>
             </div>
           </div>
           <span id="firmwareStatus" class="pill">Flasher idle</span>
@@ -1555,15 +1555,15 @@
             <div class="firmwarePanelTitle">
               <span class="firmwareStepBadge">1</span>
               <div>
-                <h3>Firmware YAML</h3>
-                <p>Choose a Tater firmware YAML to build from the shared firmware repo.</p>
+                <h3>Firmware Image</h3>
+                <p>Choose a prebuilt Tater firmware image from the shared firmware repo.</p>
               </div>
             </div>
           </div>
           <label class="field">
-            <strong>YAML File</strong>
+            <strong>Firmware Family</strong>
             <select id="firmwareTemplate">
-              <option value="">Loading templates...</option>
+              <option value="">Loading firmware images...</option>
             </select>
           </label>
         </section>
@@ -1606,14 +1606,14 @@
           <div class="firmwarePanelTitle">
             <span class="firmwareStepBadge">3</span>
             <div>
-              <h3>Device Settings</h3>
-              <p>Each build fetches the latest YAML, then applies the saved substitutions for this target device.</p>
+              <h3>Prebuilt Image</h3>
+              <p>The trainer downloads the latest verified OTA image and checks its size and SHA before flashing.</p>
             </div>
           </div>
-          <button id="saveFirmwareSettingsBtn" type="button">Save settings</button>
+          <button id="saveFirmwareSettingsBtn" type="button">Save target</button>
         </div>
         <div id="firmwareFields" class="firmwareFields stack">
-          <div class="emptyState">Firmware template settings will appear here.</div>
+          <div class="emptyState">Firmware image details will appear here.</div>
         </div>
       </section>
 
@@ -1621,13 +1621,13 @@
         <div class="firmwarePanelTitle">
           <span class="firmwareStepBadge">4</span>
           <div>
-            <h3>Build + Flash</h3>
-            <p>The ESPHome output opens in the console so you can follow build, upload, and reboot progress.</p>
+            <h3>Flash OTA</h3>
+            <p>The console shows download, verification, OTA upload, and reboot progress.</p>
           </div>
         </div>
         <div class="row firmwareActions">
-          <button id="flashFirmwareBtn" class="primary" type="button" disabled>Build + Flash firmware</button>
-          <button id="cleanFirmwareBtn" type="button">Clean build files</button>
+          <button id="flashFirmwareBtn" class="primary" type="button" disabled>Flash prebuilt firmware</button>
+          <button id="cleanFirmwareBtn" type="button">Clear downloaded images</button>
           <button id="openFirmwareConsoleBtn" type="button">Open firmware console</button>
         </div>
       </section>
@@ -1653,13 +1653,13 @@
     <div id="firmwareLogDialog" class="firmwareLogDialog" role="dialog" aria-modal="true" aria-labelledby="firmwareLogTitle">
       <div class="firmwareLogHeader">
         <div>
-          <h3 id="firmwareLogTitle" class="firmwareLogTitle">Firmware Build + Flash</h3>
-          <p id="firmwareLogMeta" class="firmwareLogMeta">ESPHome output will appear here.</p>
+          <h3 id="firmwareLogTitle" class="firmwareLogTitle">Prebuilt Firmware Flash</h3>
+          <p id="firmwareLogMeta" class="firmwareLogMeta">Firmware output will appear here.</p>
         </div>
         <button id="closeFirmwareLogBtn" type="button">Close</button>
       </div>
       <div id="firmwareLogStatus" class="firmwareLogStatus">Waiting for firmware output...</div>
-      <div id="firmwareLogConsole" class="firmwareLogConsole" role="log" aria-live="polite" aria-label="Firmware build and flash log">
+      <div id="firmwareLogConsole" class="firmwareLogConsole" role="log" aria-live="polite" aria-label="Firmware flash log">
         <div class="firmwareLogEmpty">No firmware flash started yet.</div>
       </div>
     </div>
@@ -2341,7 +2341,7 @@
       consoleEl.innerHTML = "";
     }
     if (!rows.length) {
-      consoleEl.innerHTML = `<div class="firmwareLogEmpty">Waiting for ESPHome build output...</div>`;
+      consoleEl.innerHTML = `<div class="firmwareLogEmpty">Waiting for firmware flash output...</div>`;
     } else {
       consoleEl.innerHTML = rows.map((line) => {
         const tone = firmwareLogTone(line);
@@ -2366,17 +2366,17 @@
     const template = selectedFirmwareTemplate();
     const host = ($("firmwareHost").value || "").trim();
     const port = ($("firmwarePort").value || "3232").trim();
-    $("firmwareLogTitle").textContent = "Firmware Build + Flash";
+    $("firmwareLogTitle").textContent = "Prebuilt Firmware Flash";
     $("firmwareLogMeta").textContent = [
       template?.label || template?.value || "Firmware",
       host ? `${host}:${port || "3232"}` : "",
-    ].filter(Boolean).join(" • ") || "ESPHome output will appear here.";
+    ].filter(Boolean).join(" • ") || "Firmware output will appear here.";
     if (text !== null) {
       renderFirmwareLogLines(String(text).split("\n"), true);
     } else {
       renderFirmwareLogLines(uiState.firmware.logLines || [], true);
     }
-    setFirmwareLogStatus(statusText || "ESPHome build, upload, and flash output appears here.");
+    setFirmwareLogStatus(statusText || "Prebuilt firmware download, verification, and upload output appears here.");
     const modal = $("firmwareLogModal");
     const dialog = $("firmwareLogDialog");
     modal.classList.add("active");
@@ -2499,8 +2499,11 @@
     uiState.firmware.wakeWords = Array.isArray(payload?.wake_words) ? payload.wake_words : [];
     renderRuntimeWakeWordLinks();
     $("firmwareTemplate").innerHTML = templates.length
-      ? templates.map((item) => `<option value="${escapeAttr(item.value)}">${escapeHtml(item.label || item.value)}</option>`).join("")
-      : `<option value="">No firmware templates found</option>`;
+      ? templates.map((item) => {
+          const version = item.firmware_version ? ` ${item.firmware_version}` : "";
+          return `<option value="${escapeAttr(item.value)}">${escapeHtml((item.label || item.value) + version)}</option>`;
+        }).join("")
+      : `<option value="">No firmware images found</option>`;
     if (previousTemplateKey && templates.some((item) => String(item.value || "") === previousTemplateKey)) {
       $("firmwareTemplate").value = previousTemplateKey;
     } else if (payload?.active_template_key) {
@@ -2560,6 +2563,46 @@
   function renderFirmwareFields() {
     resetWakeSoundPreview();
     const template = selectedFirmwareTemplate();
+    if (!template) {
+      $("firmwareFields").innerHTML = `<div class="emptyState">Choose a firmware family to see image details.</div>`;
+      return;
+    }
+    const prebuilt = template.prebuilt_firmware || {};
+    const artifacts = prebuilt.artifacts || {};
+    const ota = artifacts.ota || {};
+    const factory = artifacts.factory || {};
+    const statusClass = prebuilt.available ? "ok" : "warn";
+    const statusText = prebuilt.available ? "OTA image available" : (prebuilt.error || "Prebuilt image unavailable");
+    $("firmwareFields").innerHTML = `
+      <section class="firmwareSettingsSection">
+        <div class="row space">
+          <h3 style="margin:0;">Firmware Details</h3>
+          <span class="pill ${statusClass}">${escapeHtml(statusText)}</span>
+        </div>
+        <div class="firmwareSettingsGrid">
+          <label class="field">
+            <strong>Latest Version</strong>
+            <span class="readOnlyValue">${escapeHtml(prebuilt.version || template.firmware_version || "Unknown")}</span>
+          </label>
+          <label class="field">
+            <strong>OTA Image</strong>
+            <span class="readOnlyValue">${escapeHtml(ota.path || "Not available")}</span>
+            <span class="muted">${ota.size_bytes ? `${Number(ota.size_bytes).toLocaleString()} bytes` : "Downloaded when you flash."}</span>
+          </label>
+          <label class="field">
+            <strong>USB Factory Image</strong>
+            <span class="readOnlyValue">${escapeHtml(factory.path || "Not available")}</span>
+            <span class="muted">Use a USB flash once if the satellite is new or older than 3.0.3.</span>
+          </label>
+          <label class="field">
+            <strong>Manifest</strong>
+            <span class="readOnlyValue">${escapeHtml(prebuilt.manifest_url || template.source_url || "Unavailable")}</span>
+          </label>
+        </div>
+      </section>
+    `;
+    return;
+
     const fields = Array.isArray(template?.fields) ? template.fields : [];
     if (!fields.length) {
       $("firmwareFields").innerHTML = `<div class="emptyState">No editable settings were found for this firmware template. You can continue with the selected template and target device.</div>`;
@@ -2932,11 +2975,15 @@
     const port = ($("firmwarePort").value || "3232").trim();
     const template = selectedFirmwareTemplate();
     if (!template) {
-      alert("Choose a firmware template first.");
+      alert("Choose a firmware family first.");
       return;
     }
     if (!host) {
       alert("Enter the device IP or hostname first.");
+      return;
+    }
+    if (template.prebuilt_firmware && !template.prebuilt_firmware.available) {
+      alert(template.prebuilt_firmware.error || "No prebuilt OTA image is available for this firmware family.");
       return;
     }
     const wakeSoundSelect = document.querySelector("select[data-wake-sound-select]");
@@ -2944,17 +2991,17 @@
       syncRenderedWakeSoundSelection({ fromPicker: true });
     }
 
-    const ok = confirm(`Build and flash ${template.label || template.value} firmware to ${host}:${port || "3232"}?\n\nMake sure this is the correct device before continuing.`);
+    const ok = confirm(`Flash prebuilt ${template.label || template.value} firmware to ${host}:${port || "3232"}?\n\nOnly continue if this device is already running Tater firmware 3.0.3 or newer. New devices need one USB flash first.`);
     if (!ok) return;
 
     uiState.firmwareBusy = true;
     uiState.firmware.logLines = [
-      "===== Firmware Build + Flash Console =====",
+      "===== Prebuilt Firmware Flash Console =====",
       `→ Target: ${host}:${port || "3232"}`,
-      "→ Contacting trainer server to start the build...",
+      "→ Contacting trainer server to prepare the OTA image...",
     ];
-    setPill($("firmwareStatus"), "Starting build + flash...", "warn");
-    openFirmwareConsole(true, uiState.firmware.logLines.join("\n"), "Starting firmware build + flash...");
+    setPill($("firmwareStatus"), "Starting firmware flash...", "warn");
+    openFirmwareConsole(true, uiState.firmware.logLines.join("\n"), "Starting prebuilt firmware flash...");
     syncButtons();
     await flushFirmwareProfileSave();
     await waitForPaint();
@@ -2973,7 +3020,7 @@
       uiState.firmware.flashing = status;
       uiState.firmware.logLines = (status.log_lines || []).length
         ? status.log_lines
-        : [...uiState.firmware.logLines, "✓ Build session started. Waiting for ESPHome output..."];
+        : [...uiState.firmware.logLines, "✓ Flash session started. Waiting for firmware output..."];
       openFirmwareConsole(false, uiState.firmware.logLines.join("\n") || "(waiting for flash output)", status.message || "Firmware session started.");
       pollFirmwareFlash(status.session_id);
     } catch (error) {
@@ -2999,16 +3046,16 @@
         renderFirmwareLogLines(lines.length ? lines : ["(waiting for flash output)"], true);
 
         if (status.running) {
-          setPill($("firmwareStatus"), status.message || "Firmware build + flash running", "warn");
-          setFirmwareLogStatus(status.message || "Firmware build + flash running.");
+          setPill($("firmwareStatus"), status.message || "Firmware flash running", "warn");
+          setFirmwareLogStatus(status.message || "Firmware flash running.");
         } else {
           uiState.firmwareBusy = false;
           if (status.exit_code === 0) {
             setPill($("firmwareStatus"), "Firmware flashed successfully", "ok");
             setFirmwareLogStatus("Firmware flashed successfully.");
           } else {
-            setPill($("firmwareStatus"), `Firmware build + flash failed (${status.exit_code})`, "err");
-            setFirmwareLogStatus(`Firmware build + flash failed (${status.exit_code}).`);
+            setPill($("firmwareStatus"), `Firmware flash failed (${status.exit_code})`, "err");
+            setFirmwareLogStatus(`Firmware flash failed (${status.exit_code}).`);
           }
           syncButtons();
           break;
@@ -3059,6 +3106,8 @@
     const negativeCount = Number(uiState.samples?.negative_count ?? uiState.captured?.negative_count ?? 0);
     const firmwareHost = ($("firmwareHost").value || "").trim();
     const firmwareTemplate = ($("firmwareTemplate").value || "").trim();
+    const firmwareSelection = selectedFirmwareTemplate();
+    const firmwareAvailable = !firmwareSelection?.prebuilt_firmware || Boolean(firmwareSelection.prebuilt_firmware.available);
 
     $("ttsBtn").disabled = !hasPhrase || uiState.uploadBusy;
     $("uploadBtn").disabled = !hasSession || !hasSelected || uiState.uploadBusy;
@@ -3073,7 +3122,7 @@
     $("saveFirmwareSettingsBtn").disabled = uiState.firmwareBusy || !firmwareHost || !firmwareTemplate;
     $("cleanFirmwareBtn").disabled = uiState.firmwareBusy;
     $("openFirmwareConsoleBtn").disabled = false;
-    $("flashFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareHost || !firmwareTemplate;
+    $("flashFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareHost || !firmwareTemplate || !firmwareAvailable;
   }
 
   function refreshSessionUI(session) {
@@ -3341,8 +3390,8 @@
   $("tabFirmware").addEventListener("click", () => {
     setActiveView("firmware");
     refreshFirmwareTemplates().catch((error) => {
-      setPill($("firmwareStatus"), "Templates failed", "err");
-      uiState.firmware.logLines = [`Template load failed: ${error.message}`];
+      setPill($("firmwareStatus"), "Firmware list failed", "err");
+      uiState.firmware.logLines = [`Firmware list load failed: ${error.message}`];
       setConsoleLogAutoScroll($("trainLog"), uiState.firmware.logLines.join("\n"));
     });
     if (!uiState.firmware.devices.length) {
@@ -3446,7 +3495,7 @@
     const host = ($("firmwareHost").value || "").trim();
     const template = ($("firmwareTemplate").value || "").trim();
     if (!template) {
-      alert("Choose a firmware template first.");
+      alert("Choose a firmware family first.");
       return;
     }
     if (!host) {
@@ -3456,7 +3505,7 @@
     try {
       setPill($("firmwareStatus"), "Saving device settings...", "warn");
       await saveFirmwareProfileNow({ quiet: true });
-      setPill($("firmwareStatus"), "Device settings saved", "ok");
+      setPill($("firmwareStatus"), "Target saved", "ok");
     } catch (error) {
       setPill($("firmwareStatus"), "Settings save failed", "err");
       alert("Settings save failed: " + error.message);
@@ -3466,9 +3515,9 @@
   });
   $("cleanFirmwareBtn").addEventListener("click", async () => {
     try {
-      setPill($("firmwareStatus"), "Cleaning build files...", "warn");
+      setPill($("firmwareStatus"), "Clearing downloaded images...", "warn");
       const result = await api("/api/firmware/clean", { method: "POST" });
-      setPill($("firmwareStatus"), result.message || "Build files cleaned", "ok");
+      setPill($("firmwareStatus"), result.message || "Downloaded images cleared", "ok");
     } catch (error) {
       setPill($("firmwareStatus"), "Clean failed", "err");
       alert("Clean failed: " + error.message);
@@ -3477,7 +3526,7 @@
     }
   });
   $("openFirmwareConsoleBtn").addEventListener("click", () => {
-    openFirmwareConsole(true, (uiState.firmware.logLines || []).join("\n") || "(no firmware flash started)", uiState.firmwareBusy ? "Firmware build + flash running." : "No active firmware flash.");
+    openFirmwareConsole(true, (uiState.firmware.logLines || []).join("\n") || "(no firmware flash started)", uiState.firmwareBusy ? "Firmware flash running." : "No active firmware flash.");
   });
 
   $("openConsoleBtn").addEventListener("click", () => {
@@ -3714,8 +3763,8 @@
     try {
       await refreshFirmwareTemplates();
     } catch (error) {
-      setPill($("firmwareStatus"), "Templates failed", "err");
-      uiState.firmware.logLines = [`Template load failed: ${error.message}`];
+      setPill($("firmwareStatus"), "Firmware list failed", "err");
+      uiState.firmware.logLines = [`Firmware list load failed: ${error.message}`];
     }
 
     try {
