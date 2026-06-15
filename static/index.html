@@ -1623,7 +1623,7 @@
           <button id="cleanFirmwareBtn" type="button">Clear downloaded images</button>
           <button id="openFirmwareConsoleBtn" type="button">Open firmware console</button>
         </div>
-        <div class="usbFlashHint">Use Browser USB Flash for new satellites, recovery, or devices older than Tater firmware 3.0.3. Chrome or Edge must be used on localhost or HTTPS.</div>
+        <div class="usbFlashHint">Use Browser USB Flash for new satellites, recovery, or devices older than Tater firmware 3.0.3. Chrome or Edge must be used on localhost or HTTPS. In the macOS app, open <code>http://127.0.0.1:8789</code> in Chrome or Edge; port <code>3232</code> is only for OTA updates after firmware is installed.</div>
       </section>
     </div>
   </div>
@@ -2789,82 +2789,7 @@
 
   function renderFirmwareFields() {
     resetWakeSoundPreview();
-    const template = selectedFirmwareTemplate();
-    if (!template) {
-      $("firmwareFields").innerHTML = `<div class="emptyState">Choose a firmware family to see image details.</div>`;
-      return;
-    }
-    const prebuilt = template.prebuilt_firmware || {};
-    const artifacts = prebuilt.artifacts || {};
-    const ota = artifacts.ota || {};
-    const factory = artifacts.factory || {};
-    const statusClass = prebuilt.available ? "ok" : "warn";
-    const statusText = prebuilt.available ? "OTA image available" : (prebuilt.error || "Prebuilt image unavailable");
-    $("firmwareFields").innerHTML = `
-      <section class="firmwareSettingsSection">
-        <div class="row space">
-          <h3 style="margin:0;">Firmware Details</h3>
-          <span class="pill ${statusClass}">${escapeHtml(statusText)}</span>
-        </div>
-        <div class="firmwareSettingsGrid">
-          <label class="field">
-            <strong>Latest Version</strong>
-            <span class="readOnlyValue">${escapeHtml(prebuilt.version || template.firmware_version || "Unknown")}</span>
-          </label>
-          <label class="field">
-            <strong>OTA Image</strong>
-            <span class="readOnlyValue">${escapeHtml(ota.path || "Not available")}</span>
-            <span class="muted">${ota.size_bytes ? `${Number(ota.size_bytes).toLocaleString()} bytes` : "Downloaded when you flash."}</span>
-          </label>
-          <label class="field">
-            <strong>USB Factory Image</strong>
-            <span class="readOnlyValue">${escapeHtml(factory.path || "Not available")}</span>
-            <span class="muted">Use a USB flash once if the satellite is new or older than 3.0.3.</span>
-          </label>
-          <label class="field">
-            <strong>Manifest</strong>
-            <span class="readOnlyValue">${escapeHtml(prebuilt.manifest_url || template.source_url || "Unavailable")}</span>
-          </label>
-        </div>
-      </section>
-    `;
-    return;
-
-    const fields = Array.isArray(template?.fields) ? template.fields : [];
-    if (!fields.length) {
-      $("firmwareFields").innerHTML = `<div class="emptyState">No editable settings were found for this firmware template. You can continue with the selected template and target device.</div>`;
-      return;
-    }
-
-    const groups = new Map();
-    fields.forEach((field) => {
-      const section = String(field.section || "Firmware");
-      if (!groups.has(section)) groups.set(section, []);
-      groups.get(section).push(field);
-    });
-
-    const orderedGroups = Array.from(groups.entries());
-    const wakeSoundIndex = orderedGroups.findIndex(([section]) => section === "Wake Sound");
-    const microWakeWordIndex = orderedGroups.findIndex(([section]) => section === "Micro Wake Word");
-    if (wakeSoundIndex >= 0 && microWakeWordIndex >= 0 && wakeSoundIndex !== microWakeWordIndex + 1) {
-      const [wakeSoundGroup] = orderedGroups.splice(wakeSoundIndex, 1);
-      const targetIndex = orderedGroups.findIndex(([section]) => section === "Micro Wake Word");
-      orderedGroups.splice(targetIndex + 1, 0, wakeSoundGroup);
-    }
-
-    $("firmwareFields").innerHTML = orderedGroups.map(([section, rows]) => `
-      <section class="firmwareSettingsSection">
-        <div class="row space">
-          <h3 style="margin:0;">${escapeHtml(section)}</h3>
-        </div>
-        <div class="firmwareSettingsGrid">
-          ${rows.map((field) => renderFirmwareField(field)).join("")}
-          ${section === "Wake Sound" ? renderWakeSoundPreviewControl() : ""}
-        </div>
-      </section>
-    `).join("");
-    syncRenderedWakeWordSelection();
-    syncRenderedWakeSoundSelection();
+    $("firmwareFields").innerHTML = "";
   }
 
   function renderFirmwareField(field) {
