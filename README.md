@@ -7,7 +7,7 @@
   <a href="https://taterassistant.com">taterassistant.com</a>
 </h3>
 
-Train custom microWakeWord models in Docker with NVIDIA/CUDA acceleration, generated Piper samples, device-captured samples, reviewed false-wake negatives, live training logs, and ESPHome firmware flashing.
+Train custom microWakeWord models in Docker with NVIDIA/CUDA acceleration, generated Piper samples, device-captured samples, reviewed false-wake negatives, live training logs, and prebuilt Tater firmware flashing.
 
 Real samples come from device-captured wake audio, close misses, or manual uploads. Every saved sample is normalized to `16 kHz / mono / 16-bit PCM WAV` before training.
 
@@ -17,6 +17,12 @@ Real samples come from device-captured wake audio, close misses, or manual uploa
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:latest
+```
+
+Tagged releases also publish matching immutable image tags:
+
+```bash
+docker pull ghcr.io/tatertotterson/microwakeword:v5
 ```
 
 ---
@@ -31,6 +37,8 @@ docker run -d \
   -v $(pwd):/data \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
+
+Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v5` when you want to pin a known release instead of tracking `latest`.
 
 The flags:
 
@@ -56,14 +64,14 @@ If you change `REC_PORT`, open that port instead and use the same port in the ES
 - `Trainer` starts a wake-word session, shows positive/negative sample counts, and launches training.
 - `Captured Audio` reviews clips sent by ESPHome sats, including wake hits, close misses, and false wakes.
 - `Samples` plays, removes, clears, and manually imports personal or negative samples.
-- `Firmware` builds the latest `microWakeWords` ESPHome YAMLs from GitHub and flashes VoicePE or Satellite1 over OTA.
+- `Firmware` pulls verified prebuilt Tater firmware images from GitHub and flashes supported satellites over OTA.
 - Popup consoles show colorized training and firmware logs while long-running jobs are active.
 
 ---
 
 ## Captured Audio Workflow
 
-To collect samples from a sat, flash it with the Tater firmware from [TaterTotterson/microWakeWords](https://github.com/TaterTotterson/microWakeWords). The `Firmware` tab can build and flash the VoicePE or Satellite1 YAMLs directly from that repo.
+To collect samples from a sat, flash it with the Tater firmware from [TaterTotterson/microWakeWords](https://github.com/TaterTotterson/microWakeWords). The `Firmware` tab can pull verified prebuilt OTA images from that repo for fast firmware updates.
 
 After flashing, the device exposes ESPHome entities for capture setup:
 
@@ -177,18 +185,17 @@ After those assets are prepared, later runs reuse the local copies unless the mo
 
 ## Firmware Flashing
 
-The `Firmware` tab builds and flashes Tater firmware for supported ESPHome sats.
+The `Firmware` tab flashes prebuilt Tater firmware for supported ESPHome satellites.
 
-- Downloads the latest firmware YAML templates from `TaterTotterson/microWakeWords` on GitHub.
-- Lets you choose `VoicePE` or `Satellite1`.
+- Downloads the latest prebuilt firmware manifest and OTA image from `TaterTotterson/microWakeWords`.
+- Verifies downloaded images by size and SHA before upload.
 - Auto-detects ESPHome devices with mDNS when the container is running with host networking.
 - Allows manual IP or hostname entry if discovery does not find the device.
-- Saves firmware form values so you do not re-enter sounds and URLs every run.
-- Lists locally trained wake words from `/data/trained_wake_words/` for easy model selection.
-- Builds with ESPHome and flashes OTA.
-- Streams ESPHome output in a colorized firmware console.
+- Saves the selected OTA target for each firmware family.
+- Lists locally trained wake words from `/data/trained_wake_words/` for live model switching.
+- Streams download, verification, and OTA upload progress in a colorized firmware console.
 
-Firmware YAMLs are intentionally pulled from GitHub each time. There is no local fallback path in the trainer UI.
+You usually only flash for firmware updates. New satellites, or devices older than Tater firmware `3.0.3`, need one USB flash first before OTA updates and live wake-word switching are available.
 
 ---
 
@@ -225,7 +232,7 @@ That removes:
 - cached datasets
 - training environments
 - trained models
-- firmware build caches
+- downloaded firmware images
 
 ---
 

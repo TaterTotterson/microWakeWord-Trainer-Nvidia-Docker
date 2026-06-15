@@ -3,6 +3,8 @@
 # trainer_server.py
 import contextlib
 import copy
+import gzip
+import hashlib
 import io
 import os
 import re
@@ -24,7 +26,6 @@ from typing import Dict, Any, List, Callable, Optional, Tuple
 from urllib.parse import quote, urlparse
 from urllib.request import Request as URLRequest, urlopen
 
-import yaml
 from fastapi import FastAPI, UploadFile, File, Form, Header, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -79,7 +80,6 @@ CAPTURE_GAIN_PROFILE = "capture_rms_v1"
 
 # Firmware build/flash cache lives inside /data so Docker runs can reuse downloads.
 FIRMWARE_CACHE_DIR = Path(os.environ.get("FIRMWARE_CACHE_DIR", str(DATA_DIR / ".cache" / "firmware_flasher"))).resolve()
-FIRMWARE_HELPER = ROOT_DIR / "cli" / "flash_esphome_ota.py"
 FIRMWARE_DEFAULT_OTA_PORT = int(os.environ.get("ESPHOME_OTA_PORT", "3232"))
 FIRMWARE_DISCOVERY_SECONDS = float(os.environ.get("ESPHOME_DISCOVERY_SECONDS", "2.5"))
 FIRMWARE_MAX_LOG_LINES = int(os.environ.get("FIRMWARE_MAX_LOG_LINES", "500"))
@@ -87,66 +87,52 @@ FIRMWARE_GITHUB_OWNER = os.environ.get("FIRMWARE_GITHUB_OWNER", "TaterTotterson"
 FIRMWARE_GITHUB_REPO = os.environ.get("FIRMWARE_GITHUB_REPO", "microWakeWords")
 FIRMWARE_GITHUB_REF = os.environ.get("FIRMWARE_GITHUB_REF", "main")
 WAKE_SOUND_CATALOG_CACHE_TTL_SECONDS = int(os.environ.get("WAKE_SOUND_CATALOG_CACHE_TTL_SECONDS", "600"))
-FIRMWARE_PLATFORMIO_DIR = FIRMWARE_CACHE_DIR / "platformio"
-FIRMWARE_HOME_DIR = FIRMWARE_CACHE_DIR / "home"
-FIRMWARE_XDG_CACHE_DIR = FIRMWARE_CACHE_DIR / "cache"
-FIRMWARE_ESPHOME_DATA_DIR = FIRMWARE_CACHE_DIR / "esphome_data"
+FIRMWARE_PREBUILT_DIR = FIRMWARE_CACHE_DIR / "prebuilt_firmware"
+FIRMWARE_DOWNLOAD_TIMEOUT_SECONDS = float(os.environ.get("FIRMWARE_DOWNLOAD_TIMEOUT_SECONDS", "120"))
+FIRMWARE_JSON_CACHE_TTL_SECONDS = float(os.environ.get("FIRMWARE_JSON_CACHE_TTL_SECONDS", "900"))
+FIRMWARE_OTA_BLOCK_SIZE = int(os.environ.get("FIRMWARE_OTA_BLOCK_SIZE", "8192"))
 FIRMWARE_PROFILE_FILE = Path(
     os.environ.get("FIRMWARE_PROFILE_FILE", str(FIRMWARE_CACHE_DIR / "profiles.json"))
 ).resolve()
 WAKE_SOUND_MANIFEST_PATHS = ("wake_sound_manifest.json", "wake-sound-manifest.json")
 WAKE_SOUND_CATALOG_CACHE: Dict[str, Any] = {"ts": 0.0, "payload": {}}
 WAKE_SOUND_CATALOG_LOCK = threading.Lock()
+FIRMWARE_JSON_CACHE: Dict[str, Dict[str, Any]] = {}
+FIRMWARE_JSON_CACHE_LOCK = threading.Lock()
 TRAIN_LOG_TAIL_LINES = int(os.environ.get("REC_TRAIN_LOG_TAIL_LINES", "400"))
 TRAIN_LOG_MAX_BYTES = int(os.environ.get("REC_TRAIN_LOG_MAX_BYTES", str(512 * 1024)))
 
 FIRMWARE_TEMPLATE_SPECS = (
     {
         "key": "voicepe",
-        "label": "VoicePE (voicePE-TaterTimer.yaml)",
-        "path": "voicePE-TaterTimer.yaml",
-        "identity_key": "device_name",
-        "friendly_key": "friendly_name",
-        "fixed_keys": {"device_name"},
-        "auto_keys": {"ha_voice_ip"},
+        "label": "VoicePE",
+        "description": "VoicePE satellite prebuilt firmware",
     },
     {
         "key": "satellite1",
-        "label": "Sat1 (satellite1-TaterTimer.yaml)",
-        "path": "satellite1-TaterTimer.yaml",
-        "identity_key": "node_name",
-        "friendly_key": "friendly_name",
-        "fixed_keys": {"node_name"},
-        "auto_keys": {"ha_voice_ip"},
+        "label": "Sat1",
+        "description": "Satellite1 prebuilt firmware",
     },
     {
         "key": "respeaker_lite",
-        "label": "ReSpeaker Lite (respeakerLite-TaterTimer.yaml)",
-        "path": "respeakerLite-TaterTimer.yaml",
-        "identity_key": "device_name",
-        "friendly_key": "friendly_name",
-        "fixed_keys": {"device_name"},
-        "auto_keys": {"ha_voice_ip"},
+        "label": "ReSpeaker Lite",
+        "description": "ReSpeaker Lite prebuilt firmware",
     },
     {
         "key": "koala",
-        "label": "Koala Satellite (koala-TaterTimer.yaml)",
-        "path": "koala-TaterTimer.yaml",
-        "identity_key": "device_name",
-        "friendly_key": "friendly_name",
-        "fixed_keys": {"device_name"},
-        "auto_keys": {"ha_voice_ip"},
+        "label": "Koala Satellite",
+        "description": "Koala satellite prebuilt firmware",
     },
     {
         "key": "respeaker_xvf3800",
-        "label": "ReSpeaker XVF3800 (respeakerXVF3800-TaterTimer.yaml)",
-        "path": "respeakerXVF3800-TaterTimer.yaml",
-        "identity_key": "device_name",
-        "friendly_key": "friendly_name",
-        "fixed_keys": {"device_name"},
-        "auto_keys": {"ha_voice_ip"},
+        "label": "ReSpeaker XVF3800",
+        "description": "ReSpeaker XVF3800 prebuilt firmware",
     },
 )
+FIRMWARE_PREBUILT_LATEST_URL = (
+    f"https://raw.githubusercontent.com/{FIRMWARE_GITHUB_OWNER}/{FIRMWARE_GITHUB_REPO}/{FIRMWARE_GITHUB_REF}/prebuilt_firmware/latest.json"
+)
+FIRMWARE_PREBUILT_TEMPLATE_KEYS = {str(spec.get("key") or "").lower() for spec in FIRMWARE_TEMPLATE_SPECS}
 
 app = FastAPI(title="microWakeWord Personal Samples")
 
@@ -245,51 +231,6 @@ def _detect_speech_segments(wav_bytes: bytes) -> List[Dict[str, float]]:
     )
     return [{"start": round(ts["start"], 3), "end": round(ts["end"], 3)} for ts in timestamps]
 
-
-class _FirmwareYamlLoader(yaml.SafeLoader):
-    pass
-
-class _FirmwareYamlDumper(yaml.SafeDumper):
-    pass
-
-
-class _TaggedYamlValue:
-    __slots__ = ("tag", "value")
-
-    def __init__(self, tag: str, value: Any) -> None:
-        self.tag = str(tag or "")
-        self.value = value
-
-
-def _construct_secret(loader: yaml.SafeLoader, node: yaml.Node) -> Dict[str, str]:
-    return {"__secret__": loader.construct_scalar(node)}
-
-
-def _construct_tagged_yaml(loader: yaml.SafeLoader, tag_suffix: str, node: yaml.Node) -> _TaggedYamlValue:
-    tag = f"!{tag_suffix}"
-    if isinstance(node, yaml.ScalarNode):
-        value = loader.construct_scalar(node)
-    elif isinstance(node, yaml.SequenceNode):
-        value = loader.construct_sequence(node, deep=True)
-    elif isinstance(node, yaml.MappingNode):
-        value = loader.construct_mapping(node, deep=True)
-    else:
-        value = loader.construct_object(node, deep=True)
-    return _TaggedYamlValue(tag, value)
-
-
-def _represent_tagged_yaml(dumper: yaml.SafeDumper, value: _TaggedYamlValue) -> yaml.Node:
-    payload = value.value
-    if isinstance(payload, dict):
-        return dumper.represent_mapping(value.tag, payload)
-    if isinstance(payload, list):
-        return dumper.represent_sequence(value.tag, payload)
-    return dumper.represent_scalar(value.tag, "" if payload is None else str(payload))
-
-
-_FirmwareYamlLoader.add_constructor("!secret", _construct_secret)
-_FirmwareYamlLoader.add_multi_constructor("!", _construct_tagged_yaml)
-_FirmwareYamlDumper.add_representer(_TaggedYamlValue, _represent_tagged_yaml)
 
 
 def _reset_personal_samples_dir():
@@ -1523,6 +1464,375 @@ def _fetch_text_url(url: str, timeout: float = 20) -> str:
         return response.read().decode(charset, errors="replace")
 
 
+def _text(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _lower(value: Any) -> str:
+    return _text(value).lower()
+
+
+def _as_int(value: Any, default: int = 0, *, minimum: int | None = None) -> int:
+    try:
+        parsed = int(value)
+    except Exception:
+        parsed = default
+    if minimum is not None:
+        parsed = max(minimum, parsed)
+    return parsed
+
+
+def _sanitize_token(value: Any) -> str:
+    token = re.sub(r"[^A-Za-z0-9_.-]+", "_", _text(value)).strip("._-")
+    return (token[:96] or "default").lower()
+
+
+def _prebuilt_firmware_raw_url(path_or_url: Any) -> str:
+    token = _text(path_or_url)
+    if not token:
+        return ""
+    parsed = urlparse(token)
+    if parsed.scheme and parsed.netloc:
+        return token
+    clean = token.lstrip("/")
+    quoted = "/".join(quote(part) for part in clean.split("/") if part)
+    return f"https://raw.githubusercontent.com/{FIRMWARE_GITHUB_OWNER}/{FIRMWARE_GITHUB_REPO}/{FIRMWARE_GITHUB_REF}/{quoted}"
+
+
+def _fetch_json_url(url: str, *, timeout: float = 20, force_refresh: bool = False) -> Dict[str, Any]:
+    now = time.time()
+    with FIRMWARE_JSON_CACHE_LOCK:
+        cached = FIRMWARE_JSON_CACHE.get(url)
+        if (
+            not force_refresh
+            and isinstance(cached, dict)
+            and isinstance(cached.get("payload"), dict)
+            and (now - float(cached.get("ts") or 0.0)) < FIRMWARE_JSON_CACHE_TTL_SECONDS
+        ):
+            return copy.deepcopy(cached["payload"])
+
+    req = URLRequest(
+        url,
+        headers={
+            "User-Agent": "microWakeWord-Trainer/1.0",
+            "Accept": "application/json, */*",
+            "Cache-Control": "no-cache" if force_refresh else "max-age=60",
+        },
+    )
+    with urlopen(req, timeout=timeout) as response:
+        charset = response.headers.get_content_charset() or "utf-8"
+        payload = json.loads(response.read().decode(charset, errors="replace"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"Remote JSON did not parse into an object: {url}")
+    with FIRMWARE_JSON_CACHE_LOCK:
+        FIRMWARE_JSON_CACHE[url] = {"ts": now, "payload": copy.deepcopy(payload)}
+    return payload
+
+
+def _load_prebuilt_firmware_manifest(*, force_refresh: bool = False) -> Dict[str, Any]:
+    latest_payload = _fetch_json_url(
+        FIRMWARE_PREBUILT_LATEST_URL,
+        timeout=20,
+        force_refresh=force_refresh,
+    )
+    manifest_ref = _text(latest_payload.get("manifest"))
+    if not manifest_ref:
+        raise RuntimeError("Prebuilt firmware latest.json is missing a manifest path.")
+
+    manifest_url = _prebuilt_firmware_raw_url(manifest_ref)
+    manifest_payload = _fetch_json_url(manifest_url, timeout=20, force_refresh=force_refresh)
+    devices = manifest_payload.get("devices")
+    if not isinstance(devices, list):
+        raise RuntimeError("Prebuilt firmware manifest is missing its devices list.")
+
+    payload = copy.deepcopy(manifest_payload)
+    payload["version"] = _text(manifest_payload.get("version")) or _text(latest_payload.get("version"))
+    payload["latest_url"] = FIRMWARE_PREBUILT_LATEST_URL
+    payload["manifest_url"] = manifest_url
+    payload["manifest_path"] = manifest_ref
+    payload["devices_by_key"] = {
+        _lower(row.get("key")): dict(row)
+        for row in devices
+        if isinstance(row, dict) and _text(row.get("key"))
+    }
+    return payload
+
+
+def _prebuilt_firmware_info(template_key: Any, *, force_refresh: bool = False) -> Dict[str, Any]:
+    key = _lower(template_key)
+    if key not in FIRMWARE_PREBUILT_TEMPLATE_KEYS:
+        return {"available": False, "template_key": key, "reason": "not_prebuilt"}
+    try:
+        manifest = _load_prebuilt_firmware_manifest(force_refresh=force_refresh)
+    except Exception as exc:
+        return {
+            "available": False,
+            "template_key": key,
+            "reason": "manifest_unavailable",
+            "error": _text(exc) or exc.__class__.__name__,
+        }
+
+    devices_by_key = manifest.get("devices_by_key") if isinstance(manifest.get("devices_by_key"), dict) else {}
+    device = devices_by_key.get(key) if isinstance(devices_by_key.get(key), dict) else None
+    if not isinstance(device, dict):
+        return {
+            "available": False,
+            "template_key": key,
+            "reason": "missing_device",
+            "version": _text(manifest.get("version")),
+            "manifest_url": _text(manifest.get("manifest_url")),
+        }
+
+    artifacts = device.get("artifacts") if isinstance(device.get("artifacts"), dict) else {}
+    return {
+        "available": bool(artifacts.get("ota") or artifacts.get("factory")),
+        "template_key": key,
+        "version": _text(manifest.get("version")),
+        "manifest_url": _text(manifest.get("manifest_url")),
+        "latest_url": _text(manifest.get("latest_url")),
+        "device": copy.deepcopy(device),
+        "artifacts": copy.deepcopy(artifacts),
+    }
+
+
+def _prebuilt_artifact_ui_summary(prebuilt: Dict[str, Any]) -> Dict[str, Any]:
+    artifacts = prebuilt.get("artifacts") if isinstance(prebuilt.get("artifacts"), dict) else {}
+    ota_artifact = artifacts.get("ota") if isinstance(artifacts.get("ota"), dict) else None
+    return {
+        "available": bool(isinstance(ota_artifact, dict) and _text(ota_artifact.get("path"))),
+        "version": _text(prebuilt.get("version")),
+        "manifest_url": _text(prebuilt.get("manifest_url")),
+        "latest_url": _text(prebuilt.get("latest_url")),
+        "error": _text(prebuilt.get("error")),
+        "artifacts": {
+            kind: {
+                "kind": _text(row.get("kind") or kind),
+                "path": _text(row.get("path")),
+                "size_bytes": _as_int(row.get("size_bytes"), 0, minimum=0),
+                "sha256": _text(row.get("sha256")),
+            }
+            for kind, row in artifacts.items()
+            if isinstance(row, dict)
+        },
+    }
+
+
+def _prebuilt_artifact_meta(prebuilt: Dict[str, Any], kind: str) -> Dict[str, Any]:
+    artifacts = prebuilt.get("artifacts") if isinstance(prebuilt.get("artifacts"), dict) else {}
+    artifact = artifacts.get(_lower(kind)) if isinstance(artifacts.get(_lower(kind)), dict) else None
+    if not isinstance(artifact, dict) or not _text(artifact.get("path")):
+        raise RuntimeError(f"No prebuilt {kind} firmware artifact is available for this target.")
+    return dict(artifact)
+
+
+def _prebuilt_cache_path(template_key: Any, version: Any, artifact: Dict[str, Any]) -> Path:
+    name = Path(_text(artifact.get("path"))).name or f"{_sanitize_token(template_key)}-{_text(artifact.get('kind')) or 'firmware'}.bin"
+    return FIRMWARE_PREBUILT_DIR / _sanitize_token(version or "latest") / _sanitize_token(template_key) / name
+
+
+def _prebuilt_binary_is_valid(path: Path, artifact: Dict[str, Any]) -> bool:
+    if not path.is_file():
+        return False
+    expected_size = _as_int(artifact.get("size_bytes"), 0, minimum=0)
+    if expected_size and int(path.stat().st_size) != expected_size:
+        return False
+    expected_sha = _lower(artifact.get("sha256"))
+    if expected_sha and hashlib.sha256(path.read_bytes()).hexdigest().lower() != expected_sha:
+        return False
+    return True
+
+
+def _download_prebuilt_firmware_binary(
+    template_key: Any,
+    prebuilt: Dict[str, Any],
+    kind: str,
+    *,
+    force_refresh: bool = False,
+) -> Dict[str, Any]:
+    artifact = _prebuilt_artifact_meta(prebuilt, kind)
+    target_path = _prebuilt_cache_path(template_key, prebuilt.get("version"), artifact)
+    url = _prebuilt_firmware_raw_url(artifact.get("path"))
+    if not url:
+        raise RuntimeError("Prebuilt firmware URL is missing.")
+    if not force_refresh and _prebuilt_binary_is_valid(target_path, artifact):
+        return {"path": target_path, "artifact": artifact, "url": url, "cached": True}
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = target_path.with_name(f".{target_path.name}.{uuid.uuid4().hex}.tmp")
+    req = URLRequest(
+        url,
+        headers={
+            "User-Agent": "microWakeWord-Trainer/1.0",
+            "Accept": "application/octet-stream, */*",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+        },
+    )
+    try:
+        with urlopen(req, timeout=FIRMWARE_DOWNLOAD_TIMEOUT_SECONDS) as response:
+            tmp_path.write_bytes(response.read())
+        if not _prebuilt_binary_is_valid(tmp_path, artifact):
+            raise RuntimeError(f"Downloaded prebuilt firmware failed verification: {target_path.name}.")
+        tmp_path.replace(target_path)
+    except Exception:
+        with contextlib.suppress(Exception):
+            tmp_path.unlink()
+        raise
+    return {"path": target_path, "artifact": artifact, "url": url, "cached": False}
+
+
+class _NativeOTAError(RuntimeError):
+    pass
+
+
+def _native_ota_check(data: bytes, expected: set[int] | None = None) -> None:
+    error_messages = {
+        0x80: "Invalid magic byte.",
+        0x81: "Device could not prepare flash memory for update.",
+        0x82: "OTA authentication failed.",
+        0x83: "Writing OTA data to flash failed.",
+        0x84: "Finishing OTA update failed.",
+        0x85: "Manual reset is required before this OTA update.",
+        0x86: "Current flash configuration does not match this firmware.",
+        0x87: "New firmware flash configuration does not match this device.",
+        0x89: "The OTA partition is too small for this firmware.",
+        0x8A: "The OTA partition could not be found. Recover with USB flashing.",
+        0x8B: "OTA MD5 mismatch. Retry or recover with USB flashing.",
+        0x8D: "Firmware signature verification failed.",
+        0x8E: "This OTA type is not supported by the device.",
+        0xFF: "Unknown OTA error from device.",
+    }
+    if not data:
+        raise _NativeOTAError("Device closed the OTA connection without responding.")
+    code = int(data[0])
+    if code in error_messages:
+        raise _NativeOTAError(error_messages[code])
+    if expected is not None and code not in expected:
+        expected_text = ", ".join(f"0x{item:02X}" for item in sorted(expected))
+        raise _NativeOTAError(f"Unexpected OTA response 0x{code:02X}; expected {expected_text}.")
+
+
+def _native_ota_receive(sock: socket.socket, amount: int, label: str, expected: set[int] | None = None) -> bytes:
+    data = b""
+    while len(data) < amount:
+        try:
+            chunk = sock.recv(amount - len(data))
+        except OSError as exc:
+            raise _NativeOTAError(f"OTA receive failed while reading {label}: {exc}") from exc
+        if not chunk:
+            raise _NativeOTAError(f"OTA connection closed while reading {label}.")
+        data += chunk
+        if len(data) == 1:
+            _native_ota_check(data, expected)
+    if len(data) > 1 and expected is not None:
+        _native_ota_check(data[:1], expected)
+    return data
+
+
+def _native_ota_send(sock: socket.socket, data: bytes | str | int | List[int], label: str) -> None:
+    if isinstance(data, str):
+        payload = data.encode("utf-8")
+    elif isinstance(data, int):
+        payload = bytes([data])
+    elif isinstance(data, list):
+        payload = bytes(data)
+    else:
+        payload = data
+    try:
+        sock.sendall(payload)
+    except OSError as exc:
+        raise _NativeOTAError(f"OTA send failed while writing {label}: {exc}") from exc
+
+
+def _native_ota_upload(
+    host: str,
+    port: int,
+    binary_path: Path,
+    *,
+    progress_callback: Callable[[int, int, int], None] | None = None,
+) -> str:
+    if not host:
+        raise _NativeOTAError("OTA target host is missing.")
+    if not binary_path.is_file():
+        raise _NativeOTAError(f"OTA firmware file was not found: {binary_path}.")
+
+    upload_contents = binary_path.read_bytes()
+    sock: socket.socket | None = None
+    try:
+        sock = socket.create_connection((host, int(port or FIRMWARE_DEFAULT_OTA_PORT)), timeout=20.0)
+        sock.settimeout(20.0)
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        _native_ota_send(sock, bytes([0x6C, 0x26, 0xF7, 0x5C, 0x45]), "magic bytes")
+        version_response = _native_ota_receive(sock, 2, "OTA version", {0x00})
+        version = int(version_response[1])
+        if version not in {1, 2}:
+            raise _NativeOTAError(f"Device uses unsupported OTA protocol version {version}.")
+
+        _native_ota_send(sock, 0x01 | 0x04, "client features")
+        feature_response = _native_ota_receive(sock, 1, "server features")
+        extended_proto = False
+        server_features = 0
+        first_feature = int(feature_response[0])
+        if first_feature == 0x48:
+            extended_proto = True
+            server_features = int(_native_ota_receive(sock, 1, "server feature flags")[0])
+        elif first_feature == 0x46:
+            server_features = 0x01
+
+        auth_response = int(_native_ota_receive(sock, 1, "OTA auth", {0x01, 0x02, 0x41})[0])
+        if auth_response != 0x41:
+            raise _NativeOTAError("Device requested OTA authentication, but Tater prebuilt OTA has no password configured.")
+
+        sock.settimeout(90.0)
+        if extended_proto:
+            _native_ota_send(sock, 0x00, "OTA app update type")
+        if server_features & 0x01:
+            upload_contents = gzip.compress(upload_contents, compresslevel=9)
+
+        upload_size = len(upload_contents)
+        _native_ota_send(
+            sock,
+            [
+                (upload_size >> 24) & 0xFF,
+                (upload_size >> 16) & 0xFF,
+                (upload_size >> 8) & 0xFF,
+                upload_size & 0xFF,
+            ],
+            "binary size",
+        )
+        _native_ota_receive(sock, 1, "update prepare", {0x42})
+        _native_ota_send(sock, hashlib.md5(upload_contents).hexdigest(), "binary md5")
+        _native_ota_receive(sock, 1, "md5 check", {0x43})
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 0)
+
+        sent = 0
+        last_percent = -1
+        while sent < upload_size:
+            chunk = upload_contents[sent : sent + FIRMWARE_OTA_BLOCK_SIZE]
+            _native_ota_send(sock, chunk, "firmware chunk")
+            sent += len(chunk)
+            if version >= 2:
+                _native_ota_receive(sock, 1, "chunk acknowledgement", {0x47})
+            percent = int((sent / upload_size) * 100) if upload_size else 100
+            if callable(progress_callback) and (percent >= last_percent + 5 or percent == 100):
+                last_percent = percent
+                progress_callback(percent, sent, upload_size)
+
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        _native_ota_receive(sock, 1, "receive result", {0x44})
+        _native_ota_receive(sock, 1, "update end", {0x45})
+        _native_ota_send(sock, 0x00, "end acknowledgement")
+        return host
+    except OSError as exc:
+        raise _NativeOTAError(f"OTA connection to {host}:{int(port or FIRMWARE_DEFAULT_OTA_PORT)} failed: {exc}") from exc
+    finally:
+        if sock is not None:
+            with contextlib.suppress(Exception):
+                sock.close()
+
+
 def _load_firmware_template_text(spec: Dict[str, Any]) -> tuple[str, str]:
     rel_path = str(spec.get("path") or "").strip()
     url = _firmware_raw_url(rel_path)
@@ -2202,20 +2512,6 @@ def _parse_flash_target(raw_host: str, raw_port: Any = None) -> tuple[str, int]:
     return host_text, port
 
 
-def _firmware_display_command(command: List[str]) -> str:
-    parts = []
-    skip_next = False
-    for token in command:
-        if skip_next:
-            parts.append("***")
-            skip_next = False
-            continue
-        parts.append(token)
-        if token == "--password":
-            skip_next = True
-    return " ".join(parts)
-
-
 def _run_firmware_flash_background(session_id: str):
     with FIRMWARE_LOCK:
         session = FIRMWARE_SESSIONS.get(session_id)
@@ -2223,60 +2519,30 @@ def _run_firmware_flash_background(session_id: str):
             return
         host = str(session.get("host") or "")
         port = int(session.get("port") or FIRMWARE_DEFAULT_OTA_PORT)
-        password = str(session.get("password") or "")
         firmware_path = str(session.get("firmware_path") or "")
-
-    command = [
-        sys.executable,
-        "-u",
-        str(FIRMWARE_HELPER),
-        "--host",
-        host,
-        "--port",
-        str(port),
-    ]
-    if password:
-        command.extend(["--password", password])
-    command.append(firmware_path)
 
     _append_firmware_log(session_id, "===== Firmware Flash Console =====")
     _append_firmware_log(session_id, f"→ Device: {host}:{port}")
-    _append_firmware_log(session_id, f"→ Running: {_firmware_display_command(command)}")
+    _append_firmware_log(session_id, f"→ OTA image: {Path(firmware_path).name}")
 
     try:
-        env = _firmware_runner_env()
-        proc = subprocess.Popen(
-            command,
-            cwd=str(ROOT_DIR),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            env=env,
-        )
         with FIRMWARE_LOCK:
             live = FIRMWARE_SESSIONS.get(session_id)
             if isinstance(live, dict):
-                live["pid"] = int(proc.pid or 0)
                 live["message"] = "Firmware upload running."
 
-        assert proc.stdout is not None
-        for line in proc.stdout:
-            for part in line.replace("\r", "\n").splitlines():
-                _append_firmware_log(session_id, part)
-        rc = proc.wait()
+        def progress(percent: int, sent: int, total: int) -> None:
+            _append_firmware_log(session_id, f"→ OTA upload progress: {percent}% ({sent}/{total} bytes)")
 
-        if rc == 0:
-            _append_firmware_log(session_id, f"✓ Firmware flash finished (exit_code={rc})")
-        else:
-            _append_firmware_log(session_id, f"✗ Firmware flash failed (exit_code={rc})")
+        uploaded_host = _native_ota_upload(host, port, Path(firmware_path), progress_callback=progress)
+        _append_firmware_log(session_id, f"✓ Firmware flash finished to {uploaded_host or host}")
         with FIRMWARE_LOCK:
             live = FIRMWARE_SESSIONS.get(session_id)
             if isinstance(live, dict):
                 live["running"] = False
-                live["exit_code"] = int(rc)
+                live["exit_code"] = 0
                 live["finished_at"] = datetime.now(timezone.utc).isoformat()
-                live["message"] = "Firmware upload completed." if rc == 0 else f"Firmware upload failed with exit code {rc}."
+                live["message"] = "Firmware uploaded successfully."
     except Exception as exc:
         _append_firmware_log(session_id, f"✗ Firmware flash crashed: {exc!r}")
         with FIRMWARE_LOCK:
@@ -2296,115 +2562,51 @@ def _run_firmware_build_flash_background(session_id: str):
         host = str(session.get("host") or "")
         port = int(session.get("port") or FIRMWARE_DEFAULT_OTA_PORT)
         template_key = str(session.get("template_key") or "")
-        values = session.get("values") if isinstance(session.get("values"), dict) else {}
+        template_label = str(session.get("template_label") or template_key)
 
-    if shutil.which("patch") is None:
-        _append_firmware_log(session_id, "✗ Firmware build cannot start: required system command 'patch' was not found.")
-        _append_firmware_log(
-            session_id,
-            "Tip: rebuild the Nvidia Docker image so it includes the patch utility required by ESP-IDF micro-opus.",
-        )
-        with FIRMWARE_LOCK:
-            live = FIRMWARE_SESSIONS.get(session_id)
-            if isinstance(live, dict):
-                live["running"] = False
-                live["exit_code"] = 997
-                live["finished_at"] = datetime.now(timezone.utc).isoformat()
-                live["message"] = "Firmware build dependency missing: patch."
-        return
-
-    try:
-        config_path, normalized, build_path = _render_firmware_config(template_key, values, host, session_id, port)
-    except Exception as exc:
-        _append_firmware_log(session_id, f"✗ Failed to prepare firmware config: {exc}")
-        with FIRMWARE_LOCK:
-            live = FIRMWARE_SESSIONS.get(session_id)
-            if isinstance(live, dict):
-                live["running"] = False
-                live["exit_code"] = 998
-                live["finished_at"] = datetime.now(timezone.utc).isoformat()
-                live["message"] = f"Firmware config failed: {exc}"
-        return
-
-    command = [
-        sys.executable,
-        "-m",
-        "esphome",
-        "run",
-        str(config_path),
-        "--no-logs",
-        "--device",
-        host,
-    ]
-
-    _append_firmware_log(session_id, "===== Firmware Build + Flash Console =====")
-    _append_firmware_log(session_id, f"→ Template: {template_key}")
+    _append_firmware_log(session_id, "===== Prebuilt Firmware Flash Console =====")
+    _append_firmware_log(session_id, f"→ Firmware: {template_label}")
     _append_firmware_log(session_id, f"→ Device: {host}:{port}")
-    _append_firmware_log(session_id, f"→ Config: {config_path}")
-    _append_firmware_log(session_id, f"→ Build cache: {build_path}")
-    if normalized.get("wake_word_triggered_sound_file"):
-        _append_firmware_log(session_id, f"→ Wake sound: {normalized['wake_word_triggered_sound_file']}")
-    _append_firmware_log(session_id, "→ Running: " + " ".join(command))
+    _append_firmware_log(session_id, "→ Loading latest prebuilt firmware manifest...")
 
     try:
-        env = _firmware_runner_env(include_esphome_pythonpath=True)
-        proc = subprocess.Popen(
-            command,
-            cwd=str(ROOT_DIR),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            env=env,
-        )
+        prebuilt = _prebuilt_firmware_info(template_key, force_refresh=True)
+        if not bool(prebuilt.get("available")):
+            raise RuntimeError(_text(prebuilt.get("error")) or "No prebuilt OTA image is available for this firmware target.")
+        firmware_version = _text(prebuilt.get("version")) or "latest"
+        _append_firmware_log(session_id, f"→ Latest firmware: {firmware_version}")
+        _append_firmware_log(session_id, "→ Downloading or reusing verified OTA image...")
+        binary = _download_prebuilt_firmware_binary(template_key, prebuilt, "ota")
+        cached_text = "cached" if bool(binary.get("cached")) else "downloaded"
+        _append_firmware_log(session_id, f"→ OTA image {cached_text}: {Path(binary['path']).name}")
         with FIRMWARE_LOCK:
             live = FIRMWARE_SESSIONS.get(session_id)
             if isinstance(live, dict):
-                live["pid"] = int(proc.pid or 0)
-                live["message"] = "Firmware build + flash running."
-                live["config_path"] = str(config_path)
+                live["message"] = "Firmware upload running."
+                live["filename"] = Path(binary["path"]).name
+                live["firmware_version"] = firmware_version
 
-        assert proc.stdout is not None
-        for line in proc.stdout:
-            for part in line.replace("\r", "\n").splitlines():
-                _append_firmware_log(session_id, part)
-        rc = proc.wait()
+        def progress(percent: int, sent: int, total: int) -> None:
+            _append_firmware_log(session_id, f"→ OTA upload progress: {percent}% ({sent}/{total} bytes)")
 
-        if rc == 0:
-            _append_firmware_log(session_id, f"✓ Firmware build + flash finished (exit_code={rc})")
-        else:
-            with FIRMWARE_LOCK:
-                live_lines = list((FIRMWARE_SESSIONS.get(session_id) or {}).get("log_lines") or [])
-            joined_lines = "\n".join(live_lines)
-            if "uv installation via pip failed" in joined_lines or "Failed to install Python dependencies into penv" in joined_lines:
-                _append_firmware_log(
-                    session_id,
-                    "Tip: PlatformIO's ESP-IDF Python environment crashed while installing dependencies. "
-                    "Run Clean Build Files once, then retry the flash.",
-                )
-            if "pioarduino/registry" in joined_lines and "ninja-" in joined_lines and "status code '502'" in joined_lines:
-                _append_firmware_log(
-                    session_id,
-                    "Tip: GitHub returned a 502 while PlatformIO was downloading Ninja. "
-                    "This is an upstream package download failure; retry the build in a few minutes.",
-                )
-            _append_firmware_log(session_id, f"✗ Firmware build + flash failed (exit_code={rc})")
+        uploaded_host = _native_ota_upload(host, port, Path(binary["path"]), progress_callback=progress)
+        _append_firmware_log(session_id, f"✓ Prebuilt firmware uploaded successfully to {uploaded_host or host}")
         with FIRMWARE_LOCK:
             live = FIRMWARE_SESSIONS.get(session_id)
             if isinstance(live, dict):
                 live["running"] = False
-                live["exit_code"] = int(rc)
+                live["exit_code"] = 0
                 live["finished_at"] = datetime.now(timezone.utc).isoformat()
-                live["message"] = "Firmware flashed successfully." if rc == 0 else f"Firmware build + flash failed with exit code {rc}."
+                live["message"] = "Firmware uploaded successfully."
     except Exception as exc:
-        _append_firmware_log(session_id, f"✗ Firmware build + flash crashed: {exc!r}")
+        _append_firmware_log(session_id, f"✗ Prebuilt firmware flash failed: {exc!r}")
         with FIRMWARE_LOCK:
             live = FIRMWARE_SESSIONS.get(session_id)
             if isinstance(live, dict):
                 live["running"] = False
                 live["exit_code"] = 999
                 live["finished_at"] = datetime.now(timezone.utc).isoformat()
-                live["message"] = f"Firmware build + flash crashed: {exc}"
+                live["message"] = f"Firmware flash failed: {exc}"
 
 
 def _dedupe_discovered_devices(devices: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -3026,7 +3228,6 @@ def firmware_devices():
 @app.get("/api/firmware/templates")
 def firmware_templates(request: Request, target_host: str = "", target_port: str = ""):
     templates = []
-    warnings = []
     base_url = _request_base_url(request)
     wake_words = _list_trained_wake_words(base_url)
     selected_host, selected_port = _firmware_profile_target(target_host, target_port)
@@ -3038,25 +3239,28 @@ def firmware_templates(request: Request, target_host: str = "", target_port: str
         row_target_port = selected_port or str(profile.get("__target_port") or "")
         if row_target_port == "6053":
             row_target_port = str(FIRMWARE_DEFAULT_OTA_PORT)
+        prebuilt = _prebuilt_firmware_info(key)
+        prebuilt_summary = _prebuilt_artifact_ui_summary(prebuilt)
         row = {
             "value": key,
             "label": str(spec.get("label") or key),
-            "source_url": _firmware_raw_url(str(spec.get("path") or "")),
+            "description": str(spec.get("description") or ""),
+            "source_url": _text(prebuilt.get("manifest_url")),
             "target_host": row_target_host,
             "target_port": row_target_port,
             "fields": [],
+            "prebuilt_firmware_available": bool(prebuilt_summary.get("available")),
+            "prebuilt_firmware": prebuilt_summary,
+            "firmware_version": _text(prebuilt.get("version")),
         }
-        try:
-            row["fields"] = _firmware_template_fields(key, base_url, profile_key)
-        except Exception as exc:
-            warnings.append(f"{row['label']}: {exc}")
         templates.append(row)
+    active = next((row["value"] for row in templates if row.get("prebuilt_firmware_available")), "")
     return {
         "ok": True,
         "templates": templates,
-        "active_template_key": templates[0]["value"] if templates else "",
+        "active_template_key": active or (templates[0]["value"] if templates else ""),
         "wake_words": wake_words,
-        "warnings": warnings,
+        "warnings": [],
     }
 
 
@@ -3068,7 +3272,12 @@ def firmware_profile(payload: Dict[str, Any]):
         _firmware_template_spec(template_key)
         values = body.get("values") if isinstance(body.get("values"), dict) else {}
         profile_key = _firmware_profile_key(template_key, values.get("__target_host"), values.get("__target_port"))
-        saved = _normalize_firmware_profile_update(template_key, values, profile_key)
+        host, port = _firmware_profile_target(values.get("__target_host"), values.get("__target_port"))
+        saved = {}
+        if host:
+            saved["__target_host"] = host
+        if port:
+            saved["__target_port"] = port
         _save_firmware_profile(profile_key or template_key, saved)
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
@@ -3099,23 +3308,31 @@ def firmware_build_flash(payload: Dict[str, Any]):
     try:
         target_host, target_port = _parse_flash_target(str(body.get("host") or ""), body.get("port"))
         template_key = str(body.get("template_key") or "").strip()
-        _firmware_template_spec(template_key)
+        template_spec = _firmware_template_spec(template_key)
+        prebuilt = _prebuilt_firmware_info(template_key)
+        if not bool(prebuilt.get("available")):
+            raise RuntimeError(_text(prebuilt.get("error")) or "No prebuilt OTA image is available for this firmware target.")
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
 
     values = body.get("values") if isinstance(body.get("values"), dict) else {}
+    with contextlib.suppress(Exception):
+        profile_key = _firmware_profile_key(template_key, target_host, target_port)
+        _save_firmware_profile(profile_key or template_key, {"__target_host": target_host, "__target_port": str(target_port)})
     session_id = f"fw_{uuid.uuid4().hex}"
     session = {
         "id": session_id,
-        "mode": "build_flash",
+        "mode": "prebuilt_ota_flash",
         "running": True,
         "exit_code": None,
         "host": target_host,
         "port": target_port,
         "template_key": template_key,
+        "template_label": str(template_spec.get("label") or template_key),
+        "firmware_version": _text(prebuilt.get("version")),
         "filename": "",
         "values": values,
-        "message": "Preparing firmware build + flash.",
+        "message": "Preparing prebuilt firmware flash.",
         "log_lines": [],
         "started_at": datetime.now(timezone.utc).isoformat(),
         "finished_at": None,
@@ -3140,7 +3357,7 @@ def firmware_clean():
         return JSONResponse({"ok": False, "error": f"Wait for active firmware session(s) to finish: {', '.join(active[:3])}."}, status_code=400)
 
     removed = []
-    for child in ("configs", "builds", "platformio", "home", "cache", "esphome_data"):
+    for child in ("prebuilt_firmware", "uploads"):
         path = FIRMWARE_CACHE_DIR / child
         if path.exists():
             shutil.rmtree(path, ignore_errors=True)
@@ -3148,7 +3365,7 @@ def firmware_clean():
     return {
         "ok": True,
         "removed": removed,
-        "message": "Cleaned firmware build files." if removed else "No firmware build files needed cleaning.",
+        "message": "Cleaned downloaded firmware images." if removed else "No downloaded firmware images needed cleaning.",
     }
 
 
@@ -3172,11 +3389,9 @@ async def firmware_flash(
     data = await file.read()
     if not data:
         return JSONResponse({"ok": False, "error": "Firmware file is empty."}, status_code=400)
-    if not FIRMWARE_HELPER.exists():
-        return JSONResponse({"ok": False, "error": f"Firmware helper not found: {FIRMWARE_HELPER}"}, status_code=500)
 
     session_id = f"fw_{uuid.uuid4().hex}"
-    session_dir = FIRMWARE_CACHE_DIR / session_id
+    session_dir = FIRMWARE_CACHE_DIR / "uploads" / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
     firmware_path = session_dir / filename
     firmware_path.write_bytes(data)
