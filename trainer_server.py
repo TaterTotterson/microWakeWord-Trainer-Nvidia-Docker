@@ -94,6 +94,7 @@ FIRMWARE_OTA_BLOCK_SIZE = int(os.environ.get("FIRMWARE_OTA_BLOCK_SIZE", "8192"))
 FIRMWARE_PROFILE_FILE = Path(
     os.environ.get("FIRMWARE_PROFILE_FILE", str(FIRMWARE_CACHE_DIR / "profiles.json"))
 ).resolve()
+FIRMWARE_WEB_FLASH_DIR = FIRMWARE_CACHE_DIR / "web_flash"
 WAKE_SOUND_MANIFEST_PATHS = ("wake_sound_manifest.json", "wake-sound-manifest.json")
 WAKE_SOUND_CATALOG_CACHE: Dict[str, Any] = {"ts": 0.0, "payload": {}}
 WAKE_SOUND_CATALOG_LOCK = threading.Lock()
@@ -1681,6 +1682,57 @@ def _download_prebuilt_firmware_binary(
             tmp_path.unlink()
         raise
     return {"path": target_path, "artifact": artifact, "url": url, "cached": False}
+
+
+def _browser_flash_artifact_id(template_key: Any) -> str:
+    return "_".join(
+        part
+        for part in [
+            _sanitize_token(template_key),
+            str(int(time.time())),
+            uuid.uuid4().hex[:8],
+        ]
+        if part
+    )
+
+
+def _create_browser_flash_artifact(template_key: Any, prebuilt: Dict[str, Any], binary_path: Path) -> Dict[str, Any]:
+    artifact_id = _browser_flash_artifact_id(template_key)
+    artifact_dir = FIRMWARE_WEB_FLASH_DIR / artifact_id
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+
+    target_binary_name = "firmware.bin"
+    target_binary_path = artifact_dir / target_binary_name
+    shutil.copy2(binary_path, target_binary_path)
+    return {
+        "artifact_id": artifact_id,
+        "binary_url": f"/api/firmware/browser_flash/{artifact_id}/{target_binary_name}",
+        "binary_name": target_binary_name,
+        "template_key": _text(template_key),
+        "firmware_version": _text(prebuilt.get("version")),
+        "source_binary": str(binary_path),
+        "binary_size": int(target_binary_path.stat().st_size),
+        "erase_all": True,
+        "flash_size": "4MB",
+        "flash_mode": "dio",
+        "flash_freq": "40m",
+    }
+
+
+def _browser_flash_artifact_path(artifact_id: str, relative_path: str) -> Path:
+    artifact = _sanitize_token(artifact_id)
+    if not artifact:
+        raise KeyError("Browser flash artifact is missing.")
+    rel = Path(_text(relative_path))
+    if rel.is_absolute() or any(part in {"", ".", ".."} for part in rel.parts):
+        raise KeyError("Browser flash artifact path is invalid.")
+    root = (FIRMWARE_WEB_FLASH_DIR / artifact).resolve()
+    target = (root / rel).resolve()
+    if root not in target.parents and target != root:
+        raise KeyError("Browser flash artifact path is invalid.")
+    if not target.is_file():
+        raise KeyError("Browser flash artifact file was not found.")
+    return target
 
 
 class _NativeOTAError(RuntimeError):
@@ -3346,6 +3398,50 @@ def firmware_build_flash(payload: Dict[str, Any]):
     return _firmware_session_payload(session_id)
 
 
+@app.post("/api/firmware/browser_flash")
+def firmware_browser_flash(payload: Dict[str, Any]):
+    body = payload if isinstance(payload, dict) else {}
+    try:
+        template_key = str(body.get("template_key") or "").strip()
+        template_spec = _firmware_template_spec(template_key)
+        prebuilt = _prebuilt_firmware_info(template_key, force_refresh=True)
+        if not bool(prebuilt.get("available")):
+            raise RuntimeError(_text(prebuilt.get("error")) or "No prebuilt firmware image is available for this firmware target.")
+        _prebuilt_artifact_meta(prebuilt, "factory")
+        binary = _download_prebuilt_firmware_binary(template_key, prebuilt, "factory", force_refresh=True)
+        artifact = _create_browser_flash_artifact(template_key, prebuilt, Path(binary["path"]))
+        template_label = str(template_spec.get("label") or template_key)
+        cached_text = "cached" if bool(binary.get("cached")) else "downloaded"
+        return {
+            "ok": True,
+            "template_key": template_key,
+            "template_label": template_label,
+            "firmware_version": _text(prebuilt.get("version")),
+            "message": f"Prepared prebuilt USB firmware for {template_label}.",
+            "entries": [
+                f"Using prebuilt {template_label} factory firmware {_text(prebuilt.get('version')) or 'latest'}.",
+                f"Factory image {cached_text}: {Path(binary['path']).name}",
+                f"Browser flash binary ready: {artifact['binary_name']} ({artifact['binary_size']} bytes)",
+            ],
+            **artifact,
+        }
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+
+@app.get("/api/firmware/browser_flash/{artifact_id}/{filename}")
+def firmware_browser_flash_binary(artifact_id: str, filename: str):
+    try:
+        target = _browser_flash_artifact_path(artifact_id, filename)
+    except KeyError as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=404)
+    return FileResponse(
+        str(target),
+        media_type="application/octet-stream",
+        filename=target.name,
+    )
+
+
 @app.post("/api/firmware/clean")
 def firmware_clean():
     active = []
@@ -3357,7 +3453,7 @@ def firmware_clean():
         return JSONResponse({"ok": False, "error": f"Wait for active firmware session(s) to finish: {', '.join(active[:3])}."}, status_code=400)
 
     removed = []
-    for child in ("prebuilt_firmware", "uploads"):
+    for child in ("prebuilt_firmware", "uploads", "web_flash"):
         path = FIRMWARE_CACHE_DIR / child
         if path.exists():
             shutil.rmtree(path, ignore_errors=True)

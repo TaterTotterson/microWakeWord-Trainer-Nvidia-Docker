@@ -503,6 +503,12 @@
       justify-content: flex-end;
     }
 
+    .usbFlashHint {
+      color: var(--muted);
+      font-size: 12px;
+      max-width: 420px;
+    }
+
     .studioHero {
       position: relative;
       overflow: hidden;
@@ -1524,8 +1530,7 @@
             <div class="firmwareSteps" aria-label="Firmware flashing steps">
               <span class="firmwareStepChip"><b>1</b> Pick firmware</span>
               <span class="firmwareStepChip"><b>2</b> Select target</span>
-              <span class="firmwareStepChip"><b>3</b> Verify image</span>
-              <span class="firmwareStepChip"><b>4</b> Flash OTA</span>
+              <span class="firmwareStepChip"><b>3</b> Flash OTA or USB</span>
             </div>
           </div>
           <span id="firmwareStatus" class="pill">Flasher idle</span>
@@ -1601,35 +1606,24 @@
         </section>
       </div>
 
-      <section class="card firmwarePanel stack">
-        <div class="firmwarePanelHeader">
-          <div class="firmwarePanelTitle">
-            <span class="firmwareStepBadge">3</span>
-            <div>
-              <h3>Prebuilt Image</h3>
-              <p>The trainer downloads the latest verified OTA image and checks its size and SHA before flashing.</p>
-            </div>
-          </div>
-          <button id="saveFirmwareSettingsBtn" type="button">Save target</button>
-        </div>
-        <div id="firmwareFields" class="firmwareFields stack">
-          <div class="emptyState">Firmware image details will appear here.</div>
-        </div>
-      </section>
+      <div id="firmwareFields" class="firmwareFields stack" hidden></div>
 
       <section class="card firmwareActionsPanel">
         <div class="firmwarePanelTitle">
-          <span class="firmwareStepBadge">4</span>
+          <span class="firmwareStepBadge">3</span>
           <div>
-            <h3>Flash OTA</h3>
-            <p>The console shows download, verification, OTA upload, and reboot progress.</p>
+            <h3>Flash Firmware</h3>
+            <p>The console shows download, verification, OTA upload, USB flash, and reboot progress.</p>
           </div>
         </div>
         <div class="row firmwareActions">
-          <button id="flashFirmwareBtn" class="primary" type="button" disabled>Flash prebuilt firmware</button>
+          <button id="flashFirmwareBtn" class="primary" type="button" disabled>Flash OTA Update</button>
+          <button id="usbFirmwareBtn" type="button" disabled>Browser USB Flash</button>
+          <button id="saveFirmwareSettingsBtn" type="button">Save target</button>
           <button id="cleanFirmwareBtn" type="button">Clear downloaded images</button>
           <button id="openFirmwareConsoleBtn" type="button">Open firmware console</button>
         </div>
+        <div class="usbFlashHint">Use Browser USB Flash for new satellites, recovery, or devices older than Tater firmware 3.0.3. Chrome or Edge must be used on localhost or HTTPS.</div>
       </section>
     </div>
   </div>
@@ -1710,6 +1704,7 @@
     captured: { items: [], captured_count: 0, negative_count: 0, personal_count: 0 },
     samples: { personal: [], negative: [], personal_count: 0, negative_count: 0, activeBucket: "personal", pages: { personal: 0, negative: 0 } },
     firmware: { devices: [], templates: [], wakeWords: [], flashing: null, logLines: [], activeTemplateKey: "" },
+    browserUsb: { ports: {}, esptoolJsModule: null, esptoolJsLoadPromise: null },
     uploadBusy: false,
     reviewBusy: false,
     firmwareBusy: false,
@@ -2362,6 +2357,23 @@
     $("firmwareLogStatus").textContent = String(text || "Waiting for firmware output...").trim() || "Waiting for firmware output...";
   }
 
+  function appendFirmwareLog(line, statusText = "") {
+    const text = String(line || "").trim();
+    if (!text) return;
+    uiState.firmware.logLines = [...(uiState.firmware.logLines || []), text].slice(-500);
+    renderFirmwareLogLines(uiState.firmware.logLines, true);
+    if (statusText) {
+      setFirmwareLogStatus(statusText);
+    }
+  }
+
+  function appendFirmwareLogs(lines, statusText = "") {
+    (Array.isArray(lines) ? lines : []).forEach((line) => appendFirmwareLog(line));
+    if (statusText) {
+      setFirmwareLogStatus(statusText);
+    }
+  }
+
   function openFirmwareConsole(wobble = true, text = null, statusText = "") {
     const template = selectedFirmwareTemplate();
     const host = ($("firmwareHost").value || "").trim();
@@ -2407,6 +2419,221 @@
         setTimeout(resolve, 0);
       }
     });
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+  }
+
+  function browserUsbPortLabel(port) {
+    if (!port || typeof port.getInfo !== "function") {
+      return "USB serial device";
+    }
+    const info = port.getInfo() || {};
+    const vendor = Number(info.usbVendorId || 0);
+    const product = Number(info.usbProductId || 0);
+    if (!vendor && !product) {
+      return "USB serial device";
+    }
+    const hex = (value) => value.toString(16).padStart(4, "0");
+    return `USB ${hex(vendor)}:${hex(product)}`;
+  }
+
+  async function browserUsbSelectPort(selector = "") {
+    if (!window.isSecureContext || !navigator.serial) {
+      throw new Error("Browser USB flash needs Chrome or Edge on HTTPS or localhost. In the macOS app, use Open in Browser and choose Chrome or Edge.");
+    }
+    const port = await navigator.serial.requestPort();
+    const key = String(selector || "default").trim() || "default";
+    uiState.browserUsb.ports[key] = port;
+    return port;
+  }
+
+  function normalizeEsptoolJsModule(module) {
+    if (module?.ESPLoader && module?.Transport) {
+      return module;
+    }
+    if (module?.default?.ESPLoader && module?.default?.Transport) {
+      return module.default;
+    }
+    return null;
+  }
+
+  async function ensureEsptoolJsLoaded() {
+    if (uiState.browserUsb.esptoolJsModule) {
+      return uiState.browserUsb.esptoolJsModule;
+    }
+    if (uiState.browserUsb.esptoolJsLoadPromise instanceof Promise) {
+      return uiState.browserUsb.esptoolJsLoadPromise;
+    }
+    const moduleUrls = [
+      "https://esm.sh/esptool-js@0.5.7?bundle",
+      "https://unpkg.com/esptool-js@0.5.7/bundle.js",
+      "https://cdn.jsdelivr.net/npm/esptool-js@0.5.7/bundle.js",
+    ];
+    uiState.browserUsb.esptoolJsLoadPromise = (async () => {
+      const errors = [];
+      for (const moduleUrl of moduleUrls) {
+        try {
+          const module = normalizeEsptoolJsModule(await import(moduleUrl));
+          if (module) {
+            uiState.browserUsb.esptoolJsModule = module;
+            return module;
+          }
+          errors.push(`${moduleUrl}: missing ESPLoader/Transport exports`);
+        } catch (error) {
+          errors.push(`${moduleUrl}: ${String(error?.message || error || "load failed")}`);
+        }
+      }
+      throw new Error(`Could not load esptool-js. ${errors.join(" | ")}`);
+    })();
+    return uiState.browserUsb.esptoolJsLoadPromise;
+  }
+
+  async function fetchFirmwareBinary(binaryUrl) {
+    const response = await fetch(binaryUrl, { credentials: "same-origin" });
+    if (!response.ok) {
+      throw new Error(`Firmware download failed: HTTP ${response.status}`);
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  function uint8ArrayToBinaryString(bytes) {
+    const chunks = [];
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + chunkSize)));
+    }
+    return chunks.join("");
+  }
+
+  async function browserUsbSetSignals(port, signals, timeoutMs = 1200) {
+    if (!port || typeof port.setSignals !== "function") {
+      return false;
+    }
+    let timeoutId = 0;
+    try {
+      await Promise.race([
+        port.setSignals(signals),
+        new Promise((_resolve, reject) => {
+          timeoutId = setTimeout(() => reject(new Error("Timed out setting USB serial control signals.")), Math.max(1, Number(timeoutMs) || 1));
+        }),
+      ]);
+      return true;
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  }
+
+  async function browserUsbHardResetAfterFlash(transport, loader, port) {
+    try {
+      appendFirmwareLog("Resetting device after USB flash.");
+      if (transport && typeof transport.setRTS === "function") {
+        await transport.setRTS(true);
+      } else {
+        await browserUsbSetSignals(port, { dataTerminalReady: false, requestToSend: true, break: false });
+      }
+      await sleep(100);
+      if (loader && typeof loader.after === "function") {
+        await loader.after();
+      }
+      await sleep(1000);
+      return true;
+    } catch (error) {
+      appendFirmwareLog(`USB reset warning: ${String(error?.message || error)}`);
+      return false;
+    }
+  }
+
+  async function flashBrowserUsbPort(port, artifact) {
+    const module = await ensureEsptoolJsLoaded();
+    const { ESPLoader, Transport } = module;
+    if (!ESPLoader || !Transport) {
+      throw new Error("esptool-js did not expose ESPLoader/Transport.");
+    }
+    const binaryUrl = String(artifact?.binary_url || "").trim();
+    if (!binaryUrl) {
+      throw new Error("Browser flash binary URL is missing.");
+    }
+
+    const transport = new Transport(port);
+    const terminal = {
+      clean() {},
+      writeLine(data) {
+        const text = String(data || "").trim();
+        if (text) appendFirmwareLog(text);
+      },
+      write(data) {
+        const text = String(data || "").trim();
+        if (text) appendFirmwareLog(text);
+      },
+    };
+    const loader = new ESPLoader({
+      transport,
+      baudrate: 115200,
+      terminal,
+      debugLogging: false,
+    });
+
+    let lastProgress = -1;
+    try {
+      appendFirmwareLog(`Connecting to ${browserUsbPortLabel(port)}...`, "Connecting to selected USB device...");
+      const chipName = await loader.main();
+      appendFirmwareLog(`Connected to ${chipName || "ESP device"}.`);
+
+      setFirmwareLogStatus("Downloading prepared factory firmware...");
+      const firmwareData = await fetchFirmwareBinary(binaryUrl);
+      appendFirmwareLog(`Firmware downloaded (${firmwareData.byteLength} bytes).`);
+
+      const eraseAll = artifact?.erase_all !== false;
+      if (eraseAll) {
+        appendFirmwareLog("Erasing flash and writing factory image at offset 0x0.");
+      } else {
+        appendFirmwareLog("Writing factory image at offset 0x0.");
+      }
+      const flashOptions = {
+        fileArray: [{ data: firmwareData, address: 0 }],
+        flashMode: String(artifact?.flash_mode || "dio"),
+        flashFreq: String(artifact?.flash_freq || "40m"),
+        flashSize: String(artifact?.flash_size || "4MB"),
+        eraseAll,
+        compress: true,
+        reportProgress: (_fileIndex, written, total) => {
+          const pct = total > 0 ? Math.floor((written / total) * 100) : 0;
+          if (pct >= lastProgress + 5 || pct === 100) {
+            lastProgress = pct;
+            appendFirmwareLog(`USB flash progress: ${pct}% (${written}/${total} bytes)`, `Flashing over USB... ${pct}%`);
+          }
+        },
+      };
+      try {
+        await loader.writeFlash(flashOptions);
+      } catch (error) {
+        const message = String(error?.message || error || "");
+        if (!message.includes("charCodeAt")) {
+          throw error;
+        }
+        appendFirmwareLog("Retrying flash with binary-string firmware format.");
+        await loader.writeFlash({
+          ...flashOptions,
+          eraseAll: false,
+          fileArray: [{ data: uint8ArrayToBinaryString(firmwareData), address: 0 }],
+        });
+      }
+      appendFirmwareLog("USB flash complete.");
+      const resetWorked = await browserUsbHardResetAfterFlash(transport, loader, port);
+      if (!resetWorked) {
+        appendFirmwareLog("If the device does not restart, unplug and reconnect USB once to leave bootloader mode.");
+      }
+    } finally {
+      try {
+        await transport.disconnect();
+      } catch (_error) {
+        // Ignore disconnect cleanup failures.
+      }
+    }
   }
 
   function closeConsole() {
@@ -3033,6 +3260,66 @@
     }
   }
 
+  async function startUsbFirmwareFlash() {
+    const template = selectedFirmwareTemplate();
+    if (!template) {
+      alert("Choose a firmware family first.");
+      return;
+    }
+    const factory = template.prebuilt_firmware?.artifacts?.factory || {};
+    if (!factory.path) {
+      alert("No prebuilt USB factory image is available for this firmware family.");
+      return;
+    }
+    if (!window.isSecureContext || !navigator.serial) {
+      alert("Browser USB flash needs Chrome or Edge on HTTPS or localhost. In the macOS app, use Open in Browser and choose Chrome or Edge.");
+      return;
+    }
+    const ok = confirm(`USB flash the prebuilt ${template.label || template.value} factory firmware?\n\nThis is for new satellites, recovery, or devices older than Tater firmware 3.0.3. It erases flash and writes the factory image over USB.`);
+    if (!ok) return;
+
+    let port;
+    try {
+      port = await browserUsbSelectPort(template.value);
+    } catch (error) {
+      alert("USB device selection failed: " + error.message);
+      return;
+    }
+
+    uiState.firmwareBusy = true;
+    uiState.firmware.logLines = [
+      "===== Browser USB Firmware Flash Console =====",
+      `Firmware: ${template.label || template.value}`,
+      `USB device: ${browserUsbPortLabel(port)}`,
+      "Preparing verified factory image...",
+    ];
+    setPill($("firmwareStatus"), "Preparing USB flash...", "warn");
+    openFirmwareConsole(true, uiState.firmware.logLines.join("\n"), "Preparing browser USB flash...");
+    syncButtons();
+    await waitForPaint();
+
+    try {
+      const artifact = await api("/api/firmware/browser_flash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          template_key: template.value,
+        }),
+      });
+      appendFirmwareLogs(artifact.entries || [], "Factory image ready. Starting USB flash...");
+      await flashBrowserUsbPort(port, artifact);
+      appendFirmwareLog("Browser USB flash finished.", "Browser USB flash finished.");
+      setPill($("firmwareStatus"), "USB flash finished", "ok");
+    } catch (error) {
+      appendFirmwareLog(`Browser USB flash failed: ${String(error.message || error)}`, "Browser USB flash failed.");
+      setPill($("firmwareStatus"), "USB flash failed", "err");
+      alert("Browser USB flash failed: " + error.message);
+    } finally {
+      uiState.firmwareBusy = false;
+      syncButtons();
+    }
+  }
+
   async function pollFirmwareFlash(sessionId) {
     if (uiState.firmwarePoller || !sessionId) return;
     uiState.firmwarePoller = true;
@@ -3123,6 +3410,7 @@
     $("cleanFirmwareBtn").disabled = uiState.firmwareBusy;
     $("openFirmwareConsoleBtn").disabled = false;
     $("flashFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareHost || !firmwareTemplate || !firmwareAvailable;
+    $("usbFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareTemplate || !firmwareSelection?.prebuilt_firmware?.artifacts?.factory?.path;
   }
 
   function refreshSessionUI(session) {
@@ -3491,6 +3779,7 @@
     }
   });
   $("flashFirmwareBtn").addEventListener("click", startFirmwareFlash);
+  $("usbFirmwareBtn").addEventListener("click", startUsbFirmwareFlash);
   $("saveFirmwareSettingsBtn").addEventListener("click", async () => {
     const host = ($("firmwareHost").value || "").trim();
     const template = ($("firmwareTemplate").value || "").trim();
