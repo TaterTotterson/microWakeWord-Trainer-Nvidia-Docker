@@ -45,6 +45,7 @@ download_hf_mit_rirs() {
     python - "${HF_RIR_REPO_ID}" "${HF_RIR_API_URL}" "${AUDIO_DIR}" <<-'EOF'
 import json
 import sys
+import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -67,24 +68,57 @@ files = sorted(
 if not files:
     raise SystemExit("Hugging Face MIT RIR dataset did not list any 16khz WAV files")
 
+print(f"   Found {len(files)} MIT environmental RIR files on Hugging Face mirror", flush=True)
 downloaded = 0
 skipped = 0
-for rel in files:
+
+def download_file(url: str, target: Path, rel: str):
+    tmp = target.with_suffix(target.suffix + ".incomplete")
+    for attempt in range(1, 4):
+        try:
+            if tmp.exists():
+                tmp.unlink()
+            with urllib.request.urlopen(url, timeout=30) as response:
+                with tmp.open("wb") as out:
+                    while True:
+                        chunk = response.read(1024 * 64)
+                        if not chunk:
+                            break
+                        out.write(chunk)
+            if not tmp.exists() or tmp.stat().st_size == 0:
+                raise RuntimeError("empty download")
+            tmp.replace(target)
+            return
+        except Exception as exc:
+            if tmp.exists():
+                tmp.unlink()
+            if attempt == 3:
+                raise RuntimeError(f"download failed for {rel}: {exc}") from exc
+            print(f"   Retry {attempt}/2 for {rel}: {exc}", flush=True)
+            time.sleep(2 * attempt)
+
+total = len(files)
+for idx, rel in enumerate(files, start=1):
     target = audio_dir / rel
     if target.exists() and target.stat().st_size > 0:
         skipped += 1
+        if idx == 1 or idx % 25 == 0 or idx == total:
+            print(f"   MIT RIR download progress: {idx}/{total} files ({downloaded} downloaded, {skipped} reused)", flush=True)
         continue
     target.parent.mkdir(parents=True, exist_ok=True)
     encoded = urllib.parse.quote(rel, safe="/")
     url = f"https://huggingface.co/datasets/{repo_id}/resolve/main/{encoded}"
-    with urllib.request.urlopen(url, timeout=60) as response:
-        target.write_bytes(response.read())
+    if idx == 1 or idx % 25 == 0 or idx == total:
+        print(f"   Downloading MIT RIR {idx}/{total}: {rel}", flush=True)
+    download_file(url, target, rel)
     if not target.exists() or target.stat().st_size == 0:
         raise SystemExit(f"download failed for {rel}")
     downloaded += 1
+    if idx == 1 or idx % 25 == 0 or idx == total:
+        print(f"   MIT RIR download progress: {idx}/{total} files ({downloaded} downloaded, {skipped} reused)", flush=True)
 
-print(f"   Hugging Face MIT environmental RIR download complete ({downloaded} downloaded, {skipped} reused)")
-print(f"   MIT environmental RIR files available: {len(files)}")
+print(f"   Hugging Face MIT environmental RIR download complete ({downloaded} downloaded, {skipped} reused)", flush=True)
+print(f"   MIT environmental RIR files available: {len(files)}", flush=True)
 EOF
 }
 
