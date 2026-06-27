@@ -1,0 +1,54 @@
+# RTX 50 / Blackwell image
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH=/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+ENV MWW_BLACKWELL_IMAGE=1
+ENV MWW_BLACKWELL_TF=auto
+ENV MWW_BLACKWELL_TF_WHEEL_URL=https://github.com/chivitiH/tensorflow-blackwell-python313/releases/download/v2.22.0-selfbuilt/tensorflow-2.22.0.dev0+selfbuilt-cp313-cp313-linux_x86_64.whl
+
+# System deps. Python 3.12 remains the main trainer/runtime venv, while
+# Python 3.13 is used only for the Blackwell TensorFlow training step.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common ca-certificates curl git wget unzip patch \
+    ninja-build nano less \
+ && add-apt-repository -y ppa:deadsnakes/ppa \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+    python3.12 python3.12-venv python3.12-dev \
+    python3.13 python3.13-venv python3.13-dev \
+    python3-pip python-is-python3 \
+ && ldconfig \
+ && rm -rf /var/lib/apt/lists/* \
+ && mkdir -p /data
+
+# Trainer UI port
+EXPOSE 8789
+
+# Script root
+WORKDIR /root/mww-scripts
+
+# Bash environment
+COPY --chown=root:root --chmod=0755 .bashrc /root/
+
+# Root-level entrypoints
+COPY --chown=root:root --chmod=0755 \
+    train_wake_word \
+    run.sh \
+    trainer_server.py \
+    requirements.txt \
+    /root/mww-scripts/
+
+# CLI folder
+COPY --chown=root:root cli/ /root/mww-scripts/cli/
+
+# Make all CLI scripts executable (avoids "Permission denied")
+RUN chmod -R a+x /root/mww-scripts/cli
+
+# Static UI for trainer
+COPY --chown=root:root --chmod=0644 static/index.html /root/mww-scripts/static/index.html
+
+# trainer server
+CMD ["/bin/bash", "-lc", "/root/mww-scripts/run.sh"]

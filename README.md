@@ -25,6 +25,19 @@ Tagged releases also publish matching immutable image tags:
 docker pull ghcr.io/tatertotterson/microwakeword:v5
 ```
 
+RTX 50-series / Blackwell GPUs use a separate image with CUDA 12.8 and a
+Python 3.13 TensorFlow build for `sm_120`:
+
+```bash
+docker pull ghcr.io/tatertotterson/microwakeword:blackwell
+docker pull ghcr.io/tatertotterson/microwakeword:v5-blackwell
+```
+
+Use the Blackwell image only for RTX 50-series cards. It includes the
+community-built TensorFlow wheel from
+[chivitiH/tensorflow-blackwell-python313](https://github.com/chivitiH/tensorflow-blackwell-python313),
+which is unofficial and licensed CC BY-NC 4.0.
+
 ---
 
 ## Run The Container
@@ -39,6 +52,9 @@ docker run -d \
 ```
 
 Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v5` when you want to pin a known release instead of tracking `latest`.
+For RTX 50-series cards, use `ghcr.io/tatertotterson/microwakeword:blackwell`
+or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v5-blackwell`
+in the same `docker run` command.
 
 The flags:
 
@@ -153,6 +169,8 @@ Personal samples are optional. Training can run with zero personal samples after
 
 Reviewed negative samples are converted into `/data/work/reviewed_negative_features/` and inserted into the training YAML as a hard-negative feature set when present.
 
+On RTX 50-series / Blackwell GPUs, the Blackwell Docker image keeps sample generation and augmentation in the normal Python 3.12 trainer environment, then runs only the TensorFlow training/export stage in `/data/.venv-blackwell` with Python 3.13 and the Blackwell-native TensorFlow wheel.
+
 ---
 
 ## Language Support
@@ -253,3 +271,4 @@ Built on top of:
 
 - [microWakeWord](https://github.com/kahrendt/microWakeWord)
 - [piper-sample-generator](https://github.com/rhasspy/piper-sample-generator)
+- [tensorflow-blackwell-python313](https://github.com/chivitiH/tensorflow-blackwell-python313) for the optional RTX 50-series / Blackwell image

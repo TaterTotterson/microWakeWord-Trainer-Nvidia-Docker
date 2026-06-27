@@ -1,0 +1,112 @@
+#!/bin/bash
+set -euo pipefail
+
+PROGDIR="$(dirname "$(realpath "$0")")"
+ROOTDIR="$(dirname "${PROGDIR}")"
+
+KNOWN_ARGS=( data-dir force python )
+source "${PROGDIR}/shell.functions"
+
+if [ ${#UNKNOWN_ARGS[@]} -gt 0 ] ; then
+    echo "Unknown argument(s): ${UNKNOWN_ARGS[*]}" >&2
+    HELP=true
+fi
+
+if [ "${HELP}" == "true" ] ; then
+    cat <<EOF >&2
+Usage: setup_blackwell_venv [ --data-dir=/data ] [ --force ] [ --python=python3.13 ]
+
+Creates /data/.venv-blackwell for RTX 50 / Blackwell TensorFlow training.
+Sample generation and augmentation continue to use /data/.venv.
+
+Environment overrides:
+MWW_BLACKWELL_TF_WHEEL_URL: TensorFlow Blackwell wheel URL.
+
+EOF
+    exit 1
+fi
+
+[ -n "${DATA_DIR}" ] && DATA_DIR="$(realpath "${DATA_DIR}")"
+[ -d "${DATA_DIR}" ] || {
+    echo "Data directory '${DATA_DIR}' doesn't exist." >&2
+    exit 1
+}
+
+PYTHON="${PYTHON:-python3.13}"
+VENV="${DATA_DIR}/.venv-blackwell"
+MARKER="${VENV}/.mww-blackwell-venv"
+TF_WHEEL_URL="${MWW_BLACKWELL_TF_WHEEL_URL:-https://github.com/chivitiH/tensorflow-blackwell-python313/releases/download/v2.22.0-selfbuilt/tensorflow-2.22.0.dev0+selfbuilt-cp313-cp313-linux_x86_64.whl}"
+
+if ! command -v "${PYTHON}" >/dev/null 2>&1 ; then
+    echo "Python 3.13 is required for the Blackwell TensorFlow wheel. Missing: ${PYTHON}" >&2
+    exit 1
+fi
+
+if [ "${FORCE:-false}" != "true" ] && [ -x "${VENV}/bin/python" ] && [ -f "${MARKER}" ] ; then
+    echo "   Blackwell TensorFlow venv found (skipping setup_blackwell_venv)"
+    exit 0
+fi
+
+echo "===== Setting up Blackwell TensorFlow environment ${VENV} ====="
+rm -rf "${VENV}" || :
+"${PYTHON}" -m venv --upgrade-deps "${VENV}"
+source "${VENV}/bin/activate"
+
+export PIP_PROGRESS_BAR=off
+export PIP_NO_COLOR=1
+export PIP_QUIET=0
+
+pip_install() {
+    if $VERBOSE ; then
+        pip install "$@" || return 1
+    else
+        { pip install "$@" || return 1 ; } | stdbuf -i0 -o0 tr -d '[:print:]' | stdbuf -i0 -o0 tr '\n' '.'
+    fi
+    echo
+}
+
+echo "   ===== Installing Blackwell TensorFlow wheel ====="
+pip_install --upgrade pip setuptools wheel
+pip_install "${TF_WHEEL_URL}"
+
+echo "   ===== Installing microWakeWord training dependencies ====="
+pip_install \
+    audiomentations \
+    audio_metadata \
+    datasets \
+    mmap_ninja \
+    pymicro-features \
+    pyyaml \
+    webrtcvad-wheels \
+    ai-edge-litert \
+    numpy-minmax \
+    numpy-rms \
+    absl-py \
+    "numpy==2.3.5"
+
+echo "   ===== Checking microwakeword ====="
+MWW="${DATA_DIR}/tools/microWakeWord"
+if [ ! -d "${MWW}" ] || [ -n "$(git -C "${MWW}" status --porcelain 2>/dev/null || true)" ] ; then
+    rm -rf "${MWW}" || :
+    mkdir -p "${DATA_DIR}/tools"
+    echo "   Cloning micro-wake-word to ${DATA_DIR}/tools"
+    git clone https://github.com/TaterTotterson/micro-wake-word "${MWW}" &>/dev/null
+fi
+echo "   Installing microwakeword into Blackwell venv"
+pip_install --no-deps -e "${MWW}"
+
+echo "   ===== Testing Blackwell TensorFlow environment ====="
+"${VENV}/bin/python" - <<'PY'
+import tensorflow as tf
+from ai_edge_litert.interpreter import Interpreter
+from microwakeword.data import FeatureHandler
+from microwakeword.inference import Model
+
+print("TensorFlow:", tf.__version__)
+print("CUDA build:", tf.test.is_built_with_cuda())
+print("GPU:", tf.config.list_physical_devices("GPU"))
+print("microWakeWord Blackwell imports available")
+PY
+
+touch "${MARKER}"
+echo "Blackwell TensorFlow environment ready: ${VENV}"

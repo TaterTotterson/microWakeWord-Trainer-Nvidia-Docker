@@ -84,6 +84,21 @@ if [ "${IS_BLACKWELL}" = "true" ]; then
   echo "ℹ️  Using GPU compatibility retries; CPU fallback is ${ALLOW_CPU_FALLBACK} (override with MWW_ALLOW_CPU_FALLBACK=true|false)."
 fi
 
+BLACKWELL_TF_MODE="${MWW_BLACKWELL_TF:-auto}"
+BLACKWELL_TF_REQUIRED="false"
+BLACKWELL_TF_ACTIVE="false"
+case "${BLACKWELL_TF_MODE,,}" in
+  1|true|yes|on|required)
+    BLACKWELL_TF_REQUIRED="true"
+    ;;
+  0|false|no|off|disabled)
+    BLACKWELL_TF_MODE="disabled"
+    ;;
+  *)
+    BLACKWELL_TF_MODE="auto"
+    ;;
+esac
+
 # Enable driver-side PTX JIT fallback when ptxas/nvlink are unavailable.
 if [ -z "${XLA_FLAGS:-}" ]; then
   export XLA_FLAGS="--xla_gpu_unsafe_fallback_to_driver_on_ptxas_not_found"
@@ -237,6 +252,32 @@ fi
 
 echo "   Wrote training_parameters.yaml"
 rm -rf "${WORK_DIR}/trained_models/wakeword"
+
+if [ "${IS_BLACKWELL}" = "true" ] && [ "${BLACKWELL_TF_MODE}" != "disabled" ]; then
+  BLACKWELL_SETUP="${PROGDIR}/setup_blackwell_venv"
+  BLACKWELL_PYTHON="${DATA_DIR}/.venv-blackwell/bin/python"
+
+  if [ -x "${BLACKWELL_SETUP}" ] && command -v python3.13 >/dev/null 2>&1; then
+    echo "↪️  Preparing Blackwell-native TensorFlow training environment."
+    if "${BLACKWELL_SETUP}" --data-dir="${DATA_DIR}"; then
+      PYTHON_BIN="${BLACKWELL_PYTHON}"
+      BLACKWELL_TF_ACTIVE="true"
+      echo "✅ Blackwell TensorFlow training enabled: ${PYTHON_BIN}"
+    else
+      if [ "${BLACKWELL_TF_REQUIRED}" = "true" ]; then
+        echo "❌ Blackwell TensorFlow setup failed and MWW_BLACKWELL_TF is required." >&2
+        exit 1
+      fi
+      echo "⚠️  Blackwell TensorFlow setup failed; continuing with compatibility retries."
+    fi
+  else
+    if [ "${BLACKWELL_TF_REQUIRED}" = "true" ]; then
+      echo "❌ Blackwell TensorFlow was required, but python3.13/setup_blackwell_venv is unavailable." >&2
+      exit 1
+    fi
+    echo "ℹ️  Blackwell TensorFlow image support not available; continuing with compatibility retries."
+  fi
+fi
 
 wake_word_filename="$(
   echo "${WAKE_WORD}" \

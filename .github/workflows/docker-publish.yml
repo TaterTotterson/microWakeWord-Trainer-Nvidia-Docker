@@ -56,3 +56,24 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=mww-trainer-nvidia-docker
           cache-to: type=gha,mode=max,scope=mww-trainer-nvidia-docker
+
+      - name: Docker metadata (Blackwell)
+        id: meta-blackwell
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=blackwell
+            type=ref,event=tag,suffix=-blackwell
+
+      - name: Build and push Blackwell image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockerfile.blackwell
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta-blackwell.outputs.tags }}
+          labels: ${{ steps.meta-blackwell.outputs.labels }}
+          cache-from: type=gha,scope=mww-trainer-nvidia-docker-blackwell
+          cache-to: type=gha,mode=max,scope=mww-trainer-nvidia-docker-blackwell
