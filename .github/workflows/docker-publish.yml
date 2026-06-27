@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 concurrency:
@@ -81,3 +81,46 @@ jobs:
           labels: ${{ steps.meta-blackwell.outputs.labels }}
           cache-from: type=gha,scope=mww-trainer-nvidia-docker-blackwell
           cache-to: type=gha,mode=max,scope=mww-trainer-nvidia-docker-blackwell
+
+      - name: Create release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          title="microWakeWord Nvidia Trainer ${TAG_NAME}"
+          generated_notes="$(mktemp)"
+          release_notes="$(mktemp)"
+
+          gh api "repos/${REPO}/releases/generate-notes" \
+            -f tag_name="${TAG_NAME}" \
+            -f target_commitish="${GITHUB_SHA}" \
+            --jq '.body' > "${generated_notes}"
+
+          {
+            echo "## Docker Images"
+            echo
+            echo "- \`ghcr.io/tatertotterson/microwakeword:${TAG_NAME}\`"
+            echo "- \`ghcr.io/tatertotterson/microwakeword:latest\`"
+            echo "- \`ghcr.io/tatertotterson/microwakeword:${TAG_NAME}-blackwell\`"
+            echo "- \`ghcr.io/tatertotterson/microwakeword:blackwell\`"
+            echo
+            cat "${generated_notes}"
+          } > "${release_notes}"
+
+          if gh release view "${TAG_NAME}" >/dev/null 2>&1; then
+            gh release edit "${TAG_NAME}" \
+              --title "${title}" \
+              --notes-file "${release_notes}" \
+              --latest \
+              --verify-tag
+          else
+            gh release create "${TAG_NAME}" \
+              --title "${title}" \
+              --notes-file "${release_notes}" \
+              --latest \
+              --verify-tag
+          fi
