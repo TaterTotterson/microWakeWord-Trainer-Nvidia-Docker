@@ -108,26 +108,31 @@ FIRMWARE_TEMPLATE_SPECS = (
         "key": "voicepe",
         "label": "VoicePE",
         "description": "VoicePE satellite prebuilt firmware",
+        "flash_size": "16MB",
     },
     {
         "key": "satellite1",
         "label": "Sat1",
         "description": "Satellite1 prebuilt firmware",
+        "flash_size": "16MB",
     },
     {
         "key": "respeaker_lite",
         "label": "ReSpeaker Lite",
         "description": "ReSpeaker Lite prebuilt firmware",
+        "flash_size": "8MB",
     },
     {
         "key": "koala",
         "label": "Koala Satellite",
         "description": "Koala satellite prebuilt firmware",
+        "flash_size": "16MB",
     },
     {
         "key": "respeaker_xvf3800",
         "label": "ReSpeaker XVF3800",
         "description": "ReSpeaker XVF3800 prebuilt firmware",
+        "flash_size": "8MB",
     },
 )
 FIRMWARE_PREBUILT_LATEST_URL = (
@@ -684,6 +689,30 @@ def _parse_float(value: Any) -> float | None:
         return None
 
 
+def _parse_int(value: Any) -> int | None:
+    if value in (None, ""):
+        return None
+    try:
+        return int(float(value))
+    except Exception:
+        return None
+
+
+def _parse_probability_history(value: Any) -> List[int]:
+    if value in (None, ""):
+        return []
+    if isinstance(value, list):
+        raw_values = value
+    else:
+        raw_values = str(value).split(",")
+    history: List[int] = []
+    for raw_value in raw_values:
+        parsed = _parse_int(raw_value)
+        if parsed is not None:
+            history.append(parsed)
+    return history
+
+
 def _audio_sidecar_path(audio_path: Path) -> Path:
     return audio_path.with_suffix(".json")
 
@@ -1001,6 +1030,15 @@ def _captured_item_from_path(audio_path: Path) -> Dict[str, Any]:
         "blocked_by_vad": bool(meta.get("blocked_by_vad")),
         "max_probability": meta.get("max_probability"),
         "average_probability": meta.get("average_probability"),
+        "probability_cutoff": meta.get("probability_cutoff"),
+        "peak_probability_cutoff": meta.get("peak_probability_cutoff"),
+        "active_window_count": meta.get("active_window_count"),
+        "min_active_windows": meta.get("min_active_windows"),
+        "rise_score": meta.get("rise_score"),
+        "vad_max_probability": meta.get("vad_max_probability"),
+        "vad_average_probability": meta.get("vad_average_probability"),
+        "detection_profile": meta.get("detection_profile") or "",
+        "probability_history": meta.get("probability_history") or [],
         "detected_format": meta.get("detected_format") or {},
         "final_format": final_format,
         "postprocess": meta.get("postprocess") or {},
@@ -1453,6 +1491,15 @@ def _firmware_template_spec(template_key: str) -> Dict[str, Any]:
     raise ValueError("Unknown firmware template.")
 
 
+def _firmware_template_flash_size(template_key: Any) -> str:
+    try:
+        spec = _firmware_template_spec(_text(template_key))
+    except Exception:
+        spec = {}
+    flash_size = _text(spec.get("flash_size")).upper()
+    return flash_size if flash_size in {"4MB", "8MB", "16MB", "32MB"} else "8MB"
+
+
 def _firmware_raw_url(path: str) -> str:
     clean = str(path or "").strip().lstrip("/")
     return f"https://raw.githubusercontent.com/{FIRMWARE_GITHUB_OWNER}/{FIRMWARE_GITHUB_REPO}/{FIRMWARE_GITHUB_REF}/{clean}"
@@ -1713,7 +1760,7 @@ def _create_browser_flash_artifact(template_key: Any, prebuilt: Dict[str, Any], 
         "source_binary": str(binary_path),
         "binary_size": int(target_binary_path.stat().st_size),
         "erase_all": True,
-        "flash_size": "4MB",
+        "flash_size": _firmware_template_flash_size(template_key),
         "flash_mode": "dio",
         "flash_freq": "40m",
     }
@@ -2967,6 +3014,15 @@ async def upload_captured_audio(
         "average_probability": _parse_float(
             extra_meta.get("average_probability") if average_probability is None else average_probability
         ),
+        "probability_cutoff": _parse_int(extra_meta.get("probability_cutoff")),
+        "peak_probability_cutoff": _parse_int(extra_meta.get("peak_probability_cutoff")),
+        "active_window_count": _parse_int(extra_meta.get("active_window_count")),
+        "min_active_windows": _parse_int(extra_meta.get("min_active_windows")),
+        "rise_score": _parse_int(extra_meta.get("rise_score")),
+        "vad_max_probability": _parse_int(extra_meta.get("vad_max_probability")),
+        "vad_average_probability": _parse_int(extra_meta.get("vad_average_probability")),
+        "detection_profile": str(extra_meta.get("detection_profile") or "").strip(),
+        "probability_history": _parse_probability_history(extra_meta.get("probability_history")),
         "notes": notes or extra_meta.get("notes") or "",
         "converted": result["converted"],
         "detected_format": result["detected_format"],
@@ -2996,6 +3052,15 @@ async def upload_captured_audio_raw(
     x_blocked_by_vad: str | None = Header(default=None),
     x_max_probability: str | None = Header(default=None),
     x_average_probability: str | None = Header(default=None),
+    x_probability_cutoff: str | None = Header(default=None),
+    x_peak_probability_cutoff: str | None = Header(default=None),
+    x_active_windows: str | None = Header(default=None),
+    x_min_active_windows: str | None = Header(default=None),
+    x_rise_score: str | None = Header(default=None),
+    x_vad_max_probability: str | None = Header(default=None),
+    x_vad_average_probability: str | None = Header(default=None),
+    x_detection_profile: str | None = Header(default=None),
+    x_probability_history: str | None = Header(default=None),
     x_notes: str | None = Header(default=None),
 ):
     raw_data = await request.body()
@@ -3031,6 +3096,15 @@ async def upload_captured_audio_raw(
         "blocked_by_vad": _parse_bool(x_blocked_by_vad),
         "max_probability": _parse_float(x_max_probability),
         "average_probability": _parse_float(x_average_probability),
+        "probability_cutoff": _parse_int(x_probability_cutoff),
+        "peak_probability_cutoff": _parse_int(x_peak_probability_cutoff),
+        "active_window_count": _parse_int(x_active_windows),
+        "min_active_windows": _parse_int(x_min_active_windows),
+        "rise_score": _parse_int(x_rise_score),
+        "vad_max_probability": _parse_int(x_vad_max_probability),
+        "vad_average_probability": _parse_int(x_vad_average_probability),
+        "detection_profile": (x_detection_profile or "").strip(),
+        "probability_history": _parse_probability_history(x_probability_history),
         "notes": x_notes or "",
         "converted": result["converted"],
         "detected_format": result["detected_format"],
