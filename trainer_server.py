@@ -20,7 +20,7 @@ import uuid
 import wave
 from array import array
 from datetime import datetime, timezone
-from math import log10
+from math import isfinite, log10
 from pathlib import Path
 from typing import Dict, Any, List, Callable, Optional, Tuple
 from urllib.parse import quote, urlparse
@@ -80,12 +80,17 @@ CAPTURE_GAIN_PROFILE = "capture_rms_v1"
 
 # Firmware build/flash cache lives inside /data so Docker runs can reuse downloads.
 FIRMWARE_CACHE_DIR = Path(os.environ.get("FIRMWARE_CACHE_DIR", str(DATA_DIR / ".cache" / "firmware_flasher"))).resolve()
-FIRMWARE_DEFAULT_OTA_PORT = int(os.environ.get("ESPHOME_OTA_PORT", "3232"))
-FIRMWARE_DISCOVERY_SECONDS = float(os.environ.get("ESPHOME_DISCOVERY_SECONDS", "2.5"))
+FIRMWARE_DEFAULT_OTA_PORT = int(os.environ.get("TATER_NATIVE_OTA_PORT", os.environ.get("ESPHOME_OTA_PORT", "3232")))
+FIRMWARE_DISCOVERY_SECONDS = float(
+    os.environ.get("TATER_NATIVE_DISCOVERY_SECONDS", os.environ.get("ESPHOME_DISCOVERY_SECONDS", "2.5"))
+)
 FIRMWARE_MAX_LOG_LINES = int(os.environ.get("FIRMWARE_MAX_LOG_LINES", "500"))
 FIRMWARE_GITHUB_OWNER = os.environ.get("FIRMWARE_GITHUB_OWNER", "TaterTotterson")
 FIRMWARE_GITHUB_REPO = os.environ.get("FIRMWARE_GITHUB_REPO", "microWakeWords")
 FIRMWARE_GITHUB_REF = os.environ.get("FIRMWARE_GITHUB_REF", "main")
+FIRMWARE_PREBUILT_GITHUB_OWNER = os.environ.get("FIRMWARE_PREBUILT_GITHUB_OWNER", "TaterTotterson")
+FIRMWARE_PREBUILT_GITHUB_REPO = os.environ.get("FIRMWARE_PREBUILT_GITHUB_REPO", "Tater-Native-Firmware")
+FIRMWARE_PREBUILT_GITHUB_REF = os.environ.get("FIRMWARE_PREBUILT_GITHUB_REF", "main")
 WAKE_SOUND_CATALOG_CACHE_TTL_SECONDS = int(os.environ.get("WAKE_SOUND_CATALOG_CACHE_TTL_SECONDS", "600"))
 FIRMWARE_PREBUILT_DIR = FIRMWARE_CACHE_DIR / "prebuilt_firmware"
 FIRMWARE_DOWNLOAD_TIMEOUT_SECONDS = float(os.environ.get("FIRMWARE_DOWNLOAD_TIMEOUT_SECONDS", "120"))
@@ -106,37 +111,32 @@ TRAIN_LOG_MAX_BYTES = int(os.environ.get("REC_TRAIN_LOG_MAX_BYTES", str(512 * 10
 FIRMWARE_TEMPLATE_SPECS = (
     {
         "key": "voicepe",
-        "label": "VoicePE",
-        "description": "VoicePE satellite prebuilt firmware",
+        "label": "Voice PE",
+        "description": "Tater Native firmware for Voice PE satellites",
         "flash_size": "16MB",
     },
     {
         "key": "satellite1",
-        "label": "Sat1",
-        "description": "Satellite1 prebuilt firmware",
-        "flash_size": "16MB",
-    },
-    {
-        "key": "respeaker_lite",
-        "label": "ReSpeaker Lite",
-        "description": "ReSpeaker Lite prebuilt firmware",
-        "flash_size": "8MB",
-    },
-    {
-        "key": "koala",
-        "label": "Koala Satellite",
-        "description": "Koala satellite prebuilt firmware",
+        "label": "Satellite1",
+        "description": "Tater Native firmware for Satellite1 devices",
         "flash_size": "16MB",
     },
     {
         "key": "respeaker_xvf3800",
         "label": "ReSpeaker XVF3800",
-        "description": "ReSpeaker XVF3800 prebuilt firmware",
+        "description": "Tater Native firmware for ReSpeaker XVF3800 devices",
         "flash_size": "8MB",
     },
+    {
+        "key": "s3_box",
+        "label": "ESP32-S3-BOX-3 Display",
+        "description": "Tater Native firmware for ESP32-S3-BOX-3 display satellites",
+        "flash_size": "16MB",
+    },
 )
-FIRMWARE_PREBUILT_LATEST_URL = (
-    f"https://raw.githubusercontent.com/{FIRMWARE_GITHUB_OWNER}/{FIRMWARE_GITHUB_REPO}/{FIRMWARE_GITHUB_REF}/prebuilt_firmware/latest.json"
+FIRMWARE_PREBUILT_LATEST_URL = os.environ.get(
+    "FIRMWARE_PREBUILT_LATEST_URL",
+    f"https://github.com/{FIRMWARE_PREBUILT_GITHUB_OWNER}/{FIRMWARE_PREBUILT_GITHUB_REPO}/releases/latest/download/latest.json",
 )
 FIRMWARE_PREBUILT_TEMPLATE_KEYS = {str(spec.get("key") or "").lower() for spec in FIRMWARE_TEMPLATE_SPECS}
 
@@ -313,10 +313,27 @@ def _sync_trained_wake_word_artifacts() -> None:
                 tflite_path.unlink()
 
 
-def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, str]]:
+def _metadata_float(value: Any) -> float | None:
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not isfinite(out):
+        return None
+    return out
+
+
+def _metadata_int(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
     _sync_trained_wake_word_artifacts()
     base = str(base_url or "").rstrip("/")
-    rows: List[Dict[str, str]] = []
+    rows: List[Dict[str, Any]] = []
     seen: set[str] = set()
 
     for json_path in sorted(TRAINED_WAKE_WORDS_DIR.glob("*.json")):
@@ -338,6 +355,18 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, str]]:
         seen.add(safe)
 
         wake_word = str(meta.get("wake_word") or safe.replace("_", " ")).strip()
+        micro = meta.get("micro") if isinstance(meta.get("micro"), dict) else {}
+        native = meta.get("tater_native") if isinstance(meta.get("tater_native"), dict) else {}
+        calibration = meta.get("calibration") if isinstance(meta.get("calibration"), dict) else {}
+        threshold = _metadata_float(native.get("wake_threshold"))
+        if threshold is None:
+            threshold = _metadata_float(micro.get("probability_cutoff"))
+        sliding_window = _metadata_int(native.get("wake_sliding_window"))
+        if sliding_window is None:
+            sliding_window = _metadata_int(micro.get("sliding_window_size"))
+        close_miss_threshold = _metadata_float(native.get("close_miss_threshold"))
+        recall = _metadata_float(calibration.get("recall"))
+        false_accepts_per_hour = _metadata_float(calibration.get("false_accepts_per_hour"))
         json_url = f"/api/trained_wake_words/{quote(json_path.name)}"
         model_url = f"/api/trained_wake_words/{quote(model_path.name)}"
         if base:
@@ -354,6 +383,17 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, str]]:
                 "model_url": model_url,
                 "json_file": json_path.name,
                 "model_file": model_path.name,
+                "threshold": round(threshold, 3) if threshold is not None else None,
+                "sliding_window": sliding_window,
+                "close_miss_threshold": round(close_miss_threshold, 3) if close_miss_threshold is not None else None,
+                "quantization": str(meta.get("quantization") or "").strip(),
+                "model_format": str(meta.get("model_format") or "").strip(),
+                "sample_rate": _metadata_int(meta.get("sample_rate")),
+                "calibration_recall": round(recall, 4) if recall is not None else None,
+                "calibration_false_accepts_per_hour": (
+                    round(false_accepts_per_hour, 6) if false_accepts_per_hour is not None else None
+                ),
+                "calibration_generated_at": str(calibration.get("generated_at") or "").strip(),
             }
         )
     return rows
@@ -1546,7 +1586,10 @@ def _prebuilt_firmware_raw_url(path_or_url: Any) -> str:
         return token
     clean = token.lstrip("/")
     quoted = "/".join(quote(part) for part in clean.split("/") if part)
-    return f"https://raw.githubusercontent.com/{FIRMWARE_GITHUB_OWNER}/{FIRMWARE_GITHUB_REPO}/{FIRMWARE_GITHUB_REF}/{quoted}"
+    return (
+        f"https://raw.githubusercontent.com/"
+        f"{FIRMWARE_PREBUILT_GITHUB_OWNER}/{FIRMWARE_PREBUILT_GITHUB_REPO}/{FIRMWARE_PREBUILT_GITHUB_REF}/{quoted}"
+    )
 
 
 def _fetch_json_url(url: str, *, timeout: float = 20, force_refresh: bool = False) -> Dict[str, Any]:
@@ -2713,7 +2756,7 @@ def _dedupe_discovered_devices(devices: List[Dict[str, Any]]) -> List[Dict[str, 
     clean_devices: List[Dict[str, Any]] = []
     for item in devices:
         host = str(item.get("host") or "").strip()
-        name = str(item.get("name") or host or "ESPHome device").strip()
+        name = str(item.get("name") or host or "Tater satellite").strip()
         if not host:
             continue
         key = (host.lower(), int(item.get("port") or FIRMWARE_DEFAULT_OTA_PORT))
@@ -2829,13 +2872,13 @@ def _discover_with_dns_sd(timeout_seconds: float) -> List[Dict[str, Any]]:
 def _discover_esphome_devices() -> tuple[List[Dict[str, Any]], str]:
     devices = _discover_with_zeroconf(FIRMWARE_DISCOVERY_SECONDS)
     if devices:
-        return devices, f"Found {len(devices)} ESPHome device{'' if len(devices) == 1 else 's'} with mDNS."
+        return devices, f"Found {len(devices)} Tater native satellite{'' if len(devices) == 1 else 's'} with mDNS."
 
     devices = _discover_with_dns_sd(FIRMWARE_DISCOVERY_SECONDS)
     if devices:
-        return devices, f"Found {len(devices)} ESPHome device{'' if len(devices) == 1 else 's'} with dns-sd."
+        return devices, f"Found {len(devices)} Tater native satellite{'' if len(devices) == 1 else 's'} with dns-sd."
 
-    return [], "No ESPHome devices were auto-detected. Enter the device IP or hostname manually."
+    return [], "No Tater native satellites were auto-detected. Enter the device IP or hostname manually."
 
 
 # -------------------- Routes --------------------

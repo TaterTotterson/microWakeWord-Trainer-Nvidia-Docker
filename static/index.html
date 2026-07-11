@@ -262,6 +262,23 @@
       margin-bottom: 0;
     }
 
+    .firmwareTaterOnlyNotice {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-color: rgba(255,138,42,0.34);
+      background:
+        linear-gradient(135deg, rgba(255,138,42,0.15), rgba(255,255,255,0.035)),
+        var(--panel2);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .firmwareTaterOnlyNotice strong {
+      color: var(--orange2);
+      white-space: nowrap;
+    }
+
     .firmwareSteps {
       display: flex;
       flex-wrap: wrap;
@@ -360,6 +377,17 @@
       font-size: 12px;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .runtimeWakeWordMeta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .runtimeWakeWordMeta .pill {
+      font-size: 11px;
     }
 
     .runtimeWakeWordItem button {
@@ -507,34 +535,6 @@
       color: var(--muted);
       font-size: 12px;
       max-width: 420px;
-    }
-
-    .firmwareUsbWifiPanel {
-      grid-column: 1 / -1;
-      display: grid;
-      gap: 12px;
-      padding: 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(57,212,160,0.16);
-      background: rgba(57,212,160,0.055);
-    }
-
-    .firmwareUsbWifiToggle {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--text);
-      font-weight: 700;
-    }
-
-    .firmwareUsbWifiToggle input {
-      width: auto;
-    }
-
-    .firmwareUsbWifiGrid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(180px, 1fr));
-      gap: 12px;
     }
 
     .studioHero {
@@ -1214,7 +1214,6 @@
       .firmwareGrid { grid-template-columns: 1fr; }
       .firmwareLayout,
       .firmwareTargetGrid,
-      .firmwareUsbWifiGrid,
       .firmwareActionsPanel {
         grid-template-columns: 1fr;
       }
@@ -1312,7 +1311,7 @@
         <div class="logo"></div>
         <div>
           <h1>microWakeWord Trainer Studio</h1>
-          <p>Train wake words, review captured clips, and flash ESPHome firmware from one local workspace.</p>
+          <p>Train wake words, review captured clips, and flash Tater Native firmware from one local workspace.</p>
         </div>
       </div>
     </div>
@@ -1555,7 +1554,7 @@
           <div>
             <div class="firmwareKicker">Firmware Studio</div>
             <h3>Prebuilt Tater Firmware Flasher</h3>
-            <p>Flash only for firmware updates. If this is a new satellite or it is not already on Tater firmware <code>3.0.3</code> or newer, do one USB flash first, then use this tab for fast OTA updates.</p>
+            <p>Flash only for firmware updates. If this is a new satellite or it is not already on Tater Native Firmware <code>v1</code>, do one USB flash first, then use this tab for fast OTA updates.</p>
             <div class="firmwareSteps" aria-label="Firmware flashing steps">
               <span class="firmwareStepChip"><b>1</b> Pick firmware</span>
               <span class="firmwareStepChip"><b>2</b> Select target</span>
@@ -1566,14 +1565,19 @@
         </div>
       </div>
 
+      <div class="card firmwareTaterOnlyNotice">
+        <strong>Tater only</strong>
+        <span>These native firmware images connect to Tater. They are not Home Assistant or ESPHome satellite firmware.</span>
+      </div>
+
       <div class="card runtimeWakeWordCard">
         <div class="runtimeWakeWordHeader">
           <div class="runtimeWakeWordTitle">
-            <span class="runtimeWakeWordBadge">3.0.3+</span>
+            <span class="runtimeWakeWordBadge">v1</span>
             <div>
               <div class="firmwareKicker">Live Model Switching</div>
-              <h3>Tater firmware 3.0.3 or higher can swap wake words live</h3>
-              <p>No reflash is needed after training. Copy a trained wake word JSON URL below and paste it into your satellite's Home Assistant <code>microWakeWord Model URL</code> entity.</p>
+              <h3>Tater Native satellites can swap wake words live</h3>
+              <p>No reflash is needed after training. Copy a trained wake word JSON URL below and paste it into the native satellite settings in Tater.</p>
             </div>
           </div>
           <span class="pill ok">No reflash needed</span>
@@ -1590,7 +1594,7 @@
               <span class="firmwareStepBadge">1</span>
               <div>
                 <h3>Firmware Image</h3>
-                <p>Choose a prebuilt Tater firmware image from the shared firmware repo.</p>
+                <p>Choose a prebuilt Tater firmware image from the Tater Native Firmware releases.</p>
               </div>
             </div>
           </div>
@@ -1614,7 +1618,7 @@
             <span id="firmwareDetectStatus" class="pill">Not scanned</span>
           </div>
           <div class="row">
-            <button id="refreshFirmwareBtn" type="button">Auto-detect ESPHome devices</button>
+            <button id="refreshFirmwareBtn" type="button">Auto-detect Tater satellites</button>
           </div>
           <div class="firmwareTargetGrid">
             <label class="field">
@@ -1653,23 +1657,7 @@
           <button id="cleanFirmwareBtn" type="button">Clear downloaded images</button>
           <button id="openFirmwareConsoleBtn" type="button">Open firmware console</button>
         </div>
-        <section class="firmwareUsbWifiPanel" aria-label="Browser USB Wi-Fi setup">
-          <label class="firmwareUsbWifiToggle">
-            <input id="firmwareUsbWifiEnabled" type="checkbox" checked />
-            <span>Set up Wi-Fi after Browser USB Flash</span>
-          </label>
-          <div class="firmwareUsbWifiGrid">
-            <label class="field">
-              <strong>Wi-Fi SSID</strong>
-              <input id="firmwareUsbSsid" type="text" placeholder="Network name" autocomplete="off" />
-            </label>
-            <label class="field">
-              <strong>Wi-Fi Password</strong>
-              <input id="firmwareUsbPassword" type="password" placeholder="Network password" autocomplete="current-password" />
-            </label>
-          </div>
-        </section>
-        <div class="usbFlashHint">Use Browser USB Flash for new satellites, recovery, or devices older than Tater firmware 3.0.3. Chrome or Edge must be used on localhost or HTTPS. In the macOS app, open <code>http://127.0.0.1:8789</code> in Chrome or Edge; port <code>3232</code> is only for OTA updates after firmware is installed.</div>
+        <div class="usbFlashHint">Use Browser USB Flash for new satellites, recovery, or devices not already running Tater Native Firmware v1. After USB flash, join the satellite setup hotspot and finish Wi-Fi, Tater server, and pairing in the device setup page. Chrome or Edge must be used on localhost or HTTPS.</div>
       </section>
     </div>
   </div>
@@ -2505,19 +2493,12 @@
 
   async function browserUsbSelectPort(selector = "") {
     if (!window.isSecureContext || !navigator.serial) {
-      throw new Error("Browser USB flash needs Chrome or Edge on HTTPS or localhost. In the macOS app, use Open in Browser and choose Chrome or Edge.");
+      throw new Error("Browser USB flash needs Chrome or Edge on HTTPS or localhost. Open the trainer URL in Chrome or Edge.");
     }
     const port = await navigator.serial.requestPort();
     const key = String(selector || "default").trim() || "default";
     uiState.browserUsb.ports[key] = port;
     return port;
-  }
-
-  async function browserUsbAuthorizedPorts() {
-    if (!window.isSecureContext || !navigator.serial || typeof navigator.serial.getPorts !== "function") {
-      return [];
-    }
-    return navigator.serial.getPorts();
   }
 
   function browserUsbStoredPort(selector = "") {
@@ -2631,42 +2612,6 @@
     }
   }
 
-  function browserUsbSameDevice(left, right) {
-    const leftInfo = left?.getInfo?.() || {};
-    const rightInfo = right?.getInfo?.() || {};
-    const leftVendor = Number(leftInfo.usbVendorId || 0);
-    const leftProduct = Number(leftInfo.usbProductId || 0);
-    const rightVendor = Number(rightInfo.usbVendorId || 0);
-    const rightProduct = Number(rightInfo.usbProductId || 0);
-    return Boolean(leftVendor && leftProduct && leftVendor === rightVendor && leftProduct === rightProduct);
-  }
-
-  async function browserUsbWaitForReconnect(previousPort, selector, timeoutMs = 30000) {
-    const deadline = Date.now() + Math.max(1000, Number(timeoutMs) || 1000);
-    let lastLogAt = 0;
-    while (Date.now() < deadline) {
-      let ports = [];
-      try {
-        ports = await browserUsbAuthorizedPorts();
-      } catch (_error) {
-        ports = [];
-      }
-      const matchingPort = ports.find((port) => browserUsbSameDevice(previousPort, port)) || (ports.length === 1 ? ports[0] : null);
-      if (matchingPort) {
-        const key = String(selector || "default").trim() || "default";
-        uiState.browserUsb.ports[key] = matchingPort;
-        appendFirmwareLog(`Reconnected ${browserUsbPortLabel(matchingPort)} for Wi-Fi setup.`, "USB serial reconnected for Wi-Fi setup...");
-        return matchingPort;
-      }
-      if (Date.now() - lastLogAt > 2500) {
-        lastLogAt = Date.now();
-        appendFirmwareLog("Waiting for Chrome to expose the rebooted USB serial device...", "Waiting for rebooted USB device...");
-      }
-      await sleep(750);
-    }
-    throw new Error("The device rebooted, but Chrome did not expose the reconnected USB serial device. Click Browser USB Flash again and select the device if needed.");
-  }
-
   async function flashBrowserUsbPort(port, artifact) {
     const module = await ensureEsptoolJsLoaded();
     const { ESPLoader, Transport } = module;
@@ -2756,344 +2701,6 @@
     }
   }
 
-  const IMPROV_SERIAL_HEADER = [0x49, 0x4d, 0x50, 0x52, 0x4f, 0x56];
-  const IMPROV_SERIAL_VERSION = 0x01;
-  const IMPROV_SERIAL_TYPE = {
-    CURRENT_STATE: 0x01,
-    ERROR_STATE: 0x02,
-    RPC: 0x03,
-    RPC_RESPONSE: 0x04,
-  };
-  const IMPROV_SERIAL_COMMAND = {
-    WIFI_SETTINGS: 0x01,
-    GET_CURRENT_STATE: 0x02,
-    GET_DEVICE_INFO: 0x03,
-  };
-  const IMPROV_SERIAL_STATE = {
-    STOPPED: 0x00,
-    AWAITING_AUTHORIZATION: 0x01,
-    AUTHORIZED: 0x02,
-    PROVISIONING: 0x03,
-    PROVISIONED: 0x04,
-  };
-  const IMPROV_SERIAL_ERROR = {
-    NONE: 0x00,
-    INVALID_RPC: 0x01,
-    UNKNOWN_RPC: 0x02,
-    UNABLE_TO_CONNECT: 0x03,
-    NOT_AUTHORIZED: 0x04,
-    UNKNOWN: 0xff,
-  };
-  const IMPROV_TEXT_ENCODER = new TextEncoder();
-  const IMPROV_TEXT_DECODER = new TextDecoder();
-
-  function improvSerialStateLabel(stateValue) {
-    switch (Number(stateValue)) {
-      case IMPROV_SERIAL_STATE.STOPPED:
-        return "Stopped";
-      case IMPROV_SERIAL_STATE.AWAITING_AUTHORIZATION:
-        return "Awaiting authorization";
-      case IMPROV_SERIAL_STATE.AUTHORIZED:
-        return "Ready for Wi-Fi credentials";
-      case IMPROV_SERIAL_STATE.PROVISIONING:
-        return "Connecting to Wi-Fi";
-      case IMPROV_SERIAL_STATE.PROVISIONED:
-        return "Wi-Fi connected";
-      default:
-        return `Unknown state ${stateValue}`;
-    }
-  }
-
-  function improvSerialErrorLabel(errorValue) {
-    switch (Number(errorValue)) {
-      case IMPROV_SERIAL_ERROR.NONE:
-        return "No error";
-      case IMPROV_SERIAL_ERROR.INVALID_RPC:
-        return "Invalid Improv command";
-      case IMPROV_SERIAL_ERROR.UNKNOWN_RPC:
-        return "Unknown Improv command";
-      case IMPROV_SERIAL_ERROR.UNABLE_TO_CONNECT:
-        return "Unable to connect to Wi-Fi";
-      case IMPROV_SERIAL_ERROR.NOT_AUTHORIZED:
-        return "Not authorized";
-      case IMPROV_SERIAL_ERROR.UNKNOWN:
-        return "Unknown Improv error";
-      default:
-        return `Improv error ${errorValue}`;
-    }
-  }
-
-  function improvEncodeString(value) {
-    const bytes = IMPROV_TEXT_ENCODER.encode(String(value || ""));
-    if (bytes.length > 255) {
-      throw new Error("Improv Serial values must be shorter than 256 bytes.");
-    }
-    return [bytes.length, ...bytes];
-  }
-
-  function improvBuildRpcPayload(command, strings = []) {
-    const data = [];
-    (Array.isArray(strings) ? strings : []).forEach((value) => {
-      data.push(...improvEncodeString(value));
-    });
-    if (data.length > 255) {
-      throw new Error("Improv Serial command is too large.");
-    }
-    return [command, data.length, ...data];
-  }
-
-  function improvBuildSerialPacket(type, payload = []) {
-    const bytes = [...IMPROV_SERIAL_HEADER, IMPROV_SERIAL_VERSION, type, payload.length, ...payload];
-    const checksum = bytes.reduce((sum, byte) => (sum + byte) & 0xff, 0);
-    return new Uint8Array([...bytes, checksum, 0x0a]);
-  }
-
-  function improvParseRpcPayload(payload) {
-    const bytes = Array.from(payload || []);
-    const command = Number(bytes[0] || 0);
-    const dataLength = Number(bytes[1] || 0);
-    const dataEnd = Math.min(bytes.length, 2 + dataLength);
-    const strings = [];
-    let offset = 2;
-    while (offset < dataEnd) {
-      const length = Number(bytes[offset] || 0);
-      offset += 1;
-      if (offset + length > dataEnd) {
-        break;
-      }
-      strings.push(IMPROV_TEXT_DECODER.decode(new Uint8Array(bytes.slice(offset, offset + length))));
-      offset += length;
-    }
-    return { command, strings };
-  }
-
-  class ImprovSerialParser {
-    constructor() {
-      this.buffer = [];
-    }
-
-    feed(chunk) {
-      const bytes = chunk instanceof Uint8Array ? Array.from(chunk) : [];
-      this.buffer.push(...bytes);
-      const packets = [];
-      while (this.buffer.length >= IMPROV_SERIAL_HEADER.length) {
-        const headerIndex = this.buffer.findIndex((byte, index, rows) =>
-          IMPROV_SERIAL_HEADER.every((headerByte, headerOffset) => rows[index + headerOffset] === headerByte)
-        );
-        if (headerIndex < 0) {
-          this.buffer.splice(0, Math.max(0, this.buffer.length - IMPROV_SERIAL_HEADER.length + 1));
-          break;
-        }
-        if (headerIndex > 0) {
-          this.buffer.splice(0, headerIndex);
-        }
-        if (this.buffer.length < 10) {
-          break;
-        }
-        if (this.buffer[6] !== IMPROV_SERIAL_VERSION) {
-          this.buffer.shift();
-          continue;
-        }
-        const type = Number(this.buffer[7] || 0);
-        const payloadLength = Number(this.buffer[8] || 0);
-        const checksumIndex = 9 + payloadLength;
-        if (this.buffer.length <= checksumIndex) {
-          break;
-        }
-        const checksum = this.buffer
-          .slice(0, checksumIndex)
-          .reduce((sum, byte) => (sum + Number(byte || 0)) & 0xff, 0);
-        if (checksum !== Number(this.buffer[checksumIndex] || 0)) {
-          this.buffer.shift();
-          continue;
-        }
-        const payload = new Uint8Array(this.buffer.slice(9, 9 + payloadLength));
-        const nextOffset = this.buffer[checksumIndex + 1] === 0x0a ? checksumIndex + 2 : checksumIndex + 1;
-        this.buffer.splice(0, nextOffset);
-        packets.push({ type, payload });
-      }
-      return packets;
-    }
-  }
-
-  async function openImprovSerialPort(port) {
-    for (let attempt = 1; attempt <= 8; attempt += 1) {
-      try {
-        await port.open({ baudRate: 115200, bufferSize: 255 });
-        return;
-      } catch (error) {
-        const message = String(error?.message || error || "");
-        if (error?.name === "InvalidStateError" || message.toLowerCase().includes("already open")) {
-          return;
-        }
-        if (attempt >= 8) {
-          throw error;
-        }
-        appendFirmwareLog(`Waiting for USB serial to reconnect (${attempt}/8)...`, "Waiting for USB serial...");
-        await sleep(1000);
-      }
-    }
-  }
-
-  async function setupImprovWifi(port, options) {
-    const ssid = String(options?.ssid || "").trim();
-    const password = String(options?.password || "");
-    if (!ssid) {
-      appendFirmwareLog("Wi-Fi setup skipped.");
-      return;
-    }
-
-    appendFirmwareLog("Waiting for the flashed device to restart into Improv Serial.", "Waiting for Improv Serial...");
-    appendFirmwareLog("If the screen stays off, unplug and reconnect USB once; the trainer will keep watching for Improv.");
-    await sleep(10000);
-    await openImprovSerialPort(port);
-    appendFirmwareLog("USB serial reopened. Checking Improv Serial.", "Checking Improv Serial...");
-
-    const parser = new ImprovSerialParser();
-    const reader = port.readable?.getReader?.();
-    const writer = port.writable?.getWriter?.();
-    if (!reader || !writer) {
-      throw new Error("USB serial reader/writer was not available for Wi-Fi setup.");
-    }
-
-    let stopped = false;
-    let currentState = null;
-    let currentError = IMPROV_SERIAL_ERROR.NONE;
-    let lastStateLabel = "";
-    let responseUrls = [];
-    let seenImprovPacket = false;
-
-    const handlePacket = (packet) => {
-      if (!packet || typeof packet !== "object") {
-        return;
-      }
-      seenImprovPacket = true;
-      if (packet.type === IMPROV_SERIAL_TYPE.CURRENT_STATE) {
-        currentState = Number(packet.payload?.[0] ?? -1);
-        const label = improvSerialStateLabel(currentState);
-        if (label !== lastStateLabel) {
-          lastStateLabel = label;
-          appendFirmwareLog(`Improv: ${label}.`, `Wi-Fi setup: ${label}.`);
-        }
-        return;
-      }
-      if (packet.type === IMPROV_SERIAL_TYPE.ERROR_STATE) {
-        currentError = Number(packet.payload?.[0] ?? IMPROV_SERIAL_ERROR.UNKNOWN);
-        if (currentError !== IMPROV_SERIAL_ERROR.NONE) {
-          appendFirmwareLog(`Improv error: ${improvSerialErrorLabel(currentError)}.`, "Wi-Fi setup failed.");
-        }
-        return;
-      }
-      if (packet.type === IMPROV_SERIAL_TYPE.RPC_RESPONSE) {
-        const response = improvParseRpcPayload(packet.payload);
-        if (response.command === IMPROV_SERIAL_COMMAND.GET_DEVICE_INFO && response.strings.length) {
-          appendFirmwareLog(`Device info: ${response.strings.filter(Boolean).join(" • ")}`);
-        }
-        if (
-          response.command === IMPROV_SERIAL_COMMAND.WIFI_SETTINGS ||
-          response.command === IMPROV_SERIAL_COMMAND.GET_CURRENT_STATE
-        ) {
-          responseUrls = response.strings.filter(Boolean);
-          if (responseUrls.length) {
-            appendFirmwareLog(`Device URL: ${responseUrls[0]}`);
-          }
-        }
-      }
-    };
-
-    const readLoop = (async () => {
-      while (!stopped) {
-        try {
-          const result = await reader.read();
-          if (result?.done) {
-            break;
-          }
-          parser.feed(result?.value).forEach(handlePacket);
-        } catch (error) {
-          if (!stopped) {
-            appendFirmwareLog(`Improv read warning: ${String(error?.message || error)}`);
-          }
-          break;
-        }
-      }
-    })();
-
-    const sendRpc = async (command, strings = []) => {
-      await browserUsbWithTimeout(
-        writer.write(improvBuildSerialPacket(IMPROV_SERIAL_TYPE.RPC, improvBuildRpcPayload(command, strings))),
-        4000,
-        "Timed out writing Improv Serial command."
-      );
-    };
-
-    let pollTimer = 0;
-    try {
-      await sendRpc(IMPROV_SERIAL_COMMAND.GET_DEVICE_INFO);
-      await sendRpc(IMPROV_SERIAL_COMMAND.GET_CURRENT_STATE);
-      const helloDeadline = Date.now() + 8000;
-      while (!seenImprovPacket && Date.now() < helloDeadline) {
-        if (currentError && currentError !== IMPROV_SERIAL_ERROR.NONE) {
-          throw new Error(improvSerialErrorLabel(currentError));
-        }
-        await sleep(150);
-      }
-      if (!seenImprovPacket) {
-        throw new Error("No Improv Serial response from the flashed firmware. Turn off Wi-Fi setup for images with saved Wi-Fi, or flash an image that includes improv_serial.");
-      }
-      appendFirmwareLog("Connected to Improv Serial.", "Connected to Improv Serial.");
-      await sleep(300);
-      appendFirmwareLog(`Sending Wi-Fi credentials for ${ssid}.`, `Sending Wi-Fi credentials for ${ssid}...`);
-      await sendRpc(IMPROV_SERIAL_COMMAND.WIFI_SETTINGS, [ssid, password]);
-      pollTimer = setInterval(() => {
-        void sendRpc(IMPROV_SERIAL_COMMAND.GET_CURRENT_STATE).catch(() => {});
-      }, 1500);
-
-      const deadline = Date.now() + 45000;
-      while (Date.now() < deadline) {
-        if (currentError && currentError !== IMPROV_SERIAL_ERROR.NONE) {
-          throw new Error(improvSerialErrorLabel(currentError));
-        }
-        if (currentState === IMPROV_SERIAL_STATE.PROVISIONED) {
-          const urlSuffix = responseUrls.length ? ` ${responseUrls[0]}` : "";
-          appendFirmwareLog(`Wi-Fi setup complete.${urlSuffix}`, "Wi-Fi setup complete.");
-          return;
-        }
-        await sleep(300);
-      }
-      throw new Error("Timed out waiting for Improv Serial Wi-Fi setup.");
-    } finally {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-      }
-      stopped = true;
-      try {
-        await reader.cancel();
-      } catch (_error) {
-        // Ignore reader cancellation cleanup failures.
-      }
-      try {
-        await readLoop;
-      } catch (_error) {
-        // Ignore read-loop cleanup failures.
-      }
-      try {
-        reader.releaseLock();
-      } catch (_error) {
-        // Ignore lock cleanup failures.
-      }
-      try {
-        writer.releaseLock();
-      } catch (_error) {
-        // Ignore lock cleanup failures.
-      }
-      try {
-        await port.close();
-      } catch (_error) {
-        // Ignore close cleanup failures.
-      }
-    }
-  }
-
   function closeConsole() {
     $("consoleOverlay").classList.remove("open");
     $("consoleOverlay").setAttribute("aria-hidden", "true");
@@ -3110,13 +2717,6 @@
 
   function firmwareUsbSelected() {
     return $("firmwareDeviceSelect").value === FIRMWARE_USB_DEVICE_VALUE;
-  }
-
-  function syncUsbFirmwareControls() {
-    const enabled = $("firmwareUsbWifiEnabled").checked;
-    $("firmwareUsbSsid").disabled = !enabled;
-    $("firmwareUsbPassword").disabled = !enabled;
-    $("usbFirmwareBtn").textContent = enabled ? "Flash + Set Up Wi-Fi" : "Browser USB Flash";
   }
 
   function renderFirmwareDevices(devices, message) {
@@ -3236,6 +2836,13 @@
       .map((item) => ({
         label: String(item.label || item.wake_word || item.wake_word_name || item.key || "Trained wake word"),
         url: String(item.json_url || "").trim(),
+        threshold: item.threshold,
+        slidingWindow: item.sliding_window,
+        closeMissThreshold: item.close_miss_threshold,
+        quantization: String(item.quantization || "").trim(),
+        modelFormat: String(item.model_format || "").trim(),
+        recall: item.calibration_recall,
+        falseAcceptsPerHour: item.calibration_false_accepts_per_hour,
       }))
       .filter((item) => item.url);
 
@@ -3244,15 +2851,27 @@
       return;
     }
 
-    container.innerHTML = rows.map((item) => `
+    container.innerHTML = rows.map((item) => {
+      const meta = [];
+      if (item.threshold !== null && item.threshold !== undefined) meta.push(`<span class="pill">threshold ${escapeHtml(item.threshold)}</span>`);
+      if (item.slidingWindow !== null && item.slidingWindow !== undefined) meta.push(`<span class="pill">window ${escapeHtml(item.slidingWindow)}</span>`);
+      if (item.closeMissThreshold !== null && item.closeMissThreshold !== undefined) meta.push(`<span class="pill">close miss ${escapeHtml(item.closeMissThreshold)}</span>`);
+      if (item.quantization) meta.push(`<span class="pill">${escapeHtml(item.quantization)}</span>`);
+      const recall = Number(item.recall);
+      const faph = Number(item.falseAcceptsPerHour);
+      if (Number.isFinite(recall)) meta.push(`<span class="pill">recall ${(recall * 100).toFixed(1)}%</span>`);
+      if (Number.isFinite(faph)) meta.push(`<span class="pill">FA/h ${escapeHtml(faph)}</span>`);
+      return `
       <div class="runtimeWakeWordItem">
         <div>
           <strong>${escapeHtml(item.label)}</strong>
           <a class="runtimeWakeWordUrl" href="${escapeAttr(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.url)}</a>
+          ${meta.length ? `<div class="runtimeWakeWordMeta">${meta.join("")}</div>` : ""}
         </div>
         <button type="button" data-runtime-wake-url="${escapeAttr(item.url)}">Copy URL</button>
       </div>
-    `).join("");
+    `;
+    }).join("");
   }
 
   async function copyTextToClipboard(text) {
@@ -3633,7 +3252,7 @@
       syncRenderedWakeSoundSelection({ fromPicker: true });
     }
 
-    const ok = confirm(`Flash prebuilt ${template.label || template.value} firmware to ${host}:${port || "3232"}?\n\nOnly continue if this device is already running Tater firmware 3.0.3 or newer. New devices need one USB flash first.`);
+    const ok = confirm(`Flash prebuilt ${template.label || template.value} firmware to ${host}:${port || "3232"}?\n\nOnly continue if this device is already running Tater Native Firmware v1. New devices need one USB flash first.`);
     if (!ok) return;
 
     uiState.firmwareBusy = true;
@@ -3687,18 +3306,10 @@
       return;
     }
     if (!window.isSecureContext || !navigator.serial) {
-      alert("Browser USB flash needs Chrome or Edge on HTTPS or localhost. In the macOS app, use Open in Browser and choose Chrome or Edge.");
+      alert("Browser USB flash needs Chrome or Edge on HTTPS or localhost. Open the trainer URL in Chrome or Edge.");
       return;
     }
-    const wifiEnabled = $("firmwareUsbWifiEnabled").checked;
-    const wifiSsid = ($("firmwareUsbSsid").value || "").trim();
-    const wifiPassword = $("firmwareUsbPassword").value || "";
-    if (wifiEnabled && !wifiSsid) {
-      alert("Enter a Wi-Fi SSID or turn off Wi-Fi setup before Browser USB Flash.");
-      return;
-    }
-    const actionLabel = wifiEnabled ? "USB flash and set up Wi-Fi" : "USB flash";
-    const ok = confirm(`${actionLabel} for the prebuilt ${template.label || template.value} factory firmware?\n\nThis is for new satellites, recovery, or devices older than Tater firmware 3.0.3. It erases flash and writes the factory image over USB.`);
+    const ok = confirm(`USB flash the prebuilt ${template.label || template.value} factory firmware?\n\nThis is for new satellites, recovery, or devices not already running Tater Native Firmware v1. It erases flash and writes the factory image over USB. After flashing, finish Wi-Fi and pairing from the satellite setup page.`);
     if (!ok) return;
 
     let port;
@@ -3731,16 +3342,9 @@
       });
       appendFirmwareLogs(artifact.entries || [], "Factory image ready. Starting USB flash...");
       await flashBrowserUsbPort(port, artifact);
-      if (wifiEnabled) {
-        port = await browserUsbWaitForReconnect(port, template.value);
-        await setupImprovWifi(port, { ssid: wifiSsid, password: wifiPassword });
-        appendFirmwareLog("Browser USB flash and Wi-Fi setup finished.", "Browser USB flash and Wi-Fi setup finished.");
-        setPill($("firmwareStatus"), "USB flash + Wi-Fi finished", "ok");
-      } else {
-        appendFirmwareLog("Wi-Fi setup skipped by user.");
-        appendFirmwareLog("Browser USB flash finished.", "Browser USB flash finished.");
-        setPill($("firmwareStatus"), "USB flash finished", "ok");
-      }
+      appendFirmwareLog("Browser USB flash finished.", "Browser USB flash finished.");
+      appendFirmwareLog("Use the satellite setup hotspot to configure Wi-Fi, Tater server, and pairing.");
+      setPill($("firmwareStatus"), "USB flash finished", "ok");
     } catch (error) {
       appendFirmwareLog(`Browser USB flash failed: ${String(error.message || error)}`, "Browser USB flash failed.");
       setPill($("firmwareStatus"), "USB flash failed", "err");
@@ -3827,10 +3431,6 @@
     const firmwareSelection = selectedFirmwareTemplate();
     const firmwareAvailable = !firmwareSelection?.prebuilt_firmware || Boolean(firmwareSelection.prebuilt_firmware.available);
     const usbSelected = firmwareUsbSelected();
-    const usbWifiEnabled = $("firmwareUsbWifiEnabled").checked;
-    const usbWifiSsid = ($("firmwareUsbSsid").value || "").trim();
-    const usbWifiReady = !usbWifiEnabled || Boolean(usbWifiSsid);
-    syncUsbFirmwareControls();
 
     $("ttsBtn").disabled = !hasPhrase || uiState.uploadBusy;
     $("uploadBtn").disabled = !hasSession || !hasSelected || uiState.uploadBusy;
@@ -3846,7 +3446,7 @@
     $("cleanFirmwareBtn").disabled = uiState.firmwareBusy;
     $("openFirmwareConsoleBtn").disabled = false;
     $("flashFirmwareBtn").disabled = uiState.firmwareBusy || usbSelected || !firmwareHost || !firmwareTemplate || !firmwareAvailable;
-    $("usbFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareTemplate || !firmwareSelection?.prebuilt_firmware?.artifacts?.factory?.path || !usbWifiReady;
+    $("usbFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareTemplate || !firmwareSelection?.prebuilt_firmware?.artifacts?.factory?.path;
   }
 
   function refreshSessionUI(session) {
@@ -4205,10 +3805,6 @@
       setPill($("firmwareStatus"), "Device settings failed", "warn");
       alert("Device settings failed: " + error.message);
     });
-  });
-  ["firmwareUsbWifiEnabled", "firmwareUsbSsid", "firmwareUsbPassword"].forEach((id) => {
-    $(id).addEventListener("input", syncButtons);
-    $(id).addEventListener("change", syncButtons);
   });
   $("refreshFirmwareBtn").addEventListener("click", async () => {
     try {
