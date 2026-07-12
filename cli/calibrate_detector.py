@@ -18,14 +18,14 @@ from microwakeword.data import FeatureHandler
 from microwakeword.inference import Model
 
 
-DEFAULT_WINDOW_SIZES = [3, 4, 5, 6, 7]
-DEFAULT_TARGET_FAPH = float(os.environ.get("MWW_CALIBRATION_TARGET_FAPH", "1.0"))
+DEFAULT_WINDOW_SIZES = [4, 5, 6, 7]
+DEFAULT_TARGET_FAPH = float(os.environ.get("MWW_CALIBRATION_TARGET_FAPH", "0.25"))
 DEFAULT_COOLDOWN_SLICES = int(os.environ.get("MWW_CALIBRATION_COOLDOWN_SLICES", "25"))
 DEFAULT_POSITIVE_SKIP_SLICES = int(
     os.environ.get("MWW_CALIBRATION_POSITIVE_SKIP_SLICES", "25")
 )
 DEFAULT_CUTOFF_STEP = float(os.environ.get("MWW_CALIBRATION_CUTOFF_STEP", "0.01"))
-DEFAULT_CUTOFF_MIN = float(os.environ.get("MWW_CALIBRATION_CUTOFF_MIN", "0.00"))
+DEFAULT_CUTOFF_MIN = float(os.environ.get("MWW_CALIBRATION_CUTOFF_MIN", "0.85"))
 DEFAULT_CUTOFF_MAX = float(os.environ.get("MWW_CALIBRATION_CUTOFF_MAX", "1.00"))
 
 

@@ -7,7 +7,7 @@
   <a href="https://taterassistant.com">taterassistant.com</a>
 </h3>
 
-Train custom microWakeWord models in Docker with NVIDIA/CUDA acceleration, generated Piper samples, device-captured samples, reviewed false-wake negatives, live training logs, and prebuilt Tater firmware flashing.
+Train custom microWakeWord models in Docker with NVIDIA/CUDA acceleration, generated Piper samples, device-captured samples, reviewed false-wake negatives, live training logs, and local wake-word links for Tater Native satellites.
 
 Real samples come from device-captured wake audio, close misses, or manual uploads. Every saved sample is normalized to `16 kHz / mono / 16-bit PCM WAV` before training.
 
@@ -22,7 +22,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 Tagged releases also publish matching immutable image tags:
 
 ```bash
-docker pull ghcr.io/tatertotterson/microwakeword:v10
+docker pull ghcr.io/tatertotterson/microwakeword:v11
 ```
 
 RTX 50-series / Blackwell GPUs use a separate image with CUDA 12.8 and a
@@ -30,7 +30,7 @@ Python 3.13 TensorFlow build for `sm_120`:
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:blackwell
-docker pull ghcr.io/tatertotterson/microwakeword:v10-blackwell
+docker pull ghcr.io/tatertotterson/microwakeword:v11-blackwell
 ```
 
 Use the Blackwell image only for RTX 50-series cards. It includes the
@@ -51,19 +51,19 @@ docker run -d \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v10` when you want to pin a known release instead of tracking `latest`.
+Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v11` when you want to pin a known release instead of tracking `latest`.
 For RTX 50-series cards, use `ghcr.io/tatertotterson/microwakeword:blackwell`
-or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v10-blackwell`
+or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v11-blackwell`
 in the same `docker run` command.
 
 The flags:
 
 - `--gpus all` enables GPU acceleration.
-- `--network host` lets the container receive mDNS/zeroconf traffic for device auto-detect.
+- `--network host` exposes the trainer server directly so satellites can send captured audio and load trained wake-word files.
 - `-e REC_PORT=8789` sets the trainer web UI and captured-audio port. Change this value if `8789` is already in use.
-- `-v $(pwd):/data` persists models, downloaded voices, datasets, samples, and firmware caches.
+- `-v $(pwd):/data` persists models, downloaded voices, datasets, samples, and generated wake-word artifacts.
 
-Host networking is recommended for the Firmware tab's mDNS device discovery. Manual IP flashing and captured-audio uploads can still work without host networking if the trainer port is reachable, but auto-detect may not see devices from Docker bridge networking.
+If you do not use host networking, publish the trainer port and make sure satellites can reach it from your LAN.
 
 Open:
 
@@ -80,8 +80,8 @@ If you change `REC_PORT`, open that port instead and use the same port in the sa
 - `Trainer` starts a wake-word session, shows positive/negative sample counts, and launches training.
 - `Captured Audio` reviews clips sent by Tater Native or ESPHome sats, including wake hits, close misses, and false wakes.
 - `Samples` plays, removes, clears, and manually imports personal or negative samples.
-- `Firmware` pulls verified prebuilt Tater firmware images from GitHub and flashes supported satellites over OTA.
-- Popup consoles show colorized training and firmware logs while long-running jobs are active.
+- `Wake Words` lists locally trained JSON/model links for live wake-word switching in Tater.
+- Popup consoles show colorized training logs while long-running jobs are active.
 
 ---
 
@@ -207,23 +207,16 @@ After those assets are prepared, later runs reuse the local copies unless the mo
 
 ---
 
-## Firmware Flashing
+## Trained Wake Words
 
-The `Firmware` tab flashes prebuilt Tater firmware for supported satellites.
+The `Wake Words` tab lists locally trained wake-word packages from `/data/trained_wake_words/`.
 
-- Downloads the latest prebuilt firmware manifest plus OTA and USB factory images from [`TaterTotterson/Tater-Native-Firmware`](https://github.com/TaterTotterson/Tater-Native-Firmware).
-- Verifies downloaded images by size and SHA before upload.
-- Auto-detects compatible devices with mDNS when the container is running with host networking.
-- Allows manual IP or hostname entry if discovery does not find the device.
-- Saves the selected OTA target for each firmware family.
-- Flashes the prebuilt factory image over Browser USB for first installs or recovery when opened in Chrome or Edge.
-- Leaves Wi-Fi, Tater server, and pairing setup to the satellite setup portal after USB flash.
-- Lists locally trained wake words from `/data/trained_wake_words/` for live model switching.
-- Streams download, verification, and OTA upload progress in a colorized firmware console.
+- Copy the JSON URL into the Tater Native satellite settings to switch wake words live.
+- Open the JSON or model links directly for quick inspection.
+- The JSON includes the matching model path plus Tater tuning metadata.
+- No firmware flashing happens from this trainer app anymore.
 
-> **Tater only:** these native firmware images connect to Tater. They are not Home Assistant or ESPHome satellite firmware.
-
-You usually only flash for firmware updates. New satellites, or devices not already running Tater Native Firmware `v1`, need one USB flash first before OTA updates and live wake-word switching are available.
+Use the main Tater app for satellite firmware updates and USB flashing.
 
 ---
 
@@ -236,14 +229,14 @@ Successful runs produce timestamped training output folders such as:
 /data/output/<timestamp>-<wake_word>-<samples>-<steps>/<wake_word>.json
 ```
 
-The trainer also syncs firmware-ready artifacts into:
+The trainer also syncs Tater-ready wake-word artifacts into:
 
 ```text
 /data/trained_wake_words/<wake_word>.tflite
 /data/trained_wake_words/<wake_word>.json
 ```
 
-The firmware tab uses `/data/trained_wake_words/` to populate the wake-word dropdown.
+The `Wake Words` tab uses `/data/trained_wake_words/` to populate the local wake-word links.
 
 The JSON keeps the standard microWakeWord fields for compatibility:
 
@@ -296,7 +289,6 @@ That removes:
 - cached datasets
 - training environments
 - trained models
-- downloaded firmware images
 
 ---
 
@@ -306,7 +298,7 @@ That removes:
 - Negative samples are optional but useful for reducing false wakes.
 - The UI server is `trainer_server.py`.
 - The launcher is `run.sh`.
-- Firmware capture settings live in Tater for Tater Native satellites, and on device entities for older ESPHome satellites.
+- Trainer capture settings live in Tater for Tater Native satellites, and on device entities for older ESPHome satellites.
 
 ---
 

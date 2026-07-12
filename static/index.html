@@ -348,6 +348,13 @@
       font-size: 13px;
     }
 
+    .runtimeWakeWordActions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .runtimeWakeWordLinks {
       display: grid;
       gap: 10px;
@@ -368,6 +375,12 @@
     .runtimeWakeWordItem strong {
       display: block;
       margin-bottom: 4px;
+    }
+
+    .runtimeWakeWordUrls {
+      display: grid;
+      gap: 3px;
+      margin-top: 6px;
     }
 
     .runtimeWakeWordUrl {
@@ -968,157 +981,6 @@
       margin-top: 2px;
     }
 
-    .firmwareLogModal {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: rgba(0, 0, 0, 0.64);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      z-index: 12000;
-    }
-
-    .firmwareLogModal.active {
-      visibility: visible;
-      pointer-events: auto;
-      animation: firmwareLogBackdropIn 280ms ease-out both;
-    }
-
-    .firmwareLogDialog {
-      width: min(1320px, 98vw);
-      height: min(94vh, 1040px);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 18px;
-      border-radius: 22px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background:
-        linear-gradient(180deg, rgba(17, 20, 28, 0.88), rgba(8, 10, 16, 0.96)),
-        rgba(8, 10, 16, 0.88);
-      box-shadow: 0 28px 84px rgba(0,0,0,0.58);
-      backdrop-filter: blur(18px) saturate(1.12);
-      overflow: hidden;
-      opacity: 0;
-      transform: translateY(14px) scale(0.97);
-    }
-
-    .firmwareLogModal.active .firmwareLogDialog {
-      animation: firmwareLogDialogIn 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    }
-
-    .firmwareLogHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 16px;
-    }
-
-    .firmwareLogTitle {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .firmwareLogMeta {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .firmwareLogStatus {
-      color: #b7c7e6;
-      font-size: 13px;
-    }
-
-    .firmwareLogConsole {
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow: auto;
-      border: 1px solid rgba(255,138,42,0.22);
-      border-radius: 16px;
-      padding: 12px 14px;
-      background:
-        linear-gradient(180deg, rgba(15, 18, 25, 0.98), rgba(10, 12, 18, 0.98)),
-        radial-gradient(circle at top, rgba(255,138,42,0.08), transparent 40%);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.05),
-        inset 0 -1px 0 rgba(0,0,0,0.35);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 13px;
-      line-height: 1.45;
-      color: #dbe8ff;
-    }
-
-    .firmwareLogLine {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 10px;
-      align-items: start;
-      padding: 2px 0;
-    }
-
-    .firmwareLogLevel {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 58px;
-      border-radius: 999px;
-      padding: 2px 8px;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      border: 1px solid rgba(255,255,255,0.12);
-      white-space: nowrap;
-    }
-
-    .firmwareLogMessage {
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .firmwareLogLine.tone-info .firmwareLogLevel {
-      background: rgba(70, 120, 255, 0.16);
-      border-color: rgba(108, 152, 255, 0.28);
-      color: #bdd3ff;
-    }
-
-    .firmwareLogLine.tone-warn .firmwareLogLevel {
-      background: rgba(245, 167, 36, 0.14);
-      border-color: rgba(245, 167, 36, 0.32);
-      color: #ffd696;
-    }
-
-    .firmwareLogLine.tone-error .firmwareLogLevel {
-      background: rgba(226, 76, 76, 0.15);
-      border-color: rgba(255, 111, 111, 0.34);
-      color: #ffc1c1;
-    }
-
-    .firmwareLogLine.tone-debug .firmwareLogLevel {
-      background: rgba(92, 214, 178, 0.14);
-      border-color: rgba(92, 214, 178, 0.28);
-      color: #bffff0;
-    }
-
-    .firmwareLogEmpty {
-      color: var(--muted);
-    }
-
-    @keyframes firmwareLogBackdropIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes firmwareLogDialogIn {
-      from { opacity: 0; transform: translateY(14px) scale(0.97); }
-      62% { transform: translateY(-3px) scale(1.01); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
     .consoleMuted { color: #93a0b5; }
     .consoleText { color: #d8e2f1; }
     .consoleCmd { color: #89d4ff; }
@@ -1263,22 +1125,6 @@
         height: min(82vh, 760px);
         padding: 14px;
       }
-      .firmwareLogModal {
-        padding: 12px;
-      }
-      .firmwareLogDialog {
-        width: 100%;
-        height: 88vh;
-        padding: 14px;
-      }
-      .firmwareLogHeader {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .firmwareLogLine {
-        grid-template-columns: 1fr;
-        gap: 4px;
-      }
       .consoleHeader {
         flex-direction: column;
         align-items: stretch;
@@ -1311,14 +1157,14 @@
         <div class="logo"></div>
         <div>
           <h1>microWakeWord Trainer Studio</h1>
-          <p>Train wake words, review captured clips, and flash Tater Native firmware from one local workspace.</p>
+          <p>Train wake words, review captured clips, and publish live model URLs for Tater Native satellites.</p>
         </div>
       </div>
     </div>
 
     <div class="tabs">
       <button id="tabTrainer" class="tabBtn active" type="button">Trainer</button>
-      <button id="tabFirmware" class="tabBtn" type="button">Firmware</button>
+      <button id="tabFirmware" class="tabBtn" type="button">Wake Words</button>
       <button id="tabCaptured" class="tabBtn" type="button">Captured Audio</button>
       <button id="tabSamples" class="tabBtn" type="button">Samples</button>
     </div>
@@ -1552,22 +1398,22 @@
       <div class="card firmwareHero">
         <div class="row space">
           <div>
-            <div class="firmwareKicker">Firmware Studio</div>
-            <h3>Prebuilt Tater Firmware Flasher</h3>
-            <p>Flash only for firmware updates. If this is a new satellite or it is not already on Tater Native Firmware <code>v1</code>, do one USB flash first, then use this tab for fast OTA updates.</p>
-            <div class="firmwareSteps" aria-label="Firmware flashing steps">
-              <span class="firmwareStepChip"><b>1</b> Pick firmware</span>
-              <span class="firmwareStepChip"><b>2</b> Select target</span>
-              <span class="firmwareStepChip"><b>3</b> Flash OTA or USB</span>
+            <div class="firmwareKicker">Wake Word Catalog</div>
+            <h3>Trained Wake Words</h3>
+            <p>Every completed training run publishes a local JSON package and model file. Copy the JSON URL into the native satellite settings in Tater to switch wake words live.</p>
+            <div class="firmwareSteps" aria-label="Wake word publishing steps">
+              <span class="firmwareStepChip"><b>1</b> Train model</span>
+              <span class="firmwareStepChip"><b>2</b> Copy JSON URL</span>
+              <span class="firmwareStepChip"><b>3</b> Paste in Tater</span>
             </div>
           </div>
-          <span id="firmwareStatus" class="pill">Flasher idle</span>
+          <span id="firmwareStatus" class="pill">Catalog idle</span>
         </div>
       </div>
 
       <div class="card firmwareTaterOnlyNotice">
-        <strong>Tater only</strong>
-        <span>These native firmware images connect to Tater. They are not Home Assistant or ESPHome satellite firmware.</span>
+        <strong>Tater Native</strong>
+        <span>These generated wake-word URLs are for Tater Native satellites and are loaded from the satellite settings in Tater.</span>
       </div>
 
       <div class="card runtimeWakeWordCard">
@@ -1576,89 +1422,19 @@
             <span class="runtimeWakeWordBadge">v1</span>
             <div>
               <div class="firmwareKicker">Live Model Switching</div>
-              <h3>Tater Native satellites can swap wake words live</h3>
-              <p>No reflash is needed after training. Copy a trained wake word JSON URL below and paste it into the native satellite settings in Tater.</p>
+              <h3>Copy trained wake-word URLs</h3>
+              <p>The JSON file points Tater and the satellite at the matching model plus trainer tuning values.</p>
             </div>
           </div>
-          <span class="pill ok">No reflash needed</span>
+          <div class="runtimeWakeWordActions">
+            <span class="pill ok">No reflash needed</span>
+            <button id="refreshWakeWordsBtn" type="button">Refresh</button>
+          </div>
         </div>
         <div id="runtimeWakeWordLinks" class="runtimeWakeWordLinks">
           <div class="emptyState">Train a wake word first, then its live model URL will appear here.</div>
         </div>
       </div>
-
-      <div class="firmwareLayout">
-        <section class="card firmwarePanel stack">
-          <div class="firmwarePanelHeader">
-            <div class="firmwarePanelTitle">
-              <span class="firmwareStepBadge">1</span>
-              <div>
-                <h3>Firmware Image</h3>
-                <p>Choose a prebuilt Tater firmware image from the Tater Native Firmware releases.</p>
-              </div>
-            </div>
-          </div>
-          <label class="field">
-            <strong>Firmware Family</strong>
-            <select id="firmwareTemplate">
-              <option value="">Loading firmware images...</option>
-            </select>
-          </label>
-        </section>
-
-        <section class="card firmwarePanel stack">
-          <div class="firmwarePanelHeader">
-            <div class="firmwarePanelTitle">
-              <span class="firmwareStepBadge">2</span>
-              <div>
-                <h3>Target Device</h3>
-                <p>Auto-detect a device or enter the OTA target manually.</p>
-              </div>
-            </div>
-            <span id="firmwareDetectStatus" class="pill">Not scanned</span>
-          </div>
-          <div class="row">
-            <button id="refreshFirmwareBtn" type="button">Auto-detect Tater satellites</button>
-          </div>
-          <div class="firmwareTargetGrid">
-            <label class="field">
-              <strong>Detected Device</strong>
-              <select id="firmwareDeviceSelect">
-                <option value="">Choose target...</option>
-                <option value="__browser_usb_flash__">Browser USB Flash (new/recovery)</option>
-              </select>
-            </label>
-            <label class="field">
-              <strong>Device IP or Hostname</strong>
-              <input id="firmwareHost" type="text" placeholder="e.g. 10.4.20.139 or tatervpe.local" />
-            </label>
-            <label class="field">
-              <strong>OTA Port</strong>
-              <input id="firmwarePort" type="number" min="1" max="65535" value="3232" />
-            </label>
-          </div>
-        </section>
-      </div>
-
-      <div id="firmwareFields" class="firmwareFields stack" hidden></div>
-
-      <section class="card firmwareActionsPanel">
-        <div class="firmwarePanelTitle">
-          <span class="firmwareStepBadge">3</span>
-          <div>
-            <h3>Flash Firmware</h3>
-            <p>The console shows download, verification, OTA upload, USB flash, and reboot progress.</p>
-          </div>
-        </div>
-        <div class="row firmwareActions">
-          <button id="flashFirmwareBtn" class="primary" type="button" disabled>Flash OTA Update</button>
-          <button id="usbFirmwareBtn" type="button" disabled>Browser USB Flash</button>
-          <button id="saveFirmwareSettingsBtn" type="button">Save target</button>
-          <button id="cleanFirmwareBtn" type="button">Clear downloaded images</button>
-          <button id="openFirmwareConsoleBtn" type="button">Open firmware console</button>
-        </div>
-        <div class="usbFlashHint">Use Browser USB Flash for new satellites, recovery, or devices not already running Tater Native Firmware v1. After USB flash, join the satellite setup hotspot and finish Wi-Fi, Tater server, and pairing in the device setup page. Chrome or Edge must be used on localhost or HTTPS.</div>
-      </section>
     </div>
   </div>
 
@@ -1673,22 +1449,6 @@
       </div>
       <div id="trainLog" class="consoleLog" aria-live="polite">
         <div class="consoleLine consoleMuted">(no training started)</div>
-      </div>
-    </div>
-  </div>
-
-  <div id="firmwareLogModal" class="firmwareLogModal" aria-hidden="true">
-    <div id="firmwareLogDialog" class="firmwareLogDialog" role="dialog" aria-modal="true" aria-labelledby="firmwareLogTitle">
-      <div class="firmwareLogHeader">
-        <div>
-          <h3 id="firmwareLogTitle" class="firmwareLogTitle">Prebuilt Firmware Flash</h3>
-          <p id="firmwareLogMeta" class="firmwareLogMeta">Firmware output will appear here.</p>
-        </div>
-        <button id="closeFirmwareLogBtn" type="button">Close</button>
-      </div>
-      <div id="firmwareLogStatus" class="firmwareLogStatus">Waiting for firmware output...</div>
-      <div id="firmwareLogConsole" class="firmwareLogConsole" role="log" aria-live="polite" aria-label="Firmware flash log">
-        <div class="firmwareLogEmpty">No firmware flash started yet.</div>
       </div>
     </div>
   </div>
@@ -1737,20 +1497,14 @@
     selectedFiles: [],
     captured: { items: [], captured_count: 0, negative_count: 0, personal_count: 0 },
     samples: { personal: [], negative: [], personal_count: 0, negative_count: 0, activeBucket: "personal", pages: { personal: 0, negative: 0 } },
-    firmware: { devices: [], templates: [], wakeWords: [], flashing: null, logLines: [], activeTemplateKey: "" },
-    browserUsb: { ports: {}, esptoolJsModule: null, esptoolJsLoadPromise: null },
+    firmware: { wakeWords: [] },
     uploadBusy: false,
     reviewBusy: false,
     firmwareBusy: false,
     trainingPoller: null,
-    firmwarePoller: null,
     activeView: "trainer",
   };
   const SAMPLE_PAGE_SIZE = 50;
-  let firmwareProfileSaveTimer = null;
-  let firmwareProfileReloadTimer = null;
-  let wakeSoundPreviewAudio = null;
-  let wakeSoundPreviewButton = null;
 
   // --- Trim Waveform Module ---
   const TrimWaveform = {
@@ -2355,352 +2109,6 @@
     }
   }
 
-  function firmwareLogTone(line) {
-    const text = String(line || "").trim();
-    const lower = text.toLowerCase();
-    const bracketMatch = text.match(/^\[[^\]]+\]\[([A-Z])\]/);
-    const token = bracketMatch?.[1] || "";
-    if (token === "E" || text.includes("✗") || lower.includes("traceback") || lower.includes("error") || lower.includes("failed") || lower.includes("crashed")) {
-      return "error";
-    }
-    if (token === "W" || text.includes("⚠") || lower.includes("warning") || lower.includes("warn")) {
-      return "warn";
-    }
-    if (token === "D" || token === "V" || lower.includes("[debug]")) {
-      return "debug";
-    }
-    return "info";
-  }
-
-  function firmwareLogLevel(line) {
-    const tone = firmwareLogTone(line);
-    if (tone === "error") return "ERROR";
-    if (tone === "warn") return "WARN";
-    if (tone === "debug") return "DEBUG";
-    return "INFO";
-  }
-
-  function renderFirmwareLogLines(lines, reset = true) {
-    const consoleEl = $("firmwareLogConsole");
-    const rows = Array.isArray(lines) ? lines.filter((line) => String(line || "").trim()) : [];
-    const shouldStick = reset || isNearBottom(consoleEl, 28);
-    if (reset) {
-      consoleEl.innerHTML = "";
-    }
-    if (!rows.length) {
-      consoleEl.innerHTML = `<div class="firmwareLogEmpty">Waiting for firmware flash output...</div>`;
-    } else {
-      consoleEl.innerHTML = rows.map((line) => {
-        const tone = firmwareLogTone(line);
-        return `
-          <div class="firmwareLogLine tone-${tone}">
-            <span class="firmwareLogLevel">${firmwareLogLevel(line)}</span>
-            <span class="firmwareLogMessage">${escapeHtml(line)}</span>
-          </div>
-        `;
-      }).join("");
-    }
-    if (shouldStick) {
-      consoleEl.scrollTop = consoleEl.scrollHeight;
-    }
-  }
-
-  function setFirmwareLogStatus(text) {
-    $("firmwareLogStatus").textContent = String(text || "Waiting for firmware output...").trim() || "Waiting for firmware output...";
-  }
-
-  function appendFirmwareLog(line, statusText = "") {
-    const text = String(line || "").trim();
-    if (!text) return;
-    uiState.firmware.logLines = [...(uiState.firmware.logLines || []), text].slice(-500);
-    renderFirmwareLogLines(uiState.firmware.logLines, true);
-    if (statusText) {
-      setFirmwareLogStatus(statusText);
-    }
-  }
-
-  function appendFirmwareLogs(lines, statusText = "") {
-    (Array.isArray(lines) ? lines : []).forEach((line) => appendFirmwareLog(line));
-    if (statusText) {
-      setFirmwareLogStatus(statusText);
-    }
-  }
-
-  function openFirmwareConsole(wobble = true, text = null, statusText = "") {
-    const template = selectedFirmwareTemplate();
-    const host = ($("firmwareHost").value || "").trim();
-    const port = ($("firmwarePort").value || "3232").trim();
-    $("firmwareLogTitle").textContent = "Prebuilt Firmware Flash";
-    $("firmwareLogMeta").textContent = [
-      template?.label || template?.value || "Firmware",
-      host ? `${host}:${port || "3232"}` : "",
-    ].filter(Boolean).join(" • ") || "Firmware output will appear here.";
-    if (text !== null) {
-      renderFirmwareLogLines(String(text).split("\n"), true);
-    } else {
-      renderFirmwareLogLines(uiState.firmware.logLines || [], true);
-    }
-    setFirmwareLogStatus(statusText || "Prebuilt firmware download, verification, and upload output appears here.");
-    const modal = $("firmwareLogModal");
-    const dialog = $("firmwareLogDialog");
-    modal.classList.add("active");
-    modal.setAttribute("aria-hidden", "false");
-    dialog.setAttribute("tabindex", "-1");
-    try {
-      dialog.focus({ preventScroll: true });
-    } catch (_) {
-      dialog.focus();
-    }
-    if (wobble) {
-      dialog.style.animation = "none";
-      void dialog.offsetWidth;
-      dialog.style.animation = "";
-    }
-  }
-
-  function closeFirmwareConsole() {
-    $("firmwareLogModal").classList.remove("active");
-    $("firmwareLogModal").setAttribute("aria-hidden", "true");
-  }
-
-  function waitForPaint() {
-    return new Promise((resolve) => {
-      if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(() => resolve());
-      } else {
-        setTimeout(resolve, 0);
-      }
-    });
-  }
-
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
-  }
-
-  function browserUsbPortLabel(port) {
-    if (!port || typeof port.getInfo !== "function") {
-      return "USB serial device";
-    }
-    const info = port.getInfo() || {};
-    const vendor = Number(info.usbVendorId || 0);
-    const product = Number(info.usbProductId || 0);
-    if (!vendor && !product) {
-      return "USB serial device";
-    }
-    const hex = (value) => value.toString(16).padStart(4, "0");
-    return `USB ${hex(vendor)}:${hex(product)}`;
-  }
-
-  async function browserUsbSelectPort(selector = "") {
-    if (!window.isSecureContext || !navigator.serial) {
-      throw new Error("Browser USB flash needs Chrome or Edge on HTTPS or localhost. Open the trainer URL in Chrome or Edge.");
-    }
-    const port = await navigator.serial.requestPort();
-    const key = String(selector || "default").trim() || "default";
-    uiState.browserUsb.ports[key] = port;
-    return port;
-  }
-
-  function browserUsbStoredPort(selector = "") {
-    const key = String(selector || "default").trim() || "default";
-    return uiState.browserUsb.ports?.[key] || null;
-  }
-
-  function normalizeEsptoolJsModule(module) {
-    if (module?.ESPLoader && module?.Transport) {
-      return module;
-    }
-    if (module?.default?.ESPLoader && module?.default?.Transport) {
-      return module.default;
-    }
-    return null;
-  }
-
-  async function ensureEsptoolJsLoaded() {
-    if (uiState.browserUsb.esptoolJsModule) {
-      return uiState.browserUsb.esptoolJsModule;
-    }
-    if (uiState.browserUsb.esptoolJsLoadPromise instanceof Promise) {
-      return uiState.browserUsb.esptoolJsLoadPromise;
-    }
-    const moduleUrls = [
-      "https://esm.sh/esptool-js@0.5.7?bundle",
-      "https://unpkg.com/esptool-js@0.5.7/bundle.js",
-      "https://cdn.jsdelivr.net/npm/esptool-js@0.5.7/bundle.js",
-    ];
-    uiState.browserUsb.esptoolJsLoadPromise = (async () => {
-      const errors = [];
-      for (const moduleUrl of moduleUrls) {
-        try {
-          const module = normalizeEsptoolJsModule(await import(moduleUrl));
-          if (module) {
-            uiState.browserUsb.esptoolJsModule = module;
-            return module;
-          }
-          errors.push(`${moduleUrl}: missing ESPLoader/Transport exports`);
-        } catch (error) {
-          errors.push(`${moduleUrl}: ${String(error?.message || error || "load failed")}`);
-        }
-      }
-      throw new Error(`Could not load esptool-js. ${errors.join(" | ")}`);
-    })();
-    return uiState.browserUsb.esptoolJsLoadPromise;
-  }
-
-  async function fetchFirmwareBinary(binaryUrl) {
-    const response = await fetch(binaryUrl, { credentials: "same-origin" });
-    if (!response.ok) {
-      throw new Error(`Firmware download failed: HTTP ${response.status}`);
-    }
-    return new Uint8Array(await response.arrayBuffer());
-  }
-
-  function uint8ArrayToBinaryString(bytes) {
-    const chunks = [];
-    const chunkSize = 0x8000;
-    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-      chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + chunkSize)));
-    }
-    return chunks.join("");
-  }
-
-  async function browserUsbWithTimeout(promise, timeoutMs, message) {
-    let timeoutId = 0;
-    try {
-      return await Promise.race([
-        promise,
-        new Promise((_resolve, reject) => {
-          timeoutId = setTimeout(() => reject(new Error(message)), Math.max(1, Number(timeoutMs) || 1));
-        }),
-      ]);
-    } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    }
-  }
-
-  async function browserUsbSetSignals(port, signals, timeoutMs = 1200) {
-    if (!port || typeof port.setSignals !== "function") {
-      return false;
-    }
-    await browserUsbWithTimeout(
-      port.setSignals(signals),
-      timeoutMs,
-      "Timed out setting USB serial control signals."
-    );
-    return true;
-  }
-
-  async function browserUsbHardResetAfterFlash(transport, loader, port) {
-    try {
-      appendFirmwareLog("Resetting device after USB flash.");
-      if (transport && typeof transport.setRTS === "function") {
-        await transport.setRTS(true);
-      } else {
-        await browserUsbSetSignals(port, { dataTerminalReady: false, requestToSend: true, break: false });
-      }
-      await sleep(100);
-      if (loader && typeof loader.after === "function") {
-        await loader.after();
-      }
-      await sleep(1000);
-      return true;
-    } catch (error) {
-      appendFirmwareLog(`USB reset warning: ${String(error?.message || error)}`);
-      return false;
-    }
-  }
-
-  async function flashBrowserUsbPort(port, artifact) {
-    const module = await ensureEsptoolJsLoaded();
-    const { ESPLoader, Transport } = module;
-    if (!ESPLoader || !Transport) {
-      throw new Error("esptool-js did not expose ESPLoader/Transport.");
-    }
-    const binaryUrl = String(artifact?.binary_url || "").trim();
-    if (!binaryUrl) {
-      throw new Error("Browser flash binary URL is missing.");
-    }
-
-    const transport = new Transport(port);
-    const terminal = {
-      clean() {},
-      writeLine(data) {
-        const text = String(data || "").trim();
-        if (text) appendFirmwareLog(text);
-      },
-      write(data) {
-        const text = String(data || "").trim();
-        if (text) appendFirmwareLog(text);
-      },
-    };
-    const loader = new ESPLoader({
-      transport,
-      baudrate: 115200,
-      terminal,
-      debugLogging: false,
-    });
-
-    let lastProgress = -1;
-    try {
-      appendFirmwareLog(`Connecting to ${browserUsbPortLabel(port)}...`, "Connecting to selected USB device...");
-      const chipName = await loader.main();
-      appendFirmwareLog(`Connected to ${chipName || "ESP device"}.`);
-
-      setFirmwareLogStatus("Downloading prepared factory firmware...");
-      const firmwareData = await fetchFirmwareBinary(binaryUrl);
-      appendFirmwareLog(`Firmware downloaded (${firmwareData.byteLength} bytes).`);
-
-      const eraseAll = artifact?.erase_all !== false;
-      if (eraseAll) {
-        appendFirmwareLog("Erasing flash and writing factory image at offset 0x0.");
-      } else {
-        appendFirmwareLog("Writing factory image at offset 0x0.");
-      }
-      const flashOptions = {
-        fileArray: [{ data: firmwareData, address: 0 }],
-        flashMode: String(artifact?.flash_mode || "dio"),
-        flashFreq: String(artifact?.flash_freq || "40m"),
-        flashSize: String(artifact?.flash_size || "4MB"),
-        eraseAll,
-        compress: true,
-        reportProgress: (_fileIndex, written, total) => {
-          const pct = total > 0 ? Math.floor((written / total) * 100) : 0;
-          if (pct >= lastProgress + 5 || pct === 100) {
-            lastProgress = pct;
-            appendFirmwareLog(`USB flash progress: ${pct}% (${written}/${total} bytes)`, `Flashing over USB... ${pct}%`);
-          }
-        },
-      };
-      try {
-        await loader.writeFlash(flashOptions);
-      } catch (error) {
-        const message = String(error?.message || error || "");
-        if (!message.includes("charCodeAt")) {
-          throw error;
-        }
-        appendFirmwareLog("Retrying flash with binary-string firmware format.");
-        await loader.writeFlash({
-          ...flashOptions,
-          eraseAll: false,
-          fileArray: [{ data: uint8ArrayToBinaryString(firmwareData), address: 0 }],
-        });
-      }
-      appendFirmwareLog("USB flash complete.");
-      const resetWorked = await browserUsbHardResetAfterFlash(transport, loader, port);
-      if (!resetWorked) {
-        appendFirmwareLog("If the device does not restart, unplug and reconnect USB once to leave bootloader mode.");
-      }
-    } finally {
-      try {
-        await transport.disconnect();
-      } catch (_error) {
-        // Ignore disconnect cleanup failures.
-      }
-    }
-  }
-
   function closeConsole() {
     $("consoleOverlay").classList.remove("open");
     $("consoleOverlay").setAttribute("aria-hidden", "true");
@@ -2713,121 +2121,6 @@
       : "No files selected";
   }
 
-  const FIRMWARE_USB_DEVICE_VALUE = "__browser_usb_flash__";
-
-  function firmwareUsbSelected() {
-    return $("firmwareDeviceSelect").value === FIRMWARE_USB_DEVICE_VALUE;
-  }
-
-  function renderFirmwareDevices(devices, message) {
-    const list = Array.isArray(devices) ? devices : [];
-    uiState.firmware.devices = list;
-
-    $("firmwareDeviceSelect").innerHTML = [
-      `<option value="">Choose target...</option>`,
-      `<option value="${FIRMWARE_USB_DEVICE_VALUE}">Browser USB Flash (new/recovery)</option>`,
-      ...list.map((device, index) => {
-        const label = `${device.name || device.host} (${device.host}:${device.port || 3232})`;
-        return `<option value="${index}">${escapeHtml(label)}</option>`;
-      }),
-    ].join("");
-
-    if (!list.length) {
-      setPill($("firmwareDetectStatus"), message || "No devices detected", "warn");
-      if (!($("firmwareHost").value || "").trim()) {
-        $("firmwareDeviceSelect").value = FIRMWARE_USB_DEVICE_VALUE;
-        applySelectedFirmwareDevice().catch((error) => {
-          setPill($("firmwareStatus"), "USB settings failed", "warn");
-          console.warn("USB settings load failed", error);
-        });
-      }
-      return;
-    }
-
-    setPill($("firmwareDetectStatus"), `${list.length} detected`, "ok");
-    if (!($("firmwareHost").value || "").trim() && !firmwareUsbSelected()) {
-      $("firmwareDeviceSelect").value = "0";
-      applySelectedFirmwareDevice().catch((error) => {
-        setPill($("firmwareStatus"), "Device settings failed", "warn");
-        console.warn("Device settings load failed", error);
-      });
-    }
-  }
-
-  async function refreshFirmwareDevices() {
-    setPill($("firmwareDetectStatus"), "Scanning mDNS...", "warn");
-    const data = await api("/api/firmware/devices", { method: "GET" });
-    renderFirmwareDevices(data.devices, data.message);
-    syncButtons();
-    return data;
-  }
-
-  async function applySelectedFirmwareDevice() {
-    const indexText = $("firmwareDeviceSelect").value;
-    if (indexText === "") return;
-    if (indexText === FIRMWARE_USB_DEVICE_VALUE) {
-      $("firmwareHost").value = "";
-      $("firmwarePort").value = "3232";
-      setPill($("firmwareStatus"), "Browser USB selected", "ok");
-      await refreshFirmwareTemplates();
-      syncButtons();
-      return;
-    }
-    const device = uiState.firmware.devices[Number(indexText)];
-    if (!device) return;
-    await flushFirmwareProfileSave();
-    $("firmwareHost").value = device.host || "";
-    $("firmwarePort").value = device.port || 3232;
-    setPill($("firmwareStatus"), "Loading device settings...", "warn");
-    const data = await refreshFirmwareTemplates();
-    if (!Array.isArray(data?.warnings) || !data.warnings.length) {
-      setPill($("firmwareStatus"), "Device settings loaded", "ok");
-    }
-    syncButtons();
-  }
-
-  function selectedFirmwareTemplate() {
-    const key = $("firmwareTemplate").value;
-    const match = (uiState.firmware.templates || []).find((item) => String(item.value || "") === key);
-    if (match) return match;
-    if (!key) return null;
-    const label = $("firmwareTemplate").selectedOptions?.[0]?.textContent || key;
-    return { value: key, label };
-  }
-
-  function applyFirmwareTemplateTarget(template = selectedFirmwareTemplate()) {
-    if (!template) return;
-    if (firmwareUsbSelected()) return;
-    if (template.target_host) {
-      $("firmwareHost").value = template.target_host;
-    }
-    if (template.target_port) {
-      $("firmwarePort").value = template.target_port;
-    }
-  }
-
-  function renderFirmwareTemplates(payload) {
-    const templates = Array.isArray(payload?.templates) ? payload.templates : [];
-    const previousTemplateKey = $("firmwareTemplate").value || uiState.firmware.activeTemplateKey || "";
-    uiState.firmware.templates = templates;
-    uiState.firmware.wakeWords = Array.isArray(payload?.wake_words) ? payload.wake_words : [];
-    renderRuntimeWakeWordLinks();
-    $("firmwareTemplate").innerHTML = templates.length
-      ? templates.map((item) => {
-          const version = item.firmware_version ? ` ${item.firmware_version}` : "";
-          return `<option value="${escapeAttr(item.value)}">${escapeHtml((item.label || item.value) + version)}</option>`;
-        }).join("")
-      : `<option value="">No firmware images found</option>`;
-    if (previousTemplateKey && templates.some((item) => String(item.value || "") === previousTemplateKey)) {
-      $("firmwareTemplate").value = previousTemplateKey;
-    } else if (payload?.active_template_key) {
-      $("firmwareTemplate").value = payload.active_template_key;
-    }
-    uiState.firmware.activeTemplateKey = $("firmwareTemplate").value;
-    renderFirmwareFields();
-    applyFirmwareTemplateTarget();
-  }
-
   function renderRuntimeWakeWordLinks() {
     const container = $("runtimeWakeWordLinks");
     if (!container) return;
@@ -2836,6 +2129,7 @@
       .map((item) => ({
         label: String(item.label || item.wake_word || item.wake_word_name || item.key || "Trained wake word"),
         url: String(item.json_url || "").trim(),
+        modelUrl: String(item.model_url || "").trim(),
         threshold: item.threshold,
         slidingWindow: item.sliding_window,
         closeMissThreshold: item.close_miss_threshold,
@@ -2865,13 +2159,37 @@
       <div class="runtimeWakeWordItem">
         <div>
           <strong>${escapeHtml(item.label)}</strong>
-          <a class="runtimeWakeWordUrl" href="${escapeAttr(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.url)}</a>
+          <div class="runtimeWakeWordUrls">
+            <a class="runtimeWakeWordUrl" href="${escapeAttr(item.url)}" target="_blank" rel="noreferrer">JSON: ${escapeHtml(item.url)}</a>
+            ${item.modelUrl ? `<a class="runtimeWakeWordUrl" href="${escapeAttr(item.modelUrl)}" target="_blank" rel="noreferrer">Model: ${escapeHtml(item.modelUrl)}</a>` : ""}
+          </div>
           ${meta.length ? `<div class="runtimeWakeWordMeta">${meta.join("")}</div>` : ""}
         </div>
         <button type="button" data-runtime-wake-url="${escapeAttr(item.url)}">Copy URL</button>
       </div>
     `;
     }).join("");
+  }
+
+  async function refreshTrainedWakeWords() {
+    uiState.firmwareBusy = true;
+    setPill($("firmwareStatus"), "Loading wake words...", "warn");
+    syncButtons();
+    try {
+      const data = await api("/api/trained_wake_words/catalog", { method: "GET" });
+      const wakeWords = Array.isArray(data?.wake_words) ? data.wake_words : [];
+      uiState.firmware.wakeWords = wakeWords;
+      renderRuntimeWakeWordLinks();
+      setPill(
+        $("firmwareStatus"),
+        wakeWords.length ? `${wakeWords.length} trained wake word${wakeWords.length === 1 ? "" : "s"}` : "No trained wake words",
+        wakeWords.length ? "ok" : "warn"
+      );
+      return data;
+    } finally {
+      uiState.firmwareBusy = false;
+      syncButtons();
+    }
   }
 
   async function copyTextToClipboard(text) {
@@ -2891,513 +2209,6 @@
     const copied = document.execCommand("copy");
     textarea.remove();
     return copied;
-  }
-
-  function renderFirmwareFields() {
-    resetWakeSoundPreview();
-    $("firmwareFields").innerHTML = "";
-  }
-
-  function renderFirmwareField(field) {
-    const key = String(field.key || "");
-    const label = String(field.label || key || "Value");
-    const type = String(field.type || "text");
-    const value = field.value ?? "";
-    const placeholder = field.placeholder ? ` placeholder="${escapeAttr(field.placeholder)}"` : "";
-    const description = field.description ? `<span class="muted">${escapeHtml(field.description)}</span>` : "";
-    const options = Array.isArray(field.options) ? field.options : [];
-    if (field.read_only) {
-      return `
-        <label class="field">
-          <strong>${escapeHtml(label)}</strong>
-          <span class="readOnlyValue">${escapeHtml(value || "(from YAML)")}</span>
-          ${description}
-        </label>
-      `;
-    }
-    if (type === "wake_word_select") {
-      const optionHtml = options.length
-        ? options.map((option) => {
-            const optionValue = String(option.key || "");
-            const selected = optionValue && optionValue === String(value || "") ? " selected" : "";
-            return `
-              <option value="${escapeAttr(optionValue)}"${selected}
-                data-wake-word-name="${escapeAttr(option.wake_word_name || optionValue)}"
-                data-wake-word-url="${escapeAttr(option.json_url || "")}">
-                ${escapeHtml(option.label || optionValue)}
-              </option>
-            `;
-          }).join("")
-        : "";
-      return `
-        <label class="field">
-          <strong>${escapeHtml(label)}</strong>
-          <select data-firmware-field="${escapeAttr(key)}" data-wake-word-select ${options.length ? "" : "disabled"}>
-            <option value="">${escapeHtml(placeholder || "Choose a trained wake word...")}</option>
-            ${optionHtml}
-          </select>
-          ${description}
-        </label>
-      `;
-    }
-    if (type === "wake_sound_select") {
-      const optionHtml = options.length
-        ? options.map((option) => {
-            const optionValue = String(option.value || "");
-            const selected = optionValue && optionValue === String(value || "") ? " selected" : "";
-            return `
-              <option value="${escapeAttr(optionValue)}"${selected}>
-                ${escapeHtml(option.label || optionValue)}
-              </option>
-            `;
-          }).join("")
-        : "";
-      return `
-        <label class="field">
-          <strong>${escapeHtml(label)}</strong>
-          <select data-firmware-field="${escapeAttr(key)}" data-wake-sound-select ${options.length ? "" : "disabled"}>
-            ${optionHtml || `<option value="__custom__">Custom URL</option>`}
-          </select>
-          ${description}
-        </label>
-      `;
-    }
-    if (type === "checkbox") {
-      return `
-        <label class="field">
-          <strong>${escapeHtml(label)}</strong>
-          <span class="row">
-            <input data-firmware-field="${escapeAttr(key)}" type="checkbox" ${value ? "checked" : ""} style="width:auto;" />
-            <span class="muted">Enabled</span>
-          </span>
-          ${description}
-        </label>
-      `;
-    }
-    return `
-      <label class="field">
-        <strong>${escapeHtml(label)}</strong>
-        <input data-firmware-field="${escapeAttr(key)}" type="${type === "password" ? "password" : "text"}" value="${escapeAttr(value)}"${placeholder} autocomplete="off" />
-        ${description}
-      </label>
-    `;
-  }
-
-  function renderWakeSoundPreviewControl() {
-    return `
-      <div class="wakeSoundPreviewRow">
-        <button type="button" data-wake-sound-preview>Play Selected Sound</button>
-        <span class="wakeSoundPreviewStatus" data-wake-sound-preview-status></span>
-      </div>
-    `;
-  }
-
-  function syncRenderedWakeWordSelection() {
-    const select = document.querySelector("select[data-wake-word-select]");
-    if (select && select.value) {
-      applyWakeWordSelection(select, { silent: true });
-    }
-  }
-
-  function applyWakeWordSelection(select, options = {}) {
-    const option = select?.selectedOptions?.[0];
-    if (!option || !select.value) return;
-    const wakeWordName = option.dataset.wakeWordName || "";
-    const wakeWordUrl = option.dataset.wakeWordUrl || "";
-    const nameInput = document.querySelector('[data-firmware-field="wake_word_name"]');
-    const urlInput = document.querySelector('[data-firmware-field="wake_word_model_url"]');
-    if (nameInput && wakeWordName) {
-      nameInput.value = wakeWordName;
-    }
-    if (urlInput && wakeWordUrl) {
-      urlInput.value = wakeWordUrl;
-    }
-    if (!options.silent) {
-      setPill($("firmwareStatus"), "Wake word selected", "ok");
-      scheduleFirmwareProfileSave();
-    }
-    syncButtons();
-  }
-
-  function syncRenderedWakeSoundSelection({ fromPicker = false } = {}) {
-    const select = document.querySelector("select[data-wake-sound-select]");
-    const urlInput = document.querySelector('[data-firmware-field="wake_word_triggered_sound_file"]');
-    if (!(select instanceof HTMLSelectElement) || !(urlInput instanceof HTMLInputElement)) return;
-    if (fromPicker) {
-      const selectedUrl = String(select.value || "").trim();
-      if (selectedUrl && selectedUrl !== "__custom__") {
-        urlInput.value = selectedUrl;
-      }
-      return;
-    }
-    const currentUrl = String(urlInput.value || "").trim();
-    const optionValues = Array.from(select.options).map((option) => String(option.value || "").trim());
-    if (currentUrl && optionValues.includes(currentUrl)) {
-      select.value = currentUrl;
-    } else if (optionValues.includes("__custom__")) {
-      select.value = "__custom__";
-    }
-  }
-
-  function applyWakeSoundSelection(select, options = {}) {
-    syncRenderedWakeSoundSelection({ fromPicker: true });
-    if (!options.silent) {
-      setPill($("firmwareStatus"), "Wake sound selected", "ok");
-      scheduleFirmwareProfileSave();
-    }
-    syncButtons();
-  }
-
-  function resetWakeSoundPreview(message = "") {
-    if (wakeSoundPreviewAudio instanceof HTMLAudioElement) {
-      try {
-        wakeSoundPreviewAudio.pause();
-        wakeSoundPreviewAudio.currentTime = 0;
-      } catch (_error) {
-        // Browser cleanup can fail if the media element is already gone.
-      }
-    }
-    if (wakeSoundPreviewButton instanceof HTMLButtonElement && document.body.contains(wakeSoundPreviewButton)) {
-      wakeSoundPreviewButton.disabled = false;
-      wakeSoundPreviewButton.textContent = "Play Selected Sound";
-      const section = wakeSoundPreviewButton.closest(".firmwareSettingsSection");
-      const status = section?.querySelector?.("[data-wake-sound-preview-status]");
-      if (status instanceof HTMLElement) {
-        status.textContent = message;
-      }
-    }
-    wakeSoundPreviewAudio = null;
-    wakeSoundPreviewButton = null;
-  }
-
-  function getWakeSoundPreviewUrl() {
-    const urlInput = document.querySelector('[data-firmware-field="wake_word_triggered_sound_file"]');
-    const picker = document.querySelector("select[data-wake-sound-select]");
-    const urlValue = String(urlInput instanceof HTMLInputElement ? urlInput.value || "" : "").trim();
-    if (urlValue) return urlValue;
-    const pickerValue = String(picker instanceof HTMLSelectElement ? picker.value || "" : "").trim();
-    return pickerValue && pickerValue !== "__custom__" ? pickerValue : "";
-  }
-
-  async function handleWakeSoundPreview(button) {
-    const status = button.closest(".firmwareSettingsSection")?.querySelector?.("[data-wake-sound-preview-status]");
-    if (wakeSoundPreviewAudio instanceof HTMLAudioElement && wakeSoundPreviewButton === button && !wakeSoundPreviewAudio.paused) {
-      resetWakeSoundPreview("Stopped.");
-      return;
-    }
-
-    const url = getWakeSoundPreviewUrl();
-    if (!url) {
-      if (status instanceof HTMLElement) status.textContent = "Choose a wake sound or enter a URL first.";
-      return;
-    }
-
-    resetWakeSoundPreview();
-    const audio = new Audio(url);
-    audio.preload = "auto";
-    wakeSoundPreviewAudio = audio;
-    wakeSoundPreviewButton = button;
-    button.disabled = true;
-    button.textContent = "Loading...";
-    if (status instanceof HTMLElement) status.textContent = "Loading preview...";
-
-    const finish = (message) => {
-      if (wakeSoundPreviewAudio !== audio) return;
-      if (button instanceof HTMLButtonElement && document.body.contains(button)) {
-        button.disabled = false;
-        button.textContent = "Play Selected Sound";
-      }
-      if (status instanceof HTMLElement) status.textContent = message;
-      wakeSoundPreviewAudio = null;
-      wakeSoundPreviewButton = null;
-    };
-
-    audio.addEventListener("ended", () => finish("Finished."));
-    audio.addEventListener("error", () => finish("Could not play this wake sound."));
-
-    try {
-      await audio.play();
-      if (wakeSoundPreviewAudio === audio) {
-        button.disabled = false;
-        button.textContent = "Stop";
-        if (status instanceof HTMLElement) status.textContent = "Playing...";
-      }
-    } catch (error) {
-      finish("Playback blocked or unavailable.");
-    }
-  }
-
-  function firmwareTemplateQuery() {
-    const params = new URLSearchParams();
-    if (firmwareUsbSelected()) {
-      return "";
-    }
-    const host = ($("firmwareHost").value || "").trim();
-    const port = ($("firmwarePort").value || "3232").trim();
-    if (host) params.set("target_host", host);
-    if (port) params.set("target_port", port);
-    const query = params.toString();
-    return query ? `?${query}` : "";
-  }
-
-  async function refreshFirmwareTemplates() {
-    const data = await api(`/api/firmware/templates${firmwareTemplateQuery()}`, { method: "GET" });
-    renderFirmwareTemplates(data);
-    if (Array.isArray(data.warnings) && data.warnings.length) {
-      setPill($("firmwareStatus"), "Template warning", "warn");
-    }
-    syncButtons();
-    return data;
-  }
-
-  function collectFirmwareValues() {
-    const values = {};
-    document.querySelectorAll("[data-firmware-field]").forEach((field) => {
-      const key = String(field.dataset.firmwareField || "");
-      if (!key) return;
-      if (field instanceof HTMLInputElement && field.type === "checkbox") {
-        values[key] = field.checked;
-      } else {
-        values[key] = field.value || "";
-      }
-    });
-    const wakeSoundChoice = String(values.wake_sound_catalog || "").trim();
-    if (wakeSoundChoice && wakeSoundChoice !== "__custom__") {
-      values.wake_word_triggered_sound_file = wakeSoundChoice;
-    }
-    return values;
-  }
-
-  async function saveFirmwareProfileNow({ templateKey = null, quiet = false } = {}) {
-    const key = String(templateKey || $("firmwareTemplate").value || "").trim();
-    if (!key) return null;
-    const values = collectFirmwareValues();
-    values.__target_host = ($("firmwareHost").value || "").trim();
-    values.__target_port = ($("firmwarePort").value || "3232").trim();
-    const result = await api("/api/firmware/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ template_key: key, values }),
-    });
-    if (!quiet && !uiState.firmwareBusy) {
-      setPill($("firmwareStatus"), "Settings saved", "ok");
-    }
-    return result;
-  }
-
-  function scheduleFirmwareProfileSave() {
-    if (firmwareProfileSaveTimer) {
-      clearTimeout(firmwareProfileSaveTimer);
-    }
-    firmwareProfileSaveTimer = setTimeout(async () => {
-      firmwareProfileSaveTimer = null;
-      try {
-        await saveFirmwareProfileNow({ quiet: false });
-      } catch (error) {
-        if (!uiState.firmwareBusy) {
-          setPill($("firmwareStatus"), "Settings save failed", "warn");
-        }
-      }
-    }, 550);
-  }
-
-  function scheduleFirmwareProfileReload() {
-    if (firmwareProfileSaveTimer) {
-      clearTimeout(firmwareProfileSaveTimer);
-      firmwareProfileSaveTimer = null;
-    }
-    if (firmwareProfileReloadTimer) {
-      clearTimeout(firmwareProfileReloadTimer);
-    }
-    firmwareProfileReloadTimer = setTimeout(async () => {
-      firmwareProfileReloadTimer = null;
-      try {
-        await refreshFirmwareTemplates();
-      } catch (error) {
-        setPill($("firmwareStatus"), "Device settings failed", "warn");
-      }
-    }, 650);
-  }
-
-  function flushFirmwareProfileSave(templateKey = null) {
-    if (firmwareProfileSaveTimer) {
-      clearTimeout(firmwareProfileSaveTimer);
-      firmwareProfileSaveTimer = null;
-    }
-    if (firmwareProfileReloadTimer) {
-      clearTimeout(firmwareProfileReloadTimer);
-      firmwareProfileReloadTimer = null;
-    }
-    return saveFirmwareProfileNow({ templateKey, quiet: true }).catch(() => null);
-  }
-
-  async function startFirmwareFlash() {
-    const host = ($("firmwareHost").value || "").trim();
-    const port = ($("firmwarePort").value || "3232").trim();
-    const template = selectedFirmwareTemplate();
-    if (!template) {
-      alert("Choose a firmware family first.");
-      return;
-    }
-    if (!host) {
-      alert("Enter the device IP or hostname first.");
-      return;
-    }
-    if (template.prebuilt_firmware && !template.prebuilt_firmware.available) {
-      alert(template.prebuilt_firmware.error || "No prebuilt OTA image is available for this firmware family.");
-      return;
-    }
-    const wakeSoundSelect = document.querySelector("select[data-wake-sound-select]");
-    if (wakeSoundSelect instanceof HTMLSelectElement) {
-      syncRenderedWakeSoundSelection({ fromPicker: true });
-    }
-
-    const ok = confirm(`Flash prebuilt ${template.label || template.value} firmware to ${host}:${port || "3232"}?\n\nOnly continue if this device is already running Tater Native Firmware v1. New devices need one USB flash first.`);
-    if (!ok) return;
-
-    uiState.firmwareBusy = true;
-    uiState.firmware.logLines = [
-      "===== Prebuilt Firmware Flash Console =====",
-      `→ Target: ${host}:${port || "3232"}`,
-      "→ Contacting trainer server to prepare the OTA image...",
-    ];
-    setPill($("firmwareStatus"), "Starting firmware flash...", "warn");
-    openFirmwareConsole(true, uiState.firmware.logLines.join("\n"), "Starting prebuilt firmware flash...");
-    syncButtons();
-    await flushFirmwareProfileSave();
-    await waitForPaint();
-
-    try {
-      const status = await api("/api/firmware/build_flash", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          template_key: template.value,
-          host,
-          port: port || "3232",
-          values: collectFirmwareValues(),
-        }),
-      });
-      uiState.firmware.flashing = status;
-      uiState.firmware.logLines = (status.log_lines || []).length
-        ? status.log_lines
-        : [...uiState.firmware.logLines, "✓ Flash session started. Waiting for firmware output..."];
-      openFirmwareConsole(false, uiState.firmware.logLines.join("\n") || "(waiting for flash output)", status.message || "Firmware session started.");
-      pollFirmwareFlash(status.session_id);
-    } catch (error) {
-      uiState.firmwareBusy = false;
-      setPill($("firmwareStatus"), "Flash failed to start", "err");
-      uiState.firmware.logLines = [String(error.message || error)];
-      openFirmwareConsole(false, uiState.firmware.logLines.join("\n"), "Firmware flash failed to start.");
-      syncButtons();
-      alert("Flash failed to start: " + error.message);
-    }
-  }
-
-  async function startUsbFirmwareFlash() {
-    const template = selectedFirmwareTemplate();
-    if (!template) {
-      alert("Choose a firmware family first.");
-      return;
-    }
-    const factory = template.prebuilt_firmware?.artifacts?.factory || {};
-    if (!factory.path) {
-      alert("No prebuilt USB factory image is available for this firmware family.");
-      return;
-    }
-    if (!window.isSecureContext || !navigator.serial) {
-      alert("Browser USB flash needs Chrome or Edge on HTTPS or localhost. Open the trainer URL in Chrome or Edge.");
-      return;
-    }
-    const ok = confirm(`USB flash the prebuilt ${template.label || template.value} factory firmware?\n\nThis is for new satellites, recovery, or devices not already running Tater Native Firmware v1. It erases flash and writes the factory image over USB. After flashing, finish Wi-Fi and pairing from the satellite setup page.`);
-    if (!ok) return;
-
-    let port;
-    try {
-      port = browserUsbStoredPort(template.value) || await browserUsbSelectPort(template.value);
-    } catch (error) {
-      alert("USB device selection failed: " + error.message);
-      return;
-    }
-
-    uiState.firmwareBusy = true;
-    uiState.firmware.logLines = [
-      "===== Browser USB Firmware Flash Console =====",
-      `Firmware: ${template.label || template.value}`,
-      `USB device: ${browserUsbPortLabel(port)}`,
-      "Preparing verified factory image...",
-    ];
-    setPill($("firmwareStatus"), "Preparing USB flash...", "warn");
-    openFirmwareConsole(true, uiState.firmware.logLines.join("\n"), "Preparing browser USB flash...");
-    syncButtons();
-    await waitForPaint();
-
-    try {
-      const artifact = await api("/api/firmware/browser_flash", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          template_key: template.value,
-        }),
-      });
-      appendFirmwareLogs(artifact.entries || [], "Factory image ready. Starting USB flash...");
-      await flashBrowserUsbPort(port, artifact);
-      appendFirmwareLog("Browser USB flash finished.", "Browser USB flash finished.");
-      appendFirmwareLog("Use the satellite setup hotspot to configure Wi-Fi, Tater server, and pairing.");
-      setPill($("firmwareStatus"), "USB flash finished", "ok");
-    } catch (error) {
-      appendFirmwareLog(`Browser USB flash failed: ${String(error.message || error)}`, "Browser USB flash failed.");
-      setPill($("firmwareStatus"), "USB flash failed", "err");
-      alert("Browser USB flash failed: " + error.message);
-    } finally {
-      uiState.firmwareBusy = false;
-      syncButtons();
-    }
-  }
-
-  async function pollFirmwareFlash(sessionId) {
-    if (uiState.firmwarePoller || !sessionId) return;
-    uiState.firmwarePoller = true;
-
-    try {
-      for (;;) {
-        const status = await api(`/api/firmware/flash_status/${encodeURIComponent(sessionId)}`, { method: "GET" });
-        uiState.firmware.flashing = status;
-        const lines = status.log_lines || [];
-        uiState.firmware.logLines = lines;
-        renderFirmwareLogLines(lines.length ? lines : ["(waiting for flash output)"], true);
-
-        if (status.running) {
-          setPill($("firmwareStatus"), status.message || "Firmware flash running", "warn");
-          setFirmwareLogStatus(status.message || "Firmware flash running.");
-        } else {
-          uiState.firmwareBusy = false;
-          if (status.exit_code === 0) {
-            setPill($("firmwareStatus"), "Firmware flashed successfully", "ok");
-            setFirmwareLogStatus("Firmware flashed successfully.");
-          } else {
-            setPill($("firmwareStatus"), `Firmware flash failed (${status.exit_code})`, "err");
-            setFirmwareLogStatus(`Firmware flash failed (${status.exit_code}).`);
-          }
-          syncButtons();
-          break;
-        }
-
-        syncButtons();
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-      }
-    } catch (error) {
-      uiState.firmwareBusy = false;
-      setPill($("firmwareStatus"), "Flash status lost", "err");
-      uiState.firmware.logLines = [
-        ...(uiState.firmware.logLines || []),
-        `✗ Flash status lost: ${error.message || error}`,
-      ];
-      openFirmwareConsole(false, uiState.firmware.logLines.join("\n"), "Firmware status polling failed.");
-      syncButtons();
-    } finally {
-      uiState.firmwarePoller = null;
-    }
   }
 
   function renderLanguageOptions(languages, preferredLanguage) {
@@ -3426,12 +2237,6 @@
     const sampleCount = Number(uiState.samples?.personal_count ?? uiState.session?.takes_received ?? 0);
     const hasConsole = Boolean(training.running || training.exit_code !== null || (training.log_lines || []).length);
     const negativeCount = Number(uiState.samples?.negative_count ?? uiState.captured?.negative_count ?? 0);
-    const firmwareHost = ($("firmwareHost").value || "").trim();
-    const firmwareTemplate = ($("firmwareTemplate").value || "").trim();
-    const firmwareSelection = selectedFirmwareTemplate();
-    const firmwareAvailable = !firmwareSelection?.prebuilt_firmware || Boolean(firmwareSelection.prebuilt_firmware.available);
-    const usbSelected = firmwareUsbSelected();
-
     $("ttsBtn").disabled = !hasPhrase || uiState.uploadBusy;
     $("uploadBtn").disabled = !hasSession || !hasSelected || uiState.uploadBusy;
     $("clearBtn").disabled = sampleCount === 0 || uiState.uploadBusy || uiState.reviewBusy;
@@ -3441,12 +2246,10 @@
     $("refreshCapturedBtn").disabled = uiState.reviewBusy;
     $("clearNegativeBtn").disabled = uiState.reviewBusy || negativeCount === 0;
     $("refreshSamplesBtn").disabled = uiState.reviewBusy || uiState.uploadBusy;
-    $("refreshFirmwareBtn").disabled = uiState.firmwareBusy;
-    $("saveFirmwareSettingsBtn").disabled = uiState.firmwareBusy || usbSelected || !firmwareHost || !firmwareTemplate;
-    $("cleanFirmwareBtn").disabled = uiState.firmwareBusy;
-    $("openFirmwareConsoleBtn").disabled = false;
-    $("flashFirmwareBtn").disabled = uiState.firmwareBusy || usbSelected || !firmwareHost || !firmwareTemplate || !firmwareAvailable;
-    $("usbFirmwareBtn").disabled = uiState.firmwareBusy || !firmwareTemplate || !firmwareSelection?.prebuilt_firmware?.artifacts?.factory?.path;
+    const refreshWakeWordsBtn = $("refreshWakeWordsBtn");
+    if (refreshWakeWordsBtn) {
+      refreshWakeWordsBtn.disabled = uiState.firmwareBusy;
+    }
   }
 
   function refreshSessionUI(session) {
@@ -3713,18 +2516,10 @@
   });
   $("tabFirmware").addEventListener("click", () => {
     setActiveView("firmware");
-    refreshFirmwareTemplates().catch((error) => {
-      setPill($("firmwareStatus"), "Firmware list failed", "err");
-      uiState.firmware.logLines = [`Firmware list load failed: ${error.message}`];
-      setConsoleLogAutoScroll($("trainLog"), uiState.firmware.logLines.join("\n"));
+    refreshTrainedWakeWords().catch((error) => {
+      setPill($("firmwareStatus"), "Wake word list failed", "err");
+      alert("Wake word list failed: " + error.message);
     });
-    if (!uiState.firmware.devices.length) {
-      refreshFirmwareDevices().catch((error) => {
-        setPill($("firmwareDetectStatus"), "Scan failed", "err");
-        uiState.firmware.logLines = [`Device scan failed: ${error.message}`];
-        setConsoleLogAutoScroll($("trainLog"), uiState.firmware.logLines.join("\n"));
-      });
-    }
   });
 
   $("runtimeWakeWordLinks").addEventListener("click", async (event) => {
@@ -3736,7 +2531,7 @@
       if (!copied) throw new Error("Clipboard unavailable");
       const previousText = button.textContent || "Copy URL";
       button.textContent = "Copied";
-      setPill($("firmwareStatus"), "Model URL copied", "ok");
+      setPill($("firmwareStatus"), "JSON URL copied", "ok");
       setTimeout(() => {
         button.textContent = previousText;
       }, 1200);
@@ -3752,106 +2547,13 @@
     syncButtons();
   });
 
-  $("firmwareHost").addEventListener("input", () => {
-    syncButtons();
-    scheduleFirmwareProfileReload();
-  });
-  $("firmwarePort").addEventListener("input", () => {
-    syncButtons();
-    scheduleFirmwareProfileReload();
-  });
-  $("firmwareTemplate").addEventListener("change", () => {
-    flushFirmwareProfileSave(uiState.firmware.activeTemplateKey);
-    uiState.firmware.activeTemplateKey = $("firmwareTemplate").value;
-    renderFirmwareFields();
-    applyFirmwareTemplateTarget();
-    syncButtons();
-  });
-  $("firmwareFields").addEventListener("input", (event) => {
-    if (event.target?.matches?.('[data-firmware-field="wake_word_triggered_sound_file"]')) {
-      resetWakeSoundPreview();
-      syncRenderedWakeSoundSelection();
-    }
-    syncButtons();
-    scheduleFirmwareProfileSave();
-  });
-  $("firmwareFields").addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-wake-sound-preview]");
-    if (!button) return;
-    handleWakeSoundPreview(button).catch(() => {
-      const status = button.closest(".firmwareSettingsSection")?.querySelector?.("[data-wake-sound-preview-status]");
-      if (status instanceof HTMLElement) {
-        status.textContent = "Preview failed.";
-      }
-    });
-  });
-  $("firmwareFields").addEventListener("change", (event) => {
-    const select = event.target.closest("select[data-wake-word-select]");
-    if (select) {
-      applyWakeWordSelection(select);
-      return;
-    }
-    const wakeSoundSelect = event.target.closest("select[data-wake-sound-select]");
-    if (wakeSoundSelect) {
-      resetWakeSoundPreview();
-      applyWakeSoundSelection(wakeSoundSelect);
-      return;
-    }
-    syncButtons();
-    scheduleFirmwareProfileSave();
-  });
-  $("firmwareDeviceSelect").addEventListener("change", () => {
-    applySelectedFirmwareDevice().catch((error) => {
-      setPill($("firmwareStatus"), "Device settings failed", "warn");
-      alert("Device settings failed: " + error.message);
-    });
-  });
-  $("refreshFirmwareBtn").addEventListener("click", async () => {
+  $("refreshWakeWordsBtn").addEventListener("click", async () => {
     try {
-      await refreshFirmwareDevices();
+      await refreshTrainedWakeWords();
     } catch (error) {
-      setPill($("firmwareDetectStatus"), "Scan failed", "err");
-      alert("Device scan failed: " + error.message);
+      setPill($("firmwareStatus"), "Wake word list failed", "err");
+      alert("Wake word list failed: " + error.message);
     }
-  });
-  $("flashFirmwareBtn").addEventListener("click", startFirmwareFlash);
-  $("usbFirmwareBtn").addEventListener("click", startUsbFirmwareFlash);
-  $("saveFirmwareSettingsBtn").addEventListener("click", async () => {
-    const host = ($("firmwareHost").value || "").trim();
-    const template = ($("firmwareTemplate").value || "").trim();
-    if (!template) {
-      alert("Choose a firmware family first.");
-      return;
-    }
-    if (!host) {
-      alert("Enter the device IP or hostname first so settings can be saved for this device.");
-      return;
-    }
-    try {
-      setPill($("firmwareStatus"), "Saving device settings...", "warn");
-      await saveFirmwareProfileNow({ quiet: true });
-      setPill($("firmwareStatus"), "Target saved", "ok");
-    } catch (error) {
-      setPill($("firmwareStatus"), "Settings save failed", "err");
-      alert("Settings save failed: " + error.message);
-    } finally {
-      syncButtons();
-    }
-  });
-  $("cleanFirmwareBtn").addEventListener("click", async () => {
-    try {
-      setPill($("firmwareStatus"), "Clearing downloaded images...", "warn");
-      const result = await api("/api/firmware/clean", { method: "POST" });
-      setPill($("firmwareStatus"), result.message || "Downloaded images cleared", "ok");
-    } catch (error) {
-      setPill($("firmwareStatus"), "Clean failed", "err");
-      alert("Clean failed: " + error.message);
-    } finally {
-      syncButtons();
-    }
-  });
-  $("openFirmwareConsoleBtn").addEventListener("click", () => {
-    openFirmwareConsole(true, (uiState.firmware.logLines || []).join("\n") || "(no firmware flash started)", uiState.firmwareBusy ? "Firmware flash running." : "No active firmware flash.");
   });
 
   $("openConsoleBtn").addEventListener("click", () => {
@@ -3863,16 +2565,6 @@
     closeConsole();
   });
 
-  $("closeFirmwareLogBtn").addEventListener("click", () => {
-    closeFirmwareConsole();
-  });
-
-  $("firmwareLogModal").addEventListener("click", (event) => {
-    if (event.target === $("firmwareLogModal")) {
-      closeFirmwareConsole();
-    }
-  });
-
   $("consoleOverlay").addEventListener("click", (event) => {
     if (event.target === $("consoleOverlay")) {
       closeConsole();
@@ -3882,7 +2574,6 @@
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeConsole();
-      closeFirmwareConsole();
     }
   });
 
@@ -4086,10 +2777,10 @@
     } catch (_) {}
 
     try {
-      await refreshFirmwareTemplates();
+      await refreshTrainedWakeWords();
     } catch (error) {
-      setPill($("firmwareStatus"), "Firmware list failed", "err");
-      uiState.firmware.logLines = [`Firmware list load failed: ${error.message}`];
+      setPill($("firmwareStatus"), "Wake word list failed", "err");
+      uiState.firmware.logLines = [`Wake word list load failed: ${error.message}`];
     }
 
     try {
