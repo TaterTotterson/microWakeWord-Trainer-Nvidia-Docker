@@ -210,6 +210,35 @@
       width: 100%;
     }
 
+    .autoGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .autoGrid .wide { grid-column: 1 / -1; }
+    .checkField {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.035);
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .checkField input { margin-top: 3px; }
+    .checkField[hidden] { display: none !important; }
+    .checkField strong { color: var(--text); display: block; margin-bottom: 3px; }
+    .autoActions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .autoAudit {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.22);
+      overflow-wrap: anywhere;
+    }
+
     .firmwareGrid {
       display: grid;
       grid-template-columns: minmax(260px, 1fr) minmax(160px, 220px) minmax(220px, 280px);
@@ -1074,6 +1103,8 @@
       input[type="text"] { width: 100%; }
       .fileItem { align-items: flex-start; flex-direction: column; }
       .firmwareGrid { grid-template-columns: 1fr; }
+      .autoGrid { grid-template-columns: 1fr; }
+      .autoGrid .wide { grid-column: auto; }
       .firmwareLayout,
       .firmwareTargetGrid,
       .firmwareActionsPanel {
@@ -1164,6 +1195,7 @@
 
     <div class="tabs">
       <button id="tabTrainer" class="tabBtn active" type="button">Trainer</button>
+      <button id="tabAuto" class="tabBtn" type="button">Auto Training</button>
       <button id="tabFirmware" class="tabBtn" type="button">Wake Words</button>
       <button id="tabCaptured" class="tabBtn" type="button">Captured Audio</button>
       <button id="tabSamples" class="tabBtn" type="button">Samples</button>
@@ -1247,6 +1279,160 @@
           <span class="muted">The training console opens automatically when a run starts.</span>
           <button id="openConsoleBtn" disabled>Open console</button>
         </div>
+      </section>
+    </div>
+
+    <div id="autoView" class="viewStack stack" hidden>
+      <div class="card studioHero trainerHero">
+        <div class="row space">
+          <div>
+            <div class="studioKicker">False-Positive Loop</div>
+            <h3>Auto Training</h3>
+            <p>Transcribe real wake triggers, turn confirmed phrase-misses into hard negatives, retrain on your schedule, and ask Tater to refresh connected satellites.</p>
+            <div class="studioSteps" aria-label="Auto Training steps">
+              <span class="studioStepChip"><b>1</b> Transcribe wakes</span>
+              <span class="studioStepChip"><b>2</b> Collect negatives</span>
+              <span class="studioStepChip"><b>3</b> Retrain + refresh</span>
+            </div>
+          </div>
+          <span id="autoStatus" class="pill">Disabled</span>
+        </div>
+      </div>
+
+      <section class="card studioPanel stack">
+        <div class="studioPanelHeader">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">1</span>
+            <div>
+              <h3>Review Rules</h3>
+              <p>Only wake-trigger clips are reviewed automatically. Close misses, empty STT results, and clips containing the wake phrase remain in the inbox.</p>
+            </div>
+          </div>
+        </div>
+        <label class="checkField">
+          <input id="autoEnabled" type="checkbox" />
+          <span><strong>Enable Auto Training</strong>New wake triggers will be queued for local Faster Whisper transcription.</span>
+        </label>
+        <div class="autoGrid">
+          <label class="field">
+            <strong>Wake phrase</strong>
+            <input id="autoWakePhrase" type="text" placeholder='e.g. "hey tater"' />
+          </label>
+          <label class="field">
+            <strong>STT language</strong>
+            <input id="autoLanguage" type="text" value="en" placeholder="en" />
+          </label>
+          <label class="field wide">
+            <strong>Faster Whisper model</strong>
+            <input id="autoSttModel" type="text" value="small.en" placeholder="small.en" />
+          </label>
+          <label class="field">
+            <strong>STT device</strong>
+            <select id="autoSttDevice">
+              <option value="auto" selected>Auto (prefer CUDA)</option>
+              <option value="cuda">CUDA</option>
+              <option value="cpu">CPU</option>
+            </select>
+          </label>
+          <label class="field">
+            <strong>Compute type</strong>
+            <select id="autoSttComputeType">
+              <option value="auto" selected>Auto (float16 CUDA / int8 CPU)</option>
+              <option value="float16">float16</option>
+              <option value="int8_float16">int8_float16</option>
+              <option value="int8">int8</option>
+              <option value="float32">float32</option>
+              <option value="default">CTranslate2 default</option>
+            </select>
+          </label>
+          <label class="field">
+            <strong>Minimum transcript characters</strong>
+            <input id="autoMinimumChars" type="number" min="1" max="100" value="2" />
+          </label>
+        </div>
+      </section>
+
+      <section class="card studioPanel stack">
+        <div class="studioPanelHeader">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">2</span>
+            <div>
+              <h3>Training Schedule</h3>
+              <p>A scheduled run starts only after enough new auto-reviewed negatives have accumulated.</p>
+            </div>
+          </div>
+        </div>
+        <div class="autoGrid">
+          <label class="field">
+            <strong>Run training</strong>
+            <select id="autoScheduleHours">
+              <option value="0">Manually only</option>
+              <option value="6">Every 6 hours</option>
+              <option value="12">Every 12 hours</option>
+              <option value="24" selected>Every day</option>
+              <option value="48">Every 2 days</option>
+              <option value="168">Every week</option>
+            </select>
+          </label>
+          <label class="field">
+            <strong>Minimum new negatives</strong>
+            <input id="autoMinimumNegatives" type="number" min="1" max="10000" value="3" />
+          </label>
+        </div>
+        <div class="statGrid">
+          <div class="stat"><span class="label">Pending Negatives</span><span class="value" id="autoPendingNegatives">0</span></div>
+          <div class="stat"><span class="label">Next Scheduled Check</span><span class="value" id="autoNextRun" style="font-size:16px;">Manual</span></div>
+          <div class="stat"><span class="label">Last Training</span><span class="value" id="autoLastTraining" style="font-size:16px;">Never</span></div>
+        </div>
+      </section>
+
+      <section class="card studioPanel stack">
+        <div class="studioPanelHeader">
+          <div class="studioPanelTitle">
+            <span class="studioStepBadge">3</span>
+            <div>
+              <h3>Publish + Satellite Refresh</h3>
+              <p>The trainer publishes a LAN-reachable model URL, then asks Tater to re-push live settings so the firmware downloads the updated model at the same URL.</p>
+            </div>
+          </div>
+        </div>
+        <div class="autoGrid">
+          <label class="field wide">
+            <strong>Trainer public URL</strong>
+            <input id="autoAdvertisedUrl" type="text" placeholder="Auto-detect this host's LAN IP" />
+            <span id="autoDetectedUrl" class="muted">Auto-detected when left blank.</span>
+          </label>
+          <label class="field wide">
+            <strong>Tater URL</strong>
+            <input id="autoTaterUrl" type="text" value="http://127.0.0.1:8501" />
+          </label>
+          <label class="field">
+            <strong>Satellite selector (optional)</strong>
+            <input id="autoTaterSelector" type="text" placeholder="Blank refreshes all connected sats" />
+          </label>
+          <label class="field">
+            <strong>Tater API token (if enabled)</strong>
+            <input id="autoTaterToken" type="password" placeholder="Not configured" autocomplete="off" />
+          </label>
+        </div>
+        <label class="checkField">
+          <input id="autoNotifySatellites" type="checkbox" checked />
+          <span><strong>Refresh satellites after successful training</strong>Uses Tater's existing native satellite settings API.</span>
+        </label>
+        <label id="autoClearTokenRow" class="checkField" hidden>
+          <input id="autoClearTaterToken" type="checkbox" />
+          <span><strong>Clear the saved Tater token</strong>The token is otherwise preserved when the password field is blank.</span>
+        </label>
+      </section>
+
+      <section class="card studioPanel stack">
+        <div class="autoActions">
+          <button id="autoSaveBtn" class="primary" type="button">Save Auto Training</button>
+          <button id="autoReviewNowBtn" type="button">Review inbox now</button>
+          <button id="autoTrainNowBtn" type="button">Train now</button>
+          <button id="autoNotifyNowBtn" type="button">Refresh satellites now</button>
+        </div>
+        <div id="autoAudit" class="autoAudit muted">No automatic review has run yet.</div>
       </section>
     </div>
 
@@ -1498,9 +1684,11 @@
     captured: { items: [], captured_count: 0, negative_count: 0, personal_count: 0 },
     samples: { personal: [], negative: [], personal_count: 0, negative_count: 0, activeBucket: "personal", pages: { personal: 0, negative: 0 } },
     firmware: { wakeWords: [] },
+    autoTrain: null,
     uploadBusy: false,
     reviewBusy: false,
     firmwareBusy: false,
+    autoBusy: false,
     trainingPoller: null,
     activeView: "trainer",
   };
@@ -1774,12 +1962,14 @@
   }
 
   function setActiveView(view) {
-    uiState.activeView = ["captured", "samples", "firmware"].includes(view) ? view : "trainer";
+    uiState.activeView = ["auto", "captured", "samples", "firmware"].includes(view) ? view : "trainer";
     $("trainerView").hidden = uiState.activeView !== "trainer";
+    $("autoView").hidden = uiState.activeView !== "auto";
     $("capturedView").hidden = uiState.activeView !== "captured";
     $("samplesView").hidden = uiState.activeView !== "samples";
     $("firmwareView").hidden = uiState.activeView !== "firmware";
     $("tabTrainer").classList.toggle("active", uiState.activeView === "trainer");
+    $("tabAuto").classList.toggle("active", uiState.activeView === "auto");
     $("tabCaptured").classList.toggle("active", uiState.activeView === "captured");
     $("tabSamples").classList.toggle("active", uiState.activeView === "samples");
     $("tabFirmware").classList.toggle("active", uiState.activeView === "firmware");
@@ -1835,6 +2025,143 @@
     return Number.isNaN(parsed.getTime()) ? String(value) : parsed.toLocaleString();
   }
 
+  function renderAutoTrain(payload, populateForm = true) {
+    const data = payload || {};
+    const config = data.config || {};
+    const state = data.state || {};
+    const runtime = data.runtime || {};
+    uiState.autoTrain = data;
+
+    if (populateForm) {
+      $("autoEnabled").checked = Boolean(config.enabled);
+      $("autoWakePhrase").value = config.wake_phrase || uiState.session?.raw_phrase || "";
+      $("autoLanguage").value = config.language || uiState.session?.language || "en";
+      $("autoSttModel").value = config.stt_model || "small.en";
+      $("autoSttDevice").value = config.stt_device || "auto";
+      $("autoSttComputeType").value = config.stt_compute_type || "auto";
+      $("autoMinimumChars").value = String(config.minimum_transcript_chars ?? 2);
+      $("autoScheduleHours").value = String(config.schedule_hours ?? 24);
+      $("autoMinimumNegatives").value = String(config.minimum_new_negatives ?? 3);
+      $("autoAdvertisedUrl").value = config.advertised_base_url || "";
+      $("autoTaterUrl").value = config.tater_url || "http://127.0.0.1:8501";
+      $("autoTaterSelector").value = config.tater_selector || "";
+      $("autoTaterToken").value = "";
+      $("autoTaterToken").placeholder = config.tater_api_token_configured ? "Saved token (leave blank to keep)" : "Not configured";
+      $("autoNotifySatellites").checked = config.notify_satellites !== false;
+      $("autoClearTokenRow").hidden = !config.tater_api_token_configured;
+      $("autoClearTaterToken").checked = false;
+    }
+
+    $("autoDetectedUrl").textContent = config.advertised_base_url
+      ? `Using configured URL: ${config.advertised_base_url}`
+      : `Auto-detected URL: ${data.advertised_base_url || "unavailable"}`;
+    $("autoPendingNegatives").textContent = String(Number(state.pending_negative_count || 0));
+    $("autoNextRun").textContent = state.next_run_at ? formatTimestamp(state.next_run_at) : "Manual";
+    const lastExit = state.last_train_exit_code;
+    $("autoLastTraining").textContent = state.last_train_finished_at
+      ? `${formatTimestamp(state.last_train_finished_at)}${lastExit === null || lastExit === undefined ? "" : ` · exit ${lastExit}`}`
+      : "Never";
+
+    if (runtime.review_running) {
+      setPill($("autoStatus"), `Transcribing ${runtime.review_file || "wake"}`, "warn");
+    } else if (uiState.training?.running && config.enabled) {
+      setPill($("autoStatus"), "Training running", "warn");
+    } else if (config.enabled) {
+      setPill($("autoStatus"), "Enabled", "ok");
+    } else {
+      setPill($("autoStatus"), "Disabled", "");
+    }
+
+    const audit = [];
+    if (state.last_review_result) audit.push(`Last review: ${String(state.last_review_result).replaceAll("_", " ")}`);
+    if (state.last_review_file) audit.push(state.last_review_file);
+    if (state.last_review_transcript) audit.push(`STT: “${state.last_review_transcript}”`);
+    if (state.last_review_error) audit.push(`Error: ${state.last_review_error}`);
+    if (state.last_stt_device) audit.push(`STT runtime: ${state.last_stt_device} / ${state.last_stt_compute_type || "default"}`);
+    if (state.last_notify_at) {
+      audit.push(state.last_notify_error
+        ? `Satellite refresh failed: ${state.last_notify_error}`
+        : `Satellite refresh: ${state.last_notify_count ?? "requested"} connected at ${formatTimestamp(state.last_notify_at)}`);
+    }
+    $("autoAudit").textContent = audit.join(" · ") || "No automatic review has run yet.";
+    syncButtons();
+  }
+
+  async function refreshAutoTrain(populateForm = true) {
+    const data = await api("/api/auto_train", { method: "GET" });
+    renderAutoTrain(data, populateForm);
+    return data;
+  }
+
+  function autoTrainFormPayload() {
+    const payload = {
+      enabled: $("autoEnabled").checked,
+      wake_phrase: ($("autoWakePhrase").value || "").trim(),
+      language: ($("autoLanguage").value || "en").trim(),
+      stt_model: ($("autoSttModel").value || "").trim(),
+      stt_device: $("autoSttDevice").value || "auto",
+      stt_compute_type: $("autoSttComputeType").value || "auto",
+      minimum_transcript_chars: Number($("autoMinimumChars").value || 2),
+      schedule_hours: Number($("autoScheduleHours").value || 0),
+      minimum_new_negatives: Number($("autoMinimumNegatives").value || 3),
+      advertised_base_url: ($("autoAdvertisedUrl").value || "").trim(),
+      tater_url: ($("autoTaterUrl").value || "").trim(),
+      tater_selector: ($("autoTaterSelector").value || "").trim(),
+      notify_satellites: $("autoNotifySatellites").checked,
+      clear_tater_api_token: $("autoClearTaterToken").checked,
+    };
+    const token = ($("autoTaterToken").value || "").trim();
+    if (token) payload.tater_api_token = token;
+    return payload;
+  }
+
+  async function saveAutoTrain() {
+    uiState.autoBusy = true;
+    syncButtons();
+    setPill($("autoStatus"), "Saving...", "warn");
+    try {
+      const data = await api("/api/auto_train", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(autoTrainFormPayload()),
+      });
+      renderAutoTrain(data, true);
+      setPill($("autoStatus"), data.config?.enabled ? "Saved + enabled" : "Saved + disabled", data.config?.enabled ? "ok" : "");
+      await refreshTrainedWakeWords().catch(() => {});
+      return data;
+    } finally {
+      uiState.autoBusy = false;
+      syncButtons();
+    }
+  }
+
+  async function runAutoTrainAction(action) {
+    uiState.autoBusy = true;
+    syncButtons();
+    setPill($("autoStatus"), "Working...", "warn");
+    try {
+      const data = await api("/api/auto_train/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      renderAutoTrain(data, false);
+      if (action === "review_now") {
+        setPill($("autoStatus"), `${Number(data.queued || 0)} clip${Number(data.queued || 0) === 1 ? "" : "s"} queued`, "ok");
+      } else if (action === "train_now") {
+        setPill($("autoStatus"), "Training started", "warn");
+        await refreshSession();
+        pollTraining();
+      } else {
+        setPill($("autoStatus"), `Satellite refresh requested${data.count === null || data.count === undefined ? "" : ` for ${data.count}`}`, "ok");
+      }
+      return data;
+    } finally {
+      uiState.autoBusy = false;
+      syncButtons();
+    }
+  }
+
   function captureBadge(item) {
     if (item.blocked_by_vad) return { label: "Blocked by VAD", cls: "warn" };
     const eventType = String(item?.event_type || "").toLowerCase();
@@ -1879,6 +2206,7 @@
       if (item.max_probability !== null && item.max_probability !== undefined) meta.push(`<span class="pill">max ${escapeHtml(item.max_probability)}</span>`);
       if (item.average_probability !== null && item.average_probability !== undefined) meta.push(`<span class="pill">avg ${escapeHtml(item.average_probability)}</span>`);
       if (item.detection_profile) meta.push(`<span class="pill">profile ${escapeHtml(formatDetectionProfile(item.detection_profile))}</span>`);
+      if (item.auto_review_status) meta.push(`<span class="pill ${item.auto_review_status === "error" ? "err" : "warn"}">auto ${escapeHtml(String(item.auto_review_status).replaceAll("_", " "))}</span>`);
       if (item.peak_probability_cutoff !== null && item.peak_probability_cutoff !== undefined) meta.push(`<span class="pill">peak cutoff ${escapeHtml(item.peak_probability_cutoff)}</span>`);
       if (item.probability_cutoff !== null && item.probability_cutoff !== undefined) meta.push(`<span class="pill">avg cutoff ${escapeHtml(item.probability_cutoff)}</span>`);
       if (item.active_window_count !== null && item.active_window_count !== undefined && item.min_active_windows !== null && item.min_active_windows !== undefined) {
@@ -1906,6 +2234,8 @@
             <span class="pill ${badge.cls}">${escapeHtml(badge.label)}</span>
           </div>
           <div class="fileMeta">${meta.join("") || `<span class="muted">No metadata attached</span>`}</div>
+          ${item.transcript ? `<div class="autoAudit"><strong>STT transcript</strong><br>${escapeHtml(item.transcript)}</div>` : ""}
+          ${item.auto_review_error ? `<div class="muted">Auto review error: ${escapeHtml(item.auto_review_error)}</div>` : ""}
           <audio class="audioPlayer" controls preload="none" src="${escapeHtml(item.audio_url || `/api/audio/captured/${encodeURIComponent(item.saved_as)}`)}"></audio>
           <div class="muted">Stored as ${escapeHtml(item.saved_as)} · ${escapeHtml(formatSummary)}</div>
           <div class="captureActions">
@@ -1949,6 +2279,7 @@
     if (item.original_name && item.original_name !== item.saved_as) subtitleParts.push(`From ${item.original_name}`);
     if (when) subtitleParts.push(`Saved ${when}`);
     if (item.message) subtitleParts.push(item.message);
+    if (item.auto_negative) subtitleParts.push("Auto-reviewed false positive");
     let revertBtn = '';
     if (item.trimmed) {
         revertBtn = `<button type="button" data-sample-revert="${escapeAttr(item.saved_as)}" data-bucket="${escapeAttr(bucket)}">Revert</button>`;
@@ -1963,6 +2294,7 @@
           <span class="pill ${badge.cls}">${badge.label}</span>
           ${trimBadgeHtml}
         </div>
+        ${item.transcript ? `<div class="autoAudit"><strong>STT transcript</strong><br>${escapeHtml(item.transcript)}</div>` : ""}
         <audio class="audioPlayer" controls preload="none" src="${escapeAttr(item.audio_url || `/api/audio/${bucket}/${encodeURIComponent(item.saved_as)}`)}?t=${encodeURIComponent(item.created_at || '')}"></audio>
         <div class="muted">Stored in ${bucket === "negative" ? "negative_samples" : "personal_samples"} · ${escapeHtml(formatSummary)}</div>
         <div class="captureActions">
@@ -2250,6 +2582,10 @@
     if (refreshWakeWordsBtn) {
       refreshWakeWordsBtn.disabled = uiState.firmwareBusy;
     }
+    for (const id of ["autoSaveBtn", "autoReviewNowBtn", "autoTrainNowBtn", "autoNotifyNowBtn"]) {
+      const button = $(id);
+      if (button) button.disabled = uiState.autoBusy || (id === "autoTrainNowBtn" && Boolean(training.running));
+    }
   }
 
   function refreshSessionUI(session) {
@@ -2506,6 +2842,13 @@
 
   $("phrase").addEventListener("input", syncButtons);
   $("tabTrainer").addEventListener("click", () => setActiveView("trainer"));
+  $("tabAuto").addEventListener("click", () => {
+    setActiveView("auto");
+    refreshAutoTrain(true).catch((error) => {
+      setPill($("autoStatus"), "Status failed", "err");
+      alert("Auto Training status failed: " + error.message);
+    });
+  });
   $("tabCaptured").addEventListener("click", () => setActiveView("captured"));
   $("tabSamples").addEventListener("click", () => {
     setActiveView("samples");
@@ -2553,6 +2896,39 @@
     } catch (error) {
       setPill($("firmwareStatus"), "Wake word list failed", "err");
       alert("Wake word list failed: " + error.message);
+    }
+  });
+
+  $("autoSaveBtn").addEventListener("click", async () => {
+    try {
+      await saveAutoTrain();
+    } catch (error) {
+      setPill($("autoStatus"), "Save failed", "err");
+      alert("Auto Training save failed: " + error.message);
+    }
+  });
+  $("autoReviewNowBtn").addEventListener("click", async () => {
+    try {
+      await runAutoTrainAction("review_now");
+    } catch (error) {
+      setPill($("autoStatus"), "Review failed", "err");
+      alert("Auto review failed: " + error.message);
+    }
+  });
+  $("autoTrainNowBtn").addEventListener("click", async () => {
+    try {
+      await runAutoTrainAction("train_now");
+    } catch (error) {
+      setPill($("autoStatus"), "Training failed", "err");
+      alert("Auto training failed: " + error.message);
+    }
+  });
+  $("autoNotifyNowBtn").addEventListener("click", async () => {
+    try {
+      await runAutoTrainAction("notify_now");
+    } catch (error) {
+      setPill($("autoStatus"), "Refresh failed", "err");
+      alert("Satellite refresh failed: " + error.message);
     }
   });
 
@@ -2774,6 +3150,7 @@
       await refreshSession();
       await refreshSamples();
       await refreshCapturedAudio();
+      await refreshAutoTrain(true);
     } catch (_) {}
 
     try {
@@ -2864,6 +3241,10 @@
   });
 
   bootstrap();
+  setInterval(() => {
+    if (uiState.activeView !== "auto" || uiState.autoBusy) return;
+    refreshAutoTrain(false).catch(() => {});
+  }, 2500);
 </script>
 </body>
 </html>

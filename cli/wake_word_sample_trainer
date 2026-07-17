@@ -467,7 +467,12 @@ echo "🎯 Calibrating detector settings for on-device use…"
 if "${PYTHON_BIN:-python}" "${PROGDIR}/calibrate_detector.py" \
     --training-config "${WORK_DIR}/trained_models/wakeword/training_config.yaml" \
     --model "${source_path}" \
-    --output "${calibration_path}"; then
+    --output "${calibration_path}" \
+    --target-faph "${MWW_CALIBRATION_TARGET_FAPH:-0.25}" \
+    --recall-margin "${MWW_CALIBRATION_RECALL_MARGIN:-0.005}" \
+    --window-sizes "${MWW_CALIBRATION_WINDOW_SIZES:-5,6,7}" \
+    --cutoff-min "${MWW_CALIBRATION_CUTOFF_MIN:-0.95}" \
+    --cutoff-max "${MWW_CALIBRATION_CUTOFF_MAX:-1.00}"; then
     echo "✅ Detector calibration complete."
 else
     echo "⚠️  Detector calibration failed; packaging with default detector settings."
@@ -496,8 +501,8 @@ from pathlib import Path
 json_path = Path(os.environ["JSON_PATH"])
 calibration_path = Path(os.environ.get("CALIBRATION_PATH", ""))
 language = (os.environ.get("LANGUAGE", "en") or "en").strip().lower()
-probability_cutoff = 0.85
-sliding_window_size = 4
+probability_cutoff = 0.97
+sliding_window_size = 6
 strict_min_close_miss_threshold = 0.68
 calibration = {}
 

@@ -13,7 +13,7 @@ ENV MWW_BLACKWELL_TF_WHEEL_URL=https://github.com/chivitiH/tensorflow-blackwell-
 # Python 3.13 is used only for the Blackwell TensorFlow training step.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common ca-certificates curl git wget unzip patch \
-    ninja-build nano less \
+    ninja-build nano less libgomp1 \
  && add-apt-repository -y ppa:deadsnakes/ppa \
  && apt-get update \
  && apt-get install -y --no-install-recommends \

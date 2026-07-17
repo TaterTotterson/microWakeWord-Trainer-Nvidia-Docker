@@ -22,15 +22,17 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 Tagged releases also publish matching immutable image tags:
 
 ```bash
-docker pull ghcr.io/tatertotterson/microwakeword:v11
+docker pull ghcr.io/tatertotterson/microwakeword:v12
 ```
+
+The release tag must match `VERSION`. Update `WHATS_NEW.md` before tagging; the Docker workflow prepends it to GitHub's automatically generated release notes.
 
 RTX 50-series / Blackwell GPUs use a separate image with CUDA 12.8 and a
 Python 3.13 TensorFlow build for `sm_120`:
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:blackwell
-docker pull ghcr.io/tatertotterson/microwakeword:v11-blackwell
+docker pull ghcr.io/tatertotterson/microwakeword:v12-blackwell
 ```
 
 Use the Blackwell image only for RTX 50-series cards. It includes the
@@ -51,9 +53,9 @@ docker run -d \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v11` when you want to pin a known release instead of tracking `latest`.
+Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v12` when you want to pin a known release instead of tracking `latest`.
 For RTX 50-series cards, use `ghcr.io/tatertotterson/microwakeword:blackwell`
-or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v11-blackwell`
+or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v12-blackwell`
 in the same `docker run` command.
 
 The flags:
@@ -78,6 +80,7 @@ If you change `REC_PORT`, open that port instead and use the same port in the sa
 ## What The UI Does
 
 - `Trainer` starts a wake-word session, shows positive/negative sample counts, and launches training.
+- `Auto Training` transcribes real wake triggers, promotes phrase-misses to hard negatives, schedules retraining, and refreshes Tater Native satellites.
 - `Captured Audio` reviews clips sent by Tater Native or ESPHome sats, including wake hits, close misses, and false wakes.
 - `Samples` plays, removes, clears, and manually imports personal or negative samples.
 - `Wake Words` lists locally trained JSON/model links for live wake-word switching in Tater.
@@ -162,6 +165,27 @@ Starting a new session does not clear samples. Use the clear buttons in `Samples
 
 ---
 
+## Auto Training
+
+`Auto Training` is an opt-in false-positive loop. It is disabled until you enter the exact wake phrase and enable it.
+
+For each new wake-trigger clip sent to the trainer:
+
+1. Faster Whisper transcribes the audio locally.
+2. If the transcript contains the configured wake phrase, the clip stays in `Captured Audio` for manual positive review.
+3. If speech was transcribed but the wake phrase is absent, the clip moves to `/data/negative_samples/` as an auto-reviewed hard negative.
+4. Empty transcripts, close misses, VAD-blocked captures, and captures for another wake word stay out of the automatic negative path.
+
+The default `small.en` model uses CUDA with `float16` when CTranslate2 can see an NVIDIA GPU, and falls back to CPU with `int8`. Choose a multilingual Faster Whisper model such as `small` when the wake phrase is not English. Downloaded STT models are cached in `/data/auto_train_models/`.
+
+Scheduled training runs only after the configured number of new automatic negatives has accumulated. A successful run publishes the replacement model at the same wake-word URL and can call Tater's native satellite settings API to make connected satellites pull it again. This refresh uses the existing Tater Native update path, so no satellite firmware change is required.
+
+The `Trainer public URL` must be reachable from the satellites. With the documented `--network host` command, the trainer can normally use the LAN address from the browser request or host network. If you open the UI as `http://localhost:8789`, enter a value such as `http://192.168.1.50:8789`, or start the container with `REC_PUBLIC_BASE_URL` set to that value. When using Docker bridge networking, always set this URL to the published host address; a container bridge address is not satellite-reachable.
+
+The default Tater URL, `http://127.0.0.1:8501`, assumes the documented host networking. Change it to a container-reachable Tater address if you use another Docker network. The optional API token is stored in `/data/auto_train_config.json` with owner-only permissions.
+
+---
+
 ## Training Flow
 
 1. Enter the wake phrase in `Trainer`.
@@ -212,6 +236,7 @@ After those assets are prepared, later runs reuse the local copies unless the mo
 The `Wake Words` tab lists locally trained wake-word packages from `/data/trained_wake_words/`.
 
 - Copy the JSON URL into the Tater Native satellite settings to switch wake words live.
+- Links use the configured public trainer URL, a non-loopback browser host, or the detected LAN address instead of advertising `127.0.0.1` to satellites.
 - Open the JSON or model links directly for quick inspection.
 - The JSON includes the matching model path plus Tater tuning metadata.
 - No firmware flashing happens from this trainer app anymore.
@@ -244,7 +269,7 @@ The JSON keeps the standard microWakeWord fields for compatibility:
 {
   "micro": {
     "probability_cutoff": 0.97,
-    "sliding_window_size": 5
+    "sliding_window_size": 6
   }
 }
 ```
@@ -259,8 +284,8 @@ It also includes Tater Native metadata used by newer satellites and the Tater se
   "tater_native": {
     "format_version": 1,
     "wake_threshold": 0.97,
-    "wake_sliding_window": 5,
-    "close_miss_threshold": 0.78,
+    "wake_sliding_window": 6,
+    "close_miss_threshold": 0.80,
     "frontend": {
       "name": "tflm_microfrontend",
       "sample_rate": 16000,
@@ -273,6 +298,7 @@ It also includes Tater Native metadata used by newer satellites and the Tater se
 ```
 
 Calibration metrics are included under `calibration` so false accepts/hour and recall can be surfaced in the UI.
+Calibration evaluates thresholds from `0.95` through `1.00` with sliding windows of `5`, `6`, and `7`. Among candidates within 0.5 percentage points of the best recall, it prefers the lowest measured ambient false-accept rate. If calibration cannot complete, packaging uses the conservative `0.97` threshold and a window of `6`.
 
 ---
 
@@ -289,6 +315,7 @@ That removes:
 - cached datasets
 - training environments
 - trained models
+- Auto Training settings, state, transcripts, and cached Faster Whisper models
 
 ---
 
@@ -296,6 +323,7 @@ That removes:
 
 - Personal samples are optional.
 - Negative samples are optional but useful for reducing false wakes.
+- Auto Training is disabled by default and only classifies actual wake triggers automatically.
 - The UI server is `trainer_server.py`.
 - The launcher is `run.sh`.
 - Trainer capture settings live in Tater for Tater Native satellites, and on device entities for older ESPHome satellites.

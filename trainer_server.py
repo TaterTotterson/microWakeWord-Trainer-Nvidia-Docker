@@ -4,17 +4,20 @@
 import contextlib
 import io
 import os
+import queue
 import re
 import json
+import socket
 import shutil
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import unicodedata
 import wave
 from array import array
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from math import isfinite, log10
 from pathlib import Path
 from typing import Dict, Any, List, Callable, Optional, Tuple
@@ -37,6 +40,15 @@ TRIM_HISTORY_DIR = Path(os.environ.get("TRIM_HISTORY_DIR", str(DATA_DIR / "trim_
 TRIM_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 TRAINED_WAKE_WORDS_DIR = Path(
     os.environ.get("TRAINED_WAKE_WORDS_DIR", str(DATA_DIR / "trained_wake_words"))
+).resolve()
+AUTO_TRAIN_CONFIG_FILE = Path(
+    os.environ.get("AUTO_TRAIN_CONFIG_FILE", str(DATA_DIR / "auto_train_config.json"))
+).resolve()
+AUTO_TRAIN_STATE_FILE = Path(
+    os.environ.get("AUTO_TRAIN_STATE_FILE", str(DATA_DIR / "auto_train_state.json"))
+).resolve()
+AUTO_TRAIN_MODEL_DIR = Path(
+    os.environ.get("AUTO_TRAIN_MODEL_DIR", str(DATA_DIR / "auto_train_models"))
 ).resolve()
 CLI_DIR = Path(os.environ.get("CLI_DIR", str(ROOT_DIR / "cli"))).resolve()
 PIPER_ROOT = DATA_DIR / "tools" / "piper-sample-generator"
@@ -72,6 +84,42 @@ TARGET_SAMPLE_RATE = 16000
 TARGET_CHANNELS = 1
 TARGET_SAMPLE_WIDTH_BYTES = 2
 CAPTURE_GAIN_PROFILE = "capture_rms_v1"
+DEFAULT_FASTER_WHISPER_MODEL = os.environ.get("AUTO_TRAIN_STT_MODEL", "small.en")
+
+AUTO_TRAIN_DEFAULT_CONFIG: Dict[str, Any] = {
+    "enabled": False,
+    "wake_phrase": "",
+    "language": DEFAULT_LANGUAGE,
+    "stt_model": DEFAULT_FASTER_WHISPER_MODEL,
+    "stt_device": "auto",
+    "stt_compute_type": "auto",
+    "minimum_transcript_chars": 2,
+    "schedule_hours": 24,
+    "minimum_new_negatives": 3,
+    "advertised_base_url": "",
+    "tater_url": "http://127.0.0.1:8501",
+    "tater_selector": "",
+    "tater_api_token": "",
+    "notify_satellites": True,
+}
+
+AUTO_TRAIN_DEFAULT_STATE: Dict[str, Any] = {
+    "pending_negative_count": 0,
+    "next_run_at": "",
+    "last_review_at": "",
+    "last_review_file": "",
+    "last_review_transcript": "",
+    "last_review_result": "",
+    "last_review_error": "",
+    "last_stt_device": "",
+    "last_stt_compute_type": "",
+    "last_train_started_at": "",
+    "last_train_finished_at": "",
+    "last_train_exit_code": None,
+    "last_notify_at": "",
+    "last_notify_count": None,
+    "last_notify_error": "",
+}
 
 
 app = FastAPI(title="microWakeWord Personal Samples")
@@ -115,6 +163,21 @@ STATE: Dict[str, Any] = {
 STATE_LOCK = threading.Lock()
 SAMPLES_LOCK = threading.Lock()
 PIPER_CATALOG_LOCK = threading.Lock()
+AUTO_TRAIN_LOCK = threading.RLock()
+AUTO_TRAIN_WAKE_EVENT = threading.Event()
+AUTO_TRAIN_STOP_EVENT = threading.Event()
+AUTO_TRAIN_REVIEW_QUEUE: queue.Queue[str] = queue.Queue()
+AUTO_TRAIN_QUEUED_FILES: set[str] = set()
+AUTO_TRAIN_WORKER: threading.Thread | None = None
+AUTO_TRAIN_RUNTIME: Dict[str, Any] = {
+    "review_running": False,
+    "review_file": "",
+    "scheduler_running": False,
+    "training_pending_consumed": 0,
+}
+LAN_ADDRESS_CACHE: Dict[str, Any] = {"value": "", "fetched_at": 0.0}
+FASTER_WHISPER_MODEL_LOCK = threading.RLock()
+FASTER_WHISPER_MODEL_CACHE: Dict[Tuple[str, str, str], Any] = {}
 PIPER_CATALOG_CACHE: Dict[str, Any] = {
     "fetched_at": 0.0,
     "entries": None,
@@ -332,6 +395,603 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
 
 def _request_base_url(request: Request) -> str:
     return str(request.base_url).rstrip("/")
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _iso_now() -> str:
+    return _utc_now().isoformat()
+
+
+def _read_json_object(path: Path) -> Dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _write_json_object(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_name(f".{path.name}.tmp")
+    temp_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    temp_path.replace(path)
+    with contextlib.suppress(Exception):
+        path.chmod(0o600)
+
+
+def _bounded_int(value: Any, default: int, minimum: int, maximum: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = default
+    return max(minimum, min(maximum, parsed))
+
+
+def _config_bool(value: Any, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    token = str(value or "").strip().lower()
+    if token in {"1", "true", "yes", "on", "enabled"}:
+        return True
+    if token in {"0", "false", "no", "off", "disabled"}:
+        return False
+    return bool(default)
+
+
+def _normalize_http_base_url(value: Any, *, allow_empty: bool = True) -> str:
+    token = str(value or "").strip().rstrip("/")
+    if not token and allow_empty:
+        return ""
+    if not token.startswith(("http://", "https://")):
+        raise ValueError("URL must start with http:// or https://")
+    return token
+
+
+def _normalize_auto_train_config(values: Dict[str, Any] | None, *, base: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    incoming = values if isinstance(values, dict) else {}
+    source = {**AUTO_TRAIN_DEFAULT_CONFIG, **(base or {}), **incoming}
+    schedule_hours = _bounded_int(source.get("schedule_hours"), 24, 0, 24 * 30)
+    language = str(source.get("language") or DEFAULT_LANGUAGE).strip().lower().replace("-", "_")
+    language = re.sub(r"[^a-z0-9_]", "", language) or DEFAULT_LANGUAGE
+    stt_device = str(source.get("stt_device") or "auto").strip().lower()
+    if stt_device not in {"auto", "cuda", "cpu"}:
+        raise ValueError("Faster Whisper device must be auto, cuda, or cpu.")
+    stt_compute_type = str(source.get("stt_compute_type") or "auto").strip().lower()
+    if stt_compute_type not in {"auto", "default", "float16", "float32", "int8", "int8_float16"}:
+        raise ValueError("Unsupported Faster Whisper compute type.")
+    return {
+        "enabled": _config_bool(source.get("enabled")),
+        "wake_phrase": str(source.get("wake_phrase") or "").strip(),
+        "language": language,
+        "stt_model": str(source.get("stt_model") or DEFAULT_FASTER_WHISPER_MODEL).strip() or DEFAULT_FASTER_WHISPER_MODEL,
+        "stt_device": stt_device,
+        "stt_compute_type": stt_compute_type,
+        "minimum_transcript_chars": _bounded_int(source.get("minimum_transcript_chars"), 2, 1, 100),
+        "schedule_hours": schedule_hours,
+        "minimum_new_negatives": _bounded_int(source.get("minimum_new_negatives"), 3, 1, 10000),
+        "advertised_base_url": _normalize_http_base_url(source.get("advertised_base_url")),
+        "tater_url": _normalize_http_base_url(source.get("tater_url"), allow_empty=False),
+        "tater_selector": str(source.get("tater_selector") or "").strip(),
+        "tater_api_token": str(source.get("tater_api_token") or "").strip(),
+        "notify_satellites": _config_bool(source.get("notify_satellites"), True),
+    }
+
+
+try:
+    AUTO_TRAIN_CONFIG: Dict[str, Any] = _normalize_auto_train_config(
+        _read_json_object(AUTO_TRAIN_CONFIG_FILE)
+    )
+except ValueError:
+    AUTO_TRAIN_CONFIG = dict(AUTO_TRAIN_DEFAULT_CONFIG)
+AUTO_TRAIN_STATE: Dict[str, Any] = {
+    **AUTO_TRAIN_DEFAULT_STATE,
+    **_read_json_object(AUTO_TRAIN_STATE_FILE),
+}
+
+
+def _save_auto_train_config_locked() -> None:
+    _write_json_object(AUTO_TRAIN_CONFIG_FILE, AUTO_TRAIN_CONFIG)
+
+
+def _save_auto_train_state_locked() -> None:
+    persisted = {key: AUTO_TRAIN_STATE.get(key) for key in AUTO_TRAIN_DEFAULT_STATE}
+    _write_json_object(AUTO_TRAIN_STATE_FILE, persisted)
+
+
+def _parse_iso_datetime(value: Any) -> datetime | None:
+    token = str(value or "").strip()
+    if not token:
+        return None
+    try:
+        parsed = datetime.fromisoformat(token.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _schedule_next_auto_run_locked(*, from_time: datetime | None = None) -> None:
+    hours = int(AUTO_TRAIN_CONFIG.get("schedule_hours") or 0)
+    if hours <= 0 or not AUTO_TRAIN_CONFIG.get("enabled"):
+        AUTO_TRAIN_STATE["next_run_at"] = ""
+    else:
+        base = from_time or _utc_now()
+        AUTO_TRAIN_STATE["next_run_at"] = (base + timedelta(hours=hours)).isoformat()
+    _save_auto_train_state_locked()
+
+
+def _public_auto_train_config() -> Dict[str, Any]:
+    with AUTO_TRAIN_LOCK:
+        config = {key: value for key, value in AUTO_TRAIN_CONFIG.items() if key != "tater_api_token"}
+        config["tater_api_token_configured"] = bool(AUTO_TRAIN_CONFIG.get("tater_api_token"))
+        return config
+
+
+def _auto_train_status_payload() -> Dict[str, Any]:
+    with AUTO_TRAIN_LOCK:
+        return {
+            "config": _public_auto_train_config(),
+            "state": dict(AUTO_TRAIN_STATE),
+            "runtime": dict(AUTO_TRAIN_RUNTIME),
+            "advertised_base_url": _advertised_base_url(),
+        }
+
+
+def _discover_lan_ipv4() -> str:
+    override = str(os.environ.get("REC_ADVERTISED_HOST") or "").strip()
+    if override and override not in {"0.0.0.0", "127.0.0.1", "localhost", "::1"}:
+        return override
+
+    now = time.time()
+    cached_value = str(LAN_ADDRESS_CACHE.get("value") or "")
+    if cached_value and (now - float(LAN_ADDRESS_CACHE.get("fetched_at") or 0.0)) < 30:
+        return cached_value
+
+    candidates: List[str] = []
+    with contextlib.suppress(Exception):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            sock.connect(("192.0.2.1", 9))
+            candidates.append(str(sock.getsockname()[0]))
+        finally:
+            sock.close()
+    with contextlib.suppress(Exception):
+        for row in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET, socket.SOCK_DGRAM):
+            candidates.append(str(row[4][0]))
+
+    with contextlib.suppress(Exception):
+        proc = subprocess.run(
+            ["/sbin/ifconfig"],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+        blocks = re.split(r"(?m)(?=^[^\s].*?: flags=)", proc.stdout or "")
+        interface_rows: List[tuple[int, str]] = []
+        for block in blocks:
+            name_match = re.match(r"^([^:]+):", block)
+            address_match = re.search(r"(?m)^\s+inet\s+(\d+(?:\.\d+){3})\b", block)
+            if not name_match or not address_match or "status: active" not in block:
+                continue
+            name = name_match.group(1)
+            if name == "lo0" or name.startswith(("utun", "awdl", "llw", "ap")):
+                continue
+            priority = 0 if name == "en0" else 1 if name == "en1" else 10
+            interface_rows.append((priority, address_match.group(1)))
+        candidates.extend(address for _priority, address in sorted(interface_rows))
+
+    for candidate in candidates:
+        if candidate and not candidate.startswith("127.") and candidate != "0.0.0.0":
+            LAN_ADDRESS_CACHE["value"] = candidate
+            LAN_ADDRESS_CACHE["fetched_at"] = now
+            return candidate
+    LAN_ADDRESS_CACHE["fetched_at"] = now
+    return ""
+
+
+def _advertised_base_url(request: Request | None = None) -> str:
+    env_url = str(os.environ.get("REC_PUBLIC_BASE_URL") or "").strip().rstrip("/")
+    with AUTO_TRAIN_LOCK:
+        configured_url = str(AUTO_TRAIN_CONFIG.get("advertised_base_url") or "").strip().rstrip("/")
+    if configured_url:
+        return configured_url
+    if env_url:
+        return env_url
+
+    request_url = _request_base_url(request) if request is not None else ""
+    request_host = str(request.url.hostname or "").lower() if request is not None else ""
+    if request_url and request_host not in {"127.0.0.1", "localhost", "::1", "0.0.0.0"}:
+        return request_url
+
+    host = _discover_lan_ipv4()
+    if not host:
+        return request_url
+    scheme = str(request.url.scheme or "http") if request is not None else "http"
+    port = request.url.port if request is not None else None
+    if port is None:
+        port = _bounded_int(os.environ.get("REC_PORT"), 8789, 1, 65535)
+    default_port = (scheme == "http" and port == 80) or (scheme == "https" and port == 443)
+    return f"{scheme}://{host}{'' if default_port else f':{port}'}"
+
+
+def _normalize_transcript_text(value: Any) -> str:
+    text = unicodedata.normalize("NFKC", str(value or "")).casefold().replace("_", " ")
+    text = re.sub(r"[^\w]+", " ", text, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _transcript_contains_wake_phrase(transcript: Any, wake_phrase: Any) -> bool:
+    normalized_transcript = _normalize_transcript_text(transcript)
+    normalized_phrase = _normalize_transcript_text(wake_phrase)
+    if not normalized_transcript or not normalized_phrase:
+        return False
+    return f" {normalized_phrase} " in f" {normalized_transcript} "
+
+
+def _captured_event_is_auto_reviewable(metadata: Dict[str, Any]) -> bool:
+    if _parse_bool(metadata.get("blocked_by_vad")):
+        return False
+    event_type = str(metadata.get("event_type") or "captured").strip().lower()
+    if "close" in event_type:
+        return False
+    return event_type in {"captured", "trigger", "false_trigger"} or "wake" in event_type or "detect" in event_type
+
+
+def _resolve_faster_whisper_runtime(device_value: Any, compute_value: Any) -> Tuple[str, str]:
+    requested_device = str(device_value or "auto").strip().lower()
+    if requested_device not in {"auto", "cuda", "cpu"}:
+        raise ValueError("Faster Whisper device must be auto, cuda, or cpu.")
+
+    cuda_devices = 0
+    with contextlib.suppress(Exception):
+        import ctranslate2
+        cuda_devices = int(ctranslate2.get_cuda_device_count())
+
+    if requested_device == "cuda" and cuda_devices <= 0:
+        raise RuntimeError("CUDA was selected for Faster Whisper, but CTranslate2 cannot see an NVIDIA GPU.")
+    device = "cuda" if requested_device == "cuda" or (requested_device == "auto" and cuda_devices > 0) else "cpu"
+
+    requested_compute = str(compute_value or "auto").strip().lower()
+    allowed_compute = {"auto", "default", "float16", "float32", "int8", "int8_float16"}
+    if requested_compute not in allowed_compute:
+        raise ValueError("Unsupported Faster Whisper compute type.")
+    compute_type = ("float16" if device == "cuda" else "int8") if requested_compute == "auto" else requested_compute
+    return device, compute_type
+
+
+def _load_faster_whisper_model(*, model_name: str, device: str, compute_type: str):
+    cache_key = (model_name, device, compute_type)
+    with FASTER_WHISPER_MODEL_LOCK:
+        cached = FASTER_WHISPER_MODEL_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
+        try:
+            from faster_whisper import WhisperModel
+        except Exception as exc:
+            raise RuntimeError(f"faster-whisper is unavailable: {exc}") from exc
+
+        AUTO_TRAIN_MODEL_DIR.mkdir(parents=True, exist_ok=True)
+        model = WhisperModel(
+            model_name,
+            device=device,
+            compute_type=compute_type,
+            download_root=str(AUTO_TRAIN_MODEL_DIR),
+        )
+        FASTER_WHISPER_MODEL_CACHE.clear()
+        FASTER_WHISPER_MODEL_CACHE[cache_key] = model
+        return model
+
+
+def _transcribe_capture_with_faster_whisper(audio_path: Path, *, model: str, language: str) -> str:
+    with AUTO_TRAIN_LOCK:
+        device_value = AUTO_TRAIN_CONFIG.get("stt_device")
+        compute_value = AUTO_TRAIN_CONFIG.get("stt_compute_type")
+    device, compute_type = _resolve_faster_whisper_runtime(device_value, compute_value)
+    whisper_model = _load_faster_whisper_model(
+        model_name=model,
+        device=device,
+        compute_type=compute_type,
+    )
+    segments, _info = whisper_model.transcribe(
+        str(audio_path),
+        language=language or None,
+        beam_size=1,
+        condition_on_previous_text=False,
+    )
+    transcript = re.sub(
+        r"\s+",
+        " ",
+        " ".join(str(segment.text or "").strip() for segment in segments),
+    ).strip()
+    with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_STATE["last_stt_device"] = device
+        AUTO_TRAIN_STATE["last_stt_compute_type"] = compute_type
+        _save_auto_train_state_locked()
+    return transcript
+
+
+def _queue_auto_review(file_name: str) -> bool:
+    safe_file_name = Path(str(file_name or "")).name
+    if not safe_file_name:
+        return False
+    with AUTO_TRAIN_LOCK:
+        if safe_file_name in AUTO_TRAIN_QUEUED_FILES:
+            return False
+        AUTO_TRAIN_QUEUED_FILES.add(safe_file_name)
+    AUTO_TRAIN_REVIEW_QUEUE.put(safe_file_name)
+    AUTO_TRAIN_WAKE_EVENT.set()
+    return True
+
+
+def _queue_pending_auto_reviews(*, force: bool = False) -> int:
+    queued = 0
+    CAPTURED_DIR.mkdir(parents=True, exist_ok=True)
+    for audio_path in sorted(CAPTURED_DIR.glob("*.wav")):
+        metadata = _load_sidecar_json(audio_path)
+        if not _captured_event_is_auto_reviewable(metadata):
+            continue
+        status = str(metadata.get("auto_review_status") or "").strip()
+        if status == "transcribing":
+            metadata.pop("auto_review_status", None)
+            _write_sidecar_json(audio_path, metadata)
+            status = ""
+        if force and status in {"error", "no_speech"}:
+            metadata.pop("auto_review_status", None)
+            _write_sidecar_json(audio_path, metadata)
+            status = ""
+        if status:
+            continue
+        if _queue_auto_review(audio_path.name):
+            queued += 1
+    return queued
+
+
+def _record_auto_review_result(*, file_name: str, transcript: str = "", result: str = "", error: str = "") -> None:
+    with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_STATE["last_review_at"] = _iso_now()
+        AUTO_TRAIN_STATE["last_review_file"] = file_name
+        AUTO_TRAIN_STATE["last_review_transcript"] = transcript
+        AUTO_TRAIN_STATE["last_review_result"] = result
+        AUTO_TRAIN_STATE["last_review_error"] = error
+        _save_auto_train_state_locked()
+
+
+def _auto_review_capture(file_name: str) -> None:
+    try:
+        with AUTO_TRAIN_LOCK:
+            config = dict(AUTO_TRAIN_CONFIG)
+            AUTO_TRAIN_RUNTIME["review_running"] = True
+            AUTO_TRAIN_RUNTIME["review_file"] = file_name
+        if not config.get("enabled"):
+            return
+        wake_phrase = str(config.get("wake_phrase") or "").strip()
+        if not wake_phrase:
+            _record_auto_review_result(file_name=file_name, result="waiting_for_wake_phrase")
+            return
+
+        try:
+            audio_path = _resolve_audio_path(CAPTURED_DIR, file_name)
+        except FileNotFoundError:
+            return
+        metadata = _load_sidecar_json(audio_path)
+        if metadata.get("auto_review_status") or not _captured_event_is_auto_reviewable(metadata):
+            return
+        captured_wake_phrase = str(metadata.get("wake_word") or "").strip()
+        if captured_wake_phrase and _normalize_transcript_text(captured_wake_phrase) != _normalize_transcript_text(wake_phrase):
+            metadata["auto_review_status"] = "different_wake_phrase"
+            metadata["auto_review_reason"] = (
+                f"Capture is for '{captured_wake_phrase}', not configured phrase '{wake_phrase}'; left for manual review."
+            )
+            metadata["auto_reviewed_at"] = _iso_now()
+            _write_sidecar_json(audio_path, metadata)
+            _record_auto_review_result(file_name=file_name, result="different_wake_phrase")
+            return
+
+        metadata["auto_review_status"] = "transcribing"
+        metadata["auto_reviewed_at"] = _iso_now()
+        metadata["auto_review_wake_phrase"] = wake_phrase
+        metadata["auto_review_stt_model"] = config["stt_model"]
+        _write_sidecar_json(audio_path, metadata)
+
+        transcript = _transcribe_capture_with_faster_whisper(
+            audio_path,
+            model=str(config["stt_model"]),
+            language=str(config.get("language") or DEFAULT_LANGUAGE),
+        )
+        normalized = _normalize_transcript_text(transcript)
+        metadata = _load_sidecar_json(audio_path)
+        metadata["transcript"] = transcript
+        metadata["transcribed_at"] = _iso_now()
+
+        if len(normalized) < int(config.get("minimum_transcript_chars") or 2):
+            metadata["auto_review_status"] = "no_speech"
+            metadata["auto_review_reason"] = "STT did not return enough text; left for manual review."
+            _write_sidecar_json(audio_path, metadata)
+            _record_auto_review_result(file_name=file_name, transcript=transcript, result="no_speech")
+            return
+
+        if _transcript_contains_wake_phrase(transcript, wake_phrase):
+            metadata["auto_review_status"] = "wake_phrase_detected"
+            metadata["auto_review_reason"] = "Wake phrase found in transcript; left for manual positive review."
+            _write_sidecar_json(audio_path, metadata)
+            _record_auto_review_result(file_name=file_name, transcript=transcript, result="wake_phrase_detected")
+            return
+
+        metadata["auto_review_status"] = "approved_negative"
+        metadata["auto_review_reason"] = "Wake phrase was not found in the STT transcript."
+        metadata["auto_negative"] = True
+        _write_sidecar_json(audio_path, metadata)
+        _move_captured_audio(
+            file_name,
+            NEGATIVE_DIR,
+            target_prefix="negative",
+            review_status="auto_approved_negative",
+        )
+        with AUTO_TRAIN_LOCK:
+            AUTO_TRAIN_STATE["pending_negative_count"] = int(AUTO_TRAIN_STATE.get("pending_negative_count") or 0) + 1
+            _save_auto_train_state_locked()
+        _record_auto_review_result(file_name=file_name, transcript=transcript, result="approved_negative")
+    except Exception as exc:
+        error = str(exc)
+        with contextlib.suppress(Exception):
+            audio_path = _resolve_audio_path(CAPTURED_DIR, file_name)
+            metadata = _load_sidecar_json(audio_path)
+            metadata["auto_review_status"] = "error"
+            metadata["auto_review_error"] = error
+            metadata["auto_reviewed_at"] = _iso_now()
+            _write_sidecar_json(audio_path, metadata)
+        _record_auto_review_result(file_name=file_name, result="error", error=error)
+    finally:
+        with AUTO_TRAIN_LOCK:
+            AUTO_TRAIN_RUNTIME["review_running"] = False
+            AUTO_TRAIN_RUNTIME["review_file"] = ""
+
+
+def _notify_tater_satellites() -> Dict[str, Any]:
+    with AUTO_TRAIN_LOCK:
+        config = dict(AUTO_TRAIN_CONFIG)
+    if not config.get("notify_satellites"):
+        return {"ok": True, "skipped": True, "message": "Satellite notification is disabled."}
+
+    endpoint = f"{str(config.get('tater_url') or '').rstrip('/')}/api/tater/satellite/v1/settings"
+    body = json.dumps(
+        {
+            "selector": str(config.get("tater_selector") or ""),
+            "settings": {},
+        }
+    ).encode("utf-8")
+    headers = {"Content-Type": "application/json", "User-Agent": "microWakeWord-Trainer/auto-train"}
+    token = str(config.get("tater_api_token") or "").strip()
+    if token:
+        headers["X-Tater-Token"] = token
+
+    try:
+        req = URLRequest(endpoint, data=body, headers=headers, method="POST")
+        with urlopen(req, timeout=15) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        push = payload.get("push") if isinstance(payload, dict) and isinstance(payload.get("push"), dict) else {}
+        count = push.get("count")
+        with AUTO_TRAIN_LOCK:
+            AUTO_TRAIN_STATE["last_notify_at"] = _iso_now()
+            AUTO_TRAIN_STATE["last_notify_count"] = count
+            AUTO_TRAIN_STATE["last_notify_error"] = ""
+            _save_auto_train_state_locked()
+        return {"ok": True, "count": count, "response": payload}
+    except Exception as exc:
+        with AUTO_TRAIN_LOCK:
+            AUTO_TRAIN_STATE["last_notify_at"] = _iso_now()
+            AUTO_TRAIN_STATE["last_notify_count"] = None
+            AUTO_TRAIN_STATE["last_notify_error"] = str(exc)
+            _save_auto_train_state_locked()
+        return {"ok": False, "error": str(exc)}
+
+
+def _start_auto_training() -> Dict[str, Any]:
+    with AUTO_TRAIN_LOCK:
+        config = dict(AUTO_TRAIN_CONFIG)
+    wake_phrase = str(config.get("wake_phrase") or "").strip()
+    if not wake_phrase:
+        return {"ok": False, "error": "Auto Training needs a wake phrase."}
+    safe_word = safe_name(wake_phrase)
+    language = str(config.get("language") or DEFAULT_LANGUAGE)
+    with STATE_LOCK:
+        if STATE["training"]["running"]:
+            return {"ok": False, "error": "Training already running."}
+        STATE["raw_phrase"] = wake_phrase
+        STATE["safe_word"] = safe_word
+        STATE["language"] = language
+        STATE["training"]["running"] = True
+    with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_STATE["last_train_started_at"] = _iso_now()
+        AUTO_TRAIN_RUNTIME["training_pending_consumed"] = int(AUTO_TRAIN_STATE.get("pending_negative_count") or 0)
+        _save_auto_train_state_locked()
+    threading.Thread(
+        target=_run_training_background,
+        args=(safe_word, language, True, True),
+        daemon=True,
+    ).start()
+    return {"ok": True, "started": True, "safe_word": safe_word, "language": language}
+
+
+def _maybe_run_scheduled_auto_training() -> None:
+    with AUTO_TRAIN_LOCK:
+        if not AUTO_TRAIN_CONFIG.get("enabled"):
+            return
+        schedule_hours = int(AUTO_TRAIN_CONFIG.get("schedule_hours") or 0)
+        if schedule_hours <= 0:
+            return
+        next_run = _parse_iso_datetime(AUTO_TRAIN_STATE.get("next_run_at"))
+        if next_run is None:
+            _schedule_next_auto_run_locked()
+            return
+        now = _utc_now()
+        if now < next_run:
+            return
+        pending = int(AUTO_TRAIN_STATE.get("pending_negative_count") or 0)
+        minimum = int(AUTO_TRAIN_CONFIG.get("minimum_new_negatives") or 1)
+        if pending < minimum:
+            _schedule_next_auto_run_locked(from_time=now)
+            return
+    result = _start_auto_training()
+    with AUTO_TRAIN_LOCK:
+        if result.get("started"):
+            _schedule_next_auto_run_locked()
+        else:
+            AUTO_TRAIN_STATE["next_run_at"] = (_utc_now() + timedelta(minutes=10)).isoformat()
+            _save_auto_train_state_locked()
+
+
+def _auto_train_worker_loop() -> None:
+    with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_RUNTIME["scheduler_running"] = True
+    _queue_pending_auto_reviews()
+    try:
+        while not AUTO_TRAIN_STOP_EVENT.is_set():
+            try:
+                file_name = AUTO_TRAIN_REVIEW_QUEUE.get_nowait()
+            except queue.Empty:
+                file_name = ""
+            if file_name:
+                try:
+                    _auto_review_capture(file_name)
+                finally:
+                    with AUTO_TRAIN_LOCK:
+                        AUTO_TRAIN_QUEUED_FILES.discard(file_name)
+                    AUTO_TRAIN_REVIEW_QUEUE.task_done()
+            _maybe_run_scheduled_auto_training()
+            AUTO_TRAIN_WAKE_EVENT.wait(1.0)
+            AUTO_TRAIN_WAKE_EVENT.clear()
+    finally:
+        with AUTO_TRAIN_LOCK:
+            AUTO_TRAIN_RUNTIME["scheduler_running"] = False
+
+
+def _start_auto_train_worker() -> None:
+    global AUTO_TRAIN_WORKER
+    with AUTO_TRAIN_LOCK:
+        if AUTO_TRAIN_WORKER is not None and AUTO_TRAIN_WORKER.is_alive():
+            return
+        AUTO_TRAIN_STOP_EVENT.clear()
+        AUTO_TRAIN_WORKER = threading.Thread(
+            target=_auto_train_worker_loop,
+            name="auto-train-worker",
+            daemon=True,
+        )
+        AUTO_TRAIN_WORKER.start()
+
+
+def _stop_auto_train_worker() -> None:
+    AUTO_TRAIN_STOP_EVENT.set()
+    AUTO_TRAIN_WAKE_EVENT.set()
+
 
 
 def _sync_personal_samples_state() -> List[str]:
@@ -1016,6 +1676,11 @@ def _captured_item_from_path(audio_path: Path) -> Dict[str, Any]:
         "message": meta.get("message") or "",
         "notes": meta.get("notes") or "",
         "review_status": meta.get("review_status") or "pending",
+        "transcript": meta.get("transcript") or "",
+        "transcribed_at": meta.get("transcribed_at") or "",
+        "auto_review_status": meta.get("auto_review_status") or "",
+        "auto_review_reason": meta.get("auto_review_reason") or "",
+        "auto_review_error": meta.get("auto_review_error") or "",
         "size_bytes": stat.st_size,
         "audio_url": f"/api/audio/captured/{audio_path.name}",
     }
@@ -1051,6 +1716,10 @@ def _sample_item_from_path(audio_path: Path, bucket: str) -> Dict[str, Any]:
         "source_file": meta.get("source_file") or "",
         "final_format": final_format,
         "message": meta.get("message") or "",
+        "transcript": meta.get("transcript") or "",
+        "transcribed_at": meta.get("transcribed_at") or "",
+        "auto_negative": bool(meta.get("auto_negative")),
+        "auto_review_reason": meta.get("auto_review_reason") or "",
         "size_bytes": stat.st_size,
         "audio_url": f"/api/audio/{bucket}/{audio_path.name}",
     }
@@ -1345,8 +2014,14 @@ def _normalize_output_artifacts(safe_word: str, log_path: Path) -> None:
     _append_train_log(f"✅ Trained wake words synced to {TRAINED_WAKE_WORDS_DIR}")
 
 
-def _run_training_background(safe_word: str, language: str, allow_no_personal: bool):
+def _run_training_background(
+    safe_word: str,
+    language: str,
+    allow_no_personal: bool,
+    auto_run: bool = False,
+):
     language = (language or DEFAULT_LANGUAGE).strip().lower() or DEFAULT_LANGUAGE
+    rc = 999
     with STATE_LOCK:
         raw_phrase = STATE.get("raw_phrase") or ""
 
@@ -1418,6 +2093,7 @@ def _run_training_background(safe_word: str, language: str, allow_no_personal: b
             _normalize_output_artifacts(safe_word, log_path)
 
     except Exception as e:
+        rc = 999
         _append_train_log(f"✗ Training crashed: {e!r}")
         with STATE_LOCK:
             STATE["training"]["exit_code"] = 999
@@ -1426,8 +2102,111 @@ def _run_training_background(safe_word: str, language: str, allow_no_personal: b
         with STATE_LOCK:
             STATE["training"]["running"] = False
 
+    if auto_run:
+        with AUTO_TRAIN_LOCK:
+            AUTO_TRAIN_STATE["last_train_finished_at"] = _iso_now()
+            AUTO_TRAIN_STATE["last_train_exit_code"] = rc
+            if rc == 0:
+                consumed = int(AUTO_TRAIN_RUNTIME.get("training_pending_consumed") or 0)
+                AUTO_TRAIN_STATE["pending_negative_count"] = max(
+                    0,
+                    int(AUTO_TRAIN_STATE.get("pending_negative_count") or 0) - consumed,
+                )
+            AUTO_TRAIN_RUNTIME["training_pending_consumed"] = 0
+            _save_auto_train_state_locked()
+        if rc == 0:
+            _append_train_log("→ Asking Tater to refresh the active wake model on connected satellites")
+            notify_result = _notify_tater_satellites()
+            if notify_result.get("ok"):
+                if notify_result.get("skipped"):
+                    _append_train_log("→ Satellite refresh skipped (disabled in Auto Training)")
+                else:
+                    count = notify_result.get("count")
+                    suffix = f" ({count} connected)" if count is not None else ""
+                    _append_train_log(f"✓ Tater satellite refresh requested{suffix}")
+            else:
+                _append_train_log(f"✗ Tater satellite refresh failed: {notify_result.get('error')}")
+
 
 # -------------------- Routes --------------------
+@app.on_event("startup")
+def start_auto_train_worker_event():
+    _start_auto_train_worker()
+
+
+@app.on_event("shutdown")
+def stop_auto_train_worker_event():
+    _stop_auto_train_worker()
+
+
+@app.get("/api/auto_train")
+def auto_train_status(request: Request):
+    payload = _auto_train_status_payload()
+    payload["ok"] = True
+    payload["advertised_base_url"] = _advertised_base_url(request)
+    payload["stt_backend"] = "faster-whisper"
+    return payload
+
+
+@app.put("/api/auto_train")
+def update_auto_train(payload: Dict[str, Any] = None):
+    incoming = dict(payload or {})
+    with AUTO_TRAIN_LOCK:
+        previous = dict(AUTO_TRAIN_CONFIG)
+        if incoming.pop("clear_tater_api_token", False):
+            incoming["tater_api_token"] = ""
+        elif not str(incoming.get("tater_api_token") or "").strip():
+            incoming.pop("tater_api_token", None)
+        try:
+            normalized = _normalize_auto_train_config(incoming, base=previous)
+        except ValueError as exc:
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+        if normalized["enabled"] and not normalized["wake_phrase"]:
+            return JSONResponse(
+                {"ok": False, "error": "Enter the wake phrase before enabling Auto Training."},
+                status_code=400,
+            )
+        AUTO_TRAIN_CONFIG.clear()
+        AUTO_TRAIN_CONFIG.update(normalized)
+        _save_auto_train_config_locked()
+        schedule_changed = (
+            previous.get("enabled") != normalized.get("enabled")
+            or previous.get("schedule_hours") != normalized.get("schedule_hours")
+        )
+        if schedule_changed or not AUTO_TRAIN_STATE.get("next_run_at"):
+            _schedule_next_auto_run_locked()
+    if normalized["enabled"]:
+        queued = _queue_pending_auto_reviews()
+        AUTO_TRAIN_WAKE_EVENT.set()
+    else:
+        queued = 0
+    return {"ok": True, "queued": queued, **_auto_train_status_payload()}
+
+
+@app.post("/api/auto_train/action")
+def auto_train_action(payload: Dict[str, Any] = None):
+    action = str((payload or {}).get("action") or "").strip().lower()
+    if action == "review_now":
+        with AUTO_TRAIN_LOCK:
+            if not AUTO_TRAIN_CONFIG.get("enabled"):
+                return JSONResponse({"ok": False, "error": "Enable Auto Training first."}, status_code=400)
+        queued = _queue_pending_auto_reviews(force=True)
+        AUTO_TRAIN_WAKE_EVENT.set()
+        return {"ok": True, "queued": queued, **_auto_train_status_payload()}
+    if action == "train_now":
+        result = _start_auto_training()
+        if not result.get("ok"):
+            return JSONResponse(result, status_code=400)
+        return {**result, **_auto_train_status_payload()}
+    if action == "notify_now":
+        result = _notify_tater_satellites()
+        if not result.get("ok"):
+            return JSONResponse(result, status_code=502)
+        return {**result, **_auto_train_status_payload()}
+    return JSONResponse({"ok": False, "error": "Unknown Auto Training action."}, status_code=400)
+
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
     html_path = STATIC_DIR / "index.html"
@@ -1621,6 +2400,10 @@ async def upload_captured_audio(
         "review_status": "pending",
     }
     _write_sidecar_json(audio_path, sidecar)
+    with AUTO_TRAIN_LOCK:
+        auto_review_enabled = bool(AUTO_TRAIN_CONFIG.get("enabled"))
+    if auto_review_enabled and _captured_event_is_auto_reviewable(sidecar):
+        _queue_auto_review(audio_path.name)
 
     return {
         "ok": True,
@@ -1703,6 +2486,10 @@ async def upload_captured_audio_raw(
         "review_status": "pending",
     }
     _write_sidecar_json(audio_path, sidecar)
+    with AUTO_TRAIN_LOCK:
+        auto_review_enabled = bool(AUTO_TRAIN_CONFIG.get("enabled"))
+    if auto_review_enabled and _captured_event_is_auto_reviewable(sidecar):
+        _queue_auto_review(audio_path.name)
 
     return {
         "ok": True,
@@ -1760,9 +2547,17 @@ def delete_sample(bucket: str, file_name: str):
         return JSONResponse({"ok": False, "error": "Unknown sample bucket."}, status_code=404)
     try:
         path = _resolve_audio_path(directory, file_name)
+        metadata = _load_sidecar_json(path)
         _remove_audio_with_sidecar(path)
     except FileNotFoundError as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=404)
+    if bucket == "negative" and metadata.get("auto_negative"):
+        with AUTO_TRAIN_LOCK:
+            AUTO_TRAIN_STATE["pending_negative_count"] = max(
+                0,
+                int(AUTO_TRAIN_STATE.get("pending_negative_count") or 0) - 1,
+            )
+            _save_auto_train_state_locked()
     return {"ok": True, "deleted_bucket": bucket, "deleted_file": file_name, "message": f"Deleted {file_name}"}
 
 
@@ -1936,7 +2731,11 @@ def discard_captured_audio(file_name: str):
 
 @app.get("/api/trained_wake_words/catalog")
 def trained_wake_words_catalog(request: Request):
-    return {"ok": True, "wake_words": _list_trained_wake_words(_request_base_url(request))}
+    return {
+        "ok": True,
+        "base_url": _advertised_base_url(request),
+        "wake_words": _list_trained_wake_words(_advertised_base_url(request)),
+    }
 
 
 @app.get("/api/trained_wake_words/{filename}")
@@ -1985,7 +2784,13 @@ def train_now(payload: Dict[str, Any] = None):
             status_code=400,
         )
 
-    t = threading.Thread(target=_run_training_background, args=(safe_word, language, allow_no_personal), daemon=True)
+    with STATE_LOCK:
+        STATE["training"]["running"] = True
+    t = threading.Thread(
+        target=_run_training_background,
+        args=(safe_word, language, allow_no_personal, False),
+        daemon=True,
+    )
     t.start()
 
     return {
@@ -2043,4 +2848,7 @@ def reset_recordings():
 @app.post("/api/reset_negative_samples")
 def reset_negative_samples():
     _reset_audio_dir(NEGATIVE_DIR)
+    with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_STATE["pending_negative_count"] = 0
+        _save_auto_train_state_locked()
     return {"ok": True, "negative_count": len(_list_negative_samples())}

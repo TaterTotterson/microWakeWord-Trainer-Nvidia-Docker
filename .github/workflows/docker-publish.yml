@@ -26,6 +26,18 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Validate tag matches trainer version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          expected_tag="v${version#v}"
+          if [[ "${GITHUB_REF_NAME}" != "${expected_tag}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match trainer version ${expected_tag}." >&2
+            exit 1
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -94,6 +106,7 @@ jobs:
           title="microWakeWord Nvidia Trainer ${TAG_NAME}"
           generated_notes="$(mktemp)"
           release_notes="$(mktemp)"
+          test -s WHATS_NEW.md
 
           gh api "repos/${REPO}/releases/generate-notes" \
             -f tag_name="${TAG_NAME}" \
@@ -101,6 +114,11 @@ jobs:
             --jq '.body' > "${generated_notes}"
 
           {
+            echo "## What's New"
+            echo
+            cat WHATS_NEW.md
+            echo
+            echo
             echo "## Docker Images"
             echo
             echo "- \`ghcr.io/tatertotterson/microwakeword:${TAG_NAME}\`"

@@ -9,24 +9,22 @@ import math
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
 import numpy as np
 import yaml
 
-from microwakeword.data import FeatureHandler
-from microwakeword.inference import Model
-
-
-DEFAULT_WINDOW_SIZES = [4, 5, 6, 7]
+DEFAULT_WINDOW_SIZES = [5, 6, 7]
 DEFAULT_TARGET_FAPH = float(os.environ.get("MWW_CALIBRATION_TARGET_FAPH", "0.25"))
 DEFAULT_COOLDOWN_SLICES = int(os.environ.get("MWW_CALIBRATION_COOLDOWN_SLICES", "25"))
 DEFAULT_POSITIVE_SKIP_SLICES = int(
     os.environ.get("MWW_CALIBRATION_POSITIVE_SKIP_SLICES", "25")
 )
 DEFAULT_CUTOFF_STEP = float(os.environ.get("MWW_CALIBRATION_CUTOFF_STEP", "0.01"))
-DEFAULT_CUTOFF_MIN = float(os.environ.get("MWW_CALIBRATION_CUTOFF_MIN", "0.85"))
+DEFAULT_CUTOFF_MIN = float(os.environ.get("MWW_CALIBRATION_CUTOFF_MIN", "0.95"))
 DEFAULT_CUTOFF_MAX = float(os.environ.get("MWW_CALIBRATION_CUTOFF_MAX", "1.00"))
+DEFAULT_RECALL_MARGIN = float(os.environ.get("MWW_CALIBRATION_RECALL_MARGIN", "0.005"))
+PREFERRED_WINDOW_SIZE = 6
 
 
 def parse_args() -> argparse.Namespace:
@@ -64,6 +62,15 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=DEFAULT_TARGET_FAPH,
         help="Target ambient false accepts per hour for the selected operating point.",
+    )
+    parser.add_argument(
+        "--recall-margin",
+        type=float,
+        default=DEFAULT_RECALL_MARGIN,
+        help=(
+            "Maximum recall loss allowed when preferring a candidate with fewer "
+            "ambient false accepts (0.005 means 0.5 percentage points)."
+        ),
     )
     parser.add_argument(
         "--cooldown-slices",
@@ -159,7 +166,13 @@ def _compute_false_accepts_per_hour(
 def _select_best_candidate(
     candidates: list[dict[str, float]],
     target_faph: float,
+    recall_margin: float = DEFAULT_RECALL_MARGIN,
 ) -> tuple[dict[str, float], float]:
+    if not candidates:
+        raise ValueError("at least one calibration candidate is required")
+    if recall_margin < 0:
+        raise ValueError("recall margin must be >= 0")
+
     fallback_limits = [
         target_faph,
         max(target_faph * 2.0, target_faph + 0.5),
@@ -172,13 +185,27 @@ def _select_best_candidate(
                 return index
         return len(fallback_limits)
 
+    # Stay in the strictest false-accept tier that has a viable candidate. Within
+    # that tier, keep candidates close to the best recall, then spend the allowed
+    # recall margin on the lowest measured false-accept rate.
+    best_tier = min(tier(candidate) for candidate in candidates)
+    tier_candidates = [
+        candidate for candidate in candidates if tier(candidate) == best_tier
+    ]
+    best_recall = max(candidate["recall"] for candidate in tier_candidates)
+    recall_floor = best_recall - recall_margin
+    viable_candidates = [
+        candidate
+        for candidate in tier_candidates
+        if candidate["recall"] >= recall_floor - 1e-12
+    ]
+
     best = min(
-        candidates,
+        viable_candidates,
         key=lambda candidate: (
-            tier(candidate),
-            -candidate["recall"],
             candidate["false_accepts_per_hour"],
-            abs(candidate["sliding_window_size"] - 5),
+            -candidate["recall"],
+            abs(candidate["sliding_window_size"] - PREFERRED_WINDOW_SIZE),
             -candidate["probability_cutoff"],
         ),
     )
@@ -195,7 +222,7 @@ def _load_config(config_path: Path) -> dict:
 
 
 def _load_eval_sets(
-    handler: FeatureHandler,
+    handler: Any,
     config: dict,
 ) -> tuple[str, str, list[np.ndarray], list[np.ndarray]]:
     for positive_mode, ambient_mode in (
@@ -228,7 +255,7 @@ def _load_eval_sets(
 
 
 def _predict_tracks(
-    model: Model,
+    model: Any,
     tracks: Sequence[np.ndarray],
     label: str,
 ) -> list[np.ndarray]:
@@ -244,8 +271,13 @@ def _predict_tracks(
 
 
 def main() -> int:
+    from microwakeword.data import FeatureHandler
+    from microwakeword.inference import Model
+
     args = parse_args()
     window_sizes = _parse_window_sizes(args.window_sizes)
+    if args.recall_margin < 0 or args.recall_margin > 1:
+        raise ValueError("recall-margin must be between 0 and 1")
     if args.cutoff_step <= 0:
         raise ValueError("cutoff-step must be > 0")
     if args.cutoff_max < args.cutoff_min:
@@ -275,6 +307,10 @@ def main() -> int:
     print(
         f"→ Evaluating window sizes {window_sizes} with target <= "
         f"{args.target_faph:.2f} false accepts/hour"
+    )
+    print(
+        f"→ Favoring lower false accepts within "
+        f"{args.recall_margin:.2%} of the best recall"
     )
 
     config = _load_config(config_path)
@@ -338,7 +374,11 @@ def main() -> int:
             candidates.append(candidate)
             window_candidates.append(candidate)
 
-        best_window, _ = _select_best_candidate(window_candidates, args.target_faph)
+        best_window, _ = _select_best_candidate(
+            window_candidates,
+            args.target_faph,
+            args.recall_margin,
+        )
         best_by_window.append(best_window)
         print(
             "   window={window}: cutoff={cutoff:.2f}; recall={recall:.2%}; "
@@ -350,7 +390,11 @@ def main() -> int:
             )
         )
 
-    best, selected_limit = _select_best_candidate(candidates, args.target_faph)
+    best, selected_limit = _select_best_candidate(
+        candidates,
+        args.target_faph,
+        args.recall_margin,
+    )
     if best["false_accepts_per_hour"] > args.target_faph + 1e-9:
         print(
             "⚠️  No candidate met the target false accepts/hour budget; "
@@ -390,6 +434,8 @@ def main() -> int:
             "cutoff_min": round(float(cutoffs[0]), 4),
             "cutoff_max": round(float(cutoffs[-1]), 4),
             "cutoff_step": float(args.cutoff_step),
+            "recall_margin": float(args.recall_margin),
+            "preferred_window_size": PREFERRED_WINDOW_SIZE,
         },
         "per_window_best": best_by_window,
         "generated_at": datetime.now(timezone.utc).isoformat(),

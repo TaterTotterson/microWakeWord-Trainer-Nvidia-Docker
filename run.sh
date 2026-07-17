@@ -31,7 +31,10 @@ install_ui_deps() {
     "uvicorn[standard]==${UVICORN_VERSION}" \
     "python-multipart==${PY_MULTIPART_VERSION}" \
     "silero-vad>=5.0.0" \
-    "numpy>=1.24.0"
+    "numpy>=1.24.0" \
+    "faster-whisper>=1.0.0" \
+    "nvidia-cublas-cu12" \
+    "nvidia-cudnn-cu12==9.*"
 }
 
 # -----------------------------
@@ -78,8 +81,13 @@ exact = {
 minimum = {
     "silero-vad": "5.0.0",
     "numpy": "1.24.0",
+    "faster-whisper": "1.0.0",
+    "nvidia-cudnn-cu12": "9.0.0",
 }
-present = ("torch",)
+present = (
+    "torch",
+    "nvidia-cublas-cu12",
+)
 
 for package, expected in exact.items():
     if md.version(package) != expected:
@@ -94,6 +102,28 @@ PY
     echo "UI dependencies missing or stale; installing recorder dependencies"
     install_ui_deps
   fi
+fi
+
+# Faster Whisper/CTranslate2 loads these CUDA libraries before Python starts.
+# They live in the persistent UI venv so both Docker image variants can use GPU STT.
+WHISPER_CUDA_LIBRARY_PATH="$("${PY}" - <<'PY'
+import os
+
+try:
+    import nvidia.cublas.lib
+    import nvidia.cudnn.lib
+except ImportError:
+    print("")
+else:
+    print(
+        os.path.dirname(nvidia.cublas.lib.__file__)
+        + ":"
+        + os.path.dirname(nvidia.cudnn.lib.__file__)
+    )
+PY
+)"
+if [[ -n "${WHISPER_CUDA_LIBRARY_PATH}" ]]; then
+  export LD_LIBRARY_PATH="${WHISPER_CUDA_LIBRARY_PATH}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 fi
 # -----------------------------
 # Trainer server env
