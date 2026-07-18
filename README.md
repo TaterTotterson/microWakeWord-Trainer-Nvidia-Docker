@@ -22,7 +22,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 Tagged releases also publish matching immutable image tags:
 
 ```bash
-docker pull ghcr.io/tatertotterson/microwakeword:v12
+docker pull ghcr.io/tatertotterson/microwakeword:v13
 ```
 
 The release tag must match `VERSION`. Update `WHATS_NEW.md` before tagging; the Docker workflow prepends it to GitHub's automatically generated release notes.
@@ -32,7 +32,7 @@ Python 3.13 TensorFlow build for `sm_120`:
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:blackwell
-docker pull ghcr.io/tatertotterson/microwakeword:v12-blackwell
+docker pull ghcr.io/tatertotterson/microwakeword:v13-blackwell
 ```
 
 Use the Blackwell image only for RTX 50-series cards. It includes the
@@ -53,9 +53,9 @@ docker run -d \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v12` when you want to pin a known release instead of tracking `latest`.
+Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v13` when you want to pin a known release instead of tracking `latest`.
 For RTX 50-series cards, use `ghcr.io/tatertotterson/microwakeword:blackwell`
-or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v12-blackwell`
+or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v13-blackwell`
 in the same `docker run` command.
 
 The flags:
@@ -167,14 +167,21 @@ Starting a new session does not clear samples. Use the clear buttons in `Samples
 
 ## Auto Training
 
-`Auto Training` is an opt-in false-positive loop. It is disabled until you enter the exact wake phrase and enable it.
+`Auto Training` is an opt-in sample-review and retraining loop. It is disabled until you enter the exact wake phrase and enable it.
 
 For each new wake-trigger clip sent to the trainer:
 
 1. Faster Whisper transcribes the audio locally.
-2. If the transcript contains the configured wake phrase, the clip stays in `Captured Audio` for manual positive review.
+2. If the transcript contains the configured wake phrase, the clip stays in `Captured Audio` for manual review by default.
 3. If speech was transcribed but the wake phrase is absent, the clip moves to `/data/negative_samples/` as an auto-reviewed hard negative.
-4. Empty transcripts, close misses, VAD-blocked captures, and captures for another wake word stay out of the automatic negative path.
+4. Empty transcripts, VAD-blocked captures, and captures for another wake word stay out of the automatic negative path.
+
+Two optional cleanup rules are available:
+
+- `Delete confirmed good wakes` removes normal wake-trigger clips after STT confirms the configured phrase.
+- `Promote confirmed close misses` checks close misses that passed VAD and moves them to the personal positive samples only when STT confirms the configured phrase.
+
+A close miss with an empty transcript or without the configured phrase stays in `Captured Audio`; it is never turned into a negative automatically. Saving Auto Training settings also scans existing eligible captures. Enabling close-miss promotion reviews previous unreviewed close misses, while enabling cleanup removes previously confirmed good wakes without transcribing them a second time.
 
 The default `small.en` model uses CUDA with `float16` when CTranslate2 can see an NVIDIA GPU, and falls back to CPU with `int8`. Choose a multilingual Faster Whisper model such as `small` when the wake phrase is not English. Downloaded STT models are cached in `/data/auto_train_models/`.
 

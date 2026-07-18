@@ -1288,7 +1288,7 @@
           <div>
             <div class="studioKicker">False-Positive Loop</div>
             <h3>Auto Training</h3>
-            <p>Transcribe real wake triggers, turn confirmed phrase-misses into hard negatives, retrain on your schedule, and ask Tater to refresh connected satellites.</p>
+            <p>Sort false wakes into negatives, recover spoken close misses as positives, clean up confirmed wakes, retrain on your schedule, and refresh connected satellites.</p>
             <div class="studioSteps" aria-label="Auto Training steps">
               <span class="studioStepChip"><b>1</b> Transcribe wakes</span>
               <span class="studioStepChip"><b>2</b> Collect negatives</span>
@@ -1305,13 +1305,21 @@
             <span class="studioStepBadge">1</span>
             <div>
               <h3>Review Rules</h3>
-              <p>Only wake-trigger clips are reviewed automatically. Close misses, empty STT results, and clips containing the wake phrase remain in the inbox.</p>
+              <p>False-wake sorting is always conservative. Cleanup and close-miss promotion remain optional, and empty STT results stay in the inbox.</p>
             </div>
           </div>
         </div>
         <label class="checkField">
           <input id="autoEnabled" type="checkbox" />
-          <span><strong>Enable Auto Training</strong>New wake triggers will be queued for local Faster Whisper transcription.</span>
+          <span><strong>Enable Auto Training</strong>Eligible wake triggers will be queued for local Faster Whisper transcription.</span>
+        </label>
+        <label class="checkField">
+          <input id="autoDeleteConfirmedWakes" type="checkbox" />
+          <span><strong>Delete confirmed good wakes</strong>When a normal wake trigger contains the configured phrase, remove it from Captured Audio instead of keeping it for manual review.</span>
+        </label>
+        <label class="checkField">
+          <input id="autoPromoteCloseMisses" type="checkbox" />
+          <span><strong>Promote confirmed close misses</strong>Transcribe close misses that passed VAD and move them to Positive samples only when STT finds the configured phrase.</span>
         </label>
         <div class="autoGrid">
           <label class="field">
@@ -2040,6 +2048,8 @@
       $("autoSttDevice").value = config.stt_device || "auto";
       $("autoSttComputeType").value = config.stt_compute_type || "auto";
       $("autoMinimumChars").value = String(config.minimum_transcript_chars ?? 2);
+      $("autoDeleteConfirmedWakes").checked = Boolean(config.delete_confirmed_wakes);
+      $("autoPromoteCloseMisses").checked = Boolean(config.promote_close_misses);
       $("autoScheduleHours").value = String(config.schedule_hours ?? 24);
       $("autoMinimumNegatives").value = String(config.minimum_new_negatives ?? 3);
       $("autoAdvertisedUrl").value = config.advertised_base_url || "";
@@ -2102,6 +2112,8 @@
       stt_device: $("autoSttDevice").value || "auto",
       stt_compute_type: $("autoSttComputeType").value || "auto",
       minimum_transcript_chars: Number($("autoMinimumChars").value || 2),
+      delete_confirmed_wakes: $("autoDeleteConfirmedWakes").checked,
+      promote_close_misses: $("autoPromoteCloseMisses").checked,
       schedule_hours: Number($("autoScheduleHours").value || 0),
       minimum_new_negatives: Number($("autoMinimumNegatives").value || 3),
       advertised_base_url: ($("autoAdvertisedUrl").value || "").trim(),
@@ -2280,6 +2292,7 @@
     if (when) subtitleParts.push(`Saved ${when}`);
     if (item.message) subtitleParts.push(item.message);
     if (item.auto_negative) subtitleParts.push("Auto-reviewed false positive");
+    if (item.auto_positive) subtitleParts.push("Auto-promoted close miss");
     let revertBtn = '';
     if (item.trimmed) {
         revertBtn = `<button type="button" data-sample-revert="${escapeAttr(item.saved_as)}" data-bucket="${escapeAttr(bucket)}">Revert</button>`;

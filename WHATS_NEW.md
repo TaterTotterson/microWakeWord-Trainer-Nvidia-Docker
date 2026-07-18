@@ -1,5 +1,6 @@
 - Added opt-in Auto Training for false-positive wake triggers, using Faster Whisper with automatic CUDA/float16 selection and CPU/int8 fallback.
-- Wake triggers whose transcripts do not contain the configured phrase can now become hard negatives automatically; close misses, empty transcripts, and phrase matches remain available for manual review.
+- Wake triggers whose transcripts do not contain the configured phrase can now become hard negatives automatically; empty transcripts and phrase matches remain available for manual review unless optional cleanup is enabled.
+- Added optional confirmed-good-wake cleanup and conservative close-miss recovery that promotes only VAD-approved, STT-confirmed phrase matches to positive samples.
 - Added scheduled retraining with a minimum-new-negatives threshold and automatic Tater Native satellite refresh after a successful model build.
 - Wake-word download links now advertise a LAN-reachable trainer URL instead of `127.0.0.1`.
 - Tightened detector calibration defaults to favor fewer ambient false accepts while preserving candidates within 0.5 percentage points of the best recall.

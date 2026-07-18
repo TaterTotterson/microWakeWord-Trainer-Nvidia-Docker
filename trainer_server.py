@@ -94,6 +94,8 @@ AUTO_TRAIN_DEFAULT_CONFIG: Dict[str, Any] = {
     "stt_device": "auto",
     "stt_compute_type": "auto",
     "minimum_transcript_chars": 2,
+    "delete_confirmed_wakes": False,
+    "promote_close_misses": False,
     "schedule_hours": 24,
     "minimum_new_negatives": 3,
     "advertised_base_url": "",
@@ -473,6 +475,8 @@ def _normalize_auto_train_config(values: Dict[str, Any] | None, *, base: Dict[st
         "stt_device": stt_device,
         "stt_compute_type": stt_compute_type,
         "minimum_transcript_chars": _bounded_int(source.get("minimum_transcript_chars"), 2, 1, 100),
+        "delete_confirmed_wakes": _config_bool(source.get("delete_confirmed_wakes")),
+        "promote_close_misses": _config_bool(source.get("promote_close_misses")),
         "schedule_hours": schedule_hours,
         "minimum_new_negatives": _bounded_int(source.get("minimum_new_negatives"), 3, 1, 10000),
         "advertised_base_url": _normalize_http_base_url(source.get("advertised_base_url")),
@@ -636,12 +640,20 @@ def _transcript_contains_wake_phrase(transcript: Any, wake_phrase: Any) -> bool:
     return f" {normalized_phrase} " in f" {normalized_transcript} "
 
 
-def _captured_event_is_auto_reviewable(metadata: Dict[str, Any]) -> bool:
+def _captured_event_is_close_miss(metadata: Dict[str, Any]) -> bool:
+    event_type = str(metadata.get("event_type") or "captured").strip().lower()
+    return "close" in event_type
+
+
+def _captured_event_is_auto_reviewable(
+    metadata: Dict[str, Any],
+    config: Dict[str, Any] | None = None,
+) -> bool:
     if _parse_bool(metadata.get("blocked_by_vad")):
         return False
     event_type = str(metadata.get("event_type") or "captured").strip().lower()
     if "close" in event_type:
-        return False
+        return bool((config or {}).get("promote_close_misses"))
     return event_type in {"captured", "trigger", "false_trigger"} or "wake" in event_type or "detect" in event_type
 
 
@@ -733,10 +745,14 @@ def _queue_auto_review(file_name: str) -> bool:
 
 def _queue_pending_auto_reviews(*, force: bool = False) -> int:
     queued = 0
+    with AUTO_TRAIN_LOCK:
+        config = dict(AUTO_TRAIN_CONFIG)
+    if not config.get("enabled"):
+        return queued
     CAPTURED_DIR.mkdir(parents=True, exist_ok=True)
     for audio_path in sorted(CAPTURED_DIR.glob("*.wav")):
         metadata = _load_sidecar_json(audio_path)
-        if not _captured_event_is_auto_reviewable(metadata):
+        if not _captured_event_is_auto_reviewable(metadata, config):
             continue
         status = str(metadata.get("auto_review_status") or "").strip()
         if status == "transcribing":
@@ -746,6 +762,12 @@ def _queue_pending_auto_reviews(*, force: bool = False) -> int:
         if force and status in {"error", "no_speech"}:
             metadata.pop("auto_review_status", None)
             _write_sidecar_json(audio_path, metadata)
+            status = ""
+        if (
+            status == "wake_phrase_detected"
+            and config.get("delete_confirmed_wakes")
+            and not _captured_event_is_close_miss(metadata)
+        ):
             status = ""
         if status:
             continue
@@ -782,7 +804,22 @@ def _auto_review_capture(file_name: str) -> None:
         except FileNotFoundError:
             return
         metadata = _load_sidecar_json(audio_path)
-        if metadata.get("auto_review_status") or not _captured_event_is_auto_reviewable(metadata):
+        is_close_miss = _captured_event_is_close_miss(metadata)
+        status = str(metadata.get("auto_review_status") or "").strip()
+        if (
+            status == "wake_phrase_detected"
+            and config.get("delete_confirmed_wakes")
+            and not is_close_miss
+        ):
+            transcript = str(metadata.get("transcript") or "")
+            _remove_audio_with_sidecar(audio_path)
+            _record_auto_review_result(
+                file_name=file_name,
+                transcript=transcript,
+                result="deleted_confirmed_wake",
+            )
+            return
+        if status or not _captured_event_is_auto_reviewable(metadata, config):
             return
         captured_wake_phrase = str(metadata.get("wake_word") or "").strip()
         if captured_wake_phrase and _normalize_transcript_text(captured_wake_phrase) != _normalize_transcript_text(wake_phrase):
@@ -819,10 +856,50 @@ def _auto_review_capture(file_name: str) -> None:
             return
 
         if _transcript_contains_wake_phrase(transcript, wake_phrase):
+            if is_close_miss:
+                metadata["auto_review_status"] = "approved_positive"
+                metadata["auto_review_reason"] = (
+                    "Close miss contained the configured wake phrase and was promoted to a positive sample."
+                )
+                metadata["auto_positive"] = True
+                _write_sidecar_json(audio_path, metadata)
+                _move_captured_audio(
+                    file_name,
+                    PERSONAL_DIR,
+                    target_prefix="sample",
+                    review_status="auto_approved_personal",
+                )
+                _record_auto_review_result(
+                    file_name=file_name,
+                    transcript=transcript,
+                    result="promoted_close_miss",
+                )
+                return
+            if config.get("delete_confirmed_wakes"):
+                _remove_audio_with_sidecar(audio_path)
+                _record_auto_review_result(
+                    file_name=file_name,
+                    transcript=transcript,
+                    result="deleted_confirmed_wake",
+                )
+                return
             metadata["auto_review_status"] = "wake_phrase_detected"
             metadata["auto_review_reason"] = "Wake phrase found in transcript; left for manual positive review."
             _write_sidecar_json(audio_path, metadata)
             _record_auto_review_result(file_name=file_name, transcript=transcript, result="wake_phrase_detected")
+            return
+
+        if is_close_miss:
+            metadata["auto_review_status"] = "close_miss_phrase_not_detected"
+            metadata["auto_review_reason"] = (
+                "Close miss did not contain the configured wake phrase; left for manual review."
+            )
+            _write_sidecar_json(audio_path, metadata)
+            _record_auto_review_result(
+                file_name=file_name,
+                transcript=transcript,
+                result="close_miss_phrase_not_detected",
+            )
             return
 
         metadata["auto_review_status"] = "approved_negative"
@@ -1719,6 +1796,7 @@ def _sample_item_from_path(audio_path: Path, bucket: str) -> Dict[str, Any]:
         "transcript": meta.get("transcript") or "",
         "transcribed_at": meta.get("transcribed_at") or "",
         "auto_negative": bool(meta.get("auto_negative")),
+        "auto_positive": bool(meta.get("auto_positive")),
         "auto_review_reason": meta.get("auto_review_reason") or "",
         "size_bytes": stat.st_size,
         "audio_url": f"/api/audio/{bucket}/{audio_path.name}",
@@ -2401,8 +2479,8 @@ async def upload_captured_audio(
     }
     _write_sidecar_json(audio_path, sidecar)
     with AUTO_TRAIN_LOCK:
-        auto_review_enabled = bool(AUTO_TRAIN_CONFIG.get("enabled"))
-    if auto_review_enabled and _captured_event_is_auto_reviewable(sidecar):
+        auto_review_config = dict(AUTO_TRAIN_CONFIG)
+    if auto_review_config.get("enabled") and _captured_event_is_auto_reviewable(sidecar, auto_review_config):
         _queue_auto_review(audio_path.name)
 
     return {
@@ -2487,8 +2565,8 @@ async def upload_captured_audio_raw(
     }
     _write_sidecar_json(audio_path, sidecar)
     with AUTO_TRAIN_LOCK:
-        auto_review_enabled = bool(AUTO_TRAIN_CONFIG.get("enabled"))
-    if auto_review_enabled and _captured_event_is_auto_reviewable(sidecar):
+        auto_review_config = dict(AUTO_TRAIN_CONFIG)
+    if auto_review_config.get("enabled") and _captured_event_is_auto_reviewable(sidecar, auto_review_config):
         _queue_auto_review(audio_path.name)
 
     return {

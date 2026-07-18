@@ -1,5 +1,6 @@
 import io
 import json
+import queue
 import sys
 import tempfile
 import unittest
@@ -22,7 +23,18 @@ def silent_wav_bytes(duration_s: float = 0.25) -> bytes:
 
 
 class AutoTrainTests(unittest.TestCase):
+    def clear_review_queue(self):
+        while True:
+            try:
+                trainer.AUTO_TRAIN_REVIEW_QUEUE.get_nowait()
+            except queue.Empty:
+                break
+            else:
+                trainer.AUTO_TRAIN_REVIEW_QUEUE.task_done()
+        trainer.AUTO_TRAIN_QUEUED_FILES.clear()
+
     def setUp(self):
+        self.clear_review_queue()
         self.tempdir = tempfile.TemporaryDirectory()
         root = Path(self.tempdir.name)
         self.original_paths = (
@@ -70,9 +82,16 @@ class AutoTrainTests(unittest.TestCase):
         trainer.AUTO_TRAIN_CONFIG.update(self.original_config)
         trainer.AUTO_TRAIN_STATE.clear()
         trainer.AUTO_TRAIN_STATE.update(self.original_state)
+        self.clear_review_queue()
         self.tempdir.cleanup()
 
-    def add_capture(self, name: str = "wake.wav", wake_word: str = "hey_tater") -> Path:
+    def add_capture(
+        self,
+        name: str = "wake.wav",
+        wake_word: str = "hey_tater",
+        event_type: str = "wake_detected",
+        blocked_by_vad: bool = False,
+    ) -> Path:
         audio_path = trainer.CAPTURED_DIR / name
         audio_path.write_bytes(silent_wav_bytes())
         trainer._write_sidecar_json(
@@ -80,7 +99,8 @@ class AutoTrainTests(unittest.TestCase):
             {
                 "original_name": name,
                 "wake_word": wake_word,
-                "event_type": "wake_detected",
+                "event_type": event_type,
+                "blocked_by_vad": blocked_by_vad,
                 "review_status": "pending",
             },
         )
@@ -114,6 +134,100 @@ class AutoTrainTests(unittest.TestCase):
         metadata = trainer._load_sidecar_json(audio_path)
         self.assertEqual(metadata["auto_review_status"], "wake_phrase_detected")
         self.assertEqual(trainer.AUTO_TRAIN_STATE["pending_negative_count"], 0)
+
+    def test_matching_phrase_is_deleted_when_cleanup_is_enabled(self):
+        audio_path = self.add_capture()
+        trainer.AUTO_TRAIN_CONFIG["delete_confirmed_wakes"] = True
+        with patch.object(
+            trainer,
+            "_transcribe_capture_with_faster_whisper",
+            return_value="hey tater turn on the lights",
+        ):
+            trainer._auto_review_capture("wake.wav")
+
+        self.assertFalse(audio_path.exists())
+        self.assertFalse(audio_path.with_suffix(".json").exists())
+        self.assertFalse(list(trainer.PERSONAL_DIR.glob("*.wav")))
+        self.assertFalse(list(trainer.NEGATIVE_DIR.glob("*.wav")))
+        self.assertEqual(trainer.AUTO_TRAIN_STATE["last_review_result"], "deleted_confirmed_wake")
+
+    def test_cleanup_processes_previously_confirmed_wake_without_retranscribing(self):
+        audio_path = self.add_capture()
+        metadata = trainer._load_sidecar_json(audio_path)
+        metadata.update(
+            {
+                "auto_review_status": "wake_phrase_detected",
+                "transcript": "hey tater",
+            }
+        )
+        trainer._write_sidecar_json(audio_path, metadata)
+        trainer.AUTO_TRAIN_CONFIG["delete_confirmed_wakes"] = True
+
+        self.assertEqual(trainer._queue_pending_auto_reviews(), 1)
+        with patch.object(trainer, "_transcribe_capture_with_faster_whisper") as transcribe:
+            trainer._auto_review_capture("wake.wav")
+
+        transcribe.assert_not_called()
+        self.assertFalse(audio_path.exists())
+        self.assertEqual(trainer.AUTO_TRAIN_STATE["last_review_transcript"], "hey tater")
+
+    def test_close_miss_is_not_transcribed_by_default(self):
+        audio_path = self.add_capture(event_type="close_miss")
+        with patch.object(trainer, "_transcribe_capture_with_faster_whisper") as transcribe:
+            trainer._auto_review_capture("wake.wav")
+
+        transcribe.assert_not_called()
+        self.assertTrue(audio_path.exists())
+        self.assertFalse(trainer._load_sidecar_json(audio_path).get("auto_review_status"))
+
+    def test_existing_close_miss_is_queued_when_promotion_is_enabled(self):
+        self.add_capture(event_type="close_miss")
+        self.assertEqual(trainer._queue_pending_auto_reviews(), 0)
+
+        trainer.AUTO_TRAIN_CONFIG["promote_close_misses"] = True
+        self.assertEqual(trainer._queue_pending_auto_reviews(), 1)
+
+    def test_close_miss_with_phrase_is_promoted_when_enabled(self):
+        self.add_capture(event_type="close_miss")
+        trainer.AUTO_TRAIN_CONFIG["promote_close_misses"] = True
+        with patch.object(trainer, "_transcribe_capture_with_faster_whisper", return_value="hey tater"):
+            trainer._auto_review_capture("wake.wav")
+
+        self.assertFalse((trainer.CAPTURED_DIR / "wake.wav").exists())
+        positives = list(trainer.PERSONAL_DIR.glob("*.wav"))
+        self.assertEqual(len(positives), 1)
+        metadata = trainer._load_sidecar_json(positives[0])
+        self.assertTrue(metadata["auto_positive"])
+        self.assertEqual(metadata["review_status"], "auto_approved_personal")
+        self.assertEqual(metadata["transcript"], "hey tater")
+        self.assertFalse(list(trainer.NEGATIVE_DIR.glob("*.wav")))
+        self.assertEqual(trainer.AUTO_TRAIN_STATE["pending_negative_count"], 0)
+
+    def test_close_miss_without_phrase_stays_in_inbox(self):
+        audio_path = self.add_capture(event_type="close_miss")
+        trainer.AUTO_TRAIN_CONFIG["promote_close_misses"] = True
+        with patch.object(
+            trainer,
+            "_transcribe_capture_with_faster_whisper",
+            return_value="turn on the lights",
+        ):
+            trainer._auto_review_capture("wake.wav")
+
+        self.assertTrue(audio_path.exists())
+        self.assertFalse(list(trainer.PERSONAL_DIR.glob("*.wav")))
+        self.assertFalse(list(trainer.NEGATIVE_DIR.glob("*.wav")))
+        metadata = trainer._load_sidecar_json(audio_path)
+        self.assertEqual(metadata["auto_review_status"], "close_miss_phrase_not_detected")
+
+    def test_vad_blocked_close_miss_is_never_transcribed(self):
+        audio_path = self.add_capture(event_type="close_miss", blocked_by_vad=True)
+        trainer.AUTO_TRAIN_CONFIG["promote_close_misses"] = True
+        with patch.object(trainer, "_transcribe_capture_with_faster_whisper") as transcribe:
+            trainer._auto_review_capture("wake.wav")
+
+        transcribe.assert_not_called()
+        self.assertTrue(audio_path.exists())
+        self.assertFalse(trainer._load_sidecar_json(audio_path).get("auto_review_status"))
 
     def test_capture_for_another_wake_word_is_not_transcribed(self):
         audio_path = self.add_capture(wake_word="computer")
