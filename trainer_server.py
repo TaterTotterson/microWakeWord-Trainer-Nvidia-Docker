@@ -932,36 +932,86 @@ def _auto_review_capture(file_name: str) -> None:
             AUTO_TRAIN_RUNTIME["review_file"] = ""
 
 
+def _connected_tater_satellite_selectors(payload: Any) -> List[str]:
+    if not isinstance(payload, dict):
+        return []
+
+    clients: Any = None
+    for key in ("clients", "satellites", "devices"):
+        if isinstance(payload.get(key), (dict, list)):
+            clients = payload.get(key)
+            break
+    if isinstance(clients, dict):
+        rows = [
+            (str(key or "").strip(), value)
+            for key, value in clients.items()
+        ]
+    elif isinstance(clients, list):
+        rows = [("", value) for value in clients]
+    else:
+        rows = []
+
+    selectors: List[str] = []
+    seen: set[str] = set()
+    for fallback_selector, row in rows:
+        if not isinstance(row, dict) or not _config_bool(row.get("connected"), False):
+            continue
+        selector = str(row.get("selector") or fallback_selector).strip()
+        if not selector or selector in seen:
+            continue
+        seen.add(selector)
+        selectors.append(selector)
+    return selectors
+
+
 def _notify_tater_satellites() -> Dict[str, Any]:
     with AUTO_TRAIN_LOCK:
         config = dict(AUTO_TRAIN_CONFIG)
     if not config.get("notify_satellites"):
         return {"ok": True, "skipped": True, "message": "Satellite notification is disabled."}
 
-    endpoint = f"{str(config.get('tater_url') or '').rstrip('/')}/api/tater/satellite/v1/settings"
-    body = json.dumps(
-        {
-            "selector": str(config.get("tater_selector") or ""),
-            "settings": {},
-        }
-    ).encode("utf-8")
+    base_url = str(config.get("tater_url") or "").rstrip("/")
+    settings_endpoint = f"{base_url}/api/tater/satellite/v1/settings"
+    status_endpoint = f"{base_url}/api/tater/satellite/v1/status"
     headers = {"Content-Type": "application/json", "User-Agent": "microWakeWord-Trainer/auto-train"}
     token = str(config.get("tater_api_token") or "").strip()
     if token:
         headers["X-Tater-Token"] = token
 
     try:
-        req = URLRequest(endpoint, data=body, headers=headers, method="POST")
-        with urlopen(req, timeout=15) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-        push = payload.get("push") if isinstance(payload, dict) and isinstance(payload.get("push"), dict) else {}
-        count = push.get("count")
+        configured_selector = str(config.get("tater_selector") or "").strip()
+        if configured_selector:
+            selectors = [configured_selector]
+        else:
+            status_request = URLRequest(status_endpoint, headers=headers, method="GET")
+            with urlopen(status_request, timeout=15) as response:
+                status_payload = json.loads(response.read().decode("utf-8"))
+            selectors = _connected_tater_satellite_selectors(status_payload)
+
+        count = 0
+        refreshes: List[Dict[str, Any]] = []
+        for selector in selectors:
+            body = json.dumps({"selector": selector, "settings": {}}).encode("utf-8")
+            request = URLRequest(settings_endpoint, data=body, headers=headers, method="POST")
+            with urlopen(request, timeout=15) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            push = payload.get("push") if isinstance(payload, dict) and isinstance(payload.get("push"), dict) else {}
+            pushed_count = push.get("count")
+            if isinstance(pushed_count, (int, float)):
+                count += max(0, int(pushed_count))
+            refreshes.append({"selector": selector, "count": pushed_count})
+
         with AUTO_TRAIN_LOCK:
             AUTO_TRAIN_STATE["last_notify_at"] = _iso_now()
             AUTO_TRAIN_STATE["last_notify_count"] = count
             AUTO_TRAIN_STATE["last_notify_error"] = ""
             _save_auto_train_state_locked()
-        return {"ok": True, "count": count, "response": payload}
+        return {
+            "ok": True,
+            "count": count,
+            "selectors": selectors,
+            "refreshes": refreshes,
+        }
     except Exception as exc:
         with AUTO_TRAIN_LOCK:
             AUTO_TRAIN_STATE["last_notify_at"] = _iso_now()

@@ -103,7 +103,8 @@ else
     if [ "${actual_filecount}" -eq 0 ] || [ "${actual_filecount}" -ne "${expected_filecount}" ] ; then
         if [ ! -f "${AUDIO_ZIP}" ] ; then
             echo "   Downloading ${AUDIO_ZIPFILE}"
-            curl -sfL "${AUDIO_URL}" -o "${AUDIO_ZIP}"
+            curl -fL --progress-bar "${AUDIO_URL}" -o "${AUDIO_ZIP}" \
+                2> >(tr '\r' '\n' >&2)
         fi
 
         rm -rf "${AUDIO_DIR}" || :

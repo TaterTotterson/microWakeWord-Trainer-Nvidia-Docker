@@ -280,6 +280,63 @@ class AutoTrainTests(unittest.TestCase):
         self.assertEqual(request.get_header("X-tater-token"), "secret-token")
         self.assertEqual(json.loads(request.data), {"selector": "kitchen-sat", "settings": {}})
 
+    def test_tater_refresh_updates_each_connected_satellite_profile(self):
+        trainer.AUTO_TRAIN_CONFIG.update(
+            {
+                "notify_satellites": True,
+                "tater_url": "http://127.0.0.1:8501",
+                "tater_selector": "",
+            }
+        )
+
+        class Response:
+            def __init__(self, payload):
+                self.payload = payload
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return json.dumps(self.payload).encode("utf-8")
+
+        responses = [
+            Response(
+                {
+                    "clients": {
+                        "native:office": {"selector": "native:office", "connected": True},
+                        "native:kitchen": {"connected": True},
+                        "native:garage": {"selector": "native:garage", "connected": False},
+                    }
+                }
+            ),
+            Response({"push": {"count": 1}}),
+            Response({"push": {"count": 1}}),
+        ]
+        with patch.object(trainer, "urlopen", side_effect=responses) as open_url:
+            result = trainer._notify_tater_satellites()
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["count"], 2)
+        self.assertEqual(result["selectors"], ["native:office", "native:kitchen"])
+        self.assertEqual(open_url.call_count, 3)
+
+        status_request = open_url.call_args_list[0].args[0]
+        self.assertEqual(status_request.get_method(), "GET")
+        self.assertEqual(status_request.full_url, "http://127.0.0.1:8501/api/tater/satellite/v1/status")
+
+        refresh_requests = [call.args[0] for call in open_url.call_args_list[1:]]
+        self.assertEqual(
+            [json.loads(request.data) for request in refresh_requests],
+            [
+                {"selector": "native:office", "settings": {}},
+                {"selector": "native:kitchen", "settings": {}},
+            ],
+        )
+        self.assertTrue(all(request.get_method() == "POST" for request in refresh_requests))
+
     def test_advertised_url_uses_non_loopback_browser_host(self):
         request = SimpleNamespace(
             base_url="http://192.168.1.50:8789/",

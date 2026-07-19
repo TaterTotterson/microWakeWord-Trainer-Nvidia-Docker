@@ -22,7 +22,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 Tagged releases also publish matching immutable image tags:
 
 ```bash
-docker pull ghcr.io/tatertotterson/microwakeword:v13
+docker pull ghcr.io/tatertotterson/microwakeword:v14
 ```
 
 The release tag must match `VERSION`. Update `WHATS_NEW.md` before tagging; the Docker workflow prepends it to GitHub's automatically generated release notes.
@@ -32,7 +32,7 @@ Python 3.13 TensorFlow build for `sm_120`:
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:blackwell
-docker pull ghcr.io/tatertotterson/microwakeword:v13-blackwell
+docker pull ghcr.io/tatertotterson/microwakeword:v14-blackwell
 ```
 
 Use the Blackwell image only for RTX 50-series cards. It includes the
@@ -53,9 +53,9 @@ docker run -d \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v13` when you want to pin a known release instead of tracking `latest`.
+Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v14` when you want to pin a known release instead of tracking `latest`.
 For RTX 50-series cards, use `ghcr.io/tatertotterson/microwakeword:blackwell`
-or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v13-blackwell`
+or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v14-blackwell`
 in the same `docker run` command.
 
 The flags:
@@ -185,7 +185,7 @@ A close miss with an empty transcript or without the configured phrase stays in 
 
 The default `small.en` model uses CUDA with `float16` when CTranslate2 can see an NVIDIA GPU, and falls back to CPU with `int8`. Choose a multilingual Faster Whisper model such as `small` when the wake phrase is not English. Downloaded STT models are cached in `/data/auto_train_models/`.
 
-Scheduled training runs only after the configured number of new automatic negatives has accumulated. A successful run publishes the replacement model at the same wake-word URL and can call Tater's native satellite settings API to make connected satellites pull it again. This refresh uses the existing Tater Native update path, so no satellite firmware change is required.
+Scheduled training runs only after the configured number of new automatic negatives has accumulated. A successful run publishes the replacement model at the same wake-word URL, asks Tater for its connected native satellites, and re-saves each satellite's current wake profile so its JSON tuning and model are fetched again. This refresh uses the existing Tater Native update path, so no satellite firmware change is required.
 
 The `Trainer public URL` must be reachable from the satellites. With the documented `--network host` command, the trainer can normally use the LAN address from the browser request or host network. If you open the UI as `http://localhost:8789`, enter a value such as `http://192.168.1.50:8789`, or start the container with `REC_PUBLIC_BASE_URL` set to that value. When using Docker bridge networking, always set this URL to the published host address; a container bridge address is not satellite-reachable.
 
