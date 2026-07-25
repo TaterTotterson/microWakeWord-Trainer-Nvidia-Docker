@@ -1084,6 +1084,43 @@
     .trimActions { display: flex; gap: 8px; flex-wrap: wrap; }
     .trimActions button { flex: 1; min-width: 120px; }
 
+    .taterLinkOverlay {
+      position: fixed; inset: 0; padding: 22px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(4,5,10,0.62); backdrop-filter: blur(12px);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity 0.18s ease, visibility 0.18s ease;
+      z-index: 12000;
+    }
+    .taterLinkOverlay.open { opacity: 1; visibility: visible; pointer-events: auto; }
+    .taterLinkDialog {
+      width: min(560px, calc(100vw - 36px));
+      display: grid; gap: 18px; padding: 22px; border-radius: 24px;
+      border: 1px solid rgba(255,138,42,0.28);
+      background:
+        radial-gradient(circle at top right, rgba(255,138,42,0.16), transparent 46%),
+        linear-gradient(180deg, rgba(17,20,28,0.96), rgba(8,10,16,0.98));
+      box-shadow: 0 30px 90px rgba(0,0,0,0.64);
+    }
+    .taterLinkCodePanel {
+      display: grid; gap: 10px; text-align: center; padding: 24px;
+      border-radius: 18px; border: 1px solid rgba(255,138,42,0.28);
+      background: rgba(255,138,42,0.09);
+    }
+    .taterLinkCode {
+      color: var(--orange2); font: 800 clamp(30px, 8vw, 46px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.12em;
+    }
+    .taterLinkSuccess {
+      display: grid; justify-items: center; gap: 12px; padding: 28px; text-align: center;
+    }
+    .taterLinkSuccessMark {
+      display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%;
+      background: rgba(57,212,160,0.15); border: 1px solid rgba(57,212,160,0.42);
+      color: #6ee0af; font-size: 24px; font-weight: 900;
+    }
+    .taterLinkActions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
     .pill.trimBadge {
       color: #89d4ff;
       border-color: rgba(137,212,255,0.25);
@@ -1399,8 +1436,8 @@
           <div class="studioPanelTitle">
             <span class="studioStepBadge">3</span>
             <div>
-              <h3>Publish + Satellite Refresh</h3>
-              <p>The trainer publishes a LAN-reachable model URL, then asks Tater to re-push live settings so the firmware downloads the updated model at the same URL.</p>
+              <h3>Publish to Tater</h3>
+              <p>The trainer publishes a LAN-reachable model URL, then tells Tater to make the newly trained wake word active on every satellite.</p>
             </div>
           </div>
         </div>
@@ -1414,22 +1451,15 @@
             <strong>Tater URL</strong>
             <input id="autoTaterUrl" type="text" value="http://127.0.0.1:8501" />
           </label>
-          <label class="field">
-            <strong>Satellite selector (optional)</strong>
-            <input id="autoTaterSelector" type="text" placeholder="Blank refreshes all connected sats" />
-          </label>
-          <label class="field">
-            <strong>Tater API token (if enabled)</strong>
-            <input id="autoTaterToken" type="password" placeholder="Not configured" autocomplete="off" />
-          </label>
+        </div>
+        <div class="taterLinkActions">
+          <span id="autoTaterLinkStatus" class="pill">Not linked</span>
+          <button id="autoLinkTaterBtn" class="primary" type="button">Link Tater</button>
+          <button id="autoUnlinkTaterBtn" class="danger" type="button" hidden>Unlink</button>
         </div>
         <label class="checkField">
           <input id="autoNotifySatellites" type="checkbox" checked />
-          <span><strong>Refresh satellites after successful training</strong>Uses Tater's existing native satellite settings API.</span>
-        </label>
-        <label id="autoClearTokenRow" class="checkField" hidden>
-          <input id="autoClearTaterToken" type="checkbox" />
-          <span><strong>Clear the saved Tater token</strong>The token is otherwise preserved when the password field is blank.</span>
+          <span><strong>Activate the new word after successful training</strong>Tater applies it globally and updates every connected satellite.</span>
         </label>
       </section>
 
@@ -1438,7 +1468,7 @@
           <button id="autoSaveBtn" class="primary" type="button">Save Auto Training</button>
           <button id="autoReviewNowBtn" type="button">Review inbox now</button>
           <button id="autoTrainNowBtn" type="button">Train now</button>
-          <button id="autoNotifyNowBtn" type="button">Refresh satellites now</button>
+          <button id="autoNotifyNowBtn" type="button">Publish current wake word now</button>
         </div>
         <div id="autoAudit" class="autoAudit muted">No automatic review has run yet.</div>
       </section>
@@ -1678,6 +1708,22 @@
         <button id="trimSaveBtn" class="primary" type="button">Save Trim</button>
         <button id="trimCancelBtn" type="button">Cancel</button>
       </div>
+    </div>
+  </div>
+
+  <div id="taterLinkOverlay" class="taterLinkOverlay" aria-hidden="true">
+    <div class="taterLinkDialog" role="dialog" aria-modal="true" aria-labelledby="taterLinkTitle">
+      <div class="trimHeader">
+        <div>
+          <h3 id="taterLinkTitle" class="trimTitle">Link Tater</h3>
+          <p id="taterLinkHint" class="trimHint">Enter the short-lived code shown in Tater Voice Settings.</p>
+        </div>
+        <button id="closeTaterLinkBtn" type="button">Close</button>
+      </div>
+      <div id="taterLinkBody">
+        <div class="emptyState">Enter the secure pairing code from Tater.</div>
+      </div>
+      <div id="taterLinkModalStatus" class="muted">Waiting for the Tater code.</div>
     </div>
   </div>
 
@@ -2038,6 +2084,7 @@
     const config = data.config || {};
     const state = data.state || {};
     const runtime = data.runtime || {};
+    const trainerLink = data.trainer_link || {};
     uiState.autoTrain = data;
 
     if (populateForm) {
@@ -2054,13 +2101,17 @@
       $("autoMinimumNegatives").value = String(config.minimum_new_negatives ?? 3);
       $("autoAdvertisedUrl").value = config.advertised_base_url || "";
       $("autoTaterUrl").value = config.tater_url || "http://127.0.0.1:8501";
-      $("autoTaterSelector").value = config.tater_selector || "";
-      $("autoTaterToken").value = "";
-      $("autoTaterToken").placeholder = config.tater_api_token_configured ? "Saved token (leave blank to keep)" : "Not configured";
       $("autoNotifySatellites").checked = config.notify_satellites !== false;
-      $("autoClearTokenRow").hidden = !config.tater_api_token_configured;
-      $("autoClearTaterToken").checked = false;
     }
+
+    const taterLinked = Boolean(trainerLink.linked);
+    setPill(
+      $("autoTaterLinkStatus"),
+      taterLinked ? `Linked${trainerLink.tater_name ? ` to ${trainerLink.tater_name}` : ""}` : "Not linked",
+      taterLinked ? "ok" : "warn"
+    );
+    $("autoLinkTaterBtn").textContent = taterLinked ? "Relink Tater" : "Link Tater";
+    $("autoUnlinkTaterBtn").hidden = !taterLinked;
 
     $("autoDetectedUrl").textContent = config.advertised_base_url
       ? `Using configured URL: ${config.advertised_base_url}`
@@ -2090,8 +2141,8 @@
     if (state.last_stt_device) audit.push(`STT runtime: ${state.last_stt_device} / ${state.last_stt_compute_type || "default"}`);
     if (state.last_notify_at) {
       audit.push(state.last_notify_error
-        ? `Satellite refresh failed: ${state.last_notify_error}`
-        : `Satellite refresh: ${state.last_notify_count ?? "requested"} connected at ${formatTimestamp(state.last_notify_at)}`);
+        ? `Wake-word publish failed: ${state.last_notify_error}`
+        : `Wake word published to ${state.last_notify_count ?? "all"} connected satellite(s) at ${formatTimestamp(state.last_notify_at)}`);
     }
     $("autoAudit").textContent = audit.join(" · ") || "No automatic review has run yet.";
     syncButtons();
@@ -2118,12 +2169,8 @@
       minimum_new_negatives: Number($("autoMinimumNegatives").value || 3),
       advertised_base_url: ($("autoAdvertisedUrl").value || "").trim(),
       tater_url: ($("autoTaterUrl").value || "").trim(),
-      tater_selector: ($("autoTaterSelector").value || "").trim(),
       notify_satellites: $("autoNotifySatellites").checked,
-      clear_tater_api_token: $("autoClearTaterToken").checked,
     };
-    const token = ($("autoTaterToken").value || "").trim();
-    if (token) payload.tater_api_token = token;
     return payload;
   }
 
@@ -2165,9 +2212,101 @@
         await refreshSession();
         pollTraining();
       } else {
-        setPill($("autoStatus"), `Satellite refresh requested${data.count === null || data.count === undefined ? "" : ` for ${data.count}`}`, "ok");
+        setPill($("autoStatus"), `Wake word published${data.count === null || data.count === undefined ? "" : ` to ${data.count} satellite(s)`}`, "ok");
       }
       return data;
+    } finally {
+      uiState.autoBusy = false;
+      syncButtons();
+    }
+  }
+
+  function closeTaterLinkModal() {
+    $("taterLinkOverlay").classList.remove("open");
+    $("taterLinkOverlay").setAttribute("aria-hidden", "true");
+  }
+
+  function showTaterLinkSuccess(status) {
+    const taterName = status?.tater_name ? ` to ${escapeHtml(status.tater_name)}` : "";
+    $("taterLinkTitle").textContent = "Tater linked";
+    $("taterLinkHint").textContent = "This trainer can now securely publish wake-word updates.";
+    $("taterLinkBody").innerHTML = `
+      <div class="taterLinkSuccess">
+        <div class="taterLinkSuccessMark" aria-hidden="true">✓</div>
+        <strong>Successfully linked${taterName}</strong>
+        <span class="muted">The private link key is stored locally and is never shown again.</span>
+      </div>
+    `;
+    $("taterLinkModalStatus").textContent = "You can close this popup.";
+  }
+
+  async function openTaterLinkModal() {
+    $("taterLinkTitle").textContent = "Link Tater";
+    $("taterLinkHint").textContent = "Enter the short-lived code shown in Tater Voice Settings.";
+    const taterUrl = ($("autoTaterUrl").value || "http://127.0.0.1:8501").trim();
+    $("taterLinkBody").innerHTML = `
+      <div class="stack">
+        <label class="field">
+          <strong>Tater address</strong>
+          <input id="taterLinkUrl" type="text" value="${escapeAttr(taterUrl)}" placeholder="http://127.0.0.1:8501" />
+        </label>
+        <div class="taterLinkCodePanel">
+          <span class="muted">Tater pairing code</span>
+          <input id="taterLinkCode" class="taterLinkCode" type="text" inputmode="text" autocomplete="off"
+            maxlength="9" placeholder="ABCD-EFGH" />
+          <span class="muted">In Tater, open Voice Settings → Wake Word Trainer → Link Trainer.</span>
+        </div>
+        <button id="claimTaterLinkBtn" class="primary" type="button">Link Tater</button>
+      </div>
+    `;
+    $("taterLinkModalStatus").textContent = "Waiting for the Tater code.";
+    $("taterLinkOverlay").classList.add("open");
+    $("taterLinkOverlay").setAttribute("aria-hidden", "false");
+    const codeInput = $("taterLinkCode");
+    const urlInput = $("taterLinkUrl");
+    const submit = $("claimTaterLinkBtn");
+    codeInput.addEventListener("input", () => {
+      const raw = String(codeInput.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+      codeInput.value = raw.length > 4 ? `${raw.slice(0, 4)}-${raw.slice(4)}` : raw;
+    });
+    submit.addEventListener("click", async () => {
+      const pairingCode = String(codeInput.value || "").trim();
+      const targetUrl = String(urlInput.value || "").trim();
+      if (!pairingCode || !targetUrl) {
+        $("taterLinkModalStatus").textContent = "Tater address and pairing code are required.";
+        return;
+      }
+      submit.disabled = true;
+      codeInput.disabled = true;
+      urlInput.disabled = true;
+      $("taterLinkModalStatus").textContent = "Linking securely with Tater...";
+      try {
+        const result = await api("/api/tater_link/claim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tater_url: targetUrl, pairing_code: pairingCode }),
+        });
+        $("autoTaterUrl").value = targetUrl;
+        showTaterLinkSuccess(result);
+        await refreshAutoTrain(false);
+      } catch (error) {
+        submit.disabled = false;
+        codeInput.disabled = false;
+        urlInput.disabled = false;
+        $("taterLinkModalStatus").textContent = `Link failed: ${error.message}`;
+      }
+    });
+    window.setTimeout(() => codeInput.focus(), 50);
+  }
+
+  async function unlinkTater() {
+    if (!window.confirm("Unlink this trainer from Tater? Wake-word publishing will stop until it is linked again.")) return;
+    uiState.autoBusy = true;
+    syncButtons();
+    try {
+      await api("/api/tater_link/unlink", { method: "POST" });
+      await refreshAutoTrain(false);
+      setPill($("autoTaterLinkStatus"), "Not linked", "warn");
     } finally {
       uiState.autoBusy = false;
       syncButtons();
@@ -2595,9 +2734,14 @@
     if (refreshWakeWordsBtn) {
       refreshWakeWordsBtn.disabled = uiState.firmwareBusy;
     }
-    for (const id of ["autoSaveBtn", "autoReviewNowBtn", "autoTrainNowBtn", "autoNotifyNowBtn"]) {
+    for (const id of ["autoSaveBtn", "autoReviewNowBtn", "autoTrainNowBtn", "autoNotifyNowBtn", "autoLinkTaterBtn", "autoUnlinkTaterBtn"]) {
       const button = $(id);
-      if (button) button.disabled = uiState.autoBusy || (id === "autoTrainNowBtn" && Boolean(training.running));
+      if (button) {
+        button.disabled =
+          uiState.autoBusy ||
+          (id === "autoTrainNowBtn" && Boolean(training.running)) ||
+          (id === "autoNotifyNowBtn" && !Boolean(uiState.autoTrain?.trainer_link?.linked));
+      }
     }
   }
 
@@ -2940,9 +3084,25 @@
     try {
       await runAutoTrainAction("notify_now");
     } catch (error) {
-      setPill($("autoStatus"), "Refresh failed", "err");
-      alert("Satellite refresh failed: " + error.message);
+      setPill($("autoStatus"), "Publish failed", "err");
+      alert("Wake-word publish failed: " + error.message);
     }
+  });
+  $("autoLinkTaterBtn").addEventListener("click", () => {
+    openTaterLinkModal().catch((error) => {
+      setPill($("autoTaterLinkStatus"), "Link failed", "err");
+      alert("Tater link failed: " + error.message);
+    });
+  });
+  $("autoUnlinkTaterBtn").addEventListener("click", () => {
+    unlinkTater().catch((error) => {
+      setPill($("autoTaterLinkStatus"), "Unlink failed", "err");
+      alert("Tater unlink failed: " + error.message);
+    });
+  });
+  $("closeTaterLinkBtn").addEventListener("click", closeTaterLinkModal);
+  $("taterLinkOverlay").addEventListener("click", (event) => {
+    if (event.target === $("taterLinkOverlay")) closeTaterLinkModal();
   });
 
   $("openConsoleBtn").addEventListener("click", () => {
@@ -2962,6 +3122,7 @@
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
+      closeTaterLinkModal();
       closeConsole();
     }
   });

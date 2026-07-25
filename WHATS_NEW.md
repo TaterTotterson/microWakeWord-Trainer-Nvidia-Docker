@@ -1,2 +1,3 @@
-- Fixed automatic and manual satellite refresh so every connected satellite re-fetches its current custom wake JSON profile before reloading the model.
-- The large WHAM augmentation dataset download now reports visible progress in the training log.
+- Added secure Tater linking: enter the short-lived code from Tater Voice Settings instead of giving the trainer a general API token.
+- Automatic and manual publishing now tell Tater which trained wake word is active, and Tater applies it globally to every connected satellite.
+- Added clear linked, unlinked, and pairing-success states to the Auto Training interface.

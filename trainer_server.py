@@ -7,6 +7,7 @@ import os
 import queue
 import re
 import json
+import secrets
 import socket
 import shutil
 import subprocess
@@ -22,6 +23,7 @@ from math import isfinite, log10
 from pathlib import Path
 from typing import Dict, Any, List, Callable, Optional, Tuple
 from urllib.parse import quote
+from urllib.error import HTTPError
 from urllib.request import Request as URLRequest, urlopen
 
 from fastapi import FastAPI, UploadFile, File, Form, Header, Request
@@ -100,8 +102,10 @@ AUTO_TRAIN_DEFAULT_CONFIG: Dict[str, Any] = {
     "minimum_new_negatives": 3,
     "advertised_base_url": "",
     "tater_url": "http://127.0.0.1:8501",
-    "tater_selector": "",
-    "tater_api_token": "",
+    "tater_link_token": "",
+    "tater_link_id": "",
+    "tater_linked_at": "",
+    "tater_link_tater_name": "",
     "notify_satellites": True,
 }
 
@@ -481,8 +485,10 @@ def _normalize_auto_train_config(values: Dict[str, Any] | None, *, base: Dict[st
         "minimum_new_negatives": _bounded_int(source.get("minimum_new_negatives"), 3, 1, 10000),
         "advertised_base_url": _normalize_http_base_url(source.get("advertised_base_url")),
         "tater_url": _normalize_http_base_url(source.get("tater_url"), allow_empty=False),
-        "tater_selector": str(source.get("tater_selector") or "").strip(),
-        "tater_api_token": str(source.get("tater_api_token") or "").strip(),
+        "tater_link_token": str(source.get("tater_link_token") or "").strip(),
+        "tater_link_id": str(source.get("tater_link_id") or "").strip(),
+        "tater_linked_at": str(source.get("tater_linked_at") or "").strip(),
+        "tater_link_tater_name": str(source.get("tater_link_tater_name") or "").strip(),
         "notify_satellites": _config_bool(source.get("notify_satellites"), True),
     }
 
@@ -533,8 +539,15 @@ def _schedule_next_auto_run_locked(*, from_time: datetime | None = None) -> None
 
 def _public_auto_train_config() -> Dict[str, Any]:
     with AUTO_TRAIN_LOCK:
-        config = {key: value for key, value in AUTO_TRAIN_CONFIG.items() if key != "tater_api_token"}
-        config["tater_api_token_configured"] = bool(AUTO_TRAIN_CONFIG.get("tater_api_token"))
+        config = {
+            key: value
+            for key, value in AUTO_TRAIN_CONFIG.items()
+            if key != "tater_link_token"
+        }
+        config["tater_linked"] = bool(
+            AUTO_TRAIN_CONFIG.get("tater_link_token")
+            and AUTO_TRAIN_CONFIG.get("tater_link_id")
+        )
         return config
 
 
@@ -545,6 +558,7 @@ def _auto_train_status_payload() -> Dict[str, Any]:
             "state": dict(AUTO_TRAIN_STATE),
             "runtime": dict(AUTO_TRAIN_RUNTIME),
             "advertised_base_url": _advertised_base_url(),
+            "trainer_link": _tater_link_public_status(),
         }
 
 
@@ -624,6 +638,115 @@ def _advertised_base_url(request: Request | None = None) -> str:
         port = _bounded_int(os.environ.get("REC_PORT"), 8789, 1, 65535)
     default_port = (scheme == "http" and port == 80) or (scheme == "https" and port == 443)
     return f"{scheme}://{host}{'' if default_port else f':{port}'}"
+
+
+def _tater_link_public_status() -> Dict[str, Any]:
+    with AUTO_TRAIN_LOCK:
+        return {
+            "linked": bool(
+                AUTO_TRAIN_CONFIG.get("tater_link_token")
+                and AUTO_TRAIN_CONFIG.get("tater_link_id")
+            ),
+            "trainer_id": str(AUTO_TRAIN_CONFIG.get("tater_link_id") or "").strip(),
+            "linked_at": str(AUTO_TRAIN_CONFIG.get("tater_linked_at") or "").strip(),
+            "tater_name": str(AUTO_TRAIN_CONFIG.get("tater_link_tater_name") or "").strip(),
+        }
+
+
+def _claim_tater_link(tater_url: Any, pairing_code: Any) -> Dict[str, Any]:
+    base_url = _normalize_http_base_url(tater_url, allow_empty=False)
+    code = "".join(ch for ch in str(pairing_code or "").upper() if ch.isalnum())
+    if len(code) != 8:
+        raise ValueError("Enter the complete pairing code shown by Tater.")
+    publish_base_url = _normalize_http_base_url(_advertised_base_url(), allow_empty=False)
+    with AUTO_TRAIN_LOCK:
+        trainer_id = str(AUTO_TRAIN_CONFIG.get("tater_link_id") or "").strip() or secrets.token_hex(12)
+
+    request = URLRequest(
+        f"{base_url}/api/tater/satellite/v1/trainer/link/claim",
+        data=json.dumps(
+            {
+                "pairing_code": code,
+                "trainer_id": trainer_id,
+                "trainer_name": "Wake Word Trainer",
+                "trainer_url": publish_base_url,
+                "publish_base_url": publish_base_url,
+            }
+        ).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "microWakeWord-Trainer/tater-link",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=10) as response:
+            payload = json.loads(response.read(64 * 1024).decode("utf-8"))
+    except HTTPError as exc:
+        detail = ""
+        with contextlib.suppress(Exception):
+            error_payload = json.loads(exc.read(64 * 1024).decode("utf-8"))
+            if isinstance(error_payload, dict):
+                detail = str(error_payload.get("detail") or error_payload.get("error") or "").strip()
+        raise ValueError(detail or f"Tater rejected the pairing code (HTTP {exc.code}).") from exc
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Could not reach Tater: {exc}") from exc
+
+    if not isinstance(payload, dict) or not bool(payload.get("ok")):
+        raise ValueError(str((payload or {}).get("error") or "Tater pairing failed."))
+    link_token = str(payload.get("token") or "").strip()
+    if len(link_token) < 32:
+        raise ValueError("Tater pairing response did not contain valid link credentials.")
+
+    linked_at = str(payload.get("linked_at") or _iso_now()).strip()
+    tater_name = str(payload.get("tater_name") or "Tater").strip() or "Tater"
+    with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_CONFIG["tater_url"] = base_url
+        AUTO_TRAIN_CONFIG["tater_link_token"] = link_token
+        AUTO_TRAIN_CONFIG["tater_link_id"] = trainer_id
+        AUTO_TRAIN_CONFIG["tater_linked_at"] = linked_at
+        AUTO_TRAIN_CONFIG["tater_link_tater_name"] = tater_name
+        _save_auto_train_config_locked()
+    return {
+        "ok": True,
+        "message": "Tater linked successfully.",
+        **_tater_link_public_status(),
+    }
+
+
+def _unlink_tater() -> Dict[str, Any]:
+    with AUTO_TRAIN_LOCK:
+        base_url = str(AUTO_TRAIN_CONFIG.get("tater_url") or "").strip().rstrip("/")
+        link_token = str(AUTO_TRAIN_CONFIG.get("tater_link_token") or "").strip()
+    remote_error = ""
+    if base_url and link_token:
+        request = URLRequest(
+            f"{base_url}/api/tater/satellite/v1/trainer/link/unlink",
+            data=b"{}",
+            headers={
+                "Content-Type": "application/json",
+                "X-Tater-Trainer-Token": link_token,
+                "User-Agent": "microWakeWord-Trainer/tater-link",
+            },
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=10):
+                pass
+        except Exception as exc:
+            remote_error = str(exc)
+    with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_CONFIG["tater_link_token"] = ""
+        AUTO_TRAIN_CONFIG["tater_link_id"] = ""
+        AUTO_TRAIN_CONFIG["tater_linked_at"] = ""
+        AUTO_TRAIN_CONFIG["tater_link_tater_name"] = ""
+        _save_auto_train_config_locked()
+    return {
+        "ok": True,
+        "message": "Tater link removed." if not remote_error else "Local Tater link removed; Tater could not be reached.",
+        "remote_error": remote_error,
+        **_tater_link_public_status(),
+    }
 
 
 def _normalize_transcript_text(value: Any) -> str:
@@ -932,74 +1055,49 @@ def _auto_review_capture(file_name: str) -> None:
             AUTO_TRAIN_RUNTIME["review_file"] = ""
 
 
-def _connected_tater_satellite_selectors(payload: Any) -> List[str]:
-    if not isinstance(payload, dict):
-        return []
-
-    clients: Any = None
-    for key in ("clients", "satellites", "devices"):
-        if isinstance(payload.get(key), (dict, list)):
-            clients = payload.get(key)
-            break
-    if isinstance(clients, dict):
-        rows = [
-            (str(key or "").strip(), value)
-            for key, value in clients.items()
-        ]
-    elif isinstance(clients, list):
-        rows = [("", value) for value in clients]
-    else:
-        rows = []
-
-    selectors: List[str] = []
-    seen: set[str] = set()
-    for fallback_selector, row in rows:
-        if not isinstance(row, dict) or not _config_bool(row.get("connected"), False):
-            continue
-        selector = str(row.get("selector") or fallback_selector).strip()
-        if not selector or selector in seen:
-            continue
-        seen.add(selector)
-        selectors.append(selector)
-    return selectors
-
-
-def _notify_tater_satellites() -> Dict[str, Any]:
+def _notify_tater_satellites(wake_word_name: str = "") -> Dict[str, Any]:
     with AUTO_TRAIN_LOCK:
         config = dict(AUTO_TRAIN_CONFIG)
     if not config.get("notify_satellites"):
         return {"ok": True, "skipped": True, "message": "Satellite notification is disabled."}
 
     base_url = str(config.get("tater_url") or "").rstrip("/")
-    settings_endpoint = f"{base_url}/api/tater/satellite/v1/settings"
-    status_endpoint = f"{base_url}/api/tater/satellite/v1/status"
+    settings_endpoint = f"{base_url}/api/tater/satellite/v1/trainer/wake-word"
     headers = {"Content-Type": "application/json", "User-Agent": "microWakeWord-Trainer/auto-train"}
-    token = str(config.get("tater_api_token") or "").strip()
-    if token:
-        headers["X-Tater-Token"] = token
+    token = str(config.get("tater_link_token") or "").strip()
+    if not token:
+        return {
+            "ok": False,
+            "error": "Wake Word Trainer is not linked to Tater. Use Link Tater first.",
+        }
+    headers["X-Tater-Trainer-Token"] = token
 
     try:
-        configured_selector = str(config.get("tater_selector") or "").strip()
-        if configured_selector:
-            selectors = [configured_selector]
-        else:
-            status_request = URLRequest(status_endpoint, headers=headers, method="GET")
-            with urlopen(status_request, timeout=15) as response:
-                status_payload = json.loads(response.read().decode("utf-8"))
-            selectors = _connected_tater_satellite_selectors(status_payload)
+        target_key = safe_name(wake_word_name or config.get("wake_phrase") or "")
+        public_base_url = _advertised_base_url()
+        wake_words = _list_trained_wake_words(public_base_url)
+        target = next(
+            (row for row in wake_words if str(row.get("key") or "").strip() == target_key),
+            None,
+        )
+        if not isinstance(target, dict):
+            raise FileNotFoundError(f"Trained wake word is not available: {target_key}")
+        wake_word_url = str(target.get("json_url") or "").strip()
+        if not wake_word_url.startswith(("http://", "https://")):
+            raise ValueError("The trained wake-word JSON needs an advertised http(s) URL.")
 
-        count = 0
-        refreshes: List[Dict[str, Any]] = []
-        for selector in selectors:
-            body = json.dumps({"selector": selector, "settings": {}}).encode("utf-8")
-            request = URLRequest(settings_endpoint, data=body, headers=headers, method="POST")
-            with urlopen(request, timeout=15) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-            push = payload.get("push") if isinstance(payload, dict) and isinstance(payload.get("push"), dict) else {}
-            pushed_count = push.get("count")
-            if isinstance(pushed_count, (int, float)):
-                count += max(0, int(pushed_count))
-            refreshes.append({"selector": selector, "count": pushed_count})
+        body = json.dumps(
+            {
+                "wake_word_name": target_key,
+                "wake_word_url": wake_word_url,
+            }
+        ).encode("utf-8")
+        request = URLRequest(settings_endpoint, data=body, headers=headers, method="POST")
+        with urlopen(request, timeout=15) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        push = payload.get("push") if isinstance(payload, dict) and isinstance(payload.get("push"), dict) else {}
+        pushed_count = push.get("count")
+        count = max(0, int(pushed_count)) if isinstance(pushed_count, (int, float)) else 0
 
         with AUTO_TRAIN_LOCK:
             AUTO_TRAIN_STATE["last_notify_at"] = _iso_now()
@@ -1009,9 +1107,23 @@ def _notify_tater_satellites() -> Dict[str, Any]:
         return {
             "ok": True,
             "count": count,
-            "selectors": selectors,
-            "refreshes": refreshes,
+            "wake_word": str(target.get("wake_word") or target_key),
+            "wake_word_name": target_key,
+            "wake_word_url": wake_word_url,
         }
+    except HTTPError as exc:
+        detail = ""
+        with contextlib.suppress(Exception):
+            error_payload = json.loads(exc.read().decode("utf-8"))
+            if isinstance(error_payload, dict):
+                detail = str(error_payload.get("detail") or error_payload.get("error") or "").strip()
+        error = detail or f"Tater rejected the wake word (HTTP {exc.code})."
+        with AUTO_TRAIN_LOCK:
+            AUTO_TRAIN_STATE["last_notify_at"] = _iso_now()
+            AUTO_TRAIN_STATE["last_notify_count"] = None
+            AUTO_TRAIN_STATE["last_notify_error"] = error
+            _save_auto_train_state_locked()
+        return {"ok": False, "error": error}
     except Exception as exc:
         with AUTO_TRAIN_LOCK:
             AUTO_TRAIN_STATE["last_notify_at"] = _iso_now()
@@ -2243,17 +2355,17 @@ def _run_training_background(
             AUTO_TRAIN_RUNTIME["training_pending_consumed"] = 0
             _save_auto_train_state_locked()
         if rc == 0:
-            _append_train_log("→ Asking Tater to refresh the active wake model on connected satellites")
-            notify_result = _notify_tater_satellites()
+            _append_train_log("→ Publishing the newly trained wake word to Tater and all satellites")
+            notify_result = _notify_tater_satellites(safe_word)
             if notify_result.get("ok"):
                 if notify_result.get("skipped"):
-                    _append_train_log("→ Satellite refresh skipped (disabled in Auto Training)")
+                    _append_train_log("→ Wake-word publish skipped (disabled in Auto Training)")
                 else:
                     count = notify_result.get("count")
                     suffix = f" ({count} connected)" if count is not None else ""
-                    _append_train_log(f"✓ Tater satellite refresh requested{suffix}")
+                    _append_train_log(f"✓ New wake word activated through Tater{suffix}")
             else:
-                _append_train_log(f"✗ Tater satellite refresh failed: {notify_result.get('error')}")
+                _append_train_log(f"✗ Tater wake-word activation failed: {notify_result.get('error')}")
 
 
 # -------------------- Routes --------------------
@@ -2279,12 +2391,15 @@ def auto_train_status(request: Request):
 @app.put("/api/auto_train")
 def update_auto_train(payload: Dict[str, Any] = None):
     incoming = dict(payload or {})
+    for protected_key in (
+        "tater_link_token",
+        "tater_link_id",
+        "tater_linked_at",
+        "tater_link_tater_name",
+    ):
+        incoming.pop(protected_key, None)
     with AUTO_TRAIN_LOCK:
         previous = dict(AUTO_TRAIN_CONFIG)
-        if incoming.pop("clear_tater_api_token", False):
-            incoming["tater_api_token"] = ""
-        elif not str(incoming.get("tater_api_token") or "").strip():
-            incoming.pop("tater_api_token", None)
         try:
             normalized = _normalize_auto_train_config(incoming, base=previous)
         except ValueError as exc:
@@ -2309,6 +2424,25 @@ def update_auto_train(payload: Dict[str, Any] = None):
     else:
         queued = 0
     return {"ok": True, "queued": queued, **_auto_train_status_payload()}
+
+
+@app.post("/api/tater_link/claim")
+def tater_link_claim(payload: Dict[str, Any] = None):
+    body = payload if isinstance(payload, dict) else {}
+    try:
+        return _claim_tater_link(
+            body.get("tater_url"),
+            body.get("pairing_code"),
+        )
+    except ValueError as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+    except RuntimeError as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=502)
+
+
+@app.post("/api/tater_link/unlink")
+def tater_link_unlink():
+    return _unlink_tater()
 
 
 @app.post("/api/auto_train/action")

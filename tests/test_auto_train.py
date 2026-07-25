@@ -250,13 +250,12 @@ class AutoTrainTests(unittest.TestCase):
         start.assert_called_once_with()
         self.assertTrue(trainer.AUTO_TRAIN_STATE["next_run_at"])
 
-    def test_tater_refresh_repushes_settings_with_selector_and_token(self):
+    def test_tater_notification_sets_new_word_globally_with_token(self):
         trainer.AUTO_TRAIN_CONFIG.update(
             {
                 "notify_satellites": True,
                 "tater_url": "http://127.0.0.1:8501",
-                "tater_selector": "kitchen-sat",
-                "tater_api_token": "secret-token",
+                "tater_link_token": "secret-token",
             }
         )
 
@@ -268,74 +267,96 @@ class AutoTrainTests(unittest.TestCase):
                 return False
 
             def read(self):
-                return b'{"push":{"count":2}}'
+                return b'{"push":{"count":4}}'
 
-        with patch.object(trainer, "urlopen", return_value=Response()) as open_url:
-            result = trainer._notify_tater_satellites()
+        trained_word = {
+            "key": "hey_tater",
+            "wake_word": "Hey Tater",
+            "json_url": "http://10.4.20.210:8789/api/trained_wake_words/hey_tater.json",
+        }
+        with (
+            patch.object(trainer, "_advertised_base_url", return_value="http://10.4.20.210:8789"),
+            patch.object(trainer, "_list_trained_wake_words", return_value=[trained_word]) as catalog,
+            patch.object(trainer, "urlopen", return_value=Response()) as open_url,
+        ):
+            result = trainer._notify_tater_satellites("hey_tater")
 
         self.assertTrue(result["ok"])
-        self.assertEqual(result["count"], 2)
+        self.assertEqual(result["count"], 4)
+        self.assertEqual(result["wake_word"], "Hey Tater")
+        self.assertEqual(result["wake_word_url"], trained_word["json_url"])
+        catalog.assert_called_once_with("http://10.4.20.210:8789")
+        self.assertEqual(open_url.call_count, 1)
         request = open_url.call_args.args[0]
-        self.assertEqual(request.full_url, "http://127.0.0.1:8501/api/tater/satellite/v1/settings")
-        self.assertEqual(request.get_header("X-tater-token"), "secret-token")
-        self.assertEqual(json.loads(request.data), {"selector": "kitchen-sat", "settings": {}})
-
-    def test_tater_refresh_updates_each_connected_satellite_profile(self):
-        trainer.AUTO_TRAIN_CONFIG.update(
+        self.assertEqual(request.full_url, "http://127.0.0.1:8501/api/tater/satellite/v1/trainer/wake-word")
+        self.assertEqual(request.get_method(), "POST")
+        self.assertEqual(request.get_header("X-tater-trainer-token"), "secret-token")
+        self.assertEqual(
+            json.loads(request.data),
             {
-                "notify_satellites": True,
-                "tater_url": "http://127.0.0.1:8501",
-                "tater_selector": "",
-            }
+                "wake_word_name": "hey_tater",
+                "wake_word_url": trained_word["json_url"],
+            },
         )
 
-        class Response:
-            def __init__(self, payload):
-                self.payload = payload
+    def test_tater_notification_fails_when_trained_word_is_missing(self):
+        trainer.AUTO_TRAIN_CONFIG["tater_link_token"] = "secret-token"
+        with (
+            patch.object(trainer, "_advertised_base_url", return_value="http://10.4.20.210:8789"),
+            patch.object(trainer, "_list_trained_wake_words", return_value=[]),
+            patch.object(trainer, "urlopen") as open_url,
+        ):
+            result = trainer._notify_tater_satellites("missing_word")
 
+        self.assertFalse(result["ok"])
+        self.assertIn("missing_word", result["error"])
+        open_url.assert_not_called()
+
+    def test_tater_notification_requires_secure_link(self):
+        trainer.AUTO_TRAIN_CONFIG["tater_link_token"] = ""
+        with patch.object(trainer, "urlopen") as open_url:
+            result = trainer._notify_tater_satellites("hey_tater")
+
+        self.assertFalse(result["ok"])
+        self.assertIn("not linked", result["error"])
+        open_url.assert_not_called()
+
+    def test_claim_tater_link_uses_tater_code_and_keeps_token_private(self):
+        class Response:
             def __enter__(self):
                 return self
 
             def __exit__(self, *_args):
                 return False
 
-            def read(self):
-                return json.dumps(self.payload).encode("utf-8")
-
-        responses = [
-            Response(
-                {
-                    "clients": {
-                        "native:office": {"selector": "native:office", "connected": True},
-                        "native:kitchen": {"connected": True},
-                        "native:garage": {"selector": "native:garage", "connected": False},
+            def read(self, *_args):
+                return json.dumps(
+                    {
+                        "ok": True,
+                        "token": "a" * 43,
+                        "tater_name": "Tater",
+                        "linked_at": "2026-07-24T12:00:00+00:00",
                     }
-                }
-            ),
-            Response({"push": {"count": 1}}),
-            Response({"push": {"count": 1}}),
-        ]
-        with patch.object(trainer, "urlopen", side_effect=responses) as open_url:
-            result = trainer._notify_tater_satellites()
+                ).encode("utf-8")
 
-        self.assertTrue(result["ok"])
-        self.assertEqual(result["count"], 2)
-        self.assertEqual(result["selectors"], ["native:office", "native:kitchen"])
-        self.assertEqual(open_url.call_count, 3)
+        with (
+            patch.object(trainer, "_advertised_base_url", return_value="http://10.4.20.210:8789"),
+            patch.object(trainer, "urlopen", return_value=Response()) as open_url,
+        ):
+            result = trainer._claim_tater_link("http://127.0.0.1:8501", "ABCD-EFGH")
 
-        status_request = open_url.call_args_list[0].args[0]
-        self.assertEqual(status_request.get_method(), "GET")
-        self.assertEqual(status_request.full_url, "http://127.0.0.1:8501/api/tater/satellite/v1/status")
-
-        refresh_requests = [call.args[0] for call in open_url.call_args_list[1:]]
+        self.assertTrue(result["linked"])
+        self.assertEqual(trainer.AUTO_TRAIN_CONFIG["tater_link_token"], "a" * 43)
+        self.assertNotIn("tater_link_token", trainer._public_auto_train_config())
+        request = open_url.call_args.args[0]
         self.assertEqual(
-            [json.loads(request.data) for request in refresh_requests],
-            [
-                {"selector": "native:office", "settings": {}},
-                {"selector": "native:kitchen", "settings": {}},
-            ],
+            request.full_url,
+            "http://127.0.0.1:8501/api/tater/satellite/v1/trainer/link/claim",
         )
-        self.assertTrue(all(request.get_method() == "POST" for request in refresh_requests))
+        payload = json.loads(request.data)
+        self.assertEqual(payload["pairing_code"], "ABCDEFGH")
+        self.assertEqual(payload["publish_base_url"], "http://10.4.20.210:8789")
+        self.assertTrue(payload["trainer_id"])
 
     def test_advertised_url_uses_non_loopback_browser_host(self):
         request = SimpleNamespace(
