@@ -1,3 +1,2 @@
-- Added secure Tater linking: enter the short-lived code from Tater Voice Settings instead of giving the trainer a general API token.
-- Automatic and manual publishing now tell Tater which trained wake word is active, and Tater applies it globally to every connected satellite.
-- Added clear linked, unlinked, and pairing-success states to the Auto Training interface.
+- Fixed a startup crash caused by newer pip-installed NVIDIA cuBLAS and cuDNN namespace packages not providing a module file path.
+- CUDA library discovery now works across both the standard NVIDIA and Blackwell images and safely allows startup when the optional libraries are unavailable.
