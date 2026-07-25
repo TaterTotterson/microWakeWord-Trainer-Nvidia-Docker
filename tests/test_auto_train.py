@@ -425,6 +425,39 @@ class AutoTrainTests(unittest.TestCase):
         self.assertEqual(trainer.AUTO_TRAIN_STATE["last_stt_device"], "cuda")
         self.assertEqual(trainer.AUTO_TRAIN_STATE["last_stt_compute_type"], "float16")
 
+    def test_train_status_reads_and_increments_training_log_tail(self):
+        log_path = Path(self.tempdir.name) / "training.log"
+        log_path.write_text("first\nsecond\nthird\n", encoding="utf-8")
+        with trainer.STATE_LOCK:
+            original_training = dict(trainer.STATE["training"])
+            trainer.STATE["training"].update(
+                {
+                    "log_path": str(log_path),
+                    "last_sent_tail": [],
+                    "last_log_size": 0,
+                }
+            )
+
+        try:
+            with (
+                patch.object(trainer, "TRAIN_LOG_TAIL_LINES", 2),
+                patch.object(trainer, "TRAIN_LOG_MAX_BYTES", 1024),
+            ):
+                first_status = trainer.train_status()
+                self.assertEqual(first_status["training"]["log_lines"], ["second", "third"])
+                self.assertEqual(first_status["training"]["log_text"], "second\nthird")
+
+                with log_path.open("a", encoding="utf-8") as log_file:
+                    log_file.write("fourth\n")
+
+                next_status = trainer.train_status()
+                self.assertEqual(next_status["training"]["log_lines"], ["third", "fourth"])
+                self.assertEqual(next_status["training"]["log_text"], "fourth")
+        finally:
+            with trainer.STATE_LOCK:
+                trainer.STATE["training"].clear()
+                trainer.STATE["training"].update(original_training)
+
 
 if __name__ == "__main__":
     unittest.main()

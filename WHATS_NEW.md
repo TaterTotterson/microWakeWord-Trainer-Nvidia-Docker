@@ -1,2 +1,2 @@
-- Fixed a startup crash caused by newer pip-installed NVIDIA cuBLAS and cuDNN namespace packages not providing a module file path.
-- CUDA library discovery now works across both the standard NVIDIA and Blackwell images and safely allows startup when the optional libraries are unavailable.
+- Fixed the training-status endpoint crashing after a training log was created because its log-tail limits were missing.
+- Restored bounded, incremental training-log updates so the UI can continue showing live progress without repeatedly reading the entire log.
