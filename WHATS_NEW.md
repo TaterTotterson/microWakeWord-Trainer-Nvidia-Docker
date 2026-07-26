@@ -1,3 +1,3 @@
-- Fixed first-run Parakeet ONNX setup failing when its empty model directory was mistaken for a complete offline model.
-- Parakeet now downloads or resumes the required INT8 snapshot before loading through ONNX ASR.
-- Complete local snapshots are reused without Hub access, preserving offline startup after the initial download.
+- Fixed the v19 container startup failure caused by malformed indentation in the Parakeet ONNX loader.
+- Preserved automatic download, resume, and offline reuse of the required Parakeet INT8 model snapshot.
+- Revalidated both CUDA and CPU Parakeet provider paths with the complete trainer test suite.

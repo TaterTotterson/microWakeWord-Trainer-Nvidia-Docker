@@ -957,11 +957,11 @@ def _load_parakeet_onnx_model():
         cached = PARAKEET_ONNX_MODEL_CACHE.get(cache_key)
         if cached is not None:
             return cached
-    suffix = (
-        f".{DEFAULT_PARAKEET_ONNX_QUANTIZATION}"
-        if DEFAULT_PARAKEET_ONNX_QUANTIZATION
-        else ""
-    )
+        suffix = (
+            f".{DEFAULT_PARAKEET_ONNX_QUANTIZATION}"
+            if DEFAULT_PARAKEET_ONNX_QUANTIZATION
+            else ""
+        )
         model_patterns = [
             "config.json",
             "vocab.txt",
@@ -988,10 +988,10 @@ def _load_parakeet_onnx_model():
         os.environ["HUGGINGFACE_HUB_CACHE"] = str(AUTO_TRAIN_MODEL_DIR / "hub")
         try:
             snapshot_root = AUTO_TRAIN_MODEL_DIR
-    if not all(
-        (AUTO_TRAIN_MODEL_DIR / filename).is_file()
-        for filename in required_model_files
-    ):
+            if not all(
+                (AUTO_TRAIN_MODEL_DIR / filename).is_file()
+                for filename in required_model_files
+            ):
                 from huggingface_hub import snapshot_download
 
                 snapshot_root = Path(
