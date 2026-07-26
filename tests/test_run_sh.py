@@ -61,6 +61,13 @@ class RunShCudaLibraryPathTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), "")
 
+    def test_parakeet_uses_cuda_onnxruntime_package(self) -> None:
+        source = RUN_SH.read_text(encoding="utf-8")
+
+        self.assertIn('"onnx-asr[hub]>=0.12.0"', source)
+        self.assertIn('"onnxruntime-gpu[cuda,cudnn]<1.27"', source)
+        self.assertIn('"CUDAExecutionProvider"', source)
+
 
 if __name__ == "__main__":
     unittest.main()

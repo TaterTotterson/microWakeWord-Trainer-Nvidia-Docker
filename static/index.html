@@ -1348,7 +1348,7 @@
         </div>
         <label class="checkField">
           <input id="autoEnabled" type="checkbox" />
-          <span><strong>Enable Auto Training</strong>Eligible wake triggers will be queued for local Faster Whisper transcription.</span>
+          <span><strong>Enable Auto Training</strong>Eligible wake triggers will be queued for transcription with the selected local STT engine.</span>
         </label>
         <label class="checkField">
           <input id="autoDeleteConfirmedWakes" type="checkbox" />
@@ -1368,26 +1368,10 @@
             <input id="autoLanguage" type="text" value="en" placeholder="en" />
           </label>
           <label class="field wide">
-            <strong>Faster Whisper model</strong>
-            <input id="autoSttModel" type="text" value="small.en" placeholder="small.en" />
-          </label>
-          <label class="field">
-            <strong>STT device</strong>
-            <select id="autoSttDevice">
-              <option value="auto" selected>Auto (prefer CUDA)</option>
-              <option value="cuda">CUDA</option>
-              <option value="cpu">CPU</option>
-            </select>
-          </label>
-          <label class="field">
-            <strong>Compute type</strong>
-            <select id="autoSttComputeType">
-              <option value="auto" selected>Auto (float16 CUDA / int8 CPU)</option>
-              <option value="float16">float16</option>
-              <option value="int8_float16">int8_float16</option>
-              <option value="int8">int8</option>
-              <option value="float32">float32</option>
-              <option value="default">CTranslate2 default</option>
+            <strong>STT engine</strong>
+            <select id="autoSttEngine">
+              <option value="faster_whisper" selected>Faster Whisper (recommended)</option>
+              <option value="parakeet_onnx">Parakeet ONNX</option>
             </select>
           </label>
           <label class="field">
@@ -2091,9 +2075,7 @@
       $("autoEnabled").checked = Boolean(config.enabled);
       $("autoWakePhrase").value = config.wake_phrase || uiState.session?.raw_phrase || "";
       $("autoLanguage").value = config.language || uiState.session?.language || "en";
-      $("autoSttModel").value = config.stt_model || "small.en";
-      $("autoSttDevice").value = config.stt_device || "auto";
-      $("autoSttComputeType").value = config.stt_compute_type || "auto";
+      $("autoSttEngine").value = config.stt_engine || "faster_whisper";
       $("autoMinimumChars").value = String(config.minimum_transcript_chars ?? 2);
       $("autoDeleteConfirmedWakes").checked = Boolean(config.delete_confirmed_wakes);
       $("autoPromoteCloseMisses").checked = Boolean(config.promote_close_misses);
@@ -2138,7 +2120,10 @@
     if (state.last_review_file) audit.push(state.last_review_file);
     if (state.last_review_transcript) audit.push(`STT: “${state.last_review_transcript}”`);
     if (state.last_review_error) audit.push(`Error: ${state.last_review_error}`);
-    if (state.last_stt_device) audit.push(`STT runtime: ${state.last_stt_device} / ${state.last_stt_compute_type || "default"}`);
+    if (state.last_stt_engine) {
+      const runtimeLabel = [state.last_stt_device, state.last_stt_compute_type].filter(Boolean).join(" / ");
+      audit.push(`STT engine: ${String(state.last_stt_engine).replaceAll("_", " ")}${runtimeLabel ? ` · ${runtimeLabel}` : ""}`);
+    }
     if (state.last_notify_at) {
       audit.push(state.last_notify_error
         ? `Wake-word publish failed: ${state.last_notify_error}`
@@ -2159,9 +2144,7 @@
       enabled: $("autoEnabled").checked,
       wake_phrase: ($("autoWakePhrase").value || "").trim(),
       language: ($("autoLanguage").value || "en").trim(),
-      stt_model: ($("autoSttModel").value || "").trim(),
-      stt_device: $("autoSttDevice").value || "auto",
-      stt_compute_type: $("autoSttComputeType").value || "auto",
+      stt_engine: $("autoSttEngine").value || "faster_whisper",
       minimum_transcript_chars: Number($("autoMinimumChars").value || 2),
       delete_confirmed_wakes: $("autoDeleteConfirmedWakes").checked,
       promote_close_misses: $("autoPromoteCloseMisses").checked,

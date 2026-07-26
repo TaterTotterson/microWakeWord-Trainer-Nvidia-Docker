@@ -1,2 +1,3 @@
-- Fixed the training-status endpoint crashing after a training log was created because its log-tail limits were missing.
-- Restored bounded, incremental training-log updates so the UI can continue showing live progress without repeatedly reading the entire log.
+- Added Parakeet ONNX as a second local Auto Training STT engine alongside Faster Whisper.
+- Replaced manual model, device, and compute fields with a simple engine selector and managed language-aware models.
+- Added CUDA-enabled ONNX Runtime with CPU fallback, runtime reporting, and model-cache cleanup when switching engines.

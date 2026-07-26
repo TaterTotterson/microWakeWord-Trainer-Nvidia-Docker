@@ -171,7 +171,7 @@ Starting a new session does not clear samples. Use the clear buttons in `Samples
 
 For each new wake-trigger clip sent to the trainer:
 
-1. Faster Whisper transcribes the audio locally.
+1. The selected local STT engine transcribes the audio.
 2. If the transcript contains the configured wake phrase, the clip stays in `Captured Audio` for manual review by default.
 3. If speech was transcribed but the wake phrase is absent, the clip moves to `/data/negative_samples/` as an auto-reviewed hard negative.
 4. Empty transcripts, VAD-blocked captures, and captures for another wake word stay out of the automatic negative path.
@@ -183,7 +183,7 @@ Two optional cleanup rules are available:
 
 A close miss with an empty transcript or without the configured phrase stays in `Captured Audio`; it is never turned into a negative automatically. Saving Auto Training settings also scans existing eligible captures. Enabling close-miss promotion reviews previous unreviewed close misses, while enabling cleanup removes previously confirmed good wakes without transcribing them a second time.
 
-The default `small.en` model uses CUDA with `float16` when CTranslate2 can see an NVIDIA GPU, and falls back to CPU with `int8`. Choose a multilingual Faster Whisper model such as `small` when the wake phrase is not English. Downloaded STT models are cached in `/data/auto_train_models/`.
+Auto Training exposes only an engine selector. Faster Whisper is the recommended default and uses CUDA with `float16` when CTranslate2 can see an NVIDIA GPU, with a CPU `int8` fallback. The trainer manages `small.en` for English and `small` for other languages. Parakeet ONNX uses the managed INT8 `nemo-parakeet-tdt-0.6b-v3` model with CUDA and CPU fallback. Downloaded STT models are cached in `/data/auto_train_models/`.
 
 Scheduled training runs only after the configured number of new automatic negatives has accumulated. A successful run securely publishes the trained wake-word name and JSON URL to the linked Tater instance. Tater saves it as the global satellite wake word and pushes the updated setting to every connected satellite, so no satellite firmware change is required.
 

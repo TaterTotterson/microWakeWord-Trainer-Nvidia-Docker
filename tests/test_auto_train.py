@@ -62,8 +62,6 @@ class AutoTrainTests(unittest.TestCase):
                     "wake_phrase": "hey tater",
                     "language": "en",
                     "tater_url": "http://127.0.0.1:8501",
-                    "stt_device": "auto",
-                    "stt_compute_type": "auto",
                 }
             )
         )
@@ -110,9 +108,90 @@ class AutoTrainTests(unittest.TestCase):
         self.assertTrue(trainer._transcript_contains_wake_phrase("Okay, HEY TATER!", "hey_tater"))
         self.assertFalse(trainer._transcript_contains_wake_phrase("Turn on the television", "hey tater"))
 
+    def test_stt_engine_selection_uses_managed_models(self):
+        config = trainer._normalize_auto_train_config(
+            {
+                "stt_engine": "parakeet-onnx",
+                "stt_model": "user/should-not-be-used",
+                "stt_device": "cpu",
+                "stt_compute_type": "float32",
+            }
+        )
+
+        self.assertEqual(config["stt_engine"], trainer.STT_ENGINE_PARAKEET_ONNX)
+        self.assertNotIn("stt_model", config)
+        self.assertNotIn("stt_device", config)
+        self.assertNotIn("stt_compute_type", config)
+        self.assertEqual(
+            trainer._managed_stt_model(config["stt_engine"], "en"),
+            trainer.DEFAULT_PARAKEET_ONNX_MODEL,
+        )
+        self.assertEqual(
+            trainer._managed_stt_model(trainer.STT_ENGINE_FASTER_WHISPER, "de"),
+            trainer.DEFAULT_FASTER_WHISPER_MULTILINGUAL_MODEL,
+        )
+
+    def test_stt_router_supports_both_nvidia_engines(self):
+        audio_path = Path("wake.wav")
+        with (
+            patch.object(trainer, "_transcribe_capture_with_faster_whisper", return_value="faster") as faster,
+            patch.object(trainer, "_transcribe_capture_with_parakeet", return_value="parakeet") as parakeet,
+        ):
+            self.assertEqual(
+                trainer._transcribe_capture(
+                    audio_path,
+                    engine=trainer.STT_ENGINE_FASTER_WHISPER,
+                    language="en",
+                ),
+                "faster",
+            )
+            self.assertEqual(
+                trainer._transcribe_capture(
+                    audio_path,
+                    engine=trainer.STT_ENGINE_PARAKEET_ONNX,
+                    language="en",
+                ),
+                "parakeet",
+            )
+
+        faster.assert_called_once()
+        parakeet.assert_called_once()
+
+    def test_parakeet_loader_prefers_cuda_then_cpu(self):
+        fake_model = object()
+        fake_onnx_asr = SimpleNamespace(load_model=Mock(return_value=fake_model))
+        with (
+            patch.dict(sys.modules, {"onnx_asr": fake_onnx_asr}),
+            patch.object(
+                trainer,
+                "_parakeet_onnx_providers",
+                return_value=["CUDAExecutionProvider", "CPUExecutionProvider"],
+            ),
+        ):
+            with trainer.PARAKEET_ONNX_MODEL_LOCK:
+                trainer.PARAKEET_ONNX_MODEL_CACHE.clear()
+            loaded = trainer._load_parakeet_onnx_model()
+
+        self.assertIs(loaded, fake_model)
+        fake_onnx_asr.load_model.assert_called_once_with(
+            trainer.DEFAULT_PARAKEET_ONNX_MODEL,
+            str(trainer.AUTO_TRAIN_MODEL_DIR),
+            quantization="int8",
+            providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        )
+
+    def test_ui_exposes_engine_selector_without_manual_runtime_fields(self):
+        source = (Path(__file__).resolve().parents[1] / "static" / "index.html").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('id="autoSttEngine"', source)
+        self.assertNotIn('id="autoSttModel"', source)
+        self.assertNotIn('id="autoSttDevice"', source)
+        self.assertNotIn('id="autoSttComputeType"', source)
+
     def test_phrase_miss_moves_wake_trigger_to_negative_samples(self):
         self.add_capture()
-        with patch.object(trainer, "_transcribe_capture_with_faster_whisper", return_value="turn on the kitchen lights"):
+        with patch.object(trainer, "_transcribe_capture", return_value="turn on the kitchen lights"):
             trainer._auto_review_capture("wake.wav")
 
         self.assertFalse((trainer.CAPTURED_DIR / "wake.wav").exists())
@@ -122,11 +201,13 @@ class AutoTrainTests(unittest.TestCase):
         self.assertTrue(metadata["auto_negative"])
         self.assertEqual(metadata["review_status"], "auto_approved_negative")
         self.assertEqual(metadata["transcript"], "turn on the kitchen lights")
+        self.assertEqual(metadata["auto_review_stt_engine"], "faster_whisper")
+        self.assertEqual(metadata["auto_review_stt_model"], "small.en")
         self.assertEqual(trainer.AUTO_TRAIN_STATE["pending_negative_count"], 1)
 
     def test_matching_phrase_stays_in_manual_review_inbox(self):
         audio_path = self.add_capture()
-        with patch.object(trainer, "_transcribe_capture_with_faster_whisper", return_value="hey tater turn on the lights"):
+        with patch.object(trainer, "_transcribe_capture", return_value="hey tater turn on the lights"):
             trainer._auto_review_capture("wake.wav")
 
         self.assertTrue(audio_path.exists())
@@ -140,7 +221,7 @@ class AutoTrainTests(unittest.TestCase):
         trainer.AUTO_TRAIN_CONFIG["delete_confirmed_wakes"] = True
         with patch.object(
             trainer,
-            "_transcribe_capture_with_faster_whisper",
+            "_transcribe_capture",
             return_value="hey tater turn on the lights",
         ):
             trainer._auto_review_capture("wake.wav")
@@ -164,7 +245,7 @@ class AutoTrainTests(unittest.TestCase):
         trainer.AUTO_TRAIN_CONFIG["delete_confirmed_wakes"] = True
 
         self.assertEqual(trainer._queue_pending_auto_reviews(), 1)
-        with patch.object(trainer, "_transcribe_capture_with_faster_whisper") as transcribe:
+        with patch.object(trainer, "_transcribe_capture") as transcribe:
             trainer._auto_review_capture("wake.wav")
 
         transcribe.assert_not_called()
@@ -173,7 +254,7 @@ class AutoTrainTests(unittest.TestCase):
 
     def test_close_miss_is_not_transcribed_by_default(self):
         audio_path = self.add_capture(event_type="close_miss")
-        with patch.object(trainer, "_transcribe_capture_with_faster_whisper") as transcribe:
+        with patch.object(trainer, "_transcribe_capture") as transcribe:
             trainer._auto_review_capture("wake.wav")
 
         transcribe.assert_not_called()
@@ -190,7 +271,7 @@ class AutoTrainTests(unittest.TestCase):
     def test_close_miss_with_phrase_is_promoted_when_enabled(self):
         self.add_capture(event_type="close_miss")
         trainer.AUTO_TRAIN_CONFIG["promote_close_misses"] = True
-        with patch.object(trainer, "_transcribe_capture_with_faster_whisper", return_value="hey tater"):
+        with patch.object(trainer, "_transcribe_capture", return_value="hey tater"):
             trainer._auto_review_capture("wake.wav")
 
         self.assertFalse((trainer.CAPTURED_DIR / "wake.wav").exists())
@@ -208,7 +289,7 @@ class AutoTrainTests(unittest.TestCase):
         trainer.AUTO_TRAIN_CONFIG["promote_close_misses"] = True
         with patch.object(
             trainer,
-            "_transcribe_capture_with_faster_whisper",
+            "_transcribe_capture",
             return_value="turn on the lights",
         ):
             trainer._auto_review_capture("wake.wav")
@@ -222,7 +303,7 @@ class AutoTrainTests(unittest.TestCase):
     def test_vad_blocked_close_miss_is_never_transcribed(self):
         audio_path = self.add_capture(event_type="close_miss", blocked_by_vad=True)
         trainer.AUTO_TRAIN_CONFIG["promote_close_misses"] = True
-        with patch.object(trainer, "_transcribe_capture_with_faster_whisper") as transcribe:
+        with patch.object(trainer, "_transcribe_capture") as transcribe:
             trainer._auto_review_capture("wake.wav")
 
         transcribe.assert_not_called()
@@ -231,7 +312,7 @@ class AutoTrainTests(unittest.TestCase):
 
     def test_capture_for_another_wake_word_is_not_transcribed(self):
         audio_path = self.add_capture(wake_word="computer")
-        with patch.object(trainer, "_transcribe_capture_with_faster_whisper") as transcribe:
+        with patch.object(trainer, "_transcribe_capture") as transcribe:
             trainer._auto_review_capture("wake.wav")
 
         transcribe.assert_not_called()

@@ -33,8 +33,11 @@ install_ui_deps() {
     "silero-vad>=5.0.0" \
     "numpy>=1.24.0" \
     "faster-whisper>=1.0.0" \
+    "onnx-asr[hub]>=0.12.0" \
     "nvidia-cublas-cu12" \
     "nvidia-cudnn-cu12==9.*"
+  ${PIP} uninstall -y onnxruntime
+  ${PIP} install "onnxruntime-gpu[cuda,cudnn]<1.27"
 }
 
 # -----------------------------
@@ -82,11 +85,13 @@ minimum = {
     "silero-vad": "5.0.0",
     "numpy": "1.24.0",
     "faster-whisper": "1.0.0",
+    "onnx-asr": "0.12.0",
     "nvidia-cudnn-cu12": "9.0.0",
 }
 present = (
     "torch",
     "nvidia-cublas-cu12",
+    "onnxruntime-gpu",
 )
 
 for package, expected in exact.items():
@@ -97,6 +102,10 @@ for package, minimum_version in minimum.items():
         raise SystemExit(1)
 for package in present:
     md.version(package)
+
+import onnxruntime as ort
+if "CUDAExecutionProvider" not in ort.get_available_providers():
+    raise SystemExit(1)
 PY
   then
     echo "UI dependencies missing or stale; installing recorder dependencies"

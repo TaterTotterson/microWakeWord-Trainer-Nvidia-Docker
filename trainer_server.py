@@ -2,6 +2,7 @@
 
 # trainer_server.py
 import contextlib
+import gc
 import io
 import os
 import queue
@@ -88,15 +89,37 @@ TARGET_SAMPLE_RATE = 16000
 TARGET_CHANNELS = 1
 TARGET_SAMPLE_WIDTH_BYTES = 2
 CAPTURE_GAIN_PROFILE = "capture_rms_v1"
-DEFAULT_FASTER_WHISPER_MODEL = os.environ.get("AUTO_TRAIN_STT_MODEL", "small.en")
+STT_ENGINE_FASTER_WHISPER = "faster_whisper"
+STT_ENGINE_PARAKEET_ONNX = "parakeet_onnx"
+SUPPORTED_STT_ENGINES = {
+    STT_ENGINE_FASTER_WHISPER,
+    STT_ENGINE_PARAKEET_ONNX,
+}
+DEFAULT_STT_ENGINE = os.environ.get(
+    "AUTO_TRAIN_STT_ENGINE",
+    STT_ENGINE_FASTER_WHISPER,
+).strip().lower().replace("-", "_")
+if DEFAULT_STT_ENGINE not in SUPPORTED_STT_ENGINES:
+    DEFAULT_STT_ENGINE = STT_ENGINE_FASTER_WHISPER
+DEFAULT_FASTER_WHISPER_EN_MODEL = os.environ.get(
+    "AUTO_TRAIN_FASTER_WHISPER_EN_MODEL",
+    "small.en",
+)
+DEFAULT_FASTER_WHISPER_MULTILINGUAL_MODEL = os.environ.get(
+    "AUTO_TRAIN_FASTER_WHISPER_MULTILINGUAL_MODEL",
+    "small",
+)
+DEFAULT_PARAKEET_ONNX_MODEL = os.environ.get(
+    "AUTO_TRAIN_PARAKEET_ONNX_MODEL",
+    "nemo-parakeet-tdt-0.6b-v3",
+)
+DEFAULT_PARAKEET_ONNX_QUANTIZATION = "int8"
 
 AUTO_TRAIN_DEFAULT_CONFIG: Dict[str, Any] = {
     "enabled": False,
     "wake_phrase": "",
     "language": DEFAULT_LANGUAGE,
-    "stt_model": DEFAULT_FASTER_WHISPER_MODEL,
-    "stt_device": "auto",
-    "stt_compute_type": "auto",
+    "stt_engine": DEFAULT_STT_ENGINE,
     "minimum_transcript_chars": 2,
     "delete_confirmed_wakes": False,
     "promote_close_misses": False,
@@ -119,6 +142,8 @@ AUTO_TRAIN_DEFAULT_STATE: Dict[str, Any] = {
     "last_review_transcript": "",
     "last_review_result": "",
     "last_review_error": "",
+    "last_stt_engine": "",
+    "last_stt_model": "",
     "last_stt_device": "",
     "last_stt_compute_type": "",
     "last_train_started_at": "",
@@ -186,6 +211,10 @@ AUTO_TRAIN_RUNTIME: Dict[str, Any] = {
 LAN_ADDRESS_CACHE: Dict[str, Any] = {"value": "", "fetched_at": 0.0}
 FASTER_WHISPER_MODEL_LOCK = threading.RLock()
 FASTER_WHISPER_MODEL_CACHE: Dict[Tuple[str, str, str], Any] = {}
+FASTER_WHISPER_TRANSCRIBE_LOCK = threading.RLock()
+PARAKEET_ONNX_MODEL_LOCK = threading.RLock()
+PARAKEET_ONNX_MODEL_CACHE: Dict[Tuple[str, str, Tuple[str, ...]], Any] = {}
+PARAKEET_ONNX_TRANSCRIBE_LOCK = threading.RLock()
 PIPER_CATALOG_CACHE: Dict[str, Any] = {
     "fetched_at": 0.0,
     "entries": None,
@@ -461,25 +490,60 @@ def _normalize_http_base_url(value: Any, *, allow_empty: bool = True) -> str:
     return token
 
 
+def _normalize_stt_engine(value: Any) -> str:
+    token = str(value or DEFAULT_STT_ENGINE).strip().lower().replace("-", "_")
+    aliases = {
+        "faster": STT_ENGINE_FASTER_WHISPER,
+        "fasterwhisper": STT_ENGINE_FASTER_WHISPER,
+        "parakeet": STT_ENGINE_PARAKEET_ONNX,
+        "onnx_parakeet": STT_ENGINE_PARAKEET_ONNX,
+    }
+    token = aliases.get(token, token)
+    if token not in SUPPORTED_STT_ENGINES:
+        raise ValueError("STT engine must be Faster Whisper or Parakeet ONNX.")
+    return token
+
+
+def _managed_stt_model(engine: Any, language: Any = DEFAULT_LANGUAGE) -> str:
+    token = _normalize_stt_engine(engine)
+    language_token = str(language or DEFAULT_LANGUAGE).strip().lower().replace("-", "_")
+    english = language_token == "en" or language_token.startswith("en_")
+    if token == STT_ENGINE_FASTER_WHISPER:
+        return (
+            DEFAULT_FASTER_WHISPER_EN_MODEL
+            if english
+            else DEFAULT_FASTER_WHISPER_MULTILINGUAL_MODEL
+        )
+    return DEFAULT_PARAKEET_ONNX_MODEL
+
+
+def _stt_engine_catalog(language: Any = DEFAULT_LANGUAGE) -> List[Dict[str, Any]]:
+    return [
+        {
+            "value": STT_ENGINE_FASTER_WHISPER,
+            "label": "Faster Whisper",
+            "model": _managed_stt_model(STT_ENGINE_FASTER_WHISPER, language),
+            "recommended": True,
+        },
+        {
+            "value": STT_ENGINE_PARAKEET_ONNX,
+            "label": "Parakeet ONNX",
+            "model": _managed_stt_model(STT_ENGINE_PARAKEET_ONNX, language),
+        },
+    ]
+
+
 def _normalize_auto_train_config(values: Dict[str, Any] | None, *, base: Dict[str, Any] | None = None) -> Dict[str, Any]:
     incoming = values if isinstance(values, dict) else {}
     source = {**AUTO_TRAIN_DEFAULT_CONFIG, **(base or {}), **incoming}
     schedule_hours = _bounded_int(source.get("schedule_hours"), 24, 0, 24 * 30)
     language = str(source.get("language") or DEFAULT_LANGUAGE).strip().lower().replace("-", "_")
     language = re.sub(r"[^a-z0-9_]", "", language) or DEFAULT_LANGUAGE
-    stt_device = str(source.get("stt_device") or "auto").strip().lower()
-    if stt_device not in {"auto", "cuda", "cpu"}:
-        raise ValueError("Faster Whisper device must be auto, cuda, or cpu.")
-    stt_compute_type = str(source.get("stt_compute_type") or "auto").strip().lower()
-    if stt_compute_type not in {"auto", "default", "float16", "float32", "int8", "int8_float16"}:
-        raise ValueError("Unsupported Faster Whisper compute type.")
     return {
         "enabled": _config_bool(source.get("enabled")),
         "wake_phrase": str(source.get("wake_phrase") or "").strip(),
         "language": language,
-        "stt_model": str(source.get("stt_model") or DEFAULT_FASTER_WHISPER_MODEL).strip() or DEFAULT_FASTER_WHISPER_MODEL,
-        "stt_device": stt_device,
-        "stt_compute_type": stt_compute_type,
+        "stt_engine": _normalize_stt_engine(source.get("stt_engine")),
         "minimum_transcript_chars": _bounded_int(source.get("minimum_transcript_chars"), 2, 1, 100),
         "delete_confirmed_wakes": _config_bool(source.get("delete_confirmed_wakes")),
         "promote_close_misses": _config_bool(source.get("promote_close_misses")),
@@ -555,10 +619,12 @@ def _public_auto_train_config() -> Dict[str, Any]:
 
 def _auto_train_status_payload() -> Dict[str, Any]:
     with AUTO_TRAIN_LOCK:
+        language = AUTO_TRAIN_CONFIG.get("language") or DEFAULT_LANGUAGE
         return {
             "config": _public_auto_train_config(),
             "state": dict(AUTO_TRAIN_STATE),
             "runtime": dict(AUTO_TRAIN_RUNTIME),
+            "stt_engines": _stt_engine_catalog(language),
             "advertised_base_url": _advertised_base_url(),
             "trainer_link": _tater_link_public_status(),
         }
@@ -828,31 +894,161 @@ def _load_faster_whisper_model(*, model_name: str, device: str, compute_type: st
 
 
 def _transcribe_capture_with_faster_whisper(audio_path: Path, *, model: str, language: str) -> str:
-    with AUTO_TRAIN_LOCK:
-        device_value = AUTO_TRAIN_CONFIG.get("stt_device")
-        compute_value = AUTO_TRAIN_CONFIG.get("stt_compute_type")
-    device, compute_type = _resolve_faster_whisper_runtime(device_value, compute_value)
+    device, compute_type = _resolve_faster_whisper_runtime("auto", "auto")
     whisper_model = _load_faster_whisper_model(
         model_name=model,
         device=device,
         compute_type=compute_type,
     )
-    segments, _info = whisper_model.transcribe(
-        str(audio_path),
-        language=language or None,
-        beam_size=1,
-        condition_on_previous_text=False,
-    )
-    transcript = re.sub(
-        r"\s+",
-        " ",
-        " ".join(str(segment.text or "").strip() for segment in segments),
-    ).strip()
+    with FASTER_WHISPER_TRANSCRIBE_LOCK:
+        segments, _info = whisper_model.transcribe(
+            str(audio_path),
+            language=language or None,
+            beam_size=1,
+            condition_on_previous_text=False,
+        )
+        transcript = re.sub(
+            r"\s+",
+            " ",
+            " ".join(str(segment.text or "").strip() for segment in segments),
+        ).strip()
     with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_STATE["last_stt_engine"] = STT_ENGINE_FASTER_WHISPER
+        AUTO_TRAIN_STATE["last_stt_model"] = model
         AUTO_TRAIN_STATE["last_stt_device"] = device
         AUTO_TRAIN_STATE["last_stt_compute_type"] = compute_type
         _save_auto_train_state_locked()
     return transcript
+
+
+def _parakeet_onnx_providers() -> List[str]:
+    try:
+        import onnxruntime as ort
+    except Exception as exc:
+        raise RuntimeError(f"onnxruntime is unavailable: {exc}") from exc
+    available = [str(value) for value in ort.get_available_providers()]
+    preferred = [
+        "CUDAExecutionProvider",
+        "CPUExecutionProvider",
+    ]
+    resolved = [provider for provider in preferred if provider in set(available)]
+    if not resolved:
+        raise RuntimeError("ONNX Runtime has no usable CUDA or CPU execution provider.")
+    return resolved
+
+
+def _load_parakeet_onnx_model():
+    try:
+        import onnx_asr
+    except Exception as exc:
+        raise RuntimeError(f"onnx-asr is unavailable: {exc}") from exc
+
+    providers = tuple(_parakeet_onnx_providers())
+    cache_key = (
+        DEFAULT_PARAKEET_ONNX_MODEL,
+        DEFAULT_PARAKEET_ONNX_QUANTIZATION,
+        providers,
+    )
+    with PARAKEET_ONNX_MODEL_LOCK:
+        cached = PARAKEET_ONNX_MODEL_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
+        AUTO_TRAIN_MODEL_DIR.mkdir(parents=True, exist_ok=True)
+        previous = {
+            key: os.environ.get(key)
+            for key in ("HF_HOME", "HF_HUB_CACHE", "HUGGINGFACE_HUB_CACHE")
+        }
+        os.environ["HF_HOME"] = str(AUTO_TRAIN_MODEL_DIR)
+        os.environ["HF_HUB_CACHE"] = str(AUTO_TRAIN_MODEL_DIR / "hub")
+        os.environ["HUGGINGFACE_HUB_CACHE"] = str(AUTO_TRAIN_MODEL_DIR / "hub")
+        try:
+            model = onnx_asr.load_model(
+                DEFAULT_PARAKEET_ONNX_MODEL,
+                str(AUTO_TRAIN_MODEL_DIR),
+                quantization=DEFAULT_PARAKEET_ONNX_QUANTIZATION,
+                providers=list(providers),
+            )
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+        PARAKEET_ONNX_MODEL_CACHE.clear()
+        PARAKEET_ONNX_MODEL_CACHE[cache_key] = model
+        return model
+
+
+def _normalized_wav_float32(audio_path: Path):
+    import numpy as np
+
+    with wave.open(str(audio_path), "rb") as wav_file:
+        channels = wav_file.getnchannels()
+        sample_width = wav_file.getsampwidth()
+        sample_rate = wav_file.getframerate()
+        frames = wav_file.readframes(wav_file.getnframes())
+    if sample_width != 2 or sample_rate != TARGET_SAMPLE_RATE or channels < 1:
+        raise RuntimeError("STT input must be 16 kHz, 16-bit PCM WAV audio.")
+    samples = np.frombuffer(frames, dtype=np.int16).astype(np.float32)
+    if channels > 1:
+        samples = samples.reshape((-1, channels)).mean(axis=1)
+    return samples / 32768.0
+
+
+def _transcribe_capture_with_parakeet(audio_path: Path, *, model: str, language: str) -> str:
+    parakeet_model = _load_parakeet_onnx_model()
+    kwargs: Dict[str, Any] = {
+        "sample_rate": TARGET_SAMPLE_RATE,
+        "channel": "mean",
+    }
+    if language:
+        kwargs["language"] = language
+    with PARAKEET_ONNX_TRANSCRIBE_LOCK:
+        result = parakeet_model.recognize(
+            _normalized_wav_float32(audio_path),
+            **kwargs,
+        )
+    providers = _parakeet_onnx_providers()
+    with AUTO_TRAIN_LOCK:
+        AUTO_TRAIN_STATE["last_stt_engine"] = STT_ENGINE_PARAKEET_ONNX
+        AUTO_TRAIN_STATE["last_stt_model"] = model
+        AUTO_TRAIN_STATE["last_stt_device"] = providers[0]
+        AUTO_TRAIN_STATE["last_stt_compute_type"] = DEFAULT_PARAKEET_ONNX_QUANTIZATION
+        _save_auto_train_state_locked()
+    return re.sub(r"\s+", " ", str(result or "")).strip()
+
+
+def _transcribe_capture(audio_path: Path, *, engine: str, language: str) -> str:
+    token = _normalize_stt_engine(engine)
+    model = _managed_stt_model(token, language)
+    if token == STT_ENGINE_PARAKEET_ONNX:
+        return _transcribe_capture_with_parakeet(
+            audio_path,
+            model=model,
+            language=language,
+        )
+    return _transcribe_capture_with_faster_whisper(
+        audio_path,
+        model=model,
+        language=language,
+    )
+
+
+def _clear_stt_model_caches(*, keep_engine: str) -> None:
+    token = _normalize_stt_engine(keep_engine)
+    cleared = False
+    if token != STT_ENGINE_FASTER_WHISPER:
+        with FASTER_WHISPER_TRANSCRIBE_LOCK:
+            with FASTER_WHISPER_MODEL_LOCK:
+                cleared = bool(FASTER_WHISPER_MODEL_CACHE) or cleared
+                FASTER_WHISPER_MODEL_CACHE.clear()
+    if token != STT_ENGINE_PARAKEET_ONNX:
+        with PARAKEET_ONNX_TRANSCRIBE_LOCK:
+            with PARAKEET_ONNX_MODEL_LOCK:
+                cleared = bool(PARAKEET_ONNX_MODEL_CACHE) or cleared
+                PARAKEET_ONNX_MODEL_CACHE.clear()
+    if cleared:
+        gc.collect()
 
 
 def _queue_auto_review(file_name: str) -> bool:
@@ -960,12 +1156,17 @@ def _auto_review_capture(file_name: str) -> None:
         metadata["auto_review_status"] = "transcribing"
         metadata["auto_reviewed_at"] = _iso_now()
         metadata["auto_review_wake_phrase"] = wake_phrase
-        metadata["auto_review_stt_model"] = config["stt_model"]
+        stt_engine = _normalize_stt_engine(config.get("stt_engine"))
+        metadata["auto_review_stt_engine"] = stt_engine
+        metadata["auto_review_stt_model"] = _managed_stt_model(
+            stt_engine,
+            config.get("language"),
+        )
         _write_sidecar_json(audio_path, metadata)
 
-        transcript = _transcribe_capture_with_faster_whisper(
+        transcript = _transcribe_capture(
             audio_path,
-            model=str(config["stt_model"]),
+            engine=stt_engine,
             language=str(config.get("language") or DEFAULT_LANGUAGE),
         )
         normalized = _normalize_transcript_text(transcript)
@@ -2386,7 +2587,7 @@ def auto_train_status(request: Request):
     payload = _auto_train_status_payload()
     payload["ok"] = True
     payload["advertised_base_url"] = _advertised_base_url(request)
-    payload["stt_backend"] = "faster-whisper"
+    payload["stt_backend"] = payload["config"].get("stt_engine")
     return payload
 
 
@@ -2420,6 +2621,8 @@ def update_auto_train(payload: Dict[str, Any] = None):
         )
         if schedule_changed or not AUTO_TRAIN_STATE.get("next_run_at"):
             _schedule_next_auto_run_locked()
+    if previous.get("stt_engine") != normalized.get("stt_engine"):
+        _clear_stt_model_caches(keep_engine=normalized["stt_engine"])
     if normalized["enabled"]:
         queued = _queue_pending_auto_reviews()
         AUTO_TRAIN_WAKE_EVENT.set()
