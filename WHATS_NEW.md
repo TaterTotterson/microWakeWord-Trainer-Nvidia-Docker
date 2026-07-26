@@ -1,3 +1,3 @@
-- Added Parakeet ONNX as a second local Auto Training STT engine alongside Faster Whisper.
-- Replaced manual model, device, and compute fields with a simple engine selector and managed language-aware models.
-- Added CUDA-enabled ONNX Runtime with CPU fallback, runtime reporting, and model-cache cleanup when switching engines.
+- Fixed first-run Parakeet ONNX setup failing when its empty model directory was mistaken for a complete offline model.
+- Parakeet now downloads or resumes the required INT8 snapshot before loading through ONNX ASR.
+- Complete local snapshots are reused without Hub access, preserving offline startup after the initial download.

@@ -43,12 +43,14 @@ class AutoTrainTests(unittest.TestCase):
             trainer.PERSONAL_DIR,
             trainer.AUTO_TRAIN_CONFIG_FILE,
             trainer.AUTO_TRAIN_STATE_FILE,
+            trainer.AUTO_TRAIN_MODEL_DIR,
         )
         trainer.CAPTURED_DIR = root / "captured_audio"
         trainer.NEGATIVE_DIR = root / "negative_samples"
         trainer.PERSONAL_DIR = root / "personal_samples"
         trainer.AUTO_TRAIN_CONFIG_FILE = root / "auto_train_config.json"
         trainer.AUTO_TRAIN_STATE_FILE = root / "auto_train_state.json"
+        trainer.AUTO_TRAIN_MODEL_DIR = root / "auto_train_models"
         for directory in (trainer.CAPTURED_DIR, trainer.NEGATIVE_DIR, trainer.PERSONAL_DIR):
             directory.mkdir(parents=True)
 
@@ -75,6 +77,7 @@ class AutoTrainTests(unittest.TestCase):
             trainer.PERSONAL_DIR,
             trainer.AUTO_TRAIN_CONFIG_FILE,
             trainer.AUTO_TRAIN_STATE_FILE,
+            trainer.AUTO_TRAIN_MODEL_DIR,
         ) = self.original_paths
         trainer.AUTO_TRAIN_CONFIG.clear()
         trainer.AUTO_TRAIN_CONFIG.update(self.original_config)
@@ -160,8 +163,17 @@ class AutoTrainTests(unittest.TestCase):
     def test_parakeet_loader_prefers_cuda_then_cpu(self):
         fake_model = object()
         fake_onnx_asr = SimpleNamespace(load_model=Mock(return_value=fake_model))
+        fake_huggingface_hub = SimpleNamespace(
+            snapshot_download=Mock(return_value=str(trainer.AUTO_TRAIN_MODEL_DIR))
+        )
         with (
-            patch.dict(sys.modules, {"onnx_asr": fake_onnx_asr}),
+            patch.dict(
+                sys.modules,
+                {
+                    "onnx_asr": fake_onnx_asr,
+                    "huggingface_hub": fake_huggingface_hub,
+                },
+            ),
             patch.object(
                 trainer,
                 "_parakeet_onnx_providers",
@@ -173,6 +185,57 @@ class AutoTrainTests(unittest.TestCase):
             loaded = trainer._load_parakeet_onnx_model()
 
         self.assertIs(loaded, fake_model)
+        fake_huggingface_hub.snapshot_download.assert_called_once_with(
+            repo_id=trainer.DEFAULT_PARAKEET_ONNX_REPO,
+            local_dir=str(trainer.AUTO_TRAIN_MODEL_DIR),
+            allow_patterns=[
+                "config.json",
+                "vocab.txt",
+                "encoder-model.int8.onnx",
+                "encoder-model.int8.onnx.data",
+                "decoder_joint-model.int8.onnx",
+                "decoder_joint-model.int8.onnx.data",
+            ],
+        )
+        fake_onnx_asr.load_model.assert_called_once_with(
+            trainer.DEFAULT_PARAKEET_ONNX_MODEL,
+            str(trainer.AUTO_TRAIN_MODEL_DIR),
+            quantization="int8",
+            providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        )
+
+    def test_parakeet_loader_reuses_complete_snapshot_offline(self):
+        fake_model = object()
+        fake_onnx_asr = SimpleNamespace(load_model=Mock(return_value=fake_model))
+        fake_huggingface_hub = SimpleNamespace(snapshot_download=Mock())
+        trainer.AUTO_TRAIN_MODEL_DIR.mkdir(parents=True, exist_ok=True)
+        for filename in (
+            "config.json",
+            "vocab.txt",
+            "encoder-model.int8.onnx",
+            "decoder_joint-model.int8.onnx",
+        ):
+            (trainer.AUTO_TRAIN_MODEL_DIR / filename).touch()
+        with (
+            patch.dict(
+                sys.modules,
+                {
+                    "onnx_asr": fake_onnx_asr,
+                    "huggingface_hub": fake_huggingface_hub,
+                },
+            ),
+            patch.object(
+                trainer,
+                "_parakeet_onnx_providers",
+                return_value=["CUDAExecutionProvider", "CPUExecutionProvider"],
+            ),
+        ):
+            with trainer.PARAKEET_ONNX_MODEL_LOCK:
+                trainer.PARAKEET_ONNX_MODEL_CACHE.clear()
+            loaded = trainer._load_parakeet_onnx_model()
+
+        self.assertIs(loaded, fake_model)
+        fake_huggingface_hub.snapshot_download.assert_not_called()
         fake_onnx_asr.load_model.assert_called_once_with(
             trainer.DEFAULT_PARAKEET_ONNX_MODEL,
             str(trainer.AUTO_TRAIN_MODEL_DIR),

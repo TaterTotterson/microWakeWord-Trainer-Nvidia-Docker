@@ -113,6 +113,10 @@ DEFAULT_PARAKEET_ONNX_MODEL = os.environ.get(
     "AUTO_TRAIN_PARAKEET_ONNX_MODEL",
     "nemo-parakeet-tdt-0.6b-v3",
 )
+DEFAULT_PARAKEET_ONNX_REPO = os.environ.get(
+    "AUTO_TRAIN_PARAKEET_ONNX_REPO",
+    "istupakov/parakeet-tdt-0.6b-v3-onnx",
+)
 DEFAULT_PARAKEET_ONNX_QUANTIZATION = "int8"
 
 AUTO_TRAIN_DEFAULT_CONFIG: Dict[str, Any] = {
@@ -953,6 +957,27 @@ def _load_parakeet_onnx_model():
         cached = PARAKEET_ONNX_MODEL_CACHE.get(cache_key)
         if cached is not None:
             return cached
+    suffix = (
+        f".{DEFAULT_PARAKEET_ONNX_QUANTIZATION}"
+        if DEFAULT_PARAKEET_ONNX_QUANTIZATION
+        else ""
+    )
+        model_patterns = [
+            "config.json",
+            "vocab.txt",
+            f"encoder-model{suffix}.onnx",
+            f"encoder-model{suffix}.onnx.data",
+            f"decoder_joint-model{suffix}.onnx",
+            f"decoder_joint-model{suffix}.onnx.data",
+        ]
+        required_model_files = [
+            "config.json",
+            "vocab.txt",
+            f"encoder-model{suffix}.onnx",
+            f"decoder_joint-model{suffix}.onnx",
+        ]
+        if not DEFAULT_PARAKEET_ONNX_QUANTIZATION:
+            required_model_files.append("encoder-model.onnx.data")
         AUTO_TRAIN_MODEL_DIR.mkdir(parents=True, exist_ok=True)
         previous = {
             key: os.environ.get(key)
@@ -962,9 +987,23 @@ def _load_parakeet_onnx_model():
         os.environ["HF_HUB_CACHE"] = str(AUTO_TRAIN_MODEL_DIR / "hub")
         os.environ["HUGGINGFACE_HUB_CACHE"] = str(AUTO_TRAIN_MODEL_DIR / "hub")
         try:
+            snapshot_root = AUTO_TRAIN_MODEL_DIR
+    if not all(
+        (AUTO_TRAIN_MODEL_DIR / filename).is_file()
+        for filename in required_model_files
+    ):
+                from huggingface_hub import snapshot_download
+
+                snapshot_root = Path(
+                    snapshot_download(
+                        repo_id=DEFAULT_PARAKEET_ONNX_REPO,
+                        local_dir=str(AUTO_TRAIN_MODEL_DIR),
+                        allow_patterns=model_patterns,
+                    )
+                )
             model = onnx_asr.load_model(
                 DEFAULT_PARAKEET_ONNX_MODEL,
-                str(AUTO_TRAIN_MODEL_DIR),
+                str(snapshot_root),
                 quantization=DEFAULT_PARAKEET_ONNX_QUANTIZATION,
                 providers=list(providers),
             )
