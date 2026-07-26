@@ -111,6 +111,21 @@ class AutoTrainTests(unittest.TestCase):
         self.assertTrue(trainer._transcript_contains_wake_phrase("Okay, HEY TATER!", "hey_tater"))
         self.assertFalse(trainer._transcript_contains_wake_phrase("Turn on the television", "hey tater"))
 
+    def test_phrase_similarity_recognizes_real_short_clip_mishearings(self):
+        for transcript in ("Hey, haters.", "Hate hater.", "Hey Ganger.", "Hey, gator."):
+            with self.subTest(transcript=transcript):
+                self.assertGreaterEqual(
+                    trainer._wake_phrase_similarity(transcript, "hey tater"),
+                    trainer.WAKE_PHRASE_GUIDANCE_MIN_SIMILARITY,
+                )
+
+        for transcript in ("turn on the lights", "what is the weather", "play some music"):
+            with self.subTest(transcript=transcript):
+                self.assertLess(
+                    trainer._wake_phrase_similarity(transcript, "hey tater"),
+                    trainer.WAKE_PHRASE_GUIDANCE_MIN_SIMILARITY,
+                )
+
     def test_stt_engine_selection_uses_managed_models(self):
         config = trainer._normalize_auto_train_config(
             {
@@ -159,6 +174,39 @@ class AutoTrainTests(unittest.TestCase):
 
         faster.assert_called_once()
         parakeet.assert_called_once()
+
+    def test_guided_faster_whisper_uses_dynamic_wake_phrase(self):
+        fake_model = SimpleNamespace(
+            transcribe=Mock(
+                return_value=(
+                    iter([SimpleNamespace(text=" hello "), SimpleNamespace(text="potato ")]),
+                    SimpleNamespace(),
+                )
+            )
+        )
+        with (
+            patch.object(
+                trainer,
+                "_resolve_faster_whisper_runtime",
+                return_value=("cuda", "float16"),
+            ),
+            patch.object(trainer, "_load_faster_whisper_model", return_value=fake_model),
+        ):
+            transcript = trainer._transcribe_capture_with_faster_whisper_guided(
+                Path("wake.wav"),
+                model="small.en",
+                language="en",
+                wake_phrase="Hello_Potato",
+            )
+
+        self.assertEqual(transcript, "hello potato")
+        _, kwargs = fake_model.transcribe.call_args
+        self.assertEqual(kwargs["hotwords"], "hello potato")
+        self.assertIn("hello potato", kwargs["initial_prompt"])
+        self.assertEqual(kwargs["beam_size"], 5)
+        self.assertEqual(kwargs["best_of"], 5)
+        self.assertEqual(kwargs["temperature"], 0.0)
+        self.assertFalse(kwargs["condition_on_previous_text"])
 
     def test_parakeet_loader_prefers_cuda_then_cpu(self):
         fake_model = object()
@@ -251,6 +299,7 @@ class AutoTrainTests(unittest.TestCase):
         self.assertNotIn('id="autoSttModel"', source)
         self.assertNotIn('id="autoSttDevice"', source)
         self.assertNotIn('id="autoSttComputeType"', source)
+        self.assertIn("Guided wake check", source)
 
     def test_phrase_miss_moves_wake_trigger_to_negative_samples(self):
         self.add_capture()
@@ -278,6 +327,80 @@ class AutoTrainTests(unittest.TestCase):
         metadata = trainer._load_sidecar_json(audio_path)
         self.assertEqual(metadata["auto_review_status"], "wake_phrase_detected")
         self.assertEqual(trainer.AUTO_TRAIN_STATE["pending_negative_count"], 0)
+
+    def test_close_transcript_uses_guided_faster_whisper_confirmation(self):
+        audio_path = self.add_capture()
+        with (
+            patch.object(trainer, "_transcribe_capture", return_value="Hey, haters."),
+            patch.object(
+                trainer,
+                "_transcribe_capture_with_faster_whisper_guided",
+                return_value="Hey Tater",
+            ) as guided,
+        ):
+            trainer._auto_review_capture("wake.wav")
+
+        self.assertTrue(audio_path.exists())
+        self.assertFalse(list(trainer.NEGATIVE_DIR.glob("*.wav")))
+        metadata = trainer._load_sidecar_json(audio_path)
+        self.assertEqual(metadata["auto_review_status"], "wake_phrase_detected")
+        self.assertEqual(metadata["transcript"], "Hey, haters.")
+        self.assertEqual(metadata["auto_review_guided_transcript"], "Hey Tater")
+        self.assertEqual(metadata["auto_review_match_method"], "guided_close_match")
+        self.assertGreaterEqual(
+            metadata["auto_review_phrase_similarity"],
+            trainer.WAKE_PHRASE_GUIDANCE_MIN_SIMILARITY,
+        )
+        guided.assert_called_once()
+        guided_args, guided_kwargs = guided.call_args
+        self.assertEqual(guided_args[0].resolve(), audio_path.resolve())
+        self.assertEqual(
+            guided_kwargs,
+            {
+                "model": "small.en",
+                "language": "en",
+                "wake_phrase": "hey tater",
+            },
+        )
+
+    def test_unconfirmed_close_transcript_stays_for_manual_review(self):
+        audio_path = self.add_capture()
+        with (
+            patch.object(trainer, "_transcribe_capture", return_value="Hate hater."),
+            patch.object(
+                trainer,
+                "_transcribe_capture_with_faster_whisper_guided",
+                return_value="Hate hater.",
+            ),
+        ):
+            trainer._auto_review_capture("wake.wav")
+
+        self.assertTrue(audio_path.exists())
+        self.assertFalse(list(trainer.NEGATIVE_DIR.glob("*.wav")))
+        metadata = trainer._load_sidecar_json(audio_path)
+        self.assertEqual(metadata["auto_review_status"], "wake_phrase_ambiguous")
+        self.assertEqual(metadata["transcript"], "Hate hater.")
+        self.assertEqual(metadata["auto_review_guided_transcript"], "Hate hater.")
+        self.assertEqual(trainer.AUTO_TRAIN_STATE["pending_negative_count"], 0)
+
+        self.assertEqual(trainer._queue_pending_auto_reviews(), 0)
+        self.assertEqual(trainer._queue_pending_auto_reviews(force=True), 1)
+
+    def test_close_parakeet_transcript_stays_for_manual_review(self):
+        audio_path = self.add_capture()
+        trainer.AUTO_TRAIN_CONFIG["stt_engine"] = trainer.STT_ENGINE_PARAKEET_ONNX
+        with (
+            patch.object(trainer, "_transcribe_capture", return_value="Hey Ganger."),
+            patch.object(trainer, "_transcribe_capture_with_faster_whisper_guided") as guided,
+        ):
+            trainer._auto_review_capture("wake.wav")
+
+        guided.assert_not_called()
+        self.assertTrue(audio_path.exists())
+        self.assertFalse(list(trainer.NEGATIVE_DIR.glob("*.wav")))
+        metadata = trainer._load_sidecar_json(audio_path)
+        self.assertEqual(metadata["auto_review_status"], "wake_phrase_ambiguous")
+        self.assertEqual(metadata["auto_review_stt_engine"], "parakeet_onnx")
 
     def test_matching_phrase_is_deleted_when_cleanup_is_enabled(self):
         audio_path = self.add_capture()

@@ -20,6 +20,7 @@ import unicodedata
 import wave
 from array import array
 from datetime import datetime, timedelta, timezone
+from difflib import SequenceMatcher
 from math import isfinite, log10
 from pathlib import Path
 from typing import Dict, Any, List, Callable, Optional, Tuple
@@ -118,6 +119,7 @@ DEFAULT_PARAKEET_ONNX_REPO = os.environ.get(
     "istupakov/parakeet-tdt-0.6b-v3-onnx",
 )
 DEFAULT_PARAKEET_ONNX_QUANTIZATION = "int8"
+WAKE_PHRASE_GUIDANCE_MIN_SIMILARITY = 0.68
 
 AUTO_TRAIN_DEFAULT_CONFIG: Dict[str, Any] = {
     "enabled": False,
@@ -835,6 +837,28 @@ def _transcript_contains_wake_phrase(transcript: Any, wake_phrase: Any) -> bool:
     return f" {normalized_phrase} " in f" {normalized_transcript} "
 
 
+def _wake_phrase_similarity(transcript: Any, wake_phrase: Any) -> float:
+    transcript_words = _normalize_transcript_text(transcript).split()
+    phrase_words = _normalize_transcript_text(wake_phrase).split()
+    if not transcript_words or not phrase_words:
+        return 0.0
+    if _transcript_contains_wake_phrase(transcript, wake_phrase):
+        return 1.0
+
+    phrase_token = "".join(phrase_words)
+    minimum_words = max(1, len(phrase_words) - 1)
+    maximum_words = min(len(transcript_words), len(phrase_words) + 1)
+    best_score = 0.0
+    for word_count in range(minimum_words, maximum_words + 1):
+        for start in range(0, len(transcript_words) - word_count + 1):
+            candidate = "".join(transcript_words[start : start + word_count])
+            best_score = max(
+                best_score,
+                SequenceMatcher(None, candidate, phrase_token).ratio(),
+            )
+    return best_score
+
+
 def _captured_event_is_close_miss(metadata: Dict[str, Any]) -> bool:
     event_type = str(metadata.get("event_type") or "captured").strip().lower()
     return "close" in event_type
@@ -923,6 +947,40 @@ def _transcribe_capture_with_faster_whisper(audio_path: Path, *, model: str, lan
         AUTO_TRAIN_STATE["last_stt_compute_type"] = compute_type
         _save_auto_train_state_locked()
     return transcript
+
+
+def _transcribe_capture_with_faster_whisper_guided(
+    audio_path: Path,
+    *,
+    model: str,
+    language: str,
+    wake_phrase: str,
+) -> str:
+    normalized_phrase = _normalize_transcript_text(wake_phrase)
+    if not normalized_phrase:
+        return ""
+    device, compute_type = _resolve_faster_whisper_runtime("auto", "auto")
+    whisper_model = _load_faster_whisper_model(
+        model_name=model,
+        device=device,
+        compute_type=compute_type,
+    )
+    with FASTER_WHISPER_TRANSCRIBE_LOCK:
+        segments, _info = whisper_model.transcribe(
+            str(audio_path),
+            language=language or None,
+            beam_size=5,
+            best_of=5,
+            temperature=0.0,
+            condition_on_previous_text=False,
+            initial_prompt=f'The wake phrase is "{normalized_phrase}".',
+            hotwords=normalized_phrase,
+        )
+        return re.sub(
+            r"\s+",
+            " ",
+            " ".join(str(segment.text or "").strip() for segment in segments),
+        ).strip()
 
 
 def _parakeet_onnx_providers() -> List[str]:
@@ -1119,7 +1177,7 @@ def _queue_pending_auto_reviews(*, force: bool = False) -> int:
             metadata.pop("auto_review_status", None)
             _write_sidecar_json(audio_path, metadata)
             status = ""
-        if force and status in {"error", "no_speech"}:
+        if force and status in {"error", "no_speech", "wake_phrase_ambiguous"}:
             metadata.pop("auto_review_status", None)
             _write_sidecar_json(audio_path, metadata)
             status = ""
@@ -1220,11 +1278,38 @@ def _auto_review_capture(file_name: str) -> None:
             _record_auto_review_result(file_name=file_name, transcript=transcript, result="no_speech")
             return
 
-        if _transcript_contains_wake_phrase(transcript, wake_phrase):
+        phrase_similarity = _wake_phrase_similarity(transcript, wake_phrase)
+        phrase_detected = _transcript_contains_wake_phrase(transcript, wake_phrase)
+        match_method = "exact" if phrase_detected else ""
+        metadata["auto_review_phrase_similarity"] = round(phrase_similarity, 4)
+
+        if (
+            not phrase_detected
+            and phrase_similarity >= WAKE_PHRASE_GUIDANCE_MIN_SIMILARITY
+            and stt_engine == STT_ENGINE_FASTER_WHISPER
+        ):
+            guided_transcript = _transcribe_capture_with_faster_whisper_guided(
+                audio_path,
+                model=str(metadata["auto_review_stt_model"]),
+                language=str(config.get("language") or DEFAULT_LANGUAGE),
+                wake_phrase=wake_phrase,
+            )
+            metadata["auto_review_guided_transcript"] = guided_transcript
+            if _transcript_contains_wake_phrase(guided_transcript, wake_phrase):
+                phrase_detected = True
+                match_method = "guided_close_match"
+
+        if match_method:
+            metadata["auto_review_match_method"] = match_method
+
+        if phrase_detected:
+            guided_confirmation = match_method == "guided_close_match"
             if is_close_miss:
                 metadata["auto_review_status"] = "approved_positive"
                 metadata["auto_review_reason"] = (
-                    "Close miss contained the configured wake phrase and was promoted to a positive sample."
+                    "Close miss was confirmed as the configured wake phrase and promoted to a positive sample."
+                    if guided_confirmation
+                    else "Close miss contained the configured wake phrase and was promoted to a positive sample."
                 )
                 metadata["auto_positive"] = True
                 _write_sidecar_json(audio_path, metadata)
@@ -1249,9 +1334,27 @@ def _auto_review_capture(file_name: str) -> None:
                 )
                 return
             metadata["auto_review_status"] = "wake_phrase_detected"
-            metadata["auto_review_reason"] = "Wake phrase found in transcript; left for manual positive review."
+            metadata["auto_review_reason"] = (
+                "Wake phrase confirmed by a guided second STT pass; left for manual positive review."
+                if guided_confirmation
+                else "Wake phrase found in transcript; left for manual positive review."
+            )
             _write_sidecar_json(audio_path, metadata)
             _record_auto_review_result(file_name=file_name, transcript=transcript, result="wake_phrase_detected")
+            return
+
+        if phrase_similarity >= WAKE_PHRASE_GUIDANCE_MIN_SIMILARITY:
+            metadata["auto_review_status"] = "wake_phrase_ambiguous"
+            metadata["auto_review_reason"] = (
+                "STT sounded close to the configured wake phrase but could not confirm it; "
+                "left for manual review."
+            )
+            _write_sidecar_json(audio_path, metadata)
+            _record_auto_review_result(
+                file_name=file_name,
+                transcript=transcript,
+                result="wake_phrase_ambiguous",
+            )
             return
 
         if is_close_miss:
@@ -2162,6 +2265,9 @@ def _captured_item_from_path(audio_path: Path) -> Dict[str, Any]:
         "auto_review_status": meta.get("auto_review_status") or "",
         "auto_review_reason": meta.get("auto_review_reason") or "",
         "auto_review_error": meta.get("auto_review_error") or "",
+        "auto_review_guided_transcript": meta.get("auto_review_guided_transcript") or "",
+        "auto_review_phrase_similarity": meta.get("auto_review_phrase_similarity"),
+        "auto_review_match_method": meta.get("auto_review_match_method") or "",
         "size_bytes": stat.st_size,
         "audio_url": f"/api/audio/captured/{audio_path.name}",
     }

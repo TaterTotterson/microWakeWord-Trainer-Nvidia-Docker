@@ -2341,6 +2341,7 @@
       if (item.average_probability !== null && item.average_probability !== undefined) meta.push(`<span class="pill">avg ${escapeHtml(item.average_probability)}</span>`);
       if (item.detection_profile) meta.push(`<span class="pill">profile ${escapeHtml(formatDetectionProfile(item.detection_profile))}</span>`);
       if (item.auto_review_status) meta.push(`<span class="pill ${item.auto_review_status === "error" ? "err" : "warn"}">auto ${escapeHtml(String(item.auto_review_status).replaceAll("_", " "))}</span>`);
+      if (item.auto_review_match_method === "guided_close_match") meta.push(`<span class="pill ok">guided wake confirmation</span>`);
       if (item.peak_probability_cutoff !== null && item.peak_probability_cutoff !== undefined) meta.push(`<span class="pill">peak cutoff ${escapeHtml(item.peak_probability_cutoff)}</span>`);
       if (item.probability_cutoff !== null && item.probability_cutoff !== undefined) meta.push(`<span class="pill">avg cutoff ${escapeHtml(item.probability_cutoff)}</span>`);
       if (item.active_window_count !== null && item.active_window_count !== undefined && item.min_active_windows !== null && item.min_active_windows !== undefined) {
@@ -2369,6 +2370,8 @@
           </div>
           <div class="fileMeta">${meta.join("") || `<span class="muted">No metadata attached</span>`}</div>
           ${item.transcript ? `<div class="autoAudit"><strong>STT transcript</strong><br>${escapeHtml(item.transcript)}</div>` : ""}
+          ${item.auto_review_guided_transcript ? `<div class="autoAudit"><strong>Guided wake check</strong><br>${escapeHtml(item.auto_review_guided_transcript)}</div>` : ""}
+          ${item.auto_review_reason ? `<div class="muted">${escapeHtml(item.auto_review_reason)}</div>` : ""}
           ${item.auto_review_error ? `<div class="muted">Auto review error: ${escapeHtml(item.auto_review_error)}</div>` : ""}
           <audio class="audioPlayer" controls preload="none" src="${escapeHtml(item.audio_url || `/api/audio/captured/${encodeURIComponent(item.saved_as)}`)}"></audio>
           <div class="muted">Stored as ${escapeHtml(item.saved_as)} · ${escapeHtml(formatSummary)}</div>
