@@ -292,13 +292,13 @@ class AutoTrainTests(unittest.TestCase):
         )
 
     def test_ui_exposes_engine_selector_without_manual_runtime_fields(self):
-        source = (Path(__file__).resolve().parents[1] / "static" / "index.html").read_text(
+        source = (Path(__file__).resolve().parents[1] / "frontend" / "src" / "TrainerApp.vue").read_text(
             encoding="utf-8"
         )
-        self.assertIn('id="autoSttEngine"', source)
-        self.assertNotIn('id="autoSttModel"', source)
-        self.assertNotIn('id="autoSttDevice"', source)
-        self.assertNotIn('id="autoSttComputeType"', source)
+        self.assertIn('v-model="trainer.autoForm.stt_engine"', source)
+        self.assertNotIn('trainer.autoForm.stt_model', source)
+        self.assertNotIn('trainer.autoForm.stt_device', source)
+        self.assertNotIn('trainer.autoForm.stt_compute_type', source)
         self.assertIn("Guided wake check", source)
 
     def test_phrase_miss_moves_wake_trigger_to_negative_samples(self):
@@ -565,6 +565,24 @@ class AutoTrainTests(unittest.TestCase):
                 "wake_word_url": trained_word["json_url"],
             },
         )
+
+    def test_trained_word_catalog_keeps_url_alias_for_json_package(self):
+        with tempfile.TemporaryDirectory() as directory:
+            trained_dir = Path(directory)
+            (trained_dir / "hey_tater.tflite").write_bytes(b"model")
+            (trained_dir / "hey_tater.json").write_text(
+                json.dumps({"wake_word": "hey tater", "model": "hey_tater.tflite"}),
+                encoding="utf-8",
+            )
+            with (
+                patch.object(trainer, "TRAINED_WAKE_WORDS_DIR", trained_dir),
+                patch.object(trainer, "_sync_trained_wake_word_artifacts"),
+            ):
+                rows = trainer._list_trained_wake_words("http://10.4.20.210:8789")
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["url"], rows[0]["json_url"])
+        self.assertTrue(rows[0]["json_url"].endswith("/api/trained_wake_words/hey_tater.json"))
 
     def test_tater_notification_fails_when_trained_word_is_missing(self):
         trainer.AUTO_TRAIN_CONFIG["tater_link_token"] = "secret-token"

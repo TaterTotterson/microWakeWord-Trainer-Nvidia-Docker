@@ -7,7 +7,7 @@
   <a href="https://taterassistant.com">taterassistant.com</a>
 </h3>
 
-Train custom microWakeWord models in Docker with NVIDIA/CUDA acceleration, generated Piper samples, device-captured samples, reviewed false-wake negatives, live training logs, and local wake-word links for Tater Native satellites.
+Train custom microWakeWord models in Docker with NVIDIA/CUDA acceleration, modern multilingual TTS ensembles, device-captured samples, reviewed false-wake negatives, live training logs, and local wake-word links for Tater Native satellites.
 
 Real samples come from device-captured wake audio, close misses, or manual uploads. Every saved sample is normalized to `16 kHz / mono / 16-bit PCM WAV` before training.
 
@@ -79,12 +79,23 @@ If you change `REC_PORT`, open that port instead and use the same port in the sa
 
 ## What The UI Does
 
+- The entire interface is reactive Vue 3 + TypeScript, following the same typed component pattern as Tater's newer UI surfaces.
 - `Trainer` starts a wake-word session, shows positive/negative sample counts, and launches training.
 - `Auto Training` transcribes real wake triggers, promotes phrase-misses to hard negatives, schedules retraining, and refreshes Tater Native satellites.
 - `Captured Audio` reviews clips sent by Tater Native or ESPHome sats, including wake hits, close misses, and false wakes.
 - `Samples` plays, removes, clears, and manually imports personal or negative samples.
 - `Wake Words` lists locally trained JSON/model links for live wake-word switching in Tater.
 - Popup consoles show colorized training logs while long-running jobs are active.
+
+The production bundle is committed under `static/ui`, so neither NVIDIA Docker image needs Node.js. To change the UI, edit `frontend/src` and rebuild it before building the image:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+`npm run build` type-checks every Vue component before writing the offline bundle copied into both the standard CUDA and Blackwell images.
 
 ---
 
@@ -196,8 +207,8 @@ The default Tater URL, `http://127.0.0.1:8501`, assumes the documented host netw
 ## Training Flow
 
 1. Enter the wake phrase in `Trainer`.
-2. Choose the language.
-3. Optionally test pronunciation with `Test TTS`.
+2. Choose the language and TTS source.
+3. Optionally check browser pronunciation with `System preview`.
 4. Review the positive and negative sample counts.
 5. Click `Start training`.
 6. Watch the popup training console.
@@ -212,16 +223,21 @@ On RTX 50-series / Blackwell GPUs, the Blackwell Docker image keeps sample gener
 
 ## Language Support
 
-The language picker is dynamic.
+The language picker is built from OmniVoice's live catalog (currently more than 600 languages), with a bundled common-language fallback for offline startup. Languages covered by Qwen3-TTS and MOSS-TTS-Nano are automatically marked `Recommended`; OmniVoice-only languages are marked `Experimental` so lower-resource coverage is not presented as equal quality.
 
-- `en` is always available.
-- English keeps the existing dedicated generator model path.
-- Non-English languages are discovered from the Piper voices catalog and any local Piper voice metadata.
-- When a non-English language is selected, the trainer downloads all voices for that selected language only.
-- Already-downloaded voices are reused.
-- It does not download every language up front.
+The selected code is sent directly to the supporting model. Model downloads happen only when a language is used, and the Hugging Face cache is persisted under `/data/.cache/huggingface`. The fetched language catalog is cached under `/data/.cache/omnivoice_languages.json`.
 
-If the upstream Piper catalog is unavailable, already-installed local voices are used when available.
+### TTS modes
+
+- `Four-provider ensemble` is the default. It uses OmniVoice for every catalog language, adds Qwen3-TTS and MOSS-TTS-Nano where supported, and adds Piper when a compatible model exists.
+- `Modern only` uses the multilingual providers without Piper.
+- `Piper only` preserves the previous generator as an explicit legacy fallback.
+
+Where a Piper voice is unavailable, the default route automatically continues with the modern providers.
+
+Qwen, OmniVoice, and Piper now generate final corpus candidates directly instead of cloning a 128-profile bank. Qwen provides 18,750 balanced voice conditions before an instruction repeats, and Piper uses every speaker in its installed model. MOSS Nano is clone-only, so each MOSS take uses a different already-accepted direct take as its carrier rather than cycling a small bank.
+
+Every generated file is normalized to `16 kHz / mono / 16-bit PCM WAV` and rejected if it contains static, broadband/high-frequency noise, silence, clipping, excessive duration/rambling, or an exact duplicate. A generation manifest records the planned and accepted provider counts and the applied safety limits.
 
 ---
 
@@ -229,12 +245,14 @@ If the upstream Piper catalog is unavailable, already-installed local voices are
 
 The first training run downloads and prepares missing training assets into `/data`, including:
 
-- Piper voices for the selected language
+- isolated Python environments for each selected modern TTS engine
+- selected TTS model weights and the direct generated corpus
+- additional language-specific Piper voices only when hybrid or legacy Piper mode is selected
 - negative datasets and background data
 - the Python training environment
 - generated samples and augmented feature caches
 
-After those assets are prepared, later runs reuse the local copies unless the mounted `/data` contents are deleted.
+The three modern engines deliberately use separate environments under `/data/tts-envs/`; their required PyTorch and Transformers versions conflict with one another and with the trainer environment. Model weights can require many gigabytes, so allow extra disk space and time on the first run. After the assets are prepared, later runs reuse the local copies unless the mounted `/data` contents are deleted.
 
 ---
 
@@ -319,6 +337,7 @@ That removes:
 - negative samples
 - captured inbox clips
 - downloaded Piper voices
+- modern TTS environments, model weights, and completed direct-generated corpora
 - cached datasets
 - training environments
 - trained models
@@ -343,4 +362,7 @@ Built on top of:
 
 - [microWakeWord](https://github.com/kahrendt/microWakeWord)
 - [piper-sample-generator](https://github.com/rhasspy/piper-sample-generator)
+- [OmniVoice](https://github.com/k2-fsa/OmniVoice)
+- [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS)
+- [MOSS-TTS-Nano](https://github.com/OpenMOSS/MOSS-TTS-Nano)
 - [tensorflow-blackwell-python313](https://github.com/chivitiH/tensorflow-blackwell-python313) for the optional RTX 50-series / Blackwell image

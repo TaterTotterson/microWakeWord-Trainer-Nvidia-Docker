@@ -1,0 +1,113 @@
+#!/bin/bash
+set -euo pipefail
+
+PROGPATH="$(realpath "$0")"
+PROGDIR="$(dirname "${PROGPATH}")"
+
+KNOWN_ARGS=( data-dir engine gpu no-gpu )
+# shellcheck source=/dev/null
+source "${PROGDIR}/shell.functions"
+
+ENGINE="${ENGINE:-${POSITIONAL_ARGS[0]:-}}"
+case "${ENGINE}" in
+    omnivoice|qwen3|moss) ;;
+    *)
+        echo "Usage: setup_modern_tts_envs --engine=<omnivoice|qwen3|moss> [--data-dir=/data]" >&2
+        exit 2
+        ;;
+esac
+
+PYTHON_BIN="${MWW_TTS_PYTHON:-python3.12}"
+command -v "${PYTHON_BIN}" >/dev/null 2>&1 || PYTHON_BIN=python3
+
+if [ -z "${GPU:-}" ] ; then
+    GPU=false
+    if [ -c /dev/nvidiactl ] || { command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1 ; } ; then
+        GPU=true
+    fi
+fi
+
+TTS_ROOT="${DATA_DIR}/tts-envs"
+VENV="${TTS_ROOT}/${ENGINE}"
+STACK_VERSION="modern-tts-v1"
+MARKER="${VENV}/.stack-version"
+mkdir -p "${TTS_ROOT}" "${DATA_DIR}/.cache/huggingface"
+
+case "${ENGINE}" in
+    omnivoice)
+        TORCH_VERSION="2.8.0"
+        TORCHAUDIO_VERSION="2.8.0"
+        PACKAGE_SPEC="git+https://github.com/k2-fsa/OmniVoice.git@28bc0889d92110491d726a9c79f26a895db5a074"
+        IMPORT_NAME="omnivoice"
+        STACK_ID="${STACK_VERSION}:omnivoice-28bc088:torch-${TORCH_VERSION}"
+        ;;
+    qwen3)
+        TORCH_VERSION="2.9.1"
+        TORCHAUDIO_VERSION="2.9.1"
+        PACKAGE_SPEC="qwen-tts==0.1.1"
+        IMPORT_NAME="qwen_tts"
+        STACK_ID="${STACK_VERSION}:qwen-tts-0.1.1:torch-${TORCH_VERSION}"
+        ;;
+    moss)
+        TORCH_VERSION="2.7.0"
+        TORCHAUDIO_VERSION="2.7.0"
+        PACKAGE_SPEC="git+https://github.com/OpenMOSS/MOSS-TTS-Nano.git@cc7bdf19c7639c0870dab22045a33b442760f6be"
+        IMPORT_NAME="moss_tts_nano"
+        STACK_ID="${STACK_VERSION}:moss-cc7bdf1:torch-${TORCH_VERSION}"
+        ;;
+esac
+
+environment_ready() {
+    [ -x "${VENV}/bin/python" ] || return 1
+    [ -f "${MARKER}" ] || return 1
+    [ "$(cat "${MARKER}")" = "${STACK_ID}" ] || return 1
+    "${VENV}/bin/python" - "${IMPORT_NAME}" "${GPU}" <<'PY' >/dev/null 2>&1
+import importlib
+import sys
+import torch
+
+importlib.import_module(sys.argv[1])
+expect_cuda = sys.argv[2].lower() == "true"
+if expect_cuda and not torch.cuda.is_available():
+    raise SystemExit("NVIDIA GPU was detected but this environment cannot use CUDA")
+if torch.cuda.is_available():
+    torch.zeros(1, device="cuda")
+PY
+}
+
+if environment_ready ; then
+    echo "✅ Reusing ${ENGINE} TTS environment: ${VENV}"
+    exit 0
+fi
+
+echo "===== Preparing isolated ${ENGINE} TTS environment ====="
+rm -rf "${VENV}"
+"${PYTHON_BIN}" -m venv "${VENV}"
+PY="${VENV}/bin/python"
+"${PY}" -m pip install -U pip setuptools wheel
+
+if ${GPU} ; then
+    TORCH_INDEX="${MWW_TTS_TORCH_INDEX:-https://download.pytorch.org/whl/cu128}"
+    echo "→ Installing CUDA torch ${TORCH_VERSION} from ${TORCH_INDEX}"
+    "${PY}" -m pip install \
+        "torch==${TORCH_VERSION}" \
+        "torchaudio==${TORCHAUDIO_VERSION}" \
+        --index-url "${TORCH_INDEX}"
+else
+    echo "→ Installing CPU torch ${TORCH_VERSION}"
+    "${PY}" -m pip install \
+        "torch==${TORCH_VERSION}" \
+        "torchaudio==${TORCHAUDIO_VERSION}"
+fi
+
+echo "→ Installing ${PACKAGE_SPEC}"
+"${PY}" -m pip install "${PACKAGE_SPEC}" "huggingface_hub[hf_xet]"
+
+printf '%s\n' "${STACK_ID}" > "${MARKER}"
+
+if ! environment_ready ; then
+    echo "❌ ${ENGINE} environment failed its import/CUDA check." >&2
+    exit 1
+fi
+
+echo "✅ ${ENGINE} TTS environment ready: ${VENV}"

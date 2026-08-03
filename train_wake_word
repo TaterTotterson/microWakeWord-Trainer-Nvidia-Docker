@@ -5,7 +5,7 @@ PROGPATH=$(realpath "$0")
 PROGDIR=$(dirname "${PROGPATH}")
 CLIDIR="${PROGDIR}/cli"
 
-KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir language )
+KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir language tts-mode tts-voice-count )
 source "${CLIDIR}/shell.functions"
 WAKE_WORD=${POSITIONAL_ARGS[0]}
 
@@ -19,6 +19,8 @@ if [ "${HELP}" == "true" ] || [ -z "${WAKE_WORD}" ] ; then
 Usage: train_wake_word [ --samples=<samples> ] [ --batch-size=<batch_size> ]
                        [ --training-steps=<steps> ] [ --cleanup-work-dir ]
                        [ --language=<lang> ]
+                       [ --tts-mode=<modern|hybrid|piper> ]
+                       [ --tts-voice-count=<voices> ]
                        <wake_word> [ <wake_word_title> ]
 
 Options:
@@ -38,6 +40,12 @@ Options:
 
 --language:           Language for TTS voice selection (e.g. "en", "nl").
                       Default: ${DEFAULT_LANGUAGE}
+
+--tts-mode:           TTS source: modern (OmniVoice plus Qwen3/MOSS where
+                      supported), hybrid (modern plus Piper), or piper.
+                      Default: ${DEFAULT_TTS_MODE}
+
+--tts-voice-count:    Deprecated compatibility option; direct generation ignores it.
 
 <wake_word>           The word to train spelled phonetically.
                       Required.
@@ -116,6 +124,8 @@ export GRPC_VERBOSITY=ERROR
     --samples=${SAMPLES} \
     --batch-size=${BATCH_SIZE} \
     --language="${LANGUAGE}" \
+    --tts-mode="${TTS_MODE}" \
+    --tts-voice-count="${TTS_VOICE_COUNT}" \
     --data-dir="${DATA_DIR}" "${WAKE_WORD}"
 
 POST_GEN_TS=$EPOCHSECONDS

@@ -2,3 +2,6 @@ personal_samples/*
 data/
 trim_history/
 .DS_Store
+frontend/node_modules/
+__pycache__/
+*.py[cod]

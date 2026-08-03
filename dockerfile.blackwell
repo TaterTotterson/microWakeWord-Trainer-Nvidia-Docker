@@ -13,7 +13,8 @@ ENV MWW_BLACKWELL_TF_WHEEL_URL=https://github.com/chivitiH/tensorflow-blackwell-
 # Python 3.13 is used only for the Blackwell TensorFlow training step.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common ca-certificates curl git wget unzip patch \
-    ninja-build nano less libgomp1 \
+    ninja-build build-essential cmake pkg-config nano less libgomp1 \
+    ffmpeg sox libsox-fmt-all libsndfile1 espeak-ng \
  && add-apt-repository -y ppa:deadsnakes/ppa \
  && apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -41,14 +42,16 @@ COPY --chown=root:root --chmod=0755 \
     requirements.txt \
     /root/mww-scripts/
 
+COPY --chown=root:root --chmod=0644 tts_config.py /root/mww-scripts/tts_config.py
+
 # CLI folder
 COPY --chown=root:root cli/ /root/mww-scripts/cli/
 
 # Make all CLI scripts executable (avoids "Permission denied")
 RUN chmod -R a+x /root/mww-scripts/cli
 
-# Static UI for trainer
-COPY --chown=root:root --chmod=0644 static/index.html /root/mww-scripts/static/index.html
+# Prebuilt Vue/TypeScript UI (Node.js is not required at runtime)
+COPY --chown=root:root static/ /root/mww-scripts/static/
 
 # trainer server
 CMD ["/bin/bash", "-lc", "/root/mww-scripts/run.sh"]

@@ -1,12 +1,13 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-PROGPATH=$(realpath "$0")
-PROGDIR=$(dirname "${PROGPATH}")
+PROGPATH="$(realpath "$0")"
+PROGDIR="$(dirname "${PROGPATH}")"
 
-KNOWN_ARGS=( samples batch-size data-dir language )
+KNOWN_ARGS=( samples batch-size data-dir language tts-mode tts-voice-count )
+# shellcheck source=/dev/null
 source "${PROGDIR}/shell.functions"
-WAKE_WORD="${POSITIONAL_ARGS[0]}"
+WAKE_WORD="${POSITIONAL_ARGS[0]:-}"
 
 if [ ${#UNKNOWN_ARGS[@]} -gt 0 ] ; then
     echo "Unknown argument(s): ${UNKNOWN_ARGS[*]}" >&2
@@ -16,147 +17,48 @@ fi
 if [ "${HELP}" == "true" ] || [ -z "${WAKE_WORD}" ] ; then
     cat <<EOF >&2
 Usage: $0 [ --samples=<samples> ] [ --batch-size=<batch_size> ]
-          [ --language=<lang> ] <wake_word>
+          [ --language=<lang> ] [ --tts-mode=<modern|hybrid|piper> ]
+          [ --tts-voice-count=<voices> ] <wake_word>
 
---samples:            The number of samples to generate for the wake word.
-                      Default: ${DEFAULT_SAMPLES}
-
---batch-size:         How many samples should be generated at a time.  The more
-                      samples, the more memory is needed.
-                      Default: ${DEFAULT_BATCH_SIZE}
-
---language:           Language for TTS voice selection.
-                      "en" uses the multi-speaker LibriTTS-R generator.
-                      Other languages (e.g. "nl") use single-speaker ONNX
-                      voices and cycle between them for variety.
-                      Default: ${DEFAULT_LANGUAGE}
-
-<wake_word>           The word to generate samples for.
-                      Required.
-
+--samples:            Number of samples to generate. Default: ${DEFAULT_SAMPLES}
+--batch-size:         Generation batch size. Default: ${DEFAULT_BATCH_SIZE}
+--language:           TTS language code. Default: ${DEFAULT_LANGUAGE}
+--tts-mode:           modern, hybrid, or piper. Default: ${DEFAULT_TTS_MODE}
+--tts-voice-count:    Deprecated compatibility option; direct generation ignores it.
+<wake_word>           Required phrase to synthesize.
 EOF
     exit 1
 fi
 
-# shellcheck source=/dev/null
-source "${DATA_DIR}/.venv/bin/activate"
+case "${TTS_MODE}" in
+    modern|hybrid|piper) ;;
+    *)
+        echo "ERROR: --tts-mode must be modern, hybrid, or piper." >&2
+        exit 2
+        ;;
+esac
 
 WORK_DIR="${DATA_DIR}/work"
-mkdir -p "${WORK_DIR}" || :
-cd "${WORK_DIR}"
-
-PSG="${DATA_DIR}/tools/piper-sample-generator"
-MODELS_DIR="${PSG}/models"
-VOICES_DIR="${PSG}/voices"
 SAMPLES_DIR="${WORK_DIR}/wake_word_samples"
-
-mkdir -p "${SAMPLES_DIR}" || :
-
-# ---------------------------------------------------------------------------
-# Build the --model argument(s) based on language
-# ---------------------------------------------------------------------------
-declare -a MODEL_ARGS=()
-MODEL_TAG=""
-
-if [ "${LANGUAGE}" == "en" ] ; then
-    # English: use the multi-speaker LibriTTS-R generator (.pt)
-    MODEL_NAME="en_US-libritts_r-medium.pt"
-    MODEL_FILE="${MODELS_DIR}/${MODEL_NAME}"
-    if [ ! -f "${MODEL_FILE}" ] ; then
-        echo "ERROR: English model ${MODEL_FILE} not found. Run setup_python_venv first." >&2
-        exit 1
-    fi
-    MODEL_ARGS=( --model "${MODEL_FILE}" )
-    MODEL_TAG="${MODEL_NAME}"
-else
-    # Non-English: find all ONNX voices matching the language prefix
-    # e.g. LANGUAGE=nl matches nl_NL-pim-medium.onnx, nl_BE-nathalie-medium.onnx, etc.
-    shopt -s nullglob
-    voice_files=( "${VOICES_DIR}/${LANGUAGE}"_*.onnx )
-    shopt -u nullglob
-
-    if [ ${#voice_files[@]} -eq 0 ] ; then
-        echo "ERROR: No ONNX voice files found for language '${LANGUAGE}' in ${VOICES_DIR}/" >&2
-        echo "       Expected files matching: ${LANGUAGE}_*.onnx" >&2
-        echo "       Run setup_python_venv to download voice models." >&2
-        exit 1
-    fi
-
-    echo "   Using ${#voice_files[@]} voice(s) for language '${LANGUAGE}':"
-    MODEL_TAG="${LANGUAGE}"
-    for vf in "${voice_files[@]}" ; do
-        vname="$(basename "${vf}")"
-        echo "      - ${vname}"
-        MODEL_ARGS+=( --model "${vf}" )
-        MODEL_TAG="${MODEL_TAG}+${vname}"
-    done
-fi
-
-REGENERATE=false
-
-if [ "${SAMPLES}" -eq 1 ] ; then
-    echo "===== Generating ${SAMPLES} sample of '${WAKE_WORD}' (language=${LANGUAGE}) ====="
-    wake_word_filename="${WAKE_WORD//[ \`~\!@#\$%^&*\(\)\{\}\[\]\|\;\'\"<>.?\/]/_}"
-
-    mkdir -p "${WORK_DIR}/test_sample" || :
-    "${PSG}/generate_samples.py" "${WAKE_WORD}" \
-        "${MODEL_ARGS[@]}" \
-        --max-samples ${SAMPLES} \
-        --batch-size ${BATCH_SIZE} \
-        --output-dir "${WORK_DIR}/test_sample" \
-        --max-speakers 100 2>&1 | sed -r -e "s/(DEBUG|INFO):__main__:/      /g"
-    mv "${WORK_DIR}/test_sample/0.wav" "${WORK_DIR}/test_sample/${wake_word_filename}.wav"
-    echo "Sample available at ${WORK_DIR}/test_sample/${wake_word_filename}.wav"
-    echo "Play it from your host."
-    exit 0
-fi
-
-grep -q "${WAKE_WORD}:${SAMPLES}:${MODEL_TAG}" "${WORK_DIR}/last_wake_word" &>/dev/null || REGENERATE=true
-
-# Double check that the number of existing samples matches SAMPLES
-existing_samples=$(find "${SAMPLES_DIR}" -name '*.wav' | wc -l)
-[ "${existing_samples}" -eq "${SAMPLES}" ] || REGENERATE=true
+mkdir -p "${WORK_DIR}"
 
 START_TS=$EPOCHSECONDS
+echo "===== Generating ${SAMPLES} wake-word samples (language=${LANGUAGE}, tts=${TTS_MODE}) ====="
 
-if ! ${REGENERATE} ; then
-    echo "Sample generation not required"
-    echo
-    exit 0
-fi
+python3 "${PROGDIR}/tts_generate_samples.py" "${WAKE_WORD}" \
+    --samples="${SAMPLES}" \
+    --batch-size="${BATCH_SIZE}" \
+    --language="${LANGUAGE}" \
+    --tts-mode="${TTS_MODE}" \
+    --voice-count="${TTS_VOICE_COUNT}" \
+    --data-dir="${DATA_DIR}" \
+    --output-dir="${SAMPLES_DIR}"
 
-echo -e "\n===== Generating ${SAMPLES} wake word samples in batches of ${BATCH_SIZE} (language=${LANGUAGE}) ====="
-export TF_CPP_MIN_LOG_LEVEL=9
-export TF_FORCE_GPU_ALLOW_GROWTH=true
-export TF_GPU_ALLOCATOR=cuda_malloc_async
-export TF_XLA_FLAGS="--tf_xla_auto_jit=0"
-export NVIDIA_TF32_OVERRIDE=1
-export TF_CUDNN_WORKSPACE_LIMIT_IN_MB=512
-export GLOG_minloglevel=2
-export GRPC_VERBOSITY=ERROR
-
-echo "   Generating samples"
-rm -rf "${SAMPLES_DIR}" || :
-mkdir -p "${SAMPLES_DIR}" || :
-python "${PROGDIR}/run_generator_with_progress.py" \
-    --generator "${PSG}/generate_samples.py" \
-    --output-dir "${SAMPLES_DIR}" \
-    --max-samples ${SAMPLES} \
-    -- \
-    "${WAKE_WORD}" \
-    "${MODEL_ARGS[@]}" \
-    --max-samples ${SAMPLES} \
-    --batch-size ${BATCH_SIZE} \
-    --output-dir "${SAMPLES_DIR}"
-
-generated_files=$(find "${SAMPLES_DIR}" -name '*.wav' | wc -l)
+generated_files=$(find "${SAMPLES_DIR}" -maxdepth 1 -name '*.wav' | wc -l)
 if [ "${generated_files}" -ne "${SAMPLES}" ] ; then
-    echo "ERROR:  only generated ${generated_files} files" >&2
+    echo "ERROR: only generated ${generated_files} of ${SAMPLES} files" >&2
     exit 1
 fi
-echo "${WAKE_WORD}:${SAMPLES}:${MODEL_TAG}" > "${WORK_DIR}/last_wake_word"
-echo
+
 END_TS=$EPOCHSECONDS
 print_elapsed_time "${START_TS}" "${END_TS}" "Generated ${SAMPLES} wake word samples."
-
-exit 0
