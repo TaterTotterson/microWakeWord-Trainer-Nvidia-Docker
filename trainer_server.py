@@ -581,6 +581,24 @@ def _metadata_int(value: Any) -> int | None:
         return None
 
 
+ESPHOME_MANIFEST_SUFFIX = ".esphome.json"
+ESPHOME_MANIFEST_KEYS = (
+    "type",
+    "wake_word",
+    "author",
+    "website",
+    "model",
+    "trained_languages",
+    "version",
+    "micro",
+)
+
+
+def _esphome_manifest(metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """Return only fields accepted by ESPHome's micro_wake_word v2 schema."""
+    return {key: metadata[key] for key in ESPHOME_MANIFEST_KEYS if key in metadata}
+
+
 def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
     _sync_trained_wake_word_artifacts()
     base = str(base_url or "").rstrip("/")
@@ -619,9 +637,11 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
         recall = _metadata_float(calibration.get("recall"))
         false_accepts_per_hour = _metadata_float(calibration.get("false_accepts_per_hour"))
         json_url = f"/api/trained_wake_words/{quote(json_path.name)}"
+        esphome_json_url = f"/api/trained_wake_words/{quote(safe + ESPHOME_MANIFEST_SUFFIX)}"
         model_url = f"/api/trained_wake_words/{quote(model_path.name)}"
         if base:
             json_url = f"{base}{json_url}"
+            esphome_json_url = f"{base}{esphome_json_url}"
             model_url = f"{base}{model_url}"
 
         rows.append(
@@ -634,6 +654,7 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
                 # New consumers should prefer the explicit `json_url` field.
                 "url": json_url,
                 "json_url": json_url,
+                "esphome_json_url": esphome_json_url,
                 "model_url": model_url,
                 "json_file": json_path.name,
                 "model_file": model_path.name,
@@ -3960,6 +3981,24 @@ def trained_wake_word_artifact(filename: str):
     if not safe_filename or Path(safe_filename).suffix.lower() not in {".json", ".tflite"}:
         return JSONResponse({"ok": False, "error": "Unsupported wake word artifact."}, status_code=400)
     _sync_trained_wake_word_artifacts()
+    if safe_filename.endswith(ESPHOME_MANIFEST_SUFFIX):
+        source_stem = safe_filename[: -len(ESPHOME_MANIFEST_SUFFIX)]
+        source_path = TRAINED_WAKE_WORDS_DIR / f"{source_stem}.json"
+        if not source_stem or not source_path.is_file():
+            return JSONResponse({"ok": False, "error": "Wake word artifact not found."}, status_code=404)
+        try:
+            metadata = json.loads(source_path.read_text(encoding="utf-8"))
+        except Exception:
+            return JSONResponse({"ok": False, "error": "Wake word package is invalid."}, status_code=422)
+        if not isinstance(metadata, dict):
+            return JSONResponse({"ok": False, "error": "Wake word package is invalid."}, status_code=422)
+        model_name = Path(str(metadata.get("model") or f"{source_stem}.tflite")).name
+        if not (TRAINED_WAKE_WORDS_DIR / model_name).is_file():
+            return JSONResponse({"ok": False, "error": "Wake word model not found."}, status_code=404)
+        return JSONResponse(
+            _esphome_manifest(metadata),
+            headers={"Cache-Control": "no-store, max-age=0"},
+        )
     artifact_path = TRAINED_WAKE_WORDS_DIR / safe_filename
     if not artifact_path.exists() or not artifact_path.is_file():
         return JSONResponse({"ok": False, "error": "Wake word artifact not found."}, status_code=404)

@@ -1,2 +1,3 @@
-- Fixed NVIDIA v22 training runs remaining stuck immediately after Start Session instead of launching the training worker.
-- Corrected the worker-state handoff for both manual and automatic training, with regression coverage for the complete startup path.
+- Added an ESPHome section to the Wake Words tab with a dedicated, copyable micro_wake_word JSON URL for every trained model.
+- Kept the full Tater Native package unchanged while serving a separate strict ESPHome v2 manifest that references the same TFLite model.
+- Added regression coverage for ESPHome manifest generation and the shared Vue interface.

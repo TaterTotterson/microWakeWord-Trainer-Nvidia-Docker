@@ -147,6 +147,9 @@ button:disabled { opacity: .43; cursor: not-allowed; }
 .progress-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--orange), var(--violet)); transition: width .2s ease; }
 .native-notice { display: flex; align-items: center; gap: 12px; padding: 14px 18px; color: var(--muted); font-size: 12px; }
 .native-notice strong { color: var(--green); }
+.esphome-notice strong { color: var(--orange-2); }
+.compatibility-panel { padding-top: 19px; }
+.compatibility-panel .panel-head { margin-bottom: 15px; }
 .word-list article { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 15px; background: rgba(18,18,19,.64); }
 .word-list article > div { display: grid; min-width: 0; gap: 6px; }
 .word-list a { overflow-wrap: anywhere; color: var(--orange-2); font-size: 11px; text-decoration: none; }

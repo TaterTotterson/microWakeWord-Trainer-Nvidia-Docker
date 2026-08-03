@@ -76,6 +76,8 @@ export interface WakeWordItem extends JsonRecord {
   url?: string;
   json_url?: string;
   jsonUrl?: string;
+  esphome_json_url?: string;
+  esphomeJsonUrl?: string;
   model_url?: string;
   modelUrl?: string;
 }

@@ -162,6 +162,7 @@ function sampleSubtitle(item: AudioItem): string {
   return rows.join(" · ") || "Training sample";
 }
 function wordJsonUrl(item: JsonRecord): string { return String(item.json_url || item.url || item.jsonUrl || ""); }
+function wordEsphomeJsonUrl(item: JsonRecord): string { return String(item.esphome_json_url || item.esphomeJsonUrl || ""); }
 function wordModelUrl(item: JsonRecord): string { return String(item.model_url || item.modelUrl || ""); }
 function consoleTone(line: string): string {
   const value = line.trim().toLowerCase();
@@ -300,6 +301,11 @@ function consoleTone(line: string): string {
           <section class="panel"><header class="panel-head"><div class="number">v1</div><div><h3>Published model URLs</h3><p>URLs stay local and are refreshed after each successful run.</p></div><button type="button" :disabled="isBusy('firmware')" @click="refreshWakeWords()">Refresh</button></header>
             <div v-if="!trainer.wakeWords.length" class="empty-state">Train a wake word and its package will appear here.</div>
             <div v-else class="word-list"><article v-for="word in trainer.wakeWords" :key="word.key || wordJsonUrl(word)"><div><strong>{{ word.label || word.name || "Trained wake word" }}</strong><a v-if="wordJsonUrl(word)" :href="wordJsonUrl(word)" target="_blank" rel="noreferrer">JSON · {{ wordJsonUrl(word) }}</a><span v-else class="muted">JSON package URL unavailable</span><a v-if="wordModelUrl(word)" :href="wordModelUrl(word)" target="_blank" rel="noreferrer">Model · {{ wordModelUrl(word) }}</a><div class="meta-row"><span v-if="word.language">{{ word.language }}</span><span v-if="word.trained_at">{{ formatTimestamp(word.trained_at) }}</span><span v-if="word.recall !== undefined">recall {{ word.recall }}</span></div></div><button type="button" :disabled="!wordJsonUrl(word)" @click="copyWakeWord(wordJsonUrl(word))">Copy URL</button></article></div>
+          </section>
+          <div class="native-notice esphome-notice"><strong>ESPHome</strong><span>Strict micro_wake_word manifest without Tater Native or calibration extensions.</span></div>
+          <section class="panel compatibility-panel"><header class="panel-head"><div class="number">ESP</div><div><h3>ESPHome JSON</h3><p>Use this URL as the model in an ESPHome micro_wake_word configuration.</p></div></header>
+            <div v-if="!trainer.wakeWords.length" class="empty-state">ESPHome links appear after a wake word is trained.</div>
+            <div v-else class="word-list"><article v-for="word in trainer.wakeWords" :key="`esphome-${word.key || wordEsphomeJsonUrl(word)}`"><div><strong>{{ word.label || word.name || "Trained wake word" }}</strong><a v-if="wordEsphomeJsonUrl(word)" :href="wordEsphomeJsonUrl(word)" target="_blank" rel="noreferrer">ESPHome JSON · {{ wordEsphomeJsonUrl(word) }}</a><span v-else class="muted">ESPHome package URL unavailable</span><div class="meta-row"><span>Schema v2</span><span>Same TFLite model</span></div></div><button type="button" :disabled="!wordEsphomeJsonUrl(word)" @click="copyWakeWord(wordEsphomeJsonUrl(word))">Copy ESPHome URL</button></article></div>
           </section>
         </template>
       </template>

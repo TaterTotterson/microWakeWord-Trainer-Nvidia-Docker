@@ -4004,23 +4004,32 @@ var hc = {
 }, Ju = ["href"], Yu = {
 	key: 1,
 	class: "muted"
-}, Xu = ["href"], Zu = { class: "meta-row" }, Qu = { key: 0 }, $u = { key: 1 }, ed = { key: 2 }, td = ["disabled", "onClick"], nd = {
+}, Xu = ["href"], Zu = { class: "meta-row" }, Qu = { key: 0 }, $u = { key: 1 }, ed = { key: 2 }, td = ["disabled", "onClick"], nd = { class: "panel compatibility-panel" }, rd = {
+	key: 0,
+	class: "empty-state"
+}, id = {
+	key: 1,
+	class: "word-list"
+}, ad = ["href"], od = {
+	key: 1,
+	class: "muted"
+}, sd = ["disabled", "onClick"], cd = {
 	class: "modal console-modal",
 	role: "dialog",
 	"aria-modal": "true",
 	"aria-label": "Training console"
-}, rd = { class: "modal-head" }, id = { class: "row console-actions" }, ad = {
+}, ld = { class: "modal-head" }, ud = { class: "row console-actions" }, dd = {
 	class: "modal link-modal",
 	role: "dialog",
 	"aria-modal": "true",
 	"aria-label": "Link Tater"
-}, od = { class: "modal-head" }, sd = {
+}, fd = { class: "modal-head" }, pd = {
 	key: 0,
 	class: "link-success"
-}, cd = {
+}, md = {
 	key: 1,
 	class: "stack"
-}, ld = { class: "field" }, ud = { class: "field" }, dd = ["disabled"], fd = "/static/images/tater-wake-word-trainer.png", pd = 50, md = /* @__PURE__ */ fr({
+}, hd = { class: "field" }, gd = { class: "field" }, _d = ["disabled"], vd = "/static/images/tater-wake-word-trainer.png", yd = 50, bd = /* @__PURE__ */ fr({
 	__name: "TrainerApp",
 	setup(e) {
 		let t = /* @__PURE__ */ F(null), n = /* @__PURE__ */ F(null), r = /* @__PURE__ */ F(!0), i = /* @__PURE__ */ F(""), a = /* @__PURE__ */ F(""), o = /* @__PURE__ */ F(!1), s = [
@@ -4056,8 +4065,8 @@ var hc = {
 			}
 		], c = Y(() => {
 			let e = X.samplePage[X.sampleBucket];
-			return As.value.slice(e * pd, (e + 1) * pd);
-		}), l = Y(() => Math.max(1, Math.ceil(As.value.length / pd))), u = Y(() => X.auto.state || {}), d = Y(() => X.auto.runtime || {}), f = Y(() => {
+			return As.value.slice(e * yd, (e + 1) * yd);
+		}), l = Y(() => Math.max(1, Math.ceil(As.value.length / yd))), u = Y(() => X.auto.state || {}), d = Y(() => X.auto.runtime || {}), f = Y(() => {
 			let e = u.value, t = [];
 			return e.last_review_result && t.push(`Last review: ${String(e.last_review_result).replaceAll("_", " ")}`), e.last_review_file && t.push(String(e.last_review_file)), e.last_review_transcript && t.push(`STT: “${e.last_review_transcript}”`), e.last_review_error && t.push(`Error: ${e.last_review_error}`), e.last_stt_engine && t.push(`STT engine: ${String(e.last_stt_engine).replaceAll("_", " ")}`), e.last_notify_at && t.push(e.last_notify_error ? `Publish failed: ${e.last_notify_error}` : `Wake word published ${uc(e.last_notify_at)}`), t.join(" · ") || "No automatic review has run yet.";
 		}), p = Y(() => X.training.running ? {
@@ -4156,18 +4165,21 @@ var hc = {
 			return String(e.json_url || e.url || e.jsonUrl || "");
 		}
 		function re(e) {
-			return String(e.model_url || e.modelUrl || "");
+			return String(e.esphome_json_url || e.esphomeJsonUrl || "");
 		}
 		function E(e) {
+			return String(e.model_url || e.modelUrl || "");
+		}
+		function ie(e) {
 			let t = e.trim().toLowerCase();
 			return /^(✓|✅)|success|finished/.test(t) ? "success" : /^(✗|❌)|error|failed|traceback/.test(t) ? "error" : /^(⚠|warning)/.test(t) ? "warning" : /^={4,}|^-----|^=====/.test(t) ? "heading" : "";
 		}
 		return (e, d) => (U(), W("div", Dc, [
-			d[113] ||= G("div", {
+			d[116] ||= G("div", {
 				class: "ambient ambient-one",
 				"aria-hidden": "true"
 			}, null, -1),
-			d[114] ||= G("div", {
+			d[117] ||= G("div", {
 				class: "ambient ambient-two",
 				"aria-hidden": "true"
 			}, null, -1),
@@ -4175,7 +4187,7 @@ var hc = {
 				class: "brand-mark",
 				"aria-hidden": "true"
 			}, [G("img", {
-				src: fd,
+				src: vd,
 				alt: ""
 			})]), d[44] ||= G("div", null, [
 				G("span", { class: "eyebrow" }, "Tater tools"),
@@ -4631,7 +4643,7 @@ var hc = {
 					G("h2", null, "Trained Wake Words"),
 					G("p", null, "Copy a local JSON package URL into Tater to switch every native satellite live.")
 				], -1), G("span", { class: O(["pill hero-pill", I(X).wakeWords.length ? "success" : "warning"]) }, k(I(X).wakeWords.length ? `${I(X).wakeWords.length} trained` : "Catalog empty"), 3)]),
-				d[105] ||= G("div", { class: "native-notice" }, [G("strong", null, "Tater Native"), G("span", null, "These packages include model metadata and a direct model URL for live satellite updates.")], -1),
+				d[107] ||= G("div", { class: "native-notice" }, [G("strong", null, "Tater Native"), G("span", null, "These packages include model metadata and a direct model URL for live satellite updates.")], -1),
 				G("section", Uu, [G("header", Wu, [
 					d[103] ||= G("div", { class: "number" }, "v1", -1),
 					d[104] ||= G("div", null, [G("h3", null, "Published model URLs"), G("p", null, "URLs stay local and are refreshed after each successful run.")], -1),
@@ -4648,12 +4660,12 @@ var hc = {
 						target: "_blank",
 						rel: "noreferrer"
 					}, "JSON · " + k(T(e)), 9, Ju)) : (U(), W("span", Yu, "JSON package URL unavailable")),
-					re(e) ? (U(), W("a", {
+					E(e) ? (U(), W("a", {
 						key: 2,
-						href: re(e),
+						href: E(e),
 						target: "_blank",
 						rel: "noreferrer"
-					}, "Model · " + k(re(e)), 9, Xu)) : q("", !0),
+					}, "Model · " + k(E(e)), 9, Xu)) : q("", !0),
 					G("div", Zu, [
 						e.language ? (U(), W("span", Qu, k(e.language), 1)) : q("", !0),
 						e.trained_at ? (U(), W("span", $u, k(I(uc)(e.trained_at)), 1)) : q("", !0),
@@ -4663,17 +4675,32 @@ var hc = {
 					type: "button",
 					disabled: !T(e),
 					onClick: (t) => I(ac)(T(e))
-				}, "Copy URL", 8, td)]))), 128))])) : (U(), W("div", Ku, "Train a wake word and its package will appear here."))])
+				}, "Copy URL", 8, td)]))), 128))])) : (U(), W("div", Ku, "Train a wake word and its package will appear here."))]),
+				d[108] ||= G("div", { class: "native-notice esphome-notice" }, [G("strong", null, "ESPHome"), G("span", null, "Strict micro_wake_word manifest without Tater Native or calibration extensions.")], -1),
+				G("section", nd, [d[106] ||= G("header", { class: "panel-head" }, [G("div", { class: "number" }, "ESP"), G("div", null, [G("h3", null, "ESPHome JSON"), G("p", null, "Use this URL as the model in an ESPHome micro_wake_word configuration.")])], -1), I(X).wakeWords.length ? (U(), W("div", id, [(U(!0), W(V, null, Lr(I(X).wakeWords, (e) => (U(), W("article", { key: `esphome-${e.key || re(e)}` }, [G("div", null, [
+					G("strong", null, k(e.label || e.name || "Trained wake word"), 1),
+					re(e) ? (U(), W("a", {
+						key: 0,
+						href: re(e),
+						target: "_blank",
+						rel: "noreferrer"
+					}, "ESPHome JSON · " + k(re(e)), 9, ad)) : (U(), W("span", od, "ESPHome package URL unavailable")),
+					d[105] ||= G("div", { class: "meta-row" }, [G("span", null, "Schema v2"), G("span", null, "Same TFLite model")], -1)
+				]), G("button", {
+					type: "button",
+					disabled: !re(e),
+					onClick: (t) => I(ac)(re(e))
+				}, "Copy ESPHome URL", 8, sd)]))), 128))])) : (U(), W("div", rd, "ESPHome links appear after a wake word is trained."))])
 			], 64)) : q("", !0)], 64)) : (U(), W("div", Lc, [...d[46] ||= [G("span", { class: "spinner" }, null, -1), G("strong", null, "Connecting to the local trainer…", -1)]]))]),
 			(U(), ra(Jn, { to: "body" }, [I(X).consoleOpen ? (U(), W("div", {
 				key: 0,
 				class: "modal-backdrop console-backdrop",
 				onClick: d[39] ||= as((e) => I(X).consoleOpen = !1, ["self"])
-			}, [G("section", nd, [G("header", rd, [d[106] ||= G("div", null, [
+			}, [G("section", cd, [G("header", ld, [d[109] ||= G("div", null, [
 				G("span", { class: "eyebrow" }, "Live pipeline"),
 				G("h2", null, "Training Console"),
 				G("p", null, "Closing this window does not interrupt training.")
-			], -1), G("div", id, [
+			], -1), G("div", ud, [
 				r.value ? q("", !0) : (U(), W("button", {
 					key: 0,
 					type: "button",
@@ -4692,29 +4719,29 @@ var hc = {
 				onScrollPassive: v
 			}, [(U(!0), W(V, null, Lr(h.value, (e, t) => (U(), W("span", {
 				key: `${t}-${e}`,
-				class: O(E(e))
+				class: O(ie(e))
 			}, k(e), 3))), 128))], 544)])])) : q("", !0)])),
 			(U(), ra(Jn, { to: "body" }, [I(X).taterLinkOpen ? (U(), W("div", {
 				key: 0,
 				class: "modal-backdrop",
 				onClick: d[43] ||= as((e) => I(X).taterLinkOpen = !1, ["self"])
-			}, [G("section", ad, [G("header", od, [G("div", null, [
-				d[107] ||= G("span", { class: "eyebrow" }, "Secure pairing", -1),
+			}, [G("section", dd, [G("header", fd, [G("div", null, [
+				d[110] ||= G("span", { class: "eyebrow" }, "Secure pairing", -1),
 				G("h2", null, k(o.value ? "Tater linked" : "Link Tater"), 1),
 				G("p", null, k(o.value ? "This trainer can securely publish wake-word updates." : "Enter the short-lived code shown in Tater Voice Settings."), 1)
 			]), G("button", {
 				type: "button",
 				onClick: d[40] ||= (e) => I(X).taterLinkOpen = !1
-			}, "Close")]), o.value ? (U(), W("div", sd, [
-				d[108] ||= G("i", null, "✓", -1),
+			}, "Close")]), o.value ? (U(), W("div", pd, [
+				d[111] ||= G("i", null, "✓", -1),
 				G("strong", null, "Successfully linked" + k(I(X).auto.trainer_link?.tater_name ? ` to ${I(X).auto.trainer_link.tater_name}` : ""), 1),
-				d[109] ||= G("span", null, "The private link key is stored locally and is never displayed.", -1)
-			])) : (U(), W("div", cd, [
-				G("label", ld, [d[110] ||= G("span", null, "Tater address", -1), R(G("input", {
+				d[112] ||= G("span", null, "The private link key is stored locally and is never displayed.", -1)
+			])) : (U(), W("div", md, [
+				G("label", hd, [d[113] ||= G("span", null, "Tater address", -1), R(G("input", {
 					"onUpdate:modelValue": d[41] ||= (e) => i.value = e,
 					type: "text"
 				}, null, 512), [[Xo, i.value]])]),
-				G("label", ud, [d[111] ||= G("span", null, "Tater pairing code", -1), R(G("input", {
+				G("label", gd, [d[114] ||= G("span", null, "Tater pairing code", -1), R(G("input", {
 					id: "pairing-code",
 					"onUpdate:modelValue": d[42] ||= (e) => a.value = e,
 					class: "pairing-code",
@@ -4723,13 +4750,13 @@ var hc = {
 					autocomplete: "off",
 					onInput: w
 				}, null, 544), [[Xo, a.value]])]),
-				d[112] ||= G("small", null, "In Tater, open Voice Settings → Wake Word Trainer → Link Trainer.", -1),
+				d[115] ||= G("small", null, "In Tater, open Voice Settings → Wake Word Trainer → Link Trainer.", -1),
 				G("button", {
 					type: "button",
 					class: "button primary",
 					disabled: I(Z)("link"),
 					onClick: ee
-				}, k(I(Z)("link") ? "Linking securely…" : "Link Tater"), 9, dd)
+				}, k(I(Z)("link") ? "Linking securely…" : "Link Tater"), 9, _d)
 			]))])])) : q("", !0)])),
 			K(Ec),
 			K($a, { name: "toast" }, {
@@ -4742,7 +4769,7 @@ var hc = {
 			})
 		]));
 	}
-}), hd = document.getElementById("trainer-app");
-if (!hd) throw Error("Missing #trainer-app mount point");
-ds(md).mount(hd);
+}), xd = document.getElementById("trainer-app");
+if (!xd) throw Error("Missing #trainer-app mount point");
+ds(bd).mount(xd);
 //#endregion

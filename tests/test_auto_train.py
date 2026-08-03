@@ -583,6 +583,56 @@ class AutoTrainTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["url"], rows[0]["json_url"])
         self.assertTrue(rows[0]["json_url"].endswith("/api/trained_wake_words/hey_tater.json"))
+        self.assertTrue(
+            rows[0]["esphome_json_url"].endswith(
+                "/api/trained_wake_words/hey_tater.esphome.json"
+            )
+        )
+
+    def test_esphome_manifest_route_removes_tater_extensions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            trained_dir = Path(directory)
+            (trained_dir / "hey_tater.tflite").write_bytes(b"model")
+            metadata = {
+                "type": "micro",
+                "wake_word": "hey tater",
+                "label": "Hey Tater",
+                "author": "Tater Totterson",
+                "website": "https://example.com",
+                "model": "hey_tater.tflite",
+                "trained_languages": ["en"],
+                "version": 2,
+                "model_format": "tflite_stream_state_internal_quant",
+                "quantization": "int8",
+                "sample_rate": 16000,
+                "micro": {
+                    "probability_cutoff": 0.97,
+                    "sliding_window_size": 5,
+                    "feature_step_size": 10,
+                    "tensor_arena_size": 30000,
+                    "minimum_esphome_version": "2024.7.0",
+                },
+                "tater_native": {"format_version": 1},
+                "calibration": {"recall": 0.99},
+            }
+            (trained_dir / "hey_tater.json").write_text(
+                json.dumps(metadata),
+                encoding="utf-8",
+            )
+            with (
+                patch.object(trainer, "TRAINED_WAKE_WORDS_DIR", trained_dir),
+                patch.object(trainer, "_sync_trained_wake_word_artifacts"),
+            ):
+                response = trainer.trained_wake_word_artifact(
+                    "hey_tater.esphome.json"
+                )
+
+        payload = json.loads(response.body)
+        self.assertEqual(set(payload), set(trainer.ESPHOME_MANIFEST_KEYS))
+        self.assertEqual(payload["micro"], metadata["micro"])
+        self.assertNotIn("label", payload)
+        self.assertNotIn("tater_native", payload)
+        self.assertNotIn("calibration", payload)
 
     def test_tater_notification_fails_when_trained_word_is_missing(self):
         trainer.AUTO_TRAIN_CONFIG["tater_link_token"] = "secret-token"

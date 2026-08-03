@@ -89,6 +89,15 @@ class VueTrainerUiTests(unittest.TestCase):
         self.assertNotIn("copyWakeWord(word.url)", app)
         self.assertIn("json_url?: string", types)
 
+    def test_wake_words_tab_exposes_esphome_manifest_urls(self) -> None:
+        app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
+        types = (REPO_ROOT / "frontend" / "src" / "types.ts").read_text(encoding="utf-8")
+
+        self.assertIn("ESPHome JSON", app)
+        self.assertIn("wordEsphomeJsonUrl", app)
+        self.assertIn("Copy ESPHome URL", app)
+        self.assertIn("esphome_json_url?: string", types)
+
     def test_runtime_packaging_uses_bundle_without_node(self) -> None:
         dockerfiles = [REPO_ROOT / "dockerfile", REPO_ROOT / "dockerfile.blackwell"]
         for dockerfile in dockerfiles:
