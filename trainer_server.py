@@ -3110,8 +3110,9 @@ def _run_training_background(
 
     with DATA_MANAGEMENT_LOCK:
         with STATE_LOCK:
-            if STATE["training"]["running"]:
-                return JSONResponse({"ok": False, "error": "Training already running"}, status_code=400)
+            # The API or auto-training scheduler reserves the run by setting
+            # this flag before the thread starts. Duplicate starts are already
+            # rejected there and by _start_training_thread's runtime lock.
             STATE["training"]["running"] = True
         STATE["training"]["exit_code"] = None
         STATE["training"]["log_lines"] = []

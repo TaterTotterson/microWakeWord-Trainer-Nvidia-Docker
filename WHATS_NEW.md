@@ -1,19 +1,2 @@
-- Fixed the training console so scrolling up pauses auto-follow and provides a Jump to latest control.
-- Fixed trained wake-word cards and Copy URL to use the explicit JSON package URL instead of producing `undefined`.
-- Replaced the 128-profile clone pipeline with direct final-corpus generation from Qwen, OmniVoice, and Piper; MOSS now uses a different accepted carrier for each take.
-- Added strict provider-specific rejection for static, broadband/high-frequency noise, silence, clipping, excessive duration/rambling, and exact duplicate audio.
-- Capped Qwen and MOSS decoding for a single short utterance, fixed OmniVoice to bounded wake-phrase durations, and let safer providers fill every rejected share.
-- Expanded Qwen to 18,750 balanced combinations across gender, age, pitch, delivery, timbre, pace, and vocal weight before an instruction repeats.
-- Shifted the reactive trainer UI from blue-black surfaces to Tater's graphite-grey and orange visual theme.
-- Rebuilt the trainer interface as a reactive Vue 3 + TypeScript application using the same typed UI pattern as Tater.
-- Preserved session setup, multilingual TTS routing, sample review/import/trim, Auto Training, secure Tater pairing, live logs, and wake-word publishing in the new component-driven UI.
-- Updated the standard CUDA and Blackwell Dockerfiles to copy the complete prebuilt UI bundle; Node.js is not installed or required in the runtime image.
-- Made OmniVoice, Qwen3-TTS, MOSS-TTS-Nano, and Piper the recommended four-provider route where a compatible Piper model is present.
-- Added the live 646-language OmniVoice catalog, language quality tiers, exact per-engine routing, and normalized acoustic QA.
-- Added persistent per-engine environments and Hugging Face caches that keep conflicting TTS dependencies separate from wake-word training.
-- Improved automatic review accuracy for short wake phrases that STT initially hears as similar-sounding words.
-- Added a conservative Faster Whisper confirmation pass that uses the currently configured wake phrase only when the unbiased transcript is already phonetically close.
-- Kept unconfirmed close transcripts in the manual review inbox instead of allowing them to become harmful negative training samples.
-- Added visible guided-transcript and review-reason details, plus retry support for ambiguous clips through Review Now.
-- Locked the wake phrase, language, and TTS route while a session is active, and added Stop Session with clean full-process-tree training cancellation.
-- Added a Data tab with per-dataset disk usage and file counts, plus confirmed, training-safe deletion for recordings, downloads, generated caches, speech models, and training results.
+- Fixed NVIDIA v22 training runs remaining stuck immediately after Start Session instead of launching the training worker.
+- Corrected the worker-state handoff for both manual and automatic training, with regression coverage for the complete startup path.
