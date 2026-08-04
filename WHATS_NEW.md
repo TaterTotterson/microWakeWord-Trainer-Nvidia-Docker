@@ -1,2 +1,1 @@
-- Prevented unreadable audio files from freezing sample preparation by adding a bounded FFmpeg watchdog, safe cleanup, and visible normalization progress.
-- Kept primary and guided STT results visible after captures are automatically sorted into positive or negative training samples.
+- Restored MOSS-TTS-Nano generation with the current voice-cloning API so all four providers contribute to the final training corpus.

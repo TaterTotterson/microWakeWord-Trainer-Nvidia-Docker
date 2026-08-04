@@ -69,7 +69,6 @@ def main() -> int:
             text=str(item["text"]),
             output_audio_path=str(output_path),
             mode="voice_clone",
-            prompt_text=str(item["ref_text"]),
             prompt_audio_path=str(item["ref_audio"]),
             reference_audio_path=None,
             text_tokenizer_path=None,

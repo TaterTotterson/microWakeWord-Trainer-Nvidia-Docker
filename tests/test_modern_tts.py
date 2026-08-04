@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import importlib.util
 import json
 import math
@@ -69,6 +70,22 @@ class ModernTtsTests(unittest.TestCase):
             generator_module.omnivoice_stability_args(),
             ["--position_temperature", "5.0", "--class_temperature", "0.0"],
         )
+
+    def test_moss_voice_clone_uses_audio_without_disallowed_prompt_text(self) -> None:
+        worker_path = REPO_ROOT / "cli" / "tts_moss_worker.py"
+        tree = ast.parse(worker_path.read_text(encoding="utf-8"))
+        inference_calls = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "inference"
+        ]
+
+        self.assertEqual(len(inference_calls), 1)
+        keywords = {keyword.arg for keyword in inference_calls[0].keywords}
+        self.assertIn("prompt_audio_path", keywords)
+        self.assertNotIn("prompt_text", keywords)
 
     def test_omnivoice_uses_a_hidden_stable_prompt_before_short_clone(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -44,7 +44,7 @@ from tts_config import (  # noqa: E402
 )
 
 
-GENERATOR_VERSION = "modern-tts-v15-four-provider-direct-corpus-safe-limits"
+GENERATOR_VERSION = "modern-tts-v16-four-provider-direct-corpus-safe-limits"
 VOICE_BANK_VERSION = "modern-tts-voice-bank-v1-native-random-qualified-single-utterance"
 COMPATIBLE_VOICE_BANK_VERSIONS = {
     VOICE_BANK_VERSION,
