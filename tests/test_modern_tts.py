@@ -5,6 +5,7 @@ import importlib.util
 import json
 import math
 import shutil
+import signal
 import subprocess
 import tempfile
 import unittest
@@ -585,6 +586,87 @@ class ModernTtsTests(unittest.TestCase):
             self.assertEqual(len(list(output_dir.glob("*.wav"))), 13)
             self.assertTrue((output_dir / ".generation_manifest.json").is_file())
             self.assertTrue(instance.cache_hit())
+
+    def test_normalization_times_out_bad_clip_and_continues(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            data_dir = Path(temp_dir)
+            output_dir = data_dir / "work" / "wake_word_samples"
+            args = argparse.Namespace(
+                phrase="hey tater",
+                language="en",
+                tts_mode="modern",
+                samples=2,
+                batch_size=1,
+                voice_count=2,
+                data_dir=data_dir,
+                output_dir=output_dir,
+                ffmpeg="ffmpeg",
+                dry_run=False,
+            )
+            instance = generator_module.Generator(args)
+            raw_dir = instance.raw_dir / "qwen3"
+            raw_dir.mkdir(parents=True)
+            paths = [raw_dir / "bad.wav", raw_dir / "good.wav"]
+            for path in paths:
+                write_tone(path)
+                instance.speed_by_path[path.resolve()] = 1.0
+
+            calls = []
+
+            class FakeProcess:
+                def __init__(self, *, pid, timed_out):
+                    self.pid = pid
+                    self.timed_out = timed_out
+                    self.wait_calls = []
+
+                def wait(self, timeout=None):
+                    self.wait_calls.append(timeout)
+                    if self.timed_out and len(self.wait_calls) == 1:
+                        raise subprocess.TimeoutExpired(
+                            calls[0][0],
+                            generator_module.NORMALIZATION_TIMEOUT_SECONDS,
+                        )
+                    return -signal.SIGKILL if self.timed_out else 0
+
+                def kill(self):
+                    return None
+
+            processes = []
+
+            def fake_ffmpeg(command, **kwargs):
+                calls.append((command, kwargs))
+                temp_path = Path(command[-1])
+                if len(calls) == 1:
+                    temp_path.touch()
+                    process = FakeProcess(pid=12345, timed_out=True)
+                else:
+                    write_tone(temp_path)
+                    process = FakeProcess(pid=12346, timed_out=False)
+                processes.append(process)
+                return process
+
+            messages = []
+            with (
+                patch.object(generator_module.subprocess, "Popen", side_effect=fake_ffmpeg),
+                patch.object(generator_module.os, "killpg") as killpg,
+                patch.object(generator_module, "log", side_effect=messages.append),
+            ):
+                accepted = instance.normalize(paths, 0, 2)
+
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(len(accepted), 1)
+            self.assertTrue((instance.final_dir / "0.wav").is_file())
+            self.assertFalse((instance.final_dir / "0.tmp.wav").exists())
+            self.assertIn("-nostdin", calls[0][0])
+            self.assertIs(calls[0][1]["stdin"], subprocess.DEVNULL)
+            self.assertTrue(calls[0][1]["start_new_session"])
+            self.assertEqual(
+                processes[0].wait_calls,
+                [generator_module.NORMALIZATION_TIMEOUT_SECONDS, 2.0],
+            )
+            killpg.assert_called_once_with(12345, signal.SIGKILL)
+            self.assertTrue(any("timed out" in message for message in messages))
+            self.assertTrue(any("1/2 accepted" in message for message in messages))
 
     def test_docker_and_ui_are_wired_for_modern_tts(self) -> None:
         for dockerfile in ("dockerfile", "dockerfile.blackwell"):

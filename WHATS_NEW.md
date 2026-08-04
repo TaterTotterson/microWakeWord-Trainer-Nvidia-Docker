@@ -1,3 +1,2 @@
-- Added an ESPHome section to the Wake Words tab with a dedicated, copyable micro_wake_word JSON URL for every trained model.
-- Kept the full Tater Native package unchanged while serving a separate strict ESPHome v2 manifest that references the same TFLite model.
-- Added regression coverage for ESPHome manifest generation and the shared Vue interface.
+- Prevented unreadable audio files from freezing sample preparation by adding a bounded FFmpeg watchdog, safe cleanup, and visible normalization progress.
+- Kept primary and guided STT results visible after captures are automatically sorted into positive or negative training samples.

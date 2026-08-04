@@ -16,6 +16,7 @@ import math
 import os
 import random
 import shutil
+import signal
 import subprocess
 import sys
 import wave
@@ -65,6 +66,8 @@ DIRECT_CANDIDATE_FACTORS = {
     ENGINE_MOSS: 1.25,
     ENGINE_PIPER: 1.05,
 }
+NORMALIZATION_TIMEOUT_SECONDS = 30.0
+NORMALIZATION_PROGRESS_INTERVAL = 100
 
 CARRIER_PROMPT_TEMPLATES = {
     "ar": "بصوت هادئ وطبيعي أقول {phrase} بوضوح، ثم أواصل الحديث بإيقاع ثابت.",
@@ -120,6 +123,38 @@ def run_with_batch_retry(
         retry_command = list(command)
         retry_command[batch_index] = "1"
         run(retry_command, env=env)
+
+
+def run_normalization_ffmpeg(command: list[str], timeout: float) -> int | None:
+    """Run one conversion without allowing a stuck file read to block training."""
+
+    process = subprocess.Popen(
+        command,
+        stdin=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    try:
+        return process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        # Do not use subprocess.run(timeout=...) here. On POSIX it performs an
+        # unbounded wait after killing the child, which can still freeze the
+        # trainer when a process is stuck in filesystem I/O.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        except OSError:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+        try:
+            process.wait(timeout=2.0)
+        except subprocess.TimeoutExpired:
+            # The process may remain in uninterruptible I/O until the kernel
+            # releases it. The next candidate can still be processed safely.
+            pass
+        return None
 
 
 def write_jsonl(path: Path, entries: list[dict]) -> None:
@@ -1247,7 +1282,9 @@ class Generator:
     def normalize(self, paths: list[Path], start_index: int, limit: int) -> list[Path]:
         accepted = []
         self.final_dir.mkdir(parents=True, exist_ok=True)
-        for path in paths:
+        candidate_count = len(paths)
+        log(f"→ Normalizing up to {limit} accepted clip(s) from {candidate_count} candidate(s)")
+        for processed, path in enumerate(paths, start=1):
             if len(accepted) >= limit:
                 break
             final_path = self.final_dir / f"{start_index + len(accepted)}.wav"
@@ -1258,6 +1295,7 @@ class Generator:
                 "-hide_banner",
                 "-loglevel",
                 "error",
+                "-nostdin",
                 "-y",
                 "-i",
                 str(path),
@@ -1272,18 +1310,39 @@ class Generator:
                 "pcm_s16le",
                 str(temp_path),
             ]
-            try:
-                subprocess.run(command, check=True)
-            except subprocess.CalledProcessError:
+            return_code = run_normalization_ffmpeg(
+                command,
+                timeout=NORMALIZATION_TIMEOUT_SECONDS,
+            )
+            converted = return_code == 0
+            if return_code is None:
                 temp_path.unlink(missing_ok=True)
-                continue
-            digest = hashlib.sha256(temp_path.read_bytes()).hexdigest() if temp_path.is_file() else ""
-            if valid_sample(temp_path) and digest and digest not in self.accepted_hashes:
-                temp_path.replace(final_path)
-                self.accepted_hashes.add(digest)
-                accepted.append(final_path)
-            else:
+                log(
+                    f"⚠️ Normalization timed out after "
+                    f"{NORMALIZATION_TIMEOUT_SECONDS:g}s; skipping {path.name}"
+                )
+            elif return_code != 0:
                 temp_path.unlink(missing_ok=True)
+                log(f"⚠️ ffmpeg rejected {path.name} (exit {return_code}); skipping it")
+
+            if converted:
+                digest = hashlib.sha256(temp_path.read_bytes()).hexdigest() if temp_path.is_file() else ""
+                if valid_sample(temp_path) and digest and digest not in self.accepted_hashes:
+                    temp_path.replace(final_path)
+                    self.accepted_hashes.add(digest)
+                    accepted.append(final_path)
+                else:
+                    temp_path.unlink(missing_ok=True)
+
+            if (
+                processed % NORMALIZATION_PROGRESS_INTERVAL == 0
+                or processed == candidate_count
+                or len(accepted) >= limit
+            ):
+                log(
+                    f"Normalization progress: {len(accepted)}/{limit} accepted "
+                    f"({processed}/{candidate_count} candidate(s) checked)"
+                )
         return accepted
 
     def generate(self) -> None:

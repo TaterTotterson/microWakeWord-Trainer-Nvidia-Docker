@@ -31,6 +31,11 @@ export interface AudioItem extends JsonRecord {
   original_name?: string;
   audio_url?: string;
   final_format?: JsonRecord;
+  transcript?: string;
+  transcribed_at?: string;
+  auto_review_guided_transcript?: string;
+  auto_review_stt_engine?: string;
+  auto_review_stt_model?: string;
 }
 
 export interface SamplesPayload extends JsonRecord {

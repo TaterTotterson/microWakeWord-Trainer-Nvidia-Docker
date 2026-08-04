@@ -315,6 +315,10 @@ class AutoTrainTests(unittest.TestCase):
         self.assertEqual(metadata["transcript"], "turn on the kitchen lights")
         self.assertEqual(metadata["auto_review_stt_engine"], "faster_whisper")
         self.assertEqual(metadata["auto_review_stt_model"], "small.en")
+        sample_item = trainer._sample_item_from_path(negatives[0], "negative")
+        self.assertEqual(sample_item["transcript"], "turn on the kitchen lights")
+        self.assertEqual(sample_item["auto_review_stt_engine"], "faster_whisper")
+        self.assertEqual(sample_item["auto_review_stt_model"], "small.en")
         self.assertEqual(trainer.AUTO_TRAIN_STATE["pending_negative_count"], 1)
 
     def test_matching_phrase_stays_in_manual_review_inbox(self):
@@ -467,8 +471,29 @@ class AutoTrainTests(unittest.TestCase):
         self.assertTrue(metadata["auto_positive"])
         self.assertEqual(metadata["review_status"], "auto_approved_personal")
         self.assertEqual(metadata["transcript"], "hey tater")
+        sample_item = trainer._sample_item_from_path(positives[0], "personal")
+        self.assertEqual(sample_item["transcript"], "hey tater")
         self.assertFalse(list(trainer.NEGATIVE_DIR.glob("*.wav")))
         self.assertEqual(trainer.AUTO_TRAIN_STATE["pending_negative_count"], 0)
+
+    def test_guided_stt_remains_visible_after_positive_auto_sort(self):
+        self.add_capture(event_type="close_miss")
+        trainer.AUTO_TRAIN_CONFIG["promote_close_misses"] = True
+        with (
+            patch.object(trainer, "_transcribe_capture", return_value="Hey, haters."),
+            patch.object(
+                trainer,
+                "_transcribe_capture_with_faster_whisper_guided",
+                return_value="Hey Tater",
+            ),
+        ):
+            trainer._auto_review_capture("wake.wav")
+
+        positives = list(trainer.PERSONAL_DIR.glob("*.wav"))
+        self.assertEqual(len(positives), 1)
+        sample_item = trainer._sample_item_from_path(positives[0], "personal")
+        self.assertEqual(sample_item["transcript"], "Hey, haters.")
+        self.assertEqual(sample_item["auto_review_guided_transcript"], "Hey Tater")
 
     def test_close_miss_without_phrase_stays_in_inbox(self):
         audio_path = self.add_capture(event_type="close_miss")

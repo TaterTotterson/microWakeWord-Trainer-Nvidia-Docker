@@ -80,6 +80,14 @@ class VueTrainerUiTests(unittest.TestCase):
         self.assertIn('@scroll.passive="onConsoleScroll"', app)
         self.assertIn("Jump to latest", app)
 
+    def test_saved_positive_and_negative_cards_keep_stt_results_visible(self) -> None:
+        app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
+        types = (REPO_ROOT / "frontend" / "src" / "types.ts").read_text(encoding="utf-8")
+
+        self.assertEqual(app.count('v-if="item.transcript" class="transcript"'), 2)
+        self.assertEqual(app.count('v-if="item.auto_review_guided_transcript"'), 2)
+        self.assertIn("auto_review_guided_transcript?: string", types)
+
     def test_wake_word_card_uses_explicit_json_catalog_url(self) -> None:
         app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
         types = (REPO_ROOT / "frontend" / "src" / "types.ts").read_text(encoding="utf-8")

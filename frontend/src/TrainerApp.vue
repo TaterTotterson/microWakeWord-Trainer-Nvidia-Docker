@@ -266,6 +266,7 @@ function consoleTone(line: string): string {
             <div v-if="!selectedSamples.length" class="empty-state">No {{ trainer.sampleBucket }} samples saved yet.</div>
             <div v-else class="audio-list compact-list"><article v-for="item in pagedSamples" :key="item.saved_as" class="audio-card">
               <header><div><strong>{{ item.saved_as }}</strong><small>{{ sampleSubtitle(item) }}</small></div><div class="row"><span v-if="item.trimmed" class="pill warning">Trimmed</span><span class="pill" :class="trainer.sampleBucket === 'personal' ? 'success' : 'error'">{{ trainer.sampleBucket === "personal" ? "Positive" : "Negative" }}</span></div></header>
+              <div v-if="item.transcript" class="transcript"><b>STT</b> {{ item.transcript }}</div><div v-if="item.auto_review_guided_transcript" class="transcript"><b>Guided wake check</b> {{ item.auto_review_guided_transcript }}</div>
               <audio controls preload="none" :src="itemAudioUrl(item, trainer.sampleBucket)" />
               <footer><span>{{ describeFormat(item.final_format) }}</span><div><button type="button" @click="openTrim(item, trainer.sampleBucket)">Trim</button><button v-if="item.trimmed" type="button" @click="revertSample(item, trainer.sampleBucket)">Revert</button><button type="button" class="button danger ghost" :disabled="isBusy('review')" @click="removeSample(item, trainer.sampleBucket)">Remove</button></div></footer>
             </article></div>
