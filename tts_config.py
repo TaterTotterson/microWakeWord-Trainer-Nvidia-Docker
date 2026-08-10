@@ -16,6 +16,26 @@ TTS_MODE_PIPER = "piper"
 TTS_MODES = (TTS_MODE_MODERN, TTS_MODE_HYBRID, TTS_MODE_PIPER)
 DEFAULT_TTS_MODE = TTS_MODE_HYBRID
 
+# English is one TTS language, while these values control the accent mix used
+# by providers that can follow a style instruction or clone a reference. The
+# remaining providers continue contributing their available English voices.
+DEFAULT_ENGLISH_ACCENT = "mixed"
+ENGLISH_ACCENTS = {
+    "mixed": "Mixed English",
+    "australian": "Australian",
+    "american": "American",
+    "british": "British",
+    "canadian": "Canadian",
+    "irish": "Irish",
+    "scottish": "Scottish",
+    "new_zealand": "New Zealand",
+    "indian": "Indian",
+    "south_african": "South African",
+}
+MIXED_ENGLISH_ACCENTS = tuple(
+    code for code in ENGLISH_ACCENTS if code != DEFAULT_ENGLISH_ACCENT
+)
+
 ENGINE_OMNIVOICE = "omnivoice"
 ENGINE_QWEN3 = "qwen3"
 ENGINE_MOSS = "moss"
@@ -155,6 +175,39 @@ def parse_omnivoice_catalog(markdown: str) -> dict[str, dict[str, object]]:
 def normalize_tts_mode(value: object) -> str:
     token = str(value or DEFAULT_TTS_MODE).strip().lower().replace("-", "_")
     return token if token in TTS_MODES else DEFAULT_TTS_MODE
+
+
+def normalize_english_accent(value: object, language: object = "en") -> str:
+    """Return a supported English accent emphasis or the mixed default."""
+
+    language_code = str(language or "en").strip().lower().replace("-", "_")
+    if language_code.split("_", 1)[0] != "en":
+        return DEFAULT_ENGLISH_ACCENT
+
+    token = str(value or DEFAULT_ENGLISH_ACCENT).strip().lower().replace("-", "_").replace(" ", "_")
+    aliases = {
+        "all": "mixed",
+        "none": "mixed",
+        "us": "american",
+        "usa": "american",
+        "uk": "british",
+        "gb": "british",
+        "australia": "australian",
+        "canada": "canadian",
+        "ireland": "irish",
+        "scotland": "scottish",
+        "new_zealand_english": "new_zealand",
+        "south_africa": "south_african",
+    }
+    token = aliases.get(token, token)
+    return token if token in ENGLISH_ACCENTS else DEFAULT_ENGLISH_ACCENT
+
+
+def english_accent_options() -> list[dict[str, str]]:
+    return [
+        {"code": code, "label": label}
+        for code, label in ENGLISH_ACCENTS.items()
+    ]
 
 
 def language_for_engine(engine: str, language: str) -> str:

@@ -10,6 +10,7 @@ from tts_config import (
     distribute_samples,
     engines_for_language,
     language_for_engine,
+    normalize_english_accent,
     normalize_tts_mode,
     quality_for_engines,
 )
@@ -50,6 +51,12 @@ class TtsConfigTests(unittest.TestCase):
 
     def test_invalid_mode_falls_back_to_four_provider_route(self) -> None:
         self.assertEqual(normalize_tts_mode("unknown"), "hybrid")
+
+    def test_english_accent_aliases_and_non_english_fallback(self) -> None:
+        self.assertEqual(normalize_english_accent("Australia", "en"), "australian")
+        self.assertEqual(normalize_english_accent("new-zealand", "en_US"), "new_zealand")
+        self.assertEqual(normalize_english_accent("unknown", "en"), "mixed")
+        self.assertEqual(normalize_english_accent("australian", "fr"), "mixed")
 
     def test_common_language_aliases_use_model_catalog_ids(self) -> None:
         self.assertEqual(language_for_engine(ENGINE_OMNIVOICE, "ar"), "arb")

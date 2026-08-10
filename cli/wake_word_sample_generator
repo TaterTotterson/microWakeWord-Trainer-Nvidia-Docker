@@ -4,7 +4,7 @@ set -euo pipefail
 PROGPATH="$(realpath "$0")"
 PROGDIR="$(dirname "${PROGPATH}")"
 
-KNOWN_ARGS=( samples batch-size data-dir language tts-mode tts-voice-count )
+KNOWN_ARGS=( samples batch-size data-dir language english-accent tts-mode tts-voice-count )
 # shellcheck source=/dev/null
 source "${PROGDIR}/shell.functions"
 WAKE_WORD="${POSITIONAL_ARGS[0]:-}"
@@ -17,12 +17,14 @@ fi
 if [ "${HELP}" == "true" ] || [ -z "${WAKE_WORD}" ] ; then
     cat <<EOF >&2
 Usage: $0 [ --samples=<samples> ] [ --batch-size=<batch_size> ]
-          [ --language=<lang> ] [ --tts-mode=<modern|hybrid|piper> ]
+          [ --language=<lang> ] [ --english-accent=<accent> ]
+          [ --tts-mode=<modern|hybrid|piper> ]
           [ --tts-voice-count=<voices> ] <wake_word>
 
 --samples:            Number of samples to generate. Default: ${DEFAULT_SAMPLES}
 --batch-size:         Generation batch size. Default: ${DEFAULT_BATCH_SIZE}
 --language:           TTS language code. Default: ${DEFAULT_LANGUAGE}
+--english-accent:     English accent emphasis. Default: ${DEFAULT_ENGLISH_ACCENT}
 --tts-mode:           modern, hybrid, or piper. Default: ${DEFAULT_TTS_MODE}
 --tts-voice-count:    Deprecated compatibility option; direct generation ignores it.
 <wake_word>           Required phrase to synthesize.
@@ -38,17 +40,31 @@ case "${TTS_MODE}" in
         ;;
 esac
 
+LANGUAGE="$(echo "${LANGUAGE}" | tr '[:upper:]' '[:lower:]')"
+ENGLISH_ACCENT="$(echo "${ENGLISH_ACCENT}" | tr '[:upper:] -' '[:lower:]__')"
+if [ "${LANGUAGE}" != "en" ]; then
+    ENGLISH_ACCENT="mixed"
+fi
+case "${ENGLISH_ACCENT}" in
+    mixed|australian|american|british|canadian|irish|scottish|new_zealand|indian|south_african) ;;
+    *)
+        echo "ERROR: unsupported --english-accent '${ENGLISH_ACCENT}'." >&2
+        exit 2
+        ;;
+esac
+
 WORK_DIR="${DATA_DIR}/work"
 SAMPLES_DIR="${WORK_DIR}/wake_word_samples"
 mkdir -p "${WORK_DIR}"
 
 START_TS=$EPOCHSECONDS
-echo "===== Generating ${SAMPLES} wake-word samples (language=${LANGUAGE}, tts=${TTS_MODE}) ====="
+echo "===== Generating ${SAMPLES} wake-word samples (language=${LANGUAGE}, accent=${ENGLISH_ACCENT}, tts=${TTS_MODE}) ====="
 
 python3 "${PROGDIR}/tts_generate_samples.py" "${WAKE_WORD}" \
     --samples="${SAMPLES}" \
     --batch-size="${BATCH_SIZE}" \
     --language="${LANGUAGE}" \
+    --english-accent="${ENGLISH_ACCENT}" \
     --tts-mode="${TTS_MODE}" \
     --voice-count="${TTS_VOICE_COUNT}" \
     --data-dir="${DATA_DIR}" \

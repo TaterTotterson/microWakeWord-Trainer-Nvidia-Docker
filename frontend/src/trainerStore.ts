@@ -1,6 +1,7 @@
 import { computed, reactive } from "vue";
 import { getJson, postJson, putJson, request, type JsonRecord } from "./api";
 import type {
+  AccentOption,
   AudioItem,
   AutoTrainForm,
   AutoTrainPayload,
@@ -26,6 +27,7 @@ const defaultAutoForm = (): AutoTrainForm => ({
   enabled: false,
   wake_phrase: "",
   language: "en",
+  english_accent: "mixed",
   stt_engine: "faster_whisper",
   minimum_transcript_chars: 2,
   delete_confirmed_wakes: false,
@@ -43,8 +45,21 @@ export const trainer = reactive({
   busy: new Set<string>(),
   phrase: "",
   language: "en",
+  englishAccent: "mixed",
   ttsMode: "hybrid",
   languages: [{ code: "en", label: "English (en)", engines: ["omnivoice"] }] as LanguageOption[],
+  englishAccents: [
+    { code: "mixed", label: "Mixed English" },
+    { code: "australian", label: "Australian" },
+    { code: "american", label: "American" },
+    { code: "british", label: "British" },
+    { code: "canadian", label: "Canadian" },
+    { code: "irish", label: "Irish" },
+    { code: "scottish", label: "Scottish" },
+    { code: "new_zealand", label: "New Zealand" },
+    { code: "indian", label: "Indian" },
+    { code: "south_african", label: "South African" },
+  ] as AccentOption[],
   session: {} as SessionPayload,
   samples: emptySamples(),
   captured: emptyCaptured(),
@@ -123,8 +138,12 @@ function applySession(payload: SessionPayload): void {
   if (Array.isArray(payload.available_languages) && payload.available_languages.length) {
     trainer.languages = payload.available_languages;
   }
+  if (Array.isArray(payload.available_english_accents) && payload.available_english_accents.length) {
+    trainer.englishAccents = payload.available_english_accents;
+  }
   if (payload.raw_phrase) trainer.phrase = payload.raw_phrase;
   if (payload.language) trainer.language = payload.language;
+  if (payload.english_accent) trainer.englishAccent = payload.english_accent;
   if (payload.tts_mode) trainer.ttsMode = payload.tts_mode;
   if (payload.training) trainer.training = payload.training;
 }
@@ -145,6 +164,7 @@ export async function startSession(): Promise<void> {
     const payload = await postJson<SessionPayload>("/api/start_session", {
       phrase: trainer.phrase.trim(),
       language: trainer.language,
+      english_accent: trainer.englishAccent,
       tts_mode: trainer.ttsMode,
     });
     applySession(payload);
@@ -193,6 +213,7 @@ export function ensureSupportedTtsMode(): void {
   if (trainer.ttsMode === "modern" && !modern) trainer.ttsMode = "piper";
   if (trainer.ttsMode === "hybrid" && !(modern && piper)) trainer.ttsMode = modern ? "modern" : "piper";
   if (trainer.ttsMode === "piper" && !piper) trainer.ttsMode = "modern";
+  if (trainer.language !== "en" || trainer.ttsMode === "piper") trainer.englishAccent = "mixed";
 }
 
 export async function refreshSamples(quiet = false): Promise<SamplesPayload> {
@@ -340,6 +361,8 @@ function applyAuto(payload: AutoTrainPayload, populate: boolean): void {
   trainer.autoForm = { ...defaultAutoForm(), ...(payload.config || {}) };
   if (!trainer.autoForm.wake_phrase) trainer.autoForm.wake_phrase = trainer.session.raw_phrase || "";
   if (!trainer.autoForm.language) trainer.autoForm.language = trainer.session.language || "en";
+  if (!trainer.autoForm.english_accent) trainer.autoForm.english_accent = trainer.session.english_accent || "mixed";
+  if (!String(trainer.autoForm.language).toLowerCase().startsWith("en")) trainer.autoForm.english_accent = "mixed";
 }
 
 export async function refreshAuto(populate = false): Promise<AutoTrainPayload> {

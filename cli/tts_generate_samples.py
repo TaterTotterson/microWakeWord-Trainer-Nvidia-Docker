@@ -31,20 +31,24 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from tts_config import (  # noqa: E402
+    DEFAULT_ENGLISH_ACCENT,
     DEFAULT_TTS_MODE,
+    ENGLISH_ACCENTS,
     ENGINE_MOSS,
     ENGINE_OMNIVOICE,
     ENGINE_PIPER,
     ENGINE_QWEN3,
+    MIXED_ENGLISH_ACCENTS,
     QWEN_LANGUAGE_NAMES,
     distribute_samples,
     engines_for_language,
     language_for_engine,
+    normalize_english_accent,
     normalize_tts_mode,
 )
 
 
-GENERATOR_VERSION = "modern-tts-v16-four-provider-direct-corpus-safe-limits"
+GENERATOR_VERSION = "modern-tts-v17-four-provider-direct-corpus-safe-limits-english-accent-emphasis"
 VOICE_BANK_VERSION = "modern-tts-voice-bank-v1-native-random-qualified-single-utterance"
 COMPATIBLE_VOICE_BANK_VERSIONS = {
     VOICE_BANK_VERSION,
@@ -199,7 +203,11 @@ def stable_prompt_text(phrase: str, language: str = "en") -> str:
     return clean + "."
 
 
-def qwen_descriptions(language_name: str, count: int) -> list[str]:
+def qwen_descriptions(
+    language_name: str,
+    count: int,
+    english_accent: str = DEFAULT_ENGLISH_ACCENT,
+) -> list[str]:
     genders = ("female", "male")
     ages = ("child", "teenager", "young adult", "middle-aged adult", "elderly adult")
     pitches = ("low pitch", "medium pitch", "high pitch")
@@ -215,16 +223,30 @@ def qwen_descriptions(language_name: str, count: int) -> list[str]:
     weights = ("light", "balanced", "compact", "full-bodied", "resonant")
     combinations = list(product(genders, ages, pitches, deliveries, textures, paces, weights))
     descriptions = []
+    accent_cycle: tuple[str, ...] = ()
+    if language_name == "English":
+        selected_accent = normalize_english_accent(english_accent, "en")
+        accent_cycle = (
+            MIXED_ENGLISH_ACCENTS
+            if selected_accent == DEFAULT_ENGLISH_ACCENT
+            else (selected_accent,)
+        )
     # Walking the Cartesian product sequentially clusters the leading traits
     # (the first 375 combinations are all female).  A coprime stride retains a
     # deterministic, non-repeating order while balancing every trait early.
     for index in range(count):
         combination_index = (index * VOICE_PROFILE_STRIDE) % len(combinations)
         gender, age, pitch, delivery, texture, pace, weight = combinations[combination_index]
+        language_style = f"native {language_name}"
+        if accent_cycle:
+            selected_accent = accent_cycle[index % len(accent_cycle)]
+            language_style = (
+                f"English with a natural {ENGLISH_ACCENTS[selected_accent]} accent"
+            )
         descriptions.append(
             f"A distinct {age} {gender} speaker with a {texture} timbre, "
-            f"{pitch}, {weight} vocal weight, and {delivery}, speaking native "
-            f"{language_name} at a {pace} pace. Say only the supplied text once."
+            f"{pitch}, {weight} vocal weight, and {delivery}, speaking "
+            f"{language_style} at a {pace} pace. Say only the supplied text once."
         )
     return descriptions
 
@@ -283,6 +305,10 @@ def valid_sample(path: Path) -> bool:
 class Generator:
     def __init__(self, args: argparse.Namespace):
         self.args = args
+        self.english_accent = normalize_english_accent(
+            getattr(args, "english_accent", DEFAULT_ENGLISH_ACCENT),
+            args.language,
+        )
         self.spoken_phrase = args.phrase.replace("_", " ").strip()
         self.data_dir = args.data_dir.resolve()
         self.output_dir = args.output_dir.resolve()
@@ -339,6 +365,7 @@ class Generator:
             "generator_version": GENERATOR_VERSION,
             "phrase": self.args.phrase,
             "language": self.args.language,
+            "english_accent": self.english_accent,
             "tts_mode": self.args.tts_mode,
             "samples": self.args.samples,
             "engines": engines,
@@ -1064,7 +1091,11 @@ class Generator:
         self.direct_attempt[engine] += count
         rng = random.Random(24051984 + start + sum(ord(ch) for ch in engine + prefix))
         descriptions = (
-            qwen_descriptions(QWEN_LANGUAGE_NAMES[self.args.language], start + count)[start:]
+            qwen_descriptions(
+                QWEN_LANGUAGE_NAMES[self.args.language],
+                start + count,
+                self.english_accent,
+            )[start:]
             if engine == ENGINE_QWEN3
             else []
         )
@@ -1360,6 +1391,8 @@ class Generator:
         self.final_dir.mkdir(parents=True, exist_ok=True)
         plan = distribute_samples(self.args.samples, engines)
         log(f"===== Direct TTS corpus plan ({self.args.tts_mode}, {self.args.language}) =====")
+        if self.args.language == "en" and ENGINE_QWEN3 in plan:
+            log(f"   English accent emphasis: {self.english_accent}")
         for engine, count in plan.items():
             log(f"   {engine}: {count} sample(s)")
         log(
@@ -1447,6 +1480,7 @@ class Generator:
                 "reusable_profile_bank": False,
                 "moss_unique_accepted_carriers": True,
                 "piper_all_model_speakers": True,
+                "english_accent_emphasis": self.english_accent,
             },
             "qa": {
                 "audio_format": "16 kHz mono PCM16 WAV",
@@ -1475,6 +1509,10 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser()
     result.add_argument("phrase")
     result.add_argument("--language", default="en")
+    result.add_argument(
+        "--english-accent",
+        default=os.environ.get("MWW_ENGLISH_ACCENT", DEFAULT_ENGLISH_ACCENT),
+    )
     result.add_argument("--tts-mode", default=DEFAULT_TTS_MODE)
     result.add_argument("--samples", type=int, default=50000)
     result.add_argument("--batch-size", type=int, default=8)
@@ -1494,6 +1532,7 @@ def parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = parser().parse_args()
     args.language = args.language.strip().lower().replace("-", "_")
+    args.english_accent = normalize_english_accent(args.english_accent, args.language)
     args.tts_mode = normalize_tts_mode(args.tts_mode)
     if args.samples < 1:
         raise SystemExit("--samples must be positive")

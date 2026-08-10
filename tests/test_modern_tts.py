@@ -71,6 +71,28 @@ class ModernTtsTests(unittest.TestCase):
             ["--position_temperature", "5.0", "--class_temperature", "0.0"],
         )
 
+    def test_qwen_accent_emphasis_supports_specific_and_mixed_english(self) -> None:
+        australian = generator_module.qwen_descriptions("English", 4, "australian")
+        self.assertTrue(all("natural Australian accent" in row for row in australian))
+
+        mixed = generator_module.qwen_descriptions("English", 9, "mixed")
+        for label in (
+            "Australian",
+            "American",
+            "British",
+            "Canadian",
+            "Irish",
+            "Scottish",
+            "New Zealand",
+            "Indian",
+            "South African",
+        ):
+            self.assertTrue(any(f"natural {label} accent" in row for row in mixed))
+
+        german = generator_module.qwen_descriptions("German", 1, "australian")
+        self.assertIn("speaking native German", german[0])
+        self.assertNotIn("accent", german[0])
+
     def test_moss_voice_clone_uses_audio_without_disallowed_prompt_text(self) -> None:
         worker_path = REPO_ROOT / "cli" / "tts_moss_worker.py"
         tree = ast.parse(worker_path.read_text(encoding="utf-8"))

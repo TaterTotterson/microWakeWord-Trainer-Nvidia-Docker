@@ -70,7 +70,7 @@ const dataCategories = computed(() => {
   return Array.from(groups, ([name, items]) => ({ name, items }));
 });
 
-watch(() => trainer.language, ensureSupportedTtsMode);
+watch([() => trainer.language, () => trainer.ttsMode], ensureSupportedTtsMode);
 watch(() => trainer.toast.serial, () => window.setTimeout(() => { trainer.toast.message = ""; }, 4500));
 watch(consoleLines, async () => {
   if (!consoleFollowing.value) return;
@@ -197,6 +197,7 @@ function consoleTone(line: string): string {
             <div class="form-grid phrase-form">
               <label class="field wide"><span>Wake phrase</span><input v-model="trainer.phrase" type="text" placeholder='e.g. "hey tater"' :disabled="Boolean(trainer.session.safe_word) || isBusy('session')" @keyup.enter="startSession" /></label>
               <label class="field"><span>Language</span><select v-model="trainer.language" :disabled="Boolean(trainer.session.safe_word) || isBusy('session')"><option v-for="item in trainer.languages" :key="item.code" :value="item.code">{{ item.label }}</option></select><small>{{ ttsRoute }}</small></label>
+              <label v-if="trainer.language === 'en' && trainer.ttsMode !== 'piper'" class="field"><span>English accent emphasis</span><select v-model="trainer.englishAccent" :disabled="Boolean(trainer.session.safe_word) || isBusy('session')"><option v-for="accent in trainer.englishAccents" :key="accent.code" :value="accent.code">{{ accent.label }}</option></select><small>Qwen emphasizes this accent; MOSS carries it through accepted references. OmniVoice and Piper keep broad English coverage.</small></label>
               <label class="field"><span>TTS source</span><select v-model="trainer.ttsMode" :disabled="Boolean(trainer.session.safe_word) || isBusy('session')">
                 <option value="hybrid" :disabled="!trainer.languages.find((item) => item.code === trainer.language)?.engines?.includes('piper')">Four-provider ensemble · recommended</option>
                 <option value="modern" :disabled="!trainer.languages.find((item) => item.code === trainer.language)?.engines?.some((engine) => engine !== 'piper')">Modern only · no Piper</option>
@@ -224,6 +225,7 @@ function consoleTone(line: string): string {
             <div class="form-grid">
               <label class="field"><span>Wake phrase</span><input v-model="trainer.autoForm.wake_phrase" type="text" /></label>
               <label class="field"><span>STT language</span><input v-model="trainer.autoForm.language" type="text" /></label>
+              <label v-if="String(trainer.autoForm.language).toLowerCase().startsWith('en')" class="field"><span>English accent emphasis</span><select v-model="trainer.autoForm.english_accent"><option v-for="accent in trainer.englishAccents" :key="accent.code" :value="accent.code">{{ accent.label }}</option></select><small>Used when Auto Training needs to regenerate English TTS.</small></label>
               <label class="field wide"><span>STT engine</span><select v-model="trainer.autoForm.stt_engine"><option v-for="engine in sttEngines" :key="engine.id || engine.value" :value="engine.id || engine.value">{{ engine.label || engine.name || engine.id }}</option></select><small>{{ sttEngines.find((row) => (row.id || row.value) === trainer.autoForm.stt_engine)?.description || "Runs locally on this trainer." }}</small></label>
               <label class="field"><span>Minimum transcript characters</span><input v-model.number="trainer.autoForm.minimum_transcript_chars" min="1" max="100" type="number" /></label>
             </div>

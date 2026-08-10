@@ -39,6 +39,7 @@ ROOT_DIR = Path(__file__).resolve().parent
 
 from tts_config import (
     COMMON_OMNIVOICE_LANGUAGES,
+    DEFAULT_ENGLISH_ACCENT,
     DEFAULT_TTS_MODE,
     ENGINE_MOSS,
     ENGINE_OMNIVOICE,
@@ -47,6 +48,8 @@ from tts_config import (
     MOSS_LANGUAGES,
     OMNIVOICE_LANGUAGE_ALIASES,
     QWEN_LANGUAGES,
+    english_accent_options,
+    normalize_english_accent,
     normalize_tts_mode,
     parse_omnivoice_catalog,
     quality_for_engines,
@@ -115,6 +118,10 @@ TRAIN_CMD = os.environ.get(
 )
 DEFAULT_LANGUAGE = os.environ.get("MWW_LANGUAGE", "en")
 DEFAULT_SERVER_TTS_MODE = normalize_tts_mode(os.environ.get("MWW_TTS_MODE", DEFAULT_TTS_MODE))
+DEFAULT_SERVER_ENGLISH_ACCENT = normalize_english_accent(
+    os.environ.get("MWW_ENGLISH_ACCENT", DEFAULT_ENGLISH_ACCENT),
+    DEFAULT_LANGUAGE,
+)
 
 TAKES_PER_SPEAKER_DEFAULT = int(os.environ.get("REC_TAKES_PER_SPEAKER", "10"))
 SPEAKERS_TOTAL_DEFAULT = int(os.environ.get("REC_SPEAKERS_TOTAL", "1"))
@@ -157,6 +164,7 @@ AUTO_TRAIN_DEFAULT_CONFIG: Dict[str, Any] = {
     "enabled": False,
     "wake_phrase": "",
     "language": DEFAULT_LANGUAGE,
+    "english_accent": DEFAULT_SERVER_ENGLISH_ACCENT,
     "stt_engine": DEFAULT_STT_ENGINE,
     "minimum_transcript_chars": 2,
     "delete_confirmed_wakes": False,
@@ -213,6 +221,7 @@ STATE: Dict[str, Any] = {
     "raw_phrase": None,
     "safe_word": None,
     "language": DEFAULT_LANGUAGE,
+    "english_accent": DEFAULT_SERVER_ENGLISH_ACCENT,
     "tts_mode": DEFAULT_SERVER_TTS_MODE,
 
     # multi-speaker
@@ -787,6 +796,9 @@ def _normalize_auto_train_config(values: Dict[str, Any] | None, *, base: Dict[st
         "enabled": _config_bool(source.get("enabled")),
         "wake_phrase": str(source.get("wake_phrase") or "").strip(),
         "language": language,
+        "english_accent": normalize_english_accent(
+            source.get("english_accent"), language
+        ),
         "stt_engine": _normalize_stt_engine(source.get("stt_engine")),
         "minimum_transcript_chars": _bounded_int(source.get("minimum_transcript_chars"), 2, 1, 100),
         "delete_confirmed_wakes": _config_bool(source.get("delete_confirmed_wakes")),
@@ -1725,6 +1737,9 @@ def _start_auto_training() -> Dict[str, Any]:
     safe_word = safe_name(wake_phrase)
     available_languages = _available_languages()
     language = _normalize_language(str(config.get("language") or DEFAULT_LANGUAGE))
+    english_accent = normalize_english_accent(
+        config.get("english_accent"), language
+    )
     tts_mode = _resolve_tts_mode_for_language(
         DEFAULT_SERVER_TTS_MODE,
         language,
@@ -1737,6 +1752,7 @@ def _start_auto_training() -> Dict[str, Any]:
             STATE["raw_phrase"] = wake_phrase
             STATE["safe_word"] = safe_word
             STATE["language"] = language
+            STATE["english_accent"] = english_accent
             STATE["tts_mode"] = tts_mode
             STATE["training"]["running"] = True
     with AUTO_TRAIN_LOCK:
@@ -1744,7 +1760,9 @@ def _start_auto_training() -> Dict[str, Any]:
         AUTO_TRAIN_RUNTIME["training_pending_consumed"] = int(AUTO_TRAIN_STATE.get("pending_negative_count") or 0)
         _save_auto_train_state_locked()
     try:
-        _start_training_thread(safe_word, language, True, True, tts_mode)
+        _start_training_thread(
+            safe_word, language, True, True, tts_mode, english_accent
+        )
     except Exception as exc:
         with STATE_LOCK:
             STATE["training"]["running"] = False
@@ -1754,6 +1772,7 @@ def _start_auto_training() -> Dict[str, Any]:
         "started": True,
         "safe_word": safe_word,
         "language": language,
+        "english_accent": english_accent,
         "tts_mode": tts_mode,
     }
 
@@ -3073,11 +3092,19 @@ def _start_training_thread(
     allow_no_personal: bool,
     auto_run: bool,
     tts_mode: str,
+    english_accent: str = DEFAULT_SERVER_ENGLISH_ACCENT,
 ) -> threading.Thread:
     global TRAINING_THREAD
     thread = threading.Thread(
         target=_run_training_background,
-        args=(safe_word, language, allow_no_personal, auto_run, tts_mode),
+        args=(
+            safe_word,
+            language,
+            allow_no_personal,
+            auto_run,
+            tts_mode,
+            english_accent,
+        ),
         daemon=True,
         name="wake-word-training",
     )
@@ -3121,10 +3148,12 @@ def _run_training_background(
     allow_no_personal: bool,
     auto_run: bool = False,
     tts_mode: str = DEFAULT_SERVER_TTS_MODE,
+    english_accent: str = DEFAULT_SERVER_ENGLISH_ACCENT,
 ):
     global TRAINING_PROCESS, TRAINING_THREAD
     language = (language or DEFAULT_LANGUAGE).strip().lower() or DEFAULT_LANGUAGE
     tts_mode = normalize_tts_mode(tts_mode)
+    english_accent = normalize_english_accent(english_accent, language)
     rc = 999
     proc: subprocess.Popen | None = None
     with STATE_LOCK:
@@ -3170,7 +3199,12 @@ def _run_training_background(
             except Exception as error:
                 _append_train_log(f"⚠️ Piper is unavailable for hybrid mode; using modern TTS only: {error}")
 
-        command_args = [f"--language={language}", f"--tts-mode={tts_mode}", safe_word]
+        command_args = [
+            f"--language={language}",
+            f"--english-accent={english_accent}",
+            f"--tts-mode={tts_mode}",
+            safe_word,
+        ]
         if wake_word_title:
             command_args.append(wake_word_title)
         cmd_str = f"{TRAIN_CMD} " + " ".join(shlex.quote(argument) for argument in command_args)
@@ -3180,6 +3214,8 @@ def _run_training_background(
 
         _append_train_log("===== Training (train_wake_word) =====")
         _append_train_log(f"→ Running: {cmd_str}")
+        if language == "en":
+            _append_train_log(f"→ English accent emphasis: {english_accent}")
 
         with open(log_path, "a", encoding="utf-8") as lf:
             proc = subprocess.Popen(
@@ -3411,6 +3447,9 @@ def start_session(payload: Dict[str, Any]):
         language,
         available_languages,
     )
+    english_accent = normalize_english_accent(
+        payload.get("english_accent", DEFAULT_SERVER_ENGLISH_ACCENT), language
+    )
 
     speakers_total = max(1, min(10, speakers_total))
     takes_per_speaker = max(1, min(50, takes_per_speaker))
@@ -3419,6 +3458,7 @@ def start_session(payload: Dict[str, Any]):
         STATE["raw_phrase"] = raw
         STATE["safe_word"] = safe
         STATE["language"] = language
+        STATE["english_accent"] = english_accent
         STATE["tts_mode"] = tts_mode
         STATE["speakers_total"] = speakers_total
         STATE["takes_per_speaker"] = takes_per_speaker
@@ -3432,6 +3472,7 @@ def start_session(payload: Dict[str, Any]):
         "raw_phrase": raw,
         "safe_word": safe,
         "language": language,
+        "english_accent": english_accent,
         "tts_mode": tts_mode,
         "speakers_total": speakers_total,
         "takes_per_speaker": takes_per_speaker,
@@ -3439,6 +3480,7 @@ def start_session(payload: Dict[str, Any]):
         "takes_received": len(takes),
         "takes": takes,
         "available_languages": available_languages,
+        "available_english_accents": english_accent_options(),
         "personal_dir": str(PERSONAL_DIR),
         "data_dir": str(DATA_DIR),
     }
@@ -3468,6 +3510,9 @@ def stop_session():
         STATE["training"]["safe_word"] = None
         training = dict(STATE["training"])
         language = _normalize_language(STATE["language"])
+        english_accent = normalize_english_accent(
+            STATE.get("english_accent"), language
+        )
         tts_mode = normalize_tts_mode(STATE.get("tts_mode"))
     return {
         "ok": True,
@@ -3476,11 +3521,13 @@ def stop_session():
         "raw_phrase": None,
         "safe_word": None,
         "language": language,
+        "english_accent": english_accent,
         "tts_mode": tts_mode,
         "takes_received": len(takes),
         "takes": list(takes),
         "training": training,
         "available_languages": available_languages,
+        "available_english_accents": english_accent_options(),
     }
 
 
@@ -3491,13 +3538,18 @@ def get_session():
     with STATE_LOCK:
         current_language = _normalize_language(STATE["language"])
         current_tts_mode = normalize_tts_mode(STATE.get("tts_mode"))
+        current_english_accent = normalize_english_accent(
+            STATE.get("english_accent"), current_language
+        )
         STATE["language"] = current_language
+        STATE["english_accent"] = current_english_accent
         STATE["tts_mode"] = current_tts_mode
         return {
             "ok": True,
             "raw_phrase": STATE["raw_phrase"],
             "safe_word": STATE["safe_word"],
             "language": current_language,
+            "english_accent": current_english_accent,
             "tts_mode": current_tts_mode,
             "speakers_total": STATE["speakers_total"],
             "takes_per_speaker": STATE["takes_per_speaker"],
@@ -3505,6 +3557,7 @@ def get_session():
             "takes": list(takes),
             "training": dict(STATE["training"]),
             "available_languages": available_languages,
+            "available_english_accents": english_accent_options(),
         }
 
 
@@ -4017,6 +4070,9 @@ def train_now(payload: Dict[str, Any] = None):
     with STATE_LOCK:
         safe_word = STATE["safe_word"]
         language = (STATE.get("language") or DEFAULT_LANGUAGE)
+        english_accent = normalize_english_accent(
+            STATE.get("english_accent"), language
+        )
         tts_mode = normalize_tts_mode(STATE.get("tts_mode"))
         takes_received = int(STATE["takes_received"])
         speakers_total = int(STATE["speakers_total"])
@@ -4046,7 +4102,14 @@ def train_now(payload: Dict[str, Any] = None):
     with STATE_LOCK:
         STATE["training"]["running"] = True
     try:
-        _start_training_thread(safe_word, language, allow_no_personal, False, tts_mode)
+        _start_training_thread(
+            safe_word,
+            language,
+            allow_no_personal,
+            False,
+            tts_mode,
+            english_accent,
+        )
     except Exception as exc:
         with STATE_LOCK:
             STATE["training"]["running"] = False
@@ -4060,6 +4123,7 @@ def train_now(payload: Dict[str, Any] = None):
         "started": True,
         "safe_word": safe_word,
         "language": language,
+        "english_accent": english_accent,
         "tts_mode": tts_mode,
         "personal_samples_used": takes_received > 0,
         "allow_no_personal": allow_no_personal,

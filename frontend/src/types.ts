@@ -10,6 +10,11 @@ export interface LanguageOption extends JsonRecord {
   quality?: string;
 }
 
+export interface AccentOption extends JsonRecord {
+  code: string;
+  label: string;
+}
+
 export interface TrainingState extends JsonRecord {
   running: boolean;
   exit_code: number | null;
@@ -20,9 +25,11 @@ export interface SessionPayload extends JsonRecord {
   safe_word?: string;
   raw_phrase?: string;
   language?: string;
+  english_accent?: string;
   tts_mode?: string;
   takes_received?: number;
   available_languages?: LanguageOption[];
+  available_english_accents?: AccentOption[];
   training?: TrainingState;
 }
 
@@ -56,6 +63,7 @@ export interface AutoTrainForm extends JsonRecord {
   enabled: boolean;
   wake_phrase: string;
   language: string;
+  english_accent: string;
   stt_engine: string;
   minimum_transcript_chars: number;
   delete_confirmed_wakes: boolean;
