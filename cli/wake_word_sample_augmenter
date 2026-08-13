@@ -25,7 +25,6 @@ parser.add_argument("--negative-output-dir", type=str, help="Reviewed negative f
 parser.add_argument("--mit-rirs-16k-dir", type=str, help="MIT RIR input directory. Default: <data-dir>/training_datasets/mit_rirs_16k", required=False)
 parser.add_argument("--fma-16k-dir", type=str, help="FMA input directory. Default: <data-dir>/training_datasets/fma_16k", required=False)
 parser.add_argument("--audioset-16k-dir", type=str, help="Audioset input directory. Default: <data-dir>/training_datasets/audioset_16k", required=False)
-parser.add_argument("--wham-16k-dir", type=str, help="WHAM input directory. Default: <data-dir>/training_datasets/wham_16k", required=False)
 parser.add_argument("--chime-16k-dir", type=str, help="CHiME input directory. Default: <data-dir>/training_datasets/chime_16k", required=False)
 
 try:
@@ -86,11 +85,6 @@ if not args.audioset_16k_dir:
 else:
     args.audioset_16k_dir = os.path.realpath(args.audioset_16k_dir)
 
-if not args.wham_16k_dir:
-    args.wham_16k_dir = os.path.join(args.data_dir, "training_datasets", "wham_16k")
-else:
-    args.wham_16k_dir = os.path.realpath(args.wham_16k_dir)
-
 if not args.chime_16k_dir:
     args.chime_16k_dir = os.path.join(args.data_dir, "training_datasets", "chime_16k")
 else:
@@ -107,7 +101,6 @@ required = [
     work_dir,
     args.input_dir,
     args.mit_rirs_16k_dir,
-    args.wham_16k_dir,
     args.chime_16k_dir,
     args.fma_16k_dir,
     args.audioset_16k_dir,
@@ -151,7 +144,6 @@ START_TIME = datetime.now(timezone.utc).replace(microsecond=0)
 
 impulse_paths = [args.mit_rirs_16k_dir]
 background_paths = [
-    args.wham_16k_dir,
     args.chime_16k_dir,
     args.fma_16k_dir,
     args.audioset_16k_dir,

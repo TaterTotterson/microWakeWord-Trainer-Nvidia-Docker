@@ -138,14 +138,19 @@ POST_GEN_TS=$EPOCHSECONDS
 AUGMENT=false
 GENERATED_DIR="${DATA_DIR}/work/wake_word_samples"
 AUGMENTED_DIR="${DATA_DIR}/work/wake_word_samples_augmented"
+AUGMENTATION_CACHE_VERSION="2"
+AUGMENTATION_CACHE_FILE="${AUGMENTED_DIR}/.augmentation_version"
 
 [ -d "${AUGMENTED_DIR}" ] || AUGMENT=true
+[ -f "${AUGMENTATION_CACHE_FILE}" ] || AUGMENT=true
+[ "$(cat "${AUGMENTATION_CACHE_FILE}" 2>/dev/null || :)" = "${AUGMENTATION_CACHE_VERSION}" ] || AUGMENT=true
 [ "${GENERATED_DIR}/0.wav" -nt "${AUGMENTED_DIR}/testing/wakeword_mmap/data.ninja" ] && AUGMENT=true || :
 
 if ${AUGMENT} ; then
     rm -rf "${AUGMENTED_DIR}" || :
     mkdir -p "${AUGMENTED_DIR}" || :
     python -u "${CLIDIR}/wake_word_sample_augmenter" --data-dir="${DATA_DIR}" || { rm -rf "${AUGMENTED_DIR}" ; exit 1 ; }
+    printf '%s\n' "${AUGMENTATION_CACHE_VERSION}" > "${AUGMENTATION_CACHE_FILE}"
 else
     echo "Augmentation not required"
     echo

@@ -1,2 +1,3 @@
+- Removed the unreliable WHAM! augmentation dataset. Existing WHAM! data is ignored by training and can be safely deleted from the Data tab; older augmented-feature caches rebuild once.
 - Fixed Japanese and other non-ASCII wake phrases so TTS and model training use the original phrase while filenames use a deterministic Unicode-safe slug.
 - Fixed positional argument counting in the training scripts and explicitly propagated the selected language into model packaging, preventing non-English models from being labeled as English.
