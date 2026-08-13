@@ -4,7 +4,7 @@ set -e
 PROGPATH=$(realpath "$0")
 PROGDIR=$(dirname "${PROGPATH}")
 
-KNOWN_ARGS=( training-steps samples data-dir )
+KNOWN_ARGS=( training-steps samples data-dir language artifact-slug )
 source "${PROGDIR}/shell.functions"
 WAKE_WORD="${POSITIONAL_ARGS[0]}"
 
@@ -39,12 +39,13 @@ fi
 WORK_DIR="${DATA_DIR}/work"
 TRAINING_DS="${DATA_DIR}/training_datasets"
 
-[ ${#POSITIONAL_ARGS} -eq 2 ] && WAKE_WORD_TITLE="${POSITIONAL_ARGS[1]}"
+[ ${#POSITIONAL_ARGS[@]} -eq 2 ] && WAKE_WORD_TITLE="${POSITIONAL_ARGS[1]}"
 
 if [ ! -v WAKE_WORD_TITLE ] ; then
     declare -a WWNA=( ${WAKE_WORD//[^a-zA-Z0-9]/ } )
     WAKE_WORD_TITLE="${WWNA[*]^}"
-elif [ -z "$WAKE_WORD_TITLE" ] ; then
+fi
+if [ -z "$WAKE_WORD_TITLE" ] ; then
     WAKE_WORD_TITLE="$WAKE_WORD"
 fi
 
@@ -279,12 +280,15 @@ if [ "${IS_BLACKWELL}" = "true" ] && [ "${BLACKWELL_TF_MODE}" != "disabled" ]; t
   fi
 fi
 
+artifact_source="${ARTIFACT_SLUG:-${WAKE_WORD}}"
 wake_word_filename="$(
-  echo "${WAKE_WORD}" \
+  echo "${artifact_source}" \
     | tr '[:upper:]' '[:lower:]' \
     | sed -E 's/[^a-z0-9]+/_/g; s/^_+//; s/_+$//'
 )"
-[ -n "${wake_word_filename}" ] || wake_word_filename="wakeword"
+if [ -z "${wake_word_filename}" ]; then
+  wake_word_filename="wakeword_$(printf '%s' "${WAKE_WORD}" | sha256sum | cut -c1-8)"
+fi
 
 OUTPUT_DIR="${DATA_DIR}/output/$(date +'%Y-%m-%d-%H-%M-%S')-${wake_word_filename}-${SAMPLES}-${TRAINING_STEPS}"
 mkdir -p "${OUTPUT_DIR}/logs" || :
@@ -576,7 +580,7 @@ meta = {
         "generated_at": calibration.get("generated_at"),
     },
 }
-json_path.write_text(json.dumps(meta, indent=4) + "\n", encoding="utf-8")
+json_path.write_text(json.dumps(meta, indent=4, ensure_ascii=False) + "\n", encoding="utf-8")
 PY
 
 echo "Name:     ${WAKE_WORD_TITLE}"

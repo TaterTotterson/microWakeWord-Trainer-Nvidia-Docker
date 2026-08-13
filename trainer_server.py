@@ -3,6 +3,7 @@
 # trainer_server.py
 import contextlib
 import gc
+import hashlib
 import io
 import os
 import queue
@@ -209,11 +210,15 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 def safe_name(raw: str) -> str:
-    s = (raw or "").strip().lower()
+    s = unicodedata.normalize("NFKC", raw or "").strip().lower()
+    digest_source = s
     s = re.sub(r"\s+", "_", s)
     s = re.sub(r"[^a-z0-9_]+", "", s)
     s = re.sub(r"^_+|_+$", "", s)
-    return s or "wakeword"
+    if s:
+        return s
+    digest = hashlib.sha256(digest_source.encode("utf-8")).hexdigest()[:8]
+    return f"wakeword_{digest}"
 
 
 # -------------------- In-memory session state --------------------
@@ -2826,8 +2831,7 @@ def _clear_training_log():
 
 
 def _title_from_phrase(raw_phrase: str) -> str:
-    s = re.sub(r"[^a-zA-Z0-9 ]+", " ", raw_phrase or "").strip()
-    s = re.sub(r"\s+", " ", s)
+    s = re.sub(r"\s+", " ", (raw_phrase or "").strip())
     return s.title() if s else ""
 
 
@@ -3199,11 +3203,13 @@ def _run_training_background(
             except Exception as error:
                 _append_train_log(f"⚠️ Piper is unavailable for hybrid mode; using modern TTS only: {error}")
 
+        training_phrase = raw_phrase.strip() or safe_word
         command_args = [
             f"--language={language}",
             f"--english-accent={english_accent}",
             f"--tts-mode={tts_mode}",
-            safe_word,
+            f"--artifact-slug={safe_word}",
+            training_phrase,
         ]
         if wake_word_title:
             command_args.append(wake_word_title)

@@ -5,7 +5,7 @@ PROGPATH=$(realpath "$0")
 PROGDIR=$(dirname "${PROGPATH}")
 CLIDIR="${PROGDIR}/cli"
 
-KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir language english-accent tts-mode tts-voice-count )
+KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir language english-accent tts-mode tts-voice-count artifact-slug )
 source "${CLIDIR}/shell.functions"
 WAKE_WORD=${POSITIONAL_ARGS[0]}
 
@@ -67,12 +67,13 @@ source "${DATA_DIR}/.venv/bin/activate"
 cd "${DATA_DIR}"
 mkdir -p "${DATA_DIR}/work" || :
 
-[ ${#POSITIONAL_ARGS} -eq 2 ] && WAKE_WORD_TITLE="${POSITIONAL_ARGS[1]}" || :
+[ ${#POSITIONAL_ARGS[@]} -eq 2 ] && WAKE_WORD_TITLE="${POSITIONAL_ARGS[1]}" || :
 
 if [ ! -v WAKE_WORD_TITLE ] ; then
     declare -a WWNA=( ${WAKE_WORD//[^a-zA-Z0-9]/ } )
     WAKE_WORD_TITLE="${WWNA[*]^}"
-elif [ -z "$WAKE_WORD_TITLE" ] ; then
+fi
+if [ -z "$WAKE_WORD_TITLE" ] ; then
     WAKE_WORD_TITLE="$WAKE_WORD"
 fi
 
@@ -155,6 +156,8 @@ POST_AUGMENT_TS=$EPOCHSECONDS
 "${CLIDIR}/wake_word_sample_trainer" \
     --samples=${SAMPLES} \
     --training-steps=${TRAINING_STEPS} \
+    --language="${LANGUAGE}" \
+    --artifact-slug="${ARTIFACT_SLUG:-}" \
     --data-dir="${DATA_DIR}" \
     "${WAKE_WORD}" "${WAKE_WORD_TITLE}"
 

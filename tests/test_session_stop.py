@@ -78,7 +78,7 @@ class SessionStopTests(unittest.TestCase):
                 trainer.TRAINING_PROCESS = None
                 trainer.TRAINING_THREAD = threading.current_thread()
                 with trainer.STATE_LOCK:
-                    trainer.STATE["raw_phrase"] = "hey tater"
+                    trainer.STATE["raw_phrase"] = "こんにちは タター"
                     trainer.STATE["training"]["running"] = True
 
                 with (
@@ -89,14 +89,20 @@ class SessionStopTests(unittest.TestCase):
                     patch.object(trainer, "_normalize_output_artifacts"),
                 ):
                     trainer._run_training_background(
-                        "hey_tater",
-                        "en",
+                        "wakeword_1234abcd",
+                        "ja",
                         True,
                         auto_run=False,
                         tts_mode="modern",
                     )
 
                 popen.assert_called_once()
+                command = popen.call_args.args[0]
+                self.assertEqual(command[:2], ["bash", "-lc"])
+                self.assertIn("--language=ja", command[2])
+                self.assertIn("--artifact-slug=wakeword_1234abcd", command[2])
+                self.assertIn("'こんにちは タター'", command[2])
+                self.assertNotIn(" wakeword_1234abcd 'こんにちは タター'", command[2])
                 log_text = (data_dir / "recorder_training.log").read_text(encoding="utf-8")
                 self.assertIn("Nvidia Docker Training Run", log_text)
                 self.assertIn("worker started", log_text)
@@ -110,6 +116,13 @@ class SessionStopTests(unittest.TestCase):
                 trainer.STATE["training"].update(original_training)
             trainer.TRAINING_PROCESS = original_process
             trainer.TRAINING_THREAD = original_thread
+
+    def test_non_ascii_phrase_gets_deterministic_unique_slug(self):
+        slug = trainer.safe_name("こんにちは タター")
+        self.assertRegex(slug, r"^wakeword_[0-9a-f]{8}$")
+        self.assertEqual(slug, trainer.safe_name("こんにちは タター"))
+        self.assertNotEqual(slug, trainer.safe_name("おはよう タター"))
+        self.assertEqual(trainer._title_from_phrase("こんにちは タター"), "こんにちは タター")
 
 
 if __name__ == "__main__":
