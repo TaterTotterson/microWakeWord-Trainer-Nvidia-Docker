@@ -60,6 +60,7 @@ VOICE_PROFILE_STRIDE = 293
 OMNIVOICE_PROMPT_RETRY_ROUNDS = 4
 OMNIVOICE_CORPUS_RETRY_ROUNDS = 3
 MOSS_CORPUS_RETRY_ROUNDS = 3
+FINAL_RECOVERY_ROUNDS = 12
 VOICE_BANK_REPLACEMENT_ROUNDS = 6
 OMNIVOICE_REPLACEMENT_FACTOR = 2.0
 OMNIVOICE_POSITION_TEMPERATURE = 5.0
@@ -1453,6 +1454,48 @@ class Generator:
                 self.actual_counts[engine] = self.actual_counts.get(engine, 0) + len(normalized)
             except Exception as error:
                 log(f"⚠️ {engine} fallback failed: {error}")
+            missing = self.args.samples - len(accepted)
+
+        # The normal refill rotation preserves provider diversity, but it can
+        # end on a low-yield MOSS batch with only a handful of clips missing.
+        # Keep the safety gates intact and finish with fresh candidates from
+        # the direct providers that already proved usable during this run.
+        recovery_candidates = [
+            engine for engine in fallback_candidates if engine != ENGINE_MOSS
+        ] or [engine for engine in fallback_candidates if engine == ENGINE_MOSS]
+        for attempt in range(FINAL_RECOVERY_ROUNDS):
+            if missing <= 0 or not recovery_candidates:
+                break
+            engine = recovery_candidates[attempt % len(recovery_candidates)]
+            prefix = f"recovery{attempt}_"
+            log(
+                f"→ Final recovery {attempt + 1}/{FINAL_RECOVERY_ROUNDS}: "
+                f"filling {missing} sample(s) with {engine}"
+            )
+            try:
+                entries, raw_paths = self.generate_direct_engine(
+                    engine,
+                    missing,
+                    list(accepted),
+                    prefix=prefix,
+                )
+                qualified_paths = self.qualify_direct_candidates(
+                    engine,
+                    entries,
+                    raw_paths,
+                    prefix=prefix,
+                )
+                normalized = self.normalize(
+                    qualified_paths,
+                    len(accepted),
+                    missing,
+                )
+                accepted.extend(normalized)
+                self.actual_counts[engine] = (
+                    self.actual_counts.get(engine, 0) + len(normalized)
+                )
+            except Exception as error:
+                log(f"⚠️ {engine} final recovery failed: {error}")
             missing = self.args.samples - len(accepted)
 
         if len(accepted) < self.args.samples:

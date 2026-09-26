@@ -626,6 +626,74 @@ class ModernTtsTests(unittest.TestCase):
             self.assertTrue((output_dir / ".generation_manifest.json").is_file())
             self.assertTrue(instance.cache_hit())
 
+    def test_final_recovery_avoids_moss_and_reaches_exact_sample_count(self) -> None:
+        class RecoveryGenerator(generator_module.Generator):
+            def __init__(self, args):
+                super().__init__(args)
+                self.generation_calls = []
+
+            def engines(self):
+                return [generator_module.ENGINE_QWEN3, generator_module.ENGINE_MOSS]
+
+            def generate_direct_engine(self, engine, count, reference_paths, prefix=""):
+                self.generation_calls.append((engine, prefix, count))
+                destination = self.raw_dir / f"{engine}_{prefix or 'main'}"
+                destination.mkdir(parents=True, exist_ok=True)
+                paths = [destination / f"{engine}_{prefix}{index}.wav" for index in range(count)]
+                entries = [{"id": path.stem} for path in paths]
+                return entries, paths
+
+            def qualify_direct_candidates(self, engine, entries, paths, prefix=""):
+                return paths
+
+            def normalize(self, paths, start_index, limit):
+                source = paths[0].parent.name if paths else ""
+                if source == "qwen3_main":
+                    accepted_count = limit
+                elif source == "moss_main":
+                    accepted_count = max(0, limit - 1)
+                elif "recovery" in source:
+                    accepted_count = limit
+                else:
+                    accepted_count = 0
+
+                self.final_dir.mkdir(parents=True, exist_ok=True)
+                accepted = []
+                for index in range(accepted_count):
+                    path = self.final_dir / f"{start_index + index}.wav"
+                    path.write_bytes(f"sample-{start_index + index}".encode())
+                    accepted.append(path)
+                return accepted
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            data_dir = Path(temp_dir)
+            output_dir = data_dir / "work" / "wake_word_samples"
+            args = argparse.Namespace(
+                phrase="hey_tater",
+                language="en",
+                tts_mode="modern",
+                samples=8,
+                batch_size=4,
+                voice_count=8,
+                data_dir=data_dir,
+                output_dir=output_dir,
+                ffmpeg="ffmpeg",
+                dry_run=False,
+            )
+            instance = RecoveryGenerator(args)
+            instance.generate()
+
+            fallback_calls = [
+                call for call in instance.generation_calls if call[1].startswith("fallback")
+            ]
+            recovery_calls = [
+                call for call in instance.generation_calls if call[1].startswith("recovery")
+            ]
+            self.assertEqual(len(fallback_calls), 6)
+            self.assertEqual(recovery_calls, [(generator_module.ENGINE_QWEN3, "recovery0_", 1)])
+            self.assertEqual(len(list(output_dir.glob("*.wav"))), 8)
+            self.assertTrue((output_dir / ".generation_manifest.json").is_file())
+
     def test_normalization_times_out_bad_clip_and_continues(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             data_dir = Path(temp_dir)
