@@ -2885,11 +2885,48 @@ def _run_streamed(
                     TRAINING_PROCESS = None
 
 
+def _training_venv_health(python: Path) -> Tuple[bool, str]:
+    health_check = CLI_DIR / "check_training_venv"
+    if not python.is_file():
+        return False, f"missing Python executable: {python}"
+    if not health_check.is_file():
+        return False, f"missing dependency health check: {health_check}"
+
+    env = os.environ.copy()
+    env["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    try:
+        result = subprocess.run(
+            [str(python), str(health_check)],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return False, str(error)
+    if result.returncode == 0:
+        return True, ""
+
+    output = "\n".join(
+        part.strip() for part in (result.stdout, result.stderr) if part.strip()
+    )
+    detail = next(
+        (line.strip() for line in reversed(output.splitlines()) if line.strip()),
+        "unknown import failure",
+    )
+    return False, detail[:500]
+
+
 def _ensure_training_venv(log_path: Path) -> None:
-    activate = DATA_DIR / ".venv" / "bin" / "activate"
-    if activate.exists():
-        _append_train_log("✅ Training venv found (skipping setup_python_venv)")
+    venv = DATA_DIR / ".venv"
+    activate = venv / "bin" / "activate"
+    python = venv / "bin" / "python"
+    healthy, detail = _training_venv_health(python)
+    if activate.exists() and healthy:
+        _append_train_log("✅ Healthy training venv found (skipping setup_python_venv)")
         return
+    if activate.exists():
+        _append_train_log(f"⚠️ Training venv is incomplete and will be repaired: {detail}")
 
     setup = CLI_DIR / "setup_python_venv"
     if not setup.exists():
@@ -2907,6 +2944,11 @@ def _ensure_training_venv(log_path: Path) -> None:
 
     if not activate.exists():
         raise RuntimeError(f"setup_python_venv finished, but {activate} is still missing")
+
+    healthy, detail = _training_venv_health(python)
+    if not healthy:
+        raise RuntimeError(f"setup_python_venv finished, but dependency validation failed: {detail}")
+    _append_train_log("✅ Training environment dependency validation passed")
 
 
 def _ensure_training_datasets(log_path: Path) -> None:

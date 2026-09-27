@@ -36,6 +36,7 @@ PYTHON="${PYTHON:-python3.13}"
 VENV="${DATA_DIR}/.venv-blackwell"
 MARKER="${VENV}/.mww-blackwell-venv"
 TF_WHEEL_URL="${MWW_BLACKWELL_TF_WHEEL_URL:-https://github.com/chivitiH/tensorflow-blackwell-python313/releases/download/v2.22.0-selfbuilt/tensorflow-2.22.0.dev0+selfbuilt-cp313-cp313-linux_x86_64.whl}"
+HEALTH_CHECK="${PROGDIR}/check_training_venv"
 
 if ! command -v "${PYTHON}" >/dev/null 2>&1 ; then
     echo "Python 3.13 is required for the Blackwell TensorFlow wheel. Missing: ${PYTHON}" >&2
@@ -43,8 +44,12 @@ if ! command -v "${PYTHON}" >/dev/null 2>&1 ; then
 fi
 
 if [ "${FORCE:-false}" != "true" ] && [ -x "${VENV}/bin/python" ] && [ -f "${MARKER}" ] ; then
-    echo "   Blackwell TensorFlow venv found (skipping setup_blackwell_venv)"
-    exit 0
+    if [ -x "${HEALTH_CHECK}" ] \
+        && TF_CPP_MIN_LOG_LEVEL=3 "${VENV}/bin/python" "${HEALTH_CHECK}" >/dev/null 2>&1 ; then
+        echo "   Healthy Blackwell TensorFlow venv found (skipping setup_blackwell_venv)"
+        exit 0
+    fi
+    echo "⚠️  Existing Blackwell TensorFlow venv is incomplete; rebuilding it."
 fi
 
 echo "===== Setting up Blackwell TensorFlow environment ${VENV} ====="
@@ -79,8 +84,12 @@ pip_install \
     pyyaml \
     webrtcvad-wheels \
     ai-edge-litert \
+    librosa \
     numpy-minmax \
     numpy-rms \
+    scipy \
+    soundfile \
+    tensorboard \
     absl-py \
     "numpy==2.3.5"
 
@@ -95,17 +104,13 @@ fi
 echo "   Installing microwakeword into Blackwell venv"
 pip_install --no-deps -e "${MWW}"
 
-echo "   ===== Testing Blackwell TensorFlow environment ====="
+echo "   ===== Testing complete Blackwell training environment ====="
+TF_CPP_MIN_LOG_LEVEL=3 "${VENV}/bin/python" "${HEALTH_CHECK}"
 "${VENV}/bin/python" - <<'PY'
 import tensorflow as tf
-from ai_edge_litert.interpreter import Interpreter
-from microwakeword.data import FeatureHandler
-from microwakeword.inference import Model
 
-print("TensorFlow:", tf.__version__)
 print("CUDA build:", tf.test.is_built_with_cuda())
 print("GPU:", tf.config.list_physical_devices("GPU"))
-print("microWakeWord Blackwell imports available")
 PY
 
 touch "${MARKER}"

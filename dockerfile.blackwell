@@ -6,7 +6,7 @@ ENV CUDA_HOME=/usr/local/cuda
 ENV PATH=/usr/local/cuda/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
 ENV MWW_BLACKWELL_IMAGE=1
-ENV MWW_BLACKWELL_TF=auto
+ENV MWW_BLACKWELL_TF=required
 ENV MWW_BLACKWELL_TF_WHEEL_URL=https://github.com/chivitiH/tensorflow-blackwell-python313/releases/download/v2.22.0-selfbuilt/tensorflow-2.22.0.dev0+selfbuilt-cp313-cp313-linux_x86_64.whl
 
 # System deps. Python 3.12 remains the main trainer/runtime venv, while

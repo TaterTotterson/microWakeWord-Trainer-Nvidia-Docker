@@ -67,8 +67,13 @@ if ${GPU} ; then
     GPU_COMPUTE_CAPABILITY="$(detect_gpu_compute_capability || true)"
     case "${GPU_COMPUTE_CAPABILITY}" in
         12.*) IS_BLACKWELL=true ;;
+        "")
+            case "${MWW_BLACKWELL_IMAGE:-}" in
+                1|true|TRUE|yes|YES|on|ON) IS_BLACKWELL=true ;;
+            esac
+            ;;
     esac
-    ${IS_BLACKWELL} && echo "   Blackwell GPU detected (compute capability ${GPU_COMPUTE_CAPABILITY})"
+    ${IS_BLACKWELL} && echo "   Blackwell GPU detected (compute capability ${GPU_COMPUTE_CAPABILITY:-image default})"
 fi
 
 VENV="${DATA_DIR}/.venv"
@@ -158,14 +163,27 @@ echo "   ===== Installing common requirements ====="
 # requirements.txt lives in repo root now
 pip_install -r "${ROOTDIR}/requirements.txt"
 
+echo "   ===== Installing microWakeWord runtime dependencies ====="
+pip_install \
+    audiomentations \
+    audio_metadata \
+    datasets \
+    mmap_ninja \
+    pymicro-features \
+    webrtcvad-wheels \
+    numpy-minmax \
+    numpy-rms \
+    absl-py
+
 ${GPU} && tfgpu='[and-cuda]' || tfgpu=""
 declare -a default_tensorboard_specs=()
 
 if ${GPU} && ${IS_BLACKWELL} ; then
     # Blackwell path: prefer nightly TF while upstream stable wheels catch up.
     DEFAULT_TF_SPEC="tf-nightly${tfgpu}"
-    # Let tf-nightly resolve a compatible TensorBoard dependency by default.
-    default_tensorboard_specs=()
+    # microWakeWord calls TensorBoard directly while logging training metrics.
+    # Do not rely on nightly TensorFlow metadata to pull it in transitively.
+    default_tensorboard_specs=( "tensorboard" )
 else
     DEFAULT_TF_SPEC="tensorflow${tfgpu}==2.20.0"
     default_tensorboard_specs=( "tensorboard==2.20.0" "tensorboard-data-server==0.7.2" )
@@ -200,7 +218,9 @@ if [ ! -d "${MWW}" ] || [ -n "$(git -C "${MWW}" status --porcelain)" ] ; then
     git clone https://github.com/TaterTotterson/micro-wake-word "${MWW}" &>/dev/null
 fi
 echo "   Installing microwakeword"
-pip_install -e "${MWW}"
+# The dependencies are installed explicitly above so pip cannot replace the
+# selected TensorFlow build while resolving microwakeword's generic TF floor.
+pip_install --no-deps -e "${MWW}"
 
 echo "   ===== Checking piper-sample-generator ====="
 PSG="${DATA_DIR}/tools/piper-sample-generator"
@@ -287,6 +307,7 @@ PY
 fi
 
 "${PROGDIR}/test_python" --data-dir="${DATA_DIR}"
+"${VENV}/bin/python" "${PROGDIR}/check_training_venv"
 
 touch .mww-data-dir
 END_TS=$EPOCHSECONDS

@@ -75,13 +75,18 @@ GPU_COMPUTE_CAPABILITY="$(detect_gpu_compute_capability)"
 IS_BLACKWELL="false"
 case "${GPU_COMPUTE_CAPABILITY}" in
   12.*) IS_BLACKWELL="true" ;;
+  "")
+    if [ "$(normalize_bool "${MWW_BLACKWELL_IMAGE:-false}")" = "true" ]; then
+      IS_BLACKWELL="true"
+    fi
+    ;;
 esac
 
 ALLOW_CPU_FALLBACK_DEFAULT="true"
 ALLOW_CPU_FALLBACK="$(normalize_bool "${MWW_ALLOW_CPU_FALLBACK:-${ALLOW_CPU_FALLBACK_DEFAULT}}")"
 
 if [ "${IS_BLACKWELL}" = "true" ]; then
-  echo "ℹ️  Blackwell GPU detected (compute capability ${GPU_COMPUTE_CAPABILITY})."
+  echo "ℹ️  Blackwell GPU detected (compute capability ${GPU_COMPUTE_CAPABILITY:-image default})."
   echo "ℹ️  Using GPU compatibility retries; CPU fallback is ${ALLOW_CPU_FALLBACK} (override with MWW_ALLOW_CPU_FALLBACK=true|false)."
 fi
 

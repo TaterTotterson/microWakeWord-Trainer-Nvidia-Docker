@@ -1,3 +1,4 @@
+- Hardened RTX 50-series/Blackwell setup by explicitly installing TensorBoard and the complete microWakeWord dependency set, validating persistent environments before reuse, automatically repairing incomplete installations, and requiring the dedicated Blackwell TensorFlow environment for model training.
 - Prevented otherwise successful TTS generation from failing just short of the requested sample count. The trainer now performs bounded final recovery with available direct providers while preserving all speech and audio safety gates.
 - Removed the unreliable WHAM! augmentation dataset. Existing WHAM! data is ignored by training and can be safely deleted from the Data tab; older augmented-feature caches rebuild once.
 - Fixed Japanese and other non-ASCII wake phrases so TTS and model training use the original phrase while filenames use a deterministic Unicode-safe slug.
