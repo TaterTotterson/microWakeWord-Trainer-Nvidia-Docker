@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,44 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class TrainingEnvironmentTests(unittest.TestCase):
+    def test_training_subprocess_removes_only_recorder_cuda_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            data_dir = Path(directory)
+            recorder_cublas = data_dir / ".recorder-venv" / "site-packages" / "cublas"
+            recorder_cudnn = data_dir / ".recorder-venv" / "site-packages" / "cudnn"
+            original = os.pathsep.join(
+                (
+                    str(recorder_cublas),
+                    "/usr/local/cuda/lib64",
+                    str(recorder_cudnn),
+                    "/opt/vendor/lib",
+                )
+            )
+
+            with (
+                patch.object(trainer, "DATA_DIR", data_dir),
+                patch.dict(trainer.os.environ, {"LD_LIBRARY_PATH": original}, clear=False),
+            ):
+                env, removed = trainer._training_subprocess_environment()
+                self.assertEqual(trainer.os.environ["LD_LIBRARY_PATH"], original)
+
+            self.assertEqual(removed, [str(recorder_cublas), str(recorder_cudnn)])
+            self.assertEqual(
+                env["LD_LIBRARY_PATH"],
+                os.pathsep.join(("/usr/local/cuda/lib64", "/opt/vendor/lib")),
+            )
+
+    def test_tensorflow_preflight_reports_the_actual_training_device(self) -> None:
+        trainer_script = (REPO_ROOT / "cli" / "wake_word_sample_trainer").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("TensorFlow GPU preflight", trainer_script)
+        self.assertIn("NVIDIA GPU passthrough is present", trainer_script)
+        self.assertIn('${INITIAL_TRAINING_DEVICE} training', trainer_script)
+        self.assertIn('package_directory("nvidia.cublas.lib")', trainer_script)
+        self.assertIn('package_directory("nvidia.cudnn.lib")', trainer_script)
+
     def test_blackwell_setup_explicitly_installs_and_checks_tensorboard(self) -> None:
         setup = (REPO_ROOT / "cli" / "setup_blackwell_venv").read_text(encoding="utf-8")
         health_check = (REPO_ROOT / "cli" / "check_training_venv").read_text(encoding="utf-8")

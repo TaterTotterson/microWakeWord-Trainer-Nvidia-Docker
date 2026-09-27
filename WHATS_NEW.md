@@ -1,5 +1,2 @@
-- Hardened RTX 50-series/Blackwell setup by explicitly installing TensorBoard and the complete microWakeWord dependency set, validating persistent environments before reuse, automatically repairing incomplete installations, and requiring the dedicated Blackwell TensorFlow environment for model training.
-- Prevented otherwise successful TTS generation from failing just short of the requested sample count. The trainer now performs bounded final recovery with available direct providers while preserving all speech and audio safety gates.
-- Removed the unreliable WHAM! augmentation dataset. Existing WHAM! data is ignored by training and can be safely deleted from the Data tab; older augmented-feature caches rebuild once.
-- Fixed Japanese and other non-ASCII wake phrases so TTS and model training use the original phrase while filenames use a deterministic Unicode-safe slug.
-- Fixed positional argument counting in the training scripts and explicitly propagated the selected language into model packaging, preventing non-English models from being labeled as English.
+- Fixed NVIDIA GPUs not being detected during the final model-training stage on some systems by isolating recorder/STT CUDA libraries from TensorFlow's training environment.
+- Added a TensorFlow GPU preflight that selects the CUDA and cuDNN libraries belonging to the active training environment and clearly reports whether model training will use the GPU or CPU. System and container CUDA paths remain available, and recorder/STT GPU acceleration is unchanged.

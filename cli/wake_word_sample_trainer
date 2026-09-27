@@ -392,15 +392,96 @@ else
   export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
 fi
 
+# Prefer CUDA libraries installed with the selected TensorFlow interpreter.
+# The dedicated Blackwell wheel uses the preserved system CUDA path instead.
+TRAINING_CUDA_LIBRARY_PATH="$("${PYTHON_BIN:-python}" - <<'PY'
+from importlib.util import find_spec
+from pathlib import Path
+
+
+def package_directory(name):
+    try:
+        spec = find_spec(name)
+    except (ImportError, AttributeError, ValueError):
+        return ""
+    if spec is None:
+        return ""
+    for location in spec.submodule_search_locations or ():
+        if location:
+            return str(Path(location).resolve())
+    origin = spec.origin
+    if origin and origin not in {"built-in", "frozen"}:
+        return str(Path(origin).resolve().parent)
+    return ""
+
+
+paths = [
+    package_directory("nvidia.cublas.lib"),
+    package_directory("nvidia.cudnn.lib"),
+]
+print(":".join(dict.fromkeys(path for path in paths if path)))
+PY
+)"
+if [ -n "${TRAINING_CUDA_LIBRARY_PATH}" ]; then
+  export LD_LIBRARY_PATH="${TRAINING_CUDA_LIBRARY_PATH}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+  echo "→ Using CUDA libraries from the selected TensorFlow training environment."
+fi
+
+tensorflow_gpu_count() {
+  TF_CPP_MIN_LOG_LEVEL=3 "${PYTHON_BIN:-python}" - <<'PY'
+import tensorflow as tf
+
+print(f"MWW_TF_GPU_COUNT={len(tf.config.list_physical_devices('GPU'))}")
+PY
+}
+
+GPU_VISIBLE_TO_CONTAINER="false"
+if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
+  GPU_VISIBLE_TO_CONTAINER="true"
+fi
+
+if ! TF_GPU_CHECK_OUTPUT="$(tensorflow_gpu_count 2>&1)"; then
+  echo "❌ TensorFlow GPU preflight could not start with ${PYTHON_BIN:-python}:" >&2
+  echo "${TF_GPU_CHECK_OUTPUT}" >&2
+  exit 1
+fi
+TF_GPU_COUNT="$(
+  printf '%s\n' "${TF_GPU_CHECK_OUTPUT}" \
+    | sed -n 's/^MWW_TF_GPU_COUNT=//p' \
+    | tail -n 1
+)"
+if ! [[ "${TF_GPU_COUNT}" =~ ^[0-9]+$ ]]; then
+  echo "❌ TensorFlow GPU preflight returned an unreadable result:" >&2
+  echo "${TF_GPU_CHECK_OUTPUT}" >&2
+  exit 1
+fi
+
+INITIAL_TRAINING_DEVICE="GPU"
+if [ "${TF_GPU_COUNT}" -gt 0 ]; then
+  echo "✅ TensorFlow GPU preflight: ${TF_GPU_COUNT} GPU device(s) available to ${PYTHON_BIN:-python}."
+else
+  INITIAL_TRAINING_DEVICE="CPU"
+  if [ "${GPU_VISIBLE_TO_CONTAINER}" = "true" ]; then
+    echo "⚠️  NVIDIA GPU passthrough is present, but TensorFlow registered no GPU devices."
+    if [ "${ALLOW_CPU_FALLBACK}" != "true" ]; then
+      echo "❌ CPU fallback is disabled; refusing to start a long CPU training run." >&2
+      exit 1
+    fi
+    echo "↪️  CPU fallback is enabled; training will continue on CPU."
+  else
+    echo "ℹ️  No NVIDIA GPU is visible to the container; training will run on CPU."
+  fi
+fi
+
 TRAINING_DONE="false"
 
 echo "🏋️ Starting model training and TFLite export (this is the longest stage)…"
 echo "🧠 Model quality: high_accuracy_plus"
-if run_attempt "Attempt 1/3: GPU training (default runtime profile)" ; then
-  echo "✅ Training complete (GPU path)."
+if run_attempt "Attempt 1/3: ${INITIAL_TRAINING_DEVICE} training (default runtime profile)" ; then
+  echo "✅ Training complete (${INITIAL_TRAINING_DEVICE} path)."
   TRAINING_DONE="true"
 else
-  echo "⚠️  GPU attempt failed. Checking whether this looks like a GPU/OOM/runtime failure…"
+  echo "⚠️  ${INITIAL_TRAINING_DEVICE} training attempt failed. Checking whether this looks like a GPU/OOM/runtime failure…"
 
   if ! is_gpu_runtime_failure; then
     echo "❌ Training failed (does not look GPU/OOM/runtime). See: ${TRAIN_LOG}" >&2
