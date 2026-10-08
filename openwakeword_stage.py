@@ -18,7 +18,7 @@ from typing import Any, Mapping
 
 
 OWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/openWakeWord-Trainer.git"
-OWW_TRAINER_REVISION = "bece9e1ac7fdf12e8d587f06f8a777446306c6c3"
+OWW_TRAINER_REVISION = "cb0cd2f13befdf50340e05cd7a69f1f3cef152ef"
 OWW_BUNDLE_SUFFIX = ".wake-bundle.json"
 OWW_METADATA_SUFFIX = ".oww.json"
 

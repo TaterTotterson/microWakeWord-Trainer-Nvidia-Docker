@@ -1,3 +1,3 @@
-- Streamed openWakeWord false-positive validation data in bounded batches instead of allocating one multi-gigabyte GPU tensor.
-- Reduced peak memory use for both regular NVIDIA and Blackwell training while retaining the full 1,024-example negative training batch for throughput.
-- Pinned both NVIDIA images to the tested openWakeWord Trainer v1.0.1 release.
+- Fixed personalized openWakeWord verifier training to load the generated ONNX model through ONNX Runtime instead of incorrectly requesting LiteRT.
+- Pinned both regular NVIDIA and Blackwell images to the tested openWakeWord Trainer v1.0.2 release.
+- Documented the required `--shm-size=8g` launch setting that prevents PyTorch DataLoader shared-memory bus errors.
