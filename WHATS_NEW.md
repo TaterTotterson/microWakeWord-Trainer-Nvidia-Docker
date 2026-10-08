@@ -1,3 +1,3 @@
-- Fixed openWakeWord companion setup in the Blackwell image by using the shared Python 3.12-compatible ONNX training path.
-- Improved dual-model calibration so openWakeWord confirmation preserves genuine wake-word recall while standalone OWW remains conservative.
-- Kept regular NVIDIA and Blackwell trainers on the same pinned, tested openWakeWord training revision.
+- Streamed openWakeWord false-positive validation data in bounded batches instead of allocating one multi-gigabyte GPU tensor.
+- Reduced peak memory use for both regular NVIDIA and Blackwell training while retaining the full 1,024-example negative training batch for throughput.
+- Pinned both NVIDIA images to the tested openWakeWord Trainer v1.0.1 release.
