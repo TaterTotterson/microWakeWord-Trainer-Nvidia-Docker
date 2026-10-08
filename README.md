@@ -52,6 +52,7 @@ which is unofficial and licensed CC BY-NC 4.0.
 ```bash
 docker run -d \
   --gpus all \
+  --shm-size=8g \
   --network host \
   -e REC_PORT=8789 \
   -v $(pwd):/data \
@@ -66,6 +67,7 @@ in the same `docker run` command.
 The flags:
 
 - `--gpus all` enables GPU acceleration.
+- `--shm-size=8g` gives PyTorch DataLoader workers enough shared memory during openWakeWord training. This is separate from free disk space and requires recreating an existing container.
 - `--network host` exposes the trainer server directly so satellites can send captured audio and load trained wake-word files.
 - `-e REC_PORT=8789` sets the trainer web UI and captured-audio port. Change this value if `8789` is already in use.
 - `-v $(pwd):/data` persists models, downloaded voices, datasets, samples, and generated wake-word artifacts.
