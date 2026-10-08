@@ -1,2 +1,5 @@
+- Added optional dual-model training: each run now builds microWakeWord plus an openWakeWord companion by default, with an MWW-only switch when needed.
+- Added a versioned wake-word bundle manifest with stable MWW links, an OWW ONNX classifier, checksums, and calibrated OWW detector settings for Echo firmware.
+- Auto Training can now keep the openWakeWord companion synchronized on scheduled retraining runs.
 - Fixed NVIDIA GPUs not being detected during the final model-training stage on some systems by isolating recorder/STT CUDA libraries from TensorFlow's training environment.
 - Added a TensorFlow GPU preflight that selects the CUDA and cuDNN libraries belonging to the active training environment and clearly reports whether model training will use the GPU or CPU. System and container CUDA paths remain available, and recorder/STT GPU acceleration is unchanged.

@@ -25,6 +25,7 @@ COPY --chown=root:root --chmod=0755 \
     train_wake_word \
     run.sh \
     trainer_server.py \
+    openwakeword_stage.py \
     requirements.txt \
     /root/mww-scripts/
 

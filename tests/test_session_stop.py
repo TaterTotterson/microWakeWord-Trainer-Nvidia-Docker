@@ -94,6 +94,7 @@ class SessionStopTests(unittest.TestCase):
                         True,
                         auto_run=False,
                         tts_mode="modern",
+                        train_openwakeword=False,
                     )
 
                 popen.assert_called_once()

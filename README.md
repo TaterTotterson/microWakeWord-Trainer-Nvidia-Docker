@@ -12,7 +12,7 @@
   </a>
 </p>
 
-Train custom microWakeWord models in Docker with NVIDIA/CUDA acceleration, modern multilingual TTS ensembles, device-captured samples, reviewed false-wake negatives, live training logs, and local wake-word links for Tater Native satellites.
+Train paired microWakeWord and openWakeWord models in Docker with NVIDIA/CUDA acceleration, modern multilingual MWW TTS ensembles, device-captured samples, reviewed false-wake negatives, live training logs, and local wake-word links for Tater Native satellites.
 
 Real samples come from device-captured wake audio, close misses, or manual uploads. Every saved sample is normalized to `16 kHz / mono / 16-bit PCM WAV` before training.
 
@@ -85,7 +85,7 @@ If you change `REC_PORT`, open that port instead and use the same port in the sa
 ## What The UI Does
 
 - The entire interface is reactive Vue 3 + TypeScript, following the same typed component pattern as Tater's newer UI surfaces.
-- `Trainer` starts a wake-word session, shows positive/negative sample counts, and launches training.
+- `Trainer` starts a wake-word session, shows positive/negative sample counts, and launches an MWW + OWW build by default.
 - `Auto Training` transcribes real wake triggers, promotes phrase-misses to hard negatives, schedules retraining, and refreshes Tater Native satellites.
 - `Captured Audio` reviews clips sent by Tater Native or ESPHome sats, including wake hits, close misses, and false wakes.
 - `Samples` plays, removes, clears, and manually imports personal or negative samples.
@@ -215,12 +215,14 @@ The default Tater URL, `http://127.0.0.1:8501`, assumes the documented host netw
 2. Choose the language and TTS source.
 3. Optionally check browser pronunciation with `System preview`.
 4. Review the positive and negative sample counts.
-5. Click `Start training`.
-6. Watch the popup training console.
+5. Leave `Build the openWakeWord companion model` enabled for a dual-model bundle, or turn it off for an MWW-only run.
+6. Click `Start training` and watch the popup training console.
 
 Personal samples are optional. Training can run with zero personal samples after confirmation, using generated TTS samples and the stock negative datasets.
 
 Reviewed negative samples are converted into `/data/work/reviewed_negative_features/` and inserted into the training YAML as a hard-negative feature set when present.
+
+The first dual-model run downloads a pinned revision of Tater's openWakeWord trainer and creates a separate environment under `/data/openwakeword`. Those assets are cached for later runs. OWW training starts only after MWW succeeds, publishes through a staging directory, and cannot overwrite the existing MWW JSON/TFLite pair. Calibration automatically packages a stricter OWW-only threshold and a separate recall-preserving threshold for MWW + OWW confirmation; users do not enter these values manually. The upstream OWW custom-training path is strongest for English; validate other languages carefully or use the MWW-only checkbox.
 
 On RTX 50-series / Blackwell GPUs, the Blackwell Docker image keeps sample generation and augmentation in the normal Python 3.12 trainer environment, then runs only the TensorFlow training/export stage in `/data/.venv-blackwell` with Python 3.13 and the Blackwell-native TensorFlow wheel.
 
@@ -289,9 +291,13 @@ The trainer also syncs Tater-ready wake-word artifacts into:
 ```text
 /data/trained_wake_words/<wake_word>.tflite
 /data/trained_wake_words/<wake_word>.json
+/data/trained_wake_words/<wake_word>.oww.onnx         # Echo openWakeWord classifier
+/data/trained_wake_words/<wake_word>.oww.json
+/data/trained_wake_words/<wake_word>.oww.verifier.pkl # when positive + negative clips exist
+/data/trained_wake_words/<wake_word>.wake-bundle.json
 ```
 
-The `Wake Words` tab uses `/data/trained_wake_words/` to populate the local wake-word links.
+The original `<wake_word>.json` and `<wake_word>.tflite` names are unchanged for existing Tater and ESPHome clients. The additive bundle manifest links the MWW TFLite and OWW ONNX models, their SHA-256 hashes, and the calibrated OWW threshold/patience. The `Wake Words` tab exposes the MWW, OWW, and bundle links.
 
 The JSON keeps the standard microWakeWord fields for compatibility:
 

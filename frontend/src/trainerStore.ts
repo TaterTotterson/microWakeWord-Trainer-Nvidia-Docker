@@ -37,6 +37,7 @@ const defaultAutoForm = (): AutoTrainForm => ({
   advertised_base_url: "",
   tater_url: "http://127.0.0.1:8501",
   notify_satellites: true,
+  train_openwakeword: true,
 });
 
 export const trainer = reactive({
@@ -47,6 +48,7 @@ export const trainer = reactive({
   language: "en",
   englishAccent: "mixed",
   ttsMode: "hybrid",
+  trainOpenWakeWord: true,
   languages: [{ code: "en", label: "English (en)", engines: ["omnivoice"] }] as LanguageOption[],
   englishAccents: [
     { code: "mixed", label: "Mixed English" },
@@ -495,7 +497,10 @@ export async function startTraining(): Promise<void> {
   trainer.training = { running: true, exit_code: null, log_lines: ["Waiting for training output…"] };
   trainer.consoleOpen = true;
   try {
-    await postJson("/api/train", { allow_no_personal: allowNoPersonal });
+    await postJson("/api/train", {
+      allow_no_personal: allowNoPersonal,
+      train_openwakeword: trainer.trainOpenWakeWord,
+    });
     beginTrainingPoll();
   } catch (error) {
     trainer.training = { running: false, exit_code: 1, log_lines: [error instanceof Error ? error.message : String(error)] };
