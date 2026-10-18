@@ -1,3 +1,3 @@
-- Fixed personalized openWakeWord verifier training to load the generated ONNX model through ONNX Runtime instead of incorrectly requesting LiteRT.
-- Pinned both regular NVIDIA and Blackwell images to the tested openWakeWord Trainer v1.0.2 release.
-- Documented the required `--shm-size=8g` launch setting that prevents PyTorch DataLoader shared-memory bus errors.
+- Restored openWakeWord training for wake phrases containing words missing from CMUdict.
+- Downloads Tater's preserved DeepPhonemizer checkpoint from Hugging Face and verifies its exact size and SHA-256 before use.
+- Automatically replaces cached S3 error responses and pins the NVIDIA trainer to openWakeWord Trainer v1.0.3.
