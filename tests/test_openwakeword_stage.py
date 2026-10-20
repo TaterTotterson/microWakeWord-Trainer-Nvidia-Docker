@@ -67,6 +67,8 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual(env["OWW_PERSONAL_DIR"], str(personal.resolve()))
             self.assertEqual(env["OWW_NEGATIVE_DIR"], str(negative.resolve()))
             self.assertEqual(env["OWW_EXPORT_DIR"], str(staging))
+            self.assertEqual(env["OWW_DEFAULT_NEGATIVE_BATCH"], "256")
+            self.assertEqual(env["OWW_DEFAULT_VALIDATION_BATCH"], "2048")
 
     def test_publish_keeps_mww_urls_and_adds_dual_bundle(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -88,6 +90,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
                 json.dumps(
                     {
                         "calibration": {
+                            "deployment_ready": True,
                             "recommended_threshold": 0.91,
                             "recommended_patience": 4,
                             "recommended_confirmation_threshold": 0.86,
@@ -145,6 +148,31 @@ class OpenWakeWordStageTests(unittest.TestCase):
                     safe_word="hey_tater",
                     phrase="hey tater",
                 )
+
+    def test_publish_rejects_failed_calibration_without_replacing_model(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            staging = root / "staging"
+            trained = root / "trained"
+            staging.mkdir()
+            trained.mkdir()
+            published = trained / "hey_tater.oww.onnx"
+            published.write_bytes(b"known-good")
+            (staging / "hey_tater.onnx").write_bytes(b"bad-new-model")
+            (staging / "hey_tater.json").write_text(
+                json.dumps({"calibration": {"deployment_ready": False}}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "failed deployment calibration"):
+                publish_openwakeword_artifacts(
+                    staging_dir=staging,
+                    trained_dir=trained,
+                    safe_word="hey_tater",
+                    phrase="hey tater",
+                )
+
+            self.assertEqual(published.read_bytes(), b"known-good")
 
 
 if __name__ == "__main__":

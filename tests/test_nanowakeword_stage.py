@@ -34,7 +34,7 @@ class NanoWakeWordStageTests(unittest.TestCase):
             (checkout / "scripts").mkdir(parents=True)
             (checkout / "train_nanowakeword.sh").write_text("#!/bin/sh\n# --positive-tts-dir\n", encoding="utf-8")
             (checkout / "scripts" / "train_nanowakeword.py").write_text(
-                "NWW_POSITIVE_TTS_DIR = True\nquality_target_negative_rate = 0.05\n",
+                "NWW_POSITIVE_TTS_DIR = True\nNWW_FEATURE_DEVICE = 'cpu'\n",
                 encoding="utf-8",
             )
             generated = root / "work" / "wake_word_samples"
@@ -53,6 +53,7 @@ class NanoWakeWordStageTests(unittest.TestCase):
             self.assertEqual(cmd[cmd.index("--model-type") + 1], "gru")
             self.assertEqual(env["NWW_POSITIVE_TTS_DIR"], str(generated.resolve()))
             self.assertNotIn("NWW_TORCH_CUDA", env)
+            self.assertEqual(env["NWW_FEATURE_DEVICE"], "cpu")
 
     def test_publish_carries_calibrated_streaming_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -81,6 +82,66 @@ class NanoWakeWordStageTests(unittest.TestCase):
             variant = json.loads(bundle_path.read_text(encoding="utf-8"))["nano_wake_word"]["variants"]["gru"]
             self.assertEqual(variant["recommended_threshold"], 0.99)
             self.assertEqual(variant["recommended_patience"], 3)
+
+    def test_stage_uses_nanowakeword_compatible_cuda_wheels(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            checkout = root / "trainer"
+            (checkout / "scripts").mkdir(parents=True)
+            (checkout / "train_nanowakeword.sh").write_text(
+                "#!/bin/sh\n# --positive-tts-dir\n", encoding="utf-8"
+            )
+            (checkout / "scripts" / "train_nanowakeword.py").write_text(
+                "NWW_POSITIVE_TTS_DIR = True\nNWW_FEATURE_DEVICE = 'cpu'\n",
+                encoding="utf-8",
+            )
+            generated = root / "generated"
+            personal = root / "personal"
+            negative = root / "negative"
+            for directory in (generated, personal, negative):
+                directory.mkdir()
+            (generated / "tts.wav").write_bytes(b"wav")
+
+            _cmd, _cwd, env, _staging = prepare_nanowakeword_stage(
+                phrase="hey tater",
+                safe_word="hey_tater",
+                architecture="cnn",
+                data_dir=root / "data",
+                generated_positive_dir=generated,
+                personal_dir=personal,
+                negative_dir=negative,
+                environ={"TATER_NWW_TRAINER_DIR": str(checkout)},
+            )
+
+            self.assertEqual(env["NWW_TORCH_CUDA"], "cu126")
+            self.assertEqual(env["NWW_TORCH_VERSION"], "2.8.0")
+            self.assertEqual(env["NWW_FEATURE_DEVICE"], "cpu")
+
+    def test_publish_rejects_failed_validation_without_replacing_model(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            staging = root / "staging"
+            trained = root / "trained"
+            staging.mkdir()
+            trained.mkdir()
+            published = trained / "hey_tater.nww.cnn.onnx"
+            published.write_bytes(b"known-good")
+            (staging / "hey_tater.onnx").write_bytes(b"bad-new-model")
+            (staging / "hey_tater.json").write_text(
+                json.dumps({"validation": {"passed": False}}),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "failed streaming validation"):
+                publish_nanowakeword_artifacts(
+                    staging_dir=staging,
+                    trained_dir=trained,
+                    safe_word="hey_tater",
+                    phrase="hey tater",
+                    architecture="cnn",
+                )
+
+            self.assertEqual(published.read_bytes(), b"known-good")
 
 
 if __name__ == "__main__":

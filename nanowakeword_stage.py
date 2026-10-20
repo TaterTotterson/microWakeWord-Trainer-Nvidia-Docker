@@ -13,9 +13,9 @@ from typing import Any, Mapping
 from wake_bundle import publish_nano_wake_word
 
 NWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/nanoWakeWord-Trainer.git"
-NWW_TRAINER_REVISION = "269fcb3ddb8cd723a194989482ff05403463a470"
+NWW_TRAINER_REVISION = "30cad9c1947f1a6e894b6d716e543603fa360522"
 NWW_ARCHITECTURES = ("cnn", "gru")
-NWW_TRAINER_COMPATIBILITY_MARKER = "quality_target_negative_rate"
+NWW_TRAINER_COMPATIBILITY_MARKER = "NWW_FEATURE_DEVICE"
 
 def normalize_train_nanowakeword(value: Any, default: bool = False) -> bool:
     if value is None:
@@ -94,9 +94,11 @@ def prepare_nanowakeword_stage(*, phrase: str, safe_word: str, architecture: str
     output_root = nww_root / "output" / architecture
     if env.get("MWW_BLACKWELL_IMAGE") == "1":
         env.setdefault("NWW_TORCH_CUDA", "cu128")
-        env.setdefault("NWW_TORCH_VERSION", "2.7.1")
+        env.setdefault("NWW_TORCH_VERSION", "2.8.0")
     elif not env.get("NWW_FORCE_CPU"):
-        env.setdefault("NWW_TORCH_CUDA", "cu124")
+        env.setdefault("NWW_TORCH_CUDA", "cu126")
+        env.setdefault("NWW_TORCH_VERSION", "2.8.0")
+    env.setdefault("NWW_FEATURE_DEVICE", "cpu")
     env.update({
         "NWW_DATA_DIR": str(nww_root), "NWW_OUTPUT_ROOT": str(output_root),
         "NWW_EXPORT_DIR": str(staging_dir), "NWW_POSITIVE_TTS_DIR": str(generated),
@@ -117,6 +119,11 @@ def publish_nanowakeword_artifacts(*, staging_dir: Path, trained_dir: Path, safe
         raise RuntimeError("NanoWakeWord produced invalid metadata") from exc
     if not isinstance(metadata, dict):
         raise RuntimeError("NanoWakeWord produced invalid metadata")
+    validation = metadata.get("validation")
+    if not isinstance(validation, dict) or validation.get("passed") is not True:
+        raise RuntimeError(
+            "NanoWakeWord failed streaming validation; the existing published model was preserved"
+        )
     destination = Path(trained_dir).resolve()
     destination.mkdir(parents=True, exist_ok=True)
     model_path = destination / f"{safe_word}.nww.{architecture}.onnx"
