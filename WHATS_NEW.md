@@ -1,5 +1,3 @@
-- Fixed NanoWakeWord training on NVIDIA by generating features on the same CPU path used by satellite runtime validation while retaining CUDA acceleration for augmentation and model training.
-- Invalidated incompatible NVIDIA NanoWakeWord feature caches once so affected models are rebuilt from correct features; later training runs continue to reuse the corrected cache.
-- Aligned openWakeWord negative sampling with the successful Apple trainer configuration to restore wake-word recall without weakening its quality gate.
-- Pinned NanoWakeWord to PyTorch 2.8 with CUDA 12.6 for standard NVIDIA cards and CUDA 12.8 for Blackwell cards, preventing dependency installation from silently replacing the tested runtime.
-- Added publication safeguards so failed openWakeWord or NanoWakeWord quality validation preserves the last known-good model and bundle entry.
+- Fixed NVIDIA openWakeWord training by generating embeddings through the same CPU ONNX path used for calibration and satellite inference while retaining CUDA acceleration for model training.
+- Added a one-time rebuild of incompatible cached openWakeWord embeddings without regenerating the existing TTS audio corpus.
+- Replaced the ambiguous `Exit 999` response for model quality rejection with a clear saved-log message, while preserving the existing published model and continuing any other selected model stages.
