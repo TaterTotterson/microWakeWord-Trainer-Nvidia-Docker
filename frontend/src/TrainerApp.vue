@@ -69,6 +69,10 @@ const dataCategories = computed(() => {
   }
   return Array.from(groups, ([name, items]) => ({ name, items }));
 });
+const manualNanoSelected = computed(() => trainer.trainNanoWakeWordCnn || trainer.trainNanoWakeWordGru);
+const autoNanoSelected = computed(() => (
+  trainer.autoForm.train_nanowakeword_cnn || trainer.autoForm.train_nanowakeword_gru
+));
 
 watch([() => trainer.language, () => trainer.ttsMode], ensureSupportedTtsMode);
 watch(() => trainer.toast.serial, () => window.setTimeout(() => { trainer.toast.message = ""; }, 4500));
@@ -125,6 +129,22 @@ function changeView(view: ViewName): void {
 }
 function setBucket(bucket: SampleBucket): void { trainer.sampleBucket = bucket; }
 function openTrim(item: AudioItem, bucket: SampleBucket): void { trainer.trimBucket = bucket; trainer.trimItem = item; }
+function toggleManualNano(): void {
+  if (manualNanoSelected.value) {
+    trainer.trainNanoWakeWordCnn = false;
+    trainer.trainNanoWakeWordGru = false;
+  } else {
+    trainer.trainNanoWakeWordCnn = true;
+  }
+}
+function toggleAutoNano(): void {
+  if (autoNanoSelected.value) {
+    trainer.autoForm.train_nanowakeword_cnn = false;
+    trainer.autoForm.train_nanowakeword_gru = false;
+  } else {
+    trainer.autoForm.train_nanowakeword_cnn = true;
+  }
+}
 function openLink(): void {
   linkUrl.value = trainer.autoForm.tater_url || "http://127.0.0.1:8501";
   linkCode.value = "";
@@ -164,8 +184,12 @@ function sampleSubtitle(item: AudioItem): string {
 function wordJsonUrl(item: JsonRecord): string { return String(item.json_url || item.url || item.jsonUrl || ""); }
 function wordEsphomeJsonUrl(item: JsonRecord): string { return String(item.esphome_json_url || item.esphomeJsonUrl || ""); }
 function wordModelUrl(item: JsonRecord): string { return String(item.model_url || item.modelUrl || ""); }
-function wordBundleUrl(item: JsonRecord): string { return String(item.bundle_url || ""); }
 function wordOpenWakeWordUrl(item: JsonRecord): string { return String(item.openwakeword_model_url || ""); }
+function wordNanoWakeWordModels(item: JsonRecord): Record<string, string> {
+  return item.nanowakeword_models && typeof item.nanowakeword_models === "object"
+    ? item.nanowakeword_models as Record<string, string>
+    : {};
+}
 function consoleTone(line: string): string {
   const value = line.trim().toLowerCase();
   if (/^(✓|✅)|success|finished/.test(value)) return "success";
@@ -211,7 +235,20 @@ function consoleTone(line: string): string {
           <section class="panel">
             <header class="panel-head"><div class="number">2</div><div><h3>Train wake word</h3><p>Personal positives and reviewed false-wake negatives are automatically included.</p></div><span class="pill" :class="trainingStatus.tone">{{ trainingStatus.text }}</span></header>
             <div class="stats"><article><span>Positive samples</span><strong>{{ personalCount }}</strong></article><article><span>Negative samples</span><strong>{{ negativeCount }}</strong></article><article><span>Training format</span><strong class="format-value">16 kHz · mono · WAV</strong></article></div>
-            <div class="toggle-list compact"><label><input v-model="trainer.trainOpenWakeWord" type="checkbox" /><span><strong>Build the openWakeWord companion model</strong><small>Produces the companion for the upcoming Echo dual-model confirmation. The first run downloads and caches the separate OWW training stack.</small></span></label></div>
+            <div class="model-picker">
+              <div class="model-choice-grid" role="group" aria-label="Wake-word models to train">
+                <button type="button" class="model-choice" :class="{ active: trainer.trainMicroWakeWord }" :aria-pressed="trainer.trainMicroWakeWord" @click="trainer.trainMicroWakeWord = !trainer.trainMicroWakeWord"><i>MWW</i><span><strong>MicroWakeWord</strong><small>TFLite for ESP32 satellites and ESPHome.</small></span><b>✓</b></button>
+                <button type="button" class="model-choice" :class="{ active: trainer.trainOpenWakeWord }" :aria-pressed="trainer.trainOpenWakeWord" @click="trainer.trainOpenWakeWord = !trainer.trainOpenWakeWord"><i>OWW</i><span><strong>openWakeWord</strong><small>ONNX for satellites with OWW support.</small></span><b>✓</b></button>
+                <button type="button" class="model-choice" :class="{ active: manualNanoSelected }" :aria-pressed="manualNanoSelected" @click="toggleManualNano"><i>NWW</i><span><strong>NanoWakeWord</strong><small>ONNX with selectable CNN and GRU builds.</small></span><b>✓</b></button>
+              </div>
+              <div v-if="manualNanoSelected" class="nano-architecture-panel">
+                <div class="nano-architecture-heading"><div><strong>NanoWakeWord architectures</strong><small>Select either architecture or train both.</small></div><span>{{ trainer.trainNanoWakeWordCnn && trainer.trainNanoWakeWordGru ? "2 selected" : "1 selected" }}</span></div>
+                <div class="nano-architecture-grid" role="group" aria-label="NanoWakeWord architectures">
+                  <button type="button" class="architecture-choice" :class="{ active: trainer.trainNanoWakeWordCnn }" :aria-pressed="trainer.trainNanoWakeWordCnn" @click="trainer.trainNanoWakeWordCnn = !trainer.trainNanoWakeWordCnn"><i>CNN</i><span><strong>CNN</strong><small>Recommended default with stronger recall.</small></span><b>✓</b></button>
+                  <button type="button" class="architecture-choice" :class="{ active: trainer.trainNanoWakeWordGru }" :aria-pressed="trainer.trainNanoWakeWordGru" @click="trainer.trainNanoWakeWordGru = !trainer.trainNanoWakeWordGru"><i>GRU</i><span><strong>GRU</strong><small>Recurrent model tuned for fewer false triggers.</small></span><b>✓</b></button>
+                </div>
+              </div>
+            </div>
             <div class="train-action"><button type="button" class="button primary large" :disabled="!trainer.session.safe_word || trainer.training.running || isBusy('training-start')" @click="startTraining">{{ trainer.training.running ? "Training in progress" : "Start training" }}</button></div>
             <footer class="panel-footer"><span>Training opens the console automatically and continues if the window is closed.</span><button type="button" :disabled="!hasConsole" @click="trainer.consoleOpen = true">Open console</button></footer>
           </section>
@@ -239,7 +276,20 @@ function consoleTone(line: string): string {
               <label class="field"><span>Run training</span><select v-model.number="trainer.autoForm.schedule_hours"><option :value="0">Manually only</option><option :value="6">Every 6 hours</option><option :value="12">Every 12 hours</option><option :value="24">Every day</option><option :value="48">Every 2 days</option><option :value="168">Every week</option></select></label>
               <label class="field"><span>Minimum new negatives</span><input v-model.number="trainer.autoForm.minimum_new_negatives" min="1" max="10000" type="number" /></label>
             </div>
-            <div class="toggle-list compact"><label><input v-model="trainer.autoForm.train_openwakeword" type="checkbox" /><span><strong>Retrain the openWakeWord companion</strong><small>Produces a fresh dual-model bundle whenever Auto Training runs.</small></span></label></div>
+            <div class="model-picker">
+              <div class="model-choice-grid" role="group" aria-label="Auto Training wake-word models">
+                <button type="button" class="model-choice" :class="{ active: trainer.autoForm.train_microwakeword }" :aria-pressed="trainer.autoForm.train_microwakeword" @click="trainer.autoForm.train_microwakeword = !trainer.autoForm.train_microwakeword"><i>MWW</i><span><strong>MicroWakeWord</strong><small>Refresh the ESP32 and ESPHome model.</small></span><b>✓</b></button>
+                <button type="button" class="model-choice" :class="{ active: trainer.autoForm.train_openwakeword }" :aria-pressed="trainer.autoForm.train_openwakeword" @click="trainer.autoForm.train_openwakeword = !trainer.autoForm.train_openwakeword"><i>OWW</i><span><strong>openWakeWord</strong><small>Refresh the openWakeWord ONNX model.</small></span><b>✓</b></button>
+                <button type="button" class="model-choice" :class="{ active: autoNanoSelected }" :aria-pressed="autoNanoSelected" @click="toggleAutoNano"><i>NWW</i><span><strong>NanoWakeWord</strong><small>Refresh selected CNN and GRU models.</small></span><b>✓</b></button>
+              </div>
+              <div v-if="autoNanoSelected" class="nano-architecture-panel">
+                <div class="nano-architecture-heading"><div><strong>NanoWakeWord architectures</strong><small>Select either architecture or retrain both.</small></div><span>{{ trainer.autoForm.train_nanowakeword_cnn && trainer.autoForm.train_nanowakeword_gru ? "2 selected" : "1 selected" }}</span></div>
+                <div class="nano-architecture-grid" role="group" aria-label="Auto Training NanoWakeWord architectures">
+                  <button type="button" class="architecture-choice" :class="{ active: trainer.autoForm.train_nanowakeword_cnn }" :aria-pressed="trainer.autoForm.train_nanowakeword_cnn" @click="trainer.autoForm.train_nanowakeword_cnn = !trainer.autoForm.train_nanowakeword_cnn"><i>CNN</i><span><strong>CNN</strong><small>Recommended default with stronger recall.</small></span><b>✓</b></button>
+                  <button type="button" class="architecture-choice" :class="{ active: trainer.autoForm.train_nanowakeword_gru }" :aria-pressed="trainer.autoForm.train_nanowakeword_gru" @click="trainer.autoForm.train_nanowakeword_gru = !trainer.autoForm.train_nanowakeword_gru"><i>GRU</i><span><strong>GRU</strong><small>Recurrent model tuned for fewer false triggers.</small></span><b>✓</b></button>
+                </div>
+              </div>
+            </div>
             <div class="stats"><article><span>Pending negatives</span><strong>{{ Number(autoState.pending_negative_count || 0) }}</strong></article><article><span>Next check</span><strong class="format-value">{{ autoState.next_run_at ? formatTimestamp(autoState.next_run_at) : "Manual" }}</strong></article><article><span>Last training</span><strong class="format-value">{{ autoState.last_train_finished_at ? formatTimestamp(autoState.last_train_finished_at) : "Never" }}</strong></article></div>
           </section>
           <section class="panel">
@@ -307,7 +357,7 @@ function consoleTone(line: string): string {
           <div class="native-notice"><strong>Tater Native</strong><span>These packages include model metadata and a direct model URL for live satellite updates.</span></div>
           <section class="panel"><header class="panel-head"><div class="number">v1</div><div><h3>Published model URLs</h3><p>URLs stay local and are refreshed after each successful run.</p></div><button type="button" :disabled="isBusy('firmware')" @click="refreshWakeWords()">Refresh</button></header>
             <div v-if="!trainer.wakeWords.length" class="empty-state">Train a wake word and its package will appear here.</div>
-            <div v-else class="word-list"><article v-for="word in trainer.wakeWords" :key="word.key || wordJsonUrl(word)"><div><strong>{{ word.label || word.name || "Trained wake word" }}</strong><a v-if="wordJsonUrl(word)" :href="wordJsonUrl(word)" target="_blank" rel="noreferrer">microWakeWord JSON · {{ wordJsonUrl(word) }}</a><span v-else class="muted">JSON package URL unavailable</span><a v-if="wordModelUrl(word)" :href="wordModelUrl(word)" target="_blank" rel="noreferrer">microWakeWord model · {{ wordModelUrl(word) }}</a><a v-if="wordOpenWakeWordUrl(word)" :href="wordOpenWakeWordUrl(word)" target="_blank" rel="noreferrer">openWakeWord model · {{ wordOpenWakeWordUrl(word) }}</a><a v-if="wordBundleUrl(word)" :href="wordBundleUrl(word)" target="_blank" rel="noreferrer">Dual-model bundle · {{ wordBundleUrl(word) }}</a><div class="meta-row"><span v-if="word.dual_model">MWW + OWW</span><span v-if="word.language">{{ word.language }}</span><span v-if="word.trained_at">{{ formatTimestamp(word.trained_at) }}</span><span v-if="word.recall !== undefined">recall {{ word.recall }}</span></div></div><button type="button" :disabled="!wordJsonUrl(word)" @click="copyWakeWord(wordJsonUrl(word))">Copy URL</button></article></div>
+            <div v-else class="word-list"><article v-for="word in trainer.wakeWords" :key="word.key || wordJsonUrl(word)"><div><strong>{{ word.label || word.name || "Trained wake word" }}</strong><a v-if="wordJsonUrl(word)" :href="wordJsonUrl(word)" target="_blank" rel="noreferrer">Tater wake-word bundle · {{ wordJsonUrl(word) }}</a><span v-else class="muted">Bundle URL unavailable</span><a v-if="wordModelUrl(word)" :href="wordModelUrl(word)" target="_blank" rel="noreferrer">MicroWakeWord model · {{ wordModelUrl(word) }}</a><a v-if="wordOpenWakeWordUrl(word)" :href="wordOpenWakeWordUrl(word)" target="_blank" rel="noreferrer">openWakeWord model · {{ wordOpenWakeWordUrl(word) }}</a><a v-for="(url, architecture) in wordNanoWakeWordModels(word)" :key="architecture" :href="url" target="_blank" rel="noreferrer">NanoWakeWord {{ String(architecture).toUpperCase() }} model · {{ url }}</a><div class="meta-row"><span v-for="engine in word.available_engines || []" :key="engine">{{ String(engine).replaceAll('_', ' ') }}</span><span v-if="word.language">{{ word.language }}</span><span v-if="word.trained_at">{{ formatTimestamp(word.trained_at) }}</span><span v-if="word.recall !== undefined">recall {{ word.recall }}</span></div></div><button type="button" :disabled="!wordJsonUrl(word)" @click="copyWakeWord(wordJsonUrl(word))">Copy bundle URL</button></article></div>
           </section>
           <div class="native-notice esphome-notice"><strong>ESPHome</strong><span>Strict micro_wake_word manifest without Tater Native or calibration extensions.</span></div>
           <section class="panel compatibility-panel"><header class="panel-head"><div class="number">ESP</div><div><h3>ESPHome JSON</h3><p>Use this URL as the model in an ESPHome micro_wake_word configuration.</p></div></header>

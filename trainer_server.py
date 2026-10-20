@@ -58,10 +58,21 @@ from tts_config import (
 from openwakeword_stage import (
     OWW_BUNDLE_SUFFIX,
     OWW_METADATA_SUFFIX,
-    bundle_catalog_fields,
     normalize_train_openwakeword,
     prepare_openwakeword_stage,
     publish_openwakeword_artifacts,
+)
+from nanowakeword_stage import (
+    normalize_train_nanowakeword,
+    prepare_nanowakeword_stage,
+    publish_nanowakeword_artifacts,
+)
+from wake_bundle import (
+    bundle_catalog_fields as canonical_bundle_catalog_fields,
+    esphome_manifest as bundle_esphome_manifest,
+    load_bundle,
+    migrate_legacy_micro_manifest,
+    publish_micro_wake_word,
 )
 
 # In Docker, /data is the persistent workspace mounted by the user.
@@ -187,7 +198,10 @@ AUTO_TRAIN_DEFAULT_CONFIG: Dict[str, Any] = {
     "tater_linked_at": "",
     "tater_link_tater_name": "",
     "notify_satellites": True,
-    "train_openwakeword": True,
+    "train_microwakeword": True,
+    "train_openwakeword": False,
+    "train_nanowakeword_cnn": False,
+    "train_nanowakeword_gru": False,
 }
 
 AUTO_TRAIN_DEFAULT_STATE: Dict[str, Any] = {
@@ -342,6 +356,7 @@ def _managed_data_registry() -> List[Dict[str, Any]]:
         {"id": "training_workspace", "label": "Model training workspace", "category": "Training results", "description": "Checkpoints, logs, and intermediate files from the latest model run.", "paths": [work_dir / "trained_models"], "rebuild_note": rebuild},
         {"id": "training_archives", "label": "Completed training archives", "category": "Training results", "description": "Timestamped final models and detailed logs from completed runs.", "paths": [DATA_DIR / "output"], "rebuild_note": "These historical results cannot be restored automatically."},
         {"id": "openwakeword_workspace", "label": "openWakeWord training cache", "category": "Training results", "description": "Pinned trainer source, generated clips, dependencies, and intermediate files for the companion model.", "paths": [DATA_DIR / "openwakeword", DATA_DIR / "tools" / "openwakeword-trainer"], "rebuild_note": redownload},
+        {"id": "nanowakeword_workspace", "label": "NanoWakeWord training cache", "category": "Training results", "description": "Trainer source, validation audio, dependencies, features, and intermediate CNN/GRU files.", "paths": [DATA_DIR / "nanowakeword", DATA_DIR / "tools" / "nanowakeword-trainer"], "rebuild_note": redownload},
         {"id": "published_models", "label": "Published wake-word models", "category": "Training results", "description": "Finished MWW/OWW models and manifests shown in Wake Words.", "paths": [TRAINED_WAKE_WORDS_DIR], "rebuild_note": "Tater links to these files will stop working. Train again to recreate them."},
         {"id": "training_log", "label": "Training console log", "category": "Training results", "description": "Saved console output from the most recent training run.", "paths": [DATA_DIR / "recorder_training.log"], "rebuild_note": "The deleted history cannot be restored; the next run creates a new log."},
     ]
@@ -576,10 +591,23 @@ def _sync_trained_wake_word_artifacts() -> None:
             else:
                 continue
 
-        for source_path in (json_path, tflite_path):
-            dest_path = TRAINED_WAKE_WORDS_DIR / source_path.name
-            if not dest_path.exists() or source_path.stat().st_mtime > dest_path.stat().st_mtime:
-                shutil.copy2(source_path, dest_path)
+        model_destination = TRAINED_WAKE_WORDS_DIR / tflite_path.name
+        if not model_destination.exists() or tflite_path.stat().st_mtime > model_destination.stat().st_mtime:
+            shutil.copy2(tflite_path, model_destination)
+        safe_word = json_path.stem
+        canonical_path = TRAINED_WAKE_WORDS_DIR / f"{safe_word}{OWW_BUNDLE_SUFFIX}"
+        if (
+            not canonical_path.exists()
+            or json_path.stat().st_mtime > canonical_path.stat().st_mtime
+            or model_destination.stat().st_mtime > canonical_path.stat().st_mtime
+        ):
+            publish_micro_wake_word(
+                trained_dir=TRAINED_WAKE_WORDS_DIR,
+                safe_word=safe_word,
+                phrase=str(meta.get("wake_word") or safe_word.replace("_", " ")),
+                metadata=meta,
+                model_path=model_destination,
+            )
 
         if json_path.parent == ROOT_DIR:
             with contextlib.suppress(Exception):
@@ -627,31 +655,24 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
     _sync_trained_wake_word_artifacts()
     base = str(base_url or "").rstrip("/")
     rows: List[Dict[str, Any]] = []
-    seen: set[str] = set()
 
     for json_path in sorted(TRAINED_WAKE_WORDS_DIR.glob("*.json")):
         if json_path.name.endswith(
             (ESPHOME_MANIFEST_SUFFIX, OWW_METADATA_SUFFIX, OWW_BUNDLE_SUFFIX)
         ):
             continue
-        try:
-            meta = json.loads(json_path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        if not isinstance(meta, dict):
-            continue
-
-        model_name = str(meta.get("model") or json_path.with_suffix(".tflite").name).strip()
-        model_path = TRAINED_WAKE_WORDS_DIR / Path(model_name).name
-        if not model_path.exists():
-            continue
-
         safe = json_path.stem
-        if safe in seen:
-            continue
-        seen.add(safe)
+        existing = load_bundle(TRAINED_WAKE_WORDS_DIR, safe)
+        if not isinstance(existing.get("micro_wake_word"), dict):
+            migrate_legacy_micro_manifest(TRAINED_WAKE_WORDS_DIR, json_path)
 
-        wake_word = str(meta.get("wake_word") or safe.replace("_", " ")).strip()
+    for bundle_path in sorted(TRAINED_WAKE_WORDS_DIR.glob(f"*{OWW_BUNDLE_SUFFIX}")):
+        safe = bundle_path.name[: -len(OWW_BUNDLE_SUFFIX)]
+        bundle = load_bundle(TRAINED_WAKE_WORDS_DIR, safe)
+        if not bundle:
+            continue
+        meta = bundle.get("micro_wake_word") if isinstance(bundle.get("micro_wake_word"), dict) else {}
+        wake_word = str(bundle.get("wake_word") or meta.get("wake_word") or safe.replace("_", " ")).strip()
         micro = meta.get("micro") if isinstance(meta.get("micro"), dict) else {}
         native = meta.get("tater_native") if isinstance(meta.get("tater_native"), dict) else {}
         calibration = meta.get("calibration") if isinstance(meta.get("calibration"), dict) else {}
@@ -664,13 +685,12 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
         close_miss_threshold = _metadata_float(native.get("close_miss_threshold"))
         recall = _metadata_float(calibration.get("recall"))
         false_accepts_per_hour = _metadata_float(calibration.get("false_accepts_per_hour"))
-        json_url = f"/api/trained_wake_words/{quote(json_path.name)}"
-        esphome_json_url = f"/api/trained_wake_words/{quote(safe + ESPHOME_MANIFEST_SUFFIX)}"
-        model_url = f"/api/trained_wake_words/{quote(model_path.name)}"
+        json_url = f"/api/trained_wake_words/{quote(bundle_path.name)}"
+        esphome_json_url = f"/api/trained_wake_words/{quote(safe + ESPHOME_MANIFEST_SUFFIX)}" if meta else ""
         if base:
             json_url = f"{base}{json_url}"
-            esphome_json_url = f"{base}{esphome_json_url}"
-            model_url = f"{base}{model_url}"
+            if esphome_json_url:
+                esphome_json_url = f"{base}{esphome_json_url}"
 
         row = {
                 "key": safe,
@@ -682,9 +702,8 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
                 "url": json_url,
                 "json_url": json_url,
                 "esphome_json_url": esphome_json_url,
-                "model_url": model_url,
-                "json_file": json_path.name,
-                "model_file": model_path.name,
+                "json_file": bundle_path.name,
+                "model_file": str(meta.get("model") or ""),
                 "threshold": round(threshold, 3) if threshold is not None else None,
                 "sliding_window": sliding_window,
                 "close_miss_threshold": round(close_miss_threshold, 3) if close_miss_threshold is not None else None,
@@ -697,7 +716,7 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
                 ),
                 "calibration_generated_at": str(calibration.get("generated_at") or "").strip(),
             }
-        row.update(bundle_catalog_fields(TRAINED_WAKE_WORDS_DIR, safe, base))
+        row.update(canonical_bundle_catalog_fields(TRAINED_WAKE_WORDS_DIR, safe, base))
         rows.append(row)
     return rows
 
@@ -831,9 +850,10 @@ def _normalize_auto_train_config(values: Dict[str, Any] | None, *, base: Dict[st
         "tater_linked_at": str(source.get("tater_linked_at") or "").strip(),
         "tater_link_tater_name": str(source.get("tater_link_tater_name") or "").strip(),
         "notify_satellites": _config_bool(source.get("notify_satellites"), True),
-        "train_openwakeword": normalize_train_openwakeword(
-            source.get("train_openwakeword"), True
-        ),
+        "train_microwakeword": _config_bool(source.get("train_microwakeword"), True),
+        "train_openwakeword": normalize_train_openwakeword(source.get("train_openwakeword"), False),
+        "train_nanowakeword_cnn": normalize_train_nanowakeword(source.get("train_nanowakeword_cnn"), False),
+        "train_nanowakeword_gru": normalize_train_nanowakeword(source.get("train_nanowakeword_gru"), False),
     }
 
 
@@ -1782,6 +1802,12 @@ def _start_auto_training() -> Dict[str, Any]:
         AUTO_TRAIN_RUNTIME["training_pending_consumed"] = int(AUTO_TRAIN_STATE.get("pending_negative_count") or 0)
         _save_auto_train_state_locked()
     try:
+        train_microwakeword = _config_bool(config.get("train_microwakeword"), True)
+        train_openwakeword = normalize_train_openwakeword(config.get("train_openwakeword"), False)
+        train_nanowakeword_cnn = normalize_train_nanowakeword(config.get("train_nanowakeword_cnn"), False)
+        train_nanowakeword_gru = normalize_train_nanowakeword(config.get("train_nanowakeword_gru"), False)
+        if not any((train_microwakeword, train_openwakeword, train_nanowakeword_cnn, train_nanowakeword_gru)):
+            raise RuntimeError("Auto Training must have at least one wake-word model selected")
         _start_training_thread(
             safe_word,
             language,
@@ -1789,7 +1815,10 @@ def _start_auto_training() -> Dict[str, Any]:
             True,
             tts_mode,
             english_accent,
-            normalize_train_openwakeword(config.get("train_openwakeword"), True),
+            train_microwakeword=train_microwakeword,
+            train_openwakeword=train_openwakeword,
+            train_nanowakeword_cnn=train_nanowakeword_cnn,
+            train_nanowakeword_gru=train_nanowakeword_gru,
         )
     except Exception as exc:
         with STATE_LOCK:
@@ -3191,7 +3220,10 @@ def _start_training_thread(
     auto_run: bool,
     tts_mode: str,
     english_accent: str = DEFAULT_SERVER_ENGLISH_ACCENT,
-    train_openwakeword: bool = True,
+    train_microwakeword: bool = True,
+    train_openwakeword: bool = False,
+    train_nanowakeword_cnn: bool = False,
+    train_nanowakeword_gru: bool = False,
 ) -> threading.Thread:
     global TRAINING_THREAD
     thread = threading.Thread(
@@ -3203,7 +3235,10 @@ def _start_training_thread(
             auto_run,
             tts_mode,
             english_accent,
+            train_microwakeword,
             train_openwakeword,
+            train_nanowakeword_cnn,
+            train_nanowakeword_gru,
         ),
         daemon=True,
         name="wake-word-training",
@@ -3304,7 +3339,67 @@ def _run_openwakeword_training(
         safe_word=safe_word,
         phrase=phrase,
     )
-    _append_train_log(f"✓ Dual-model wake-word bundle published: {bundle_path.name}")
+    _append_train_log(f"✓ openWakeWord added to bundle: {bundle_path.name}")
+    return 0
+
+
+def _run_nanowakeword_training(*, phrase: str, safe_word: str, architecture: str, log_path: Path) -> int:
+    global TRAINING_PROCESS
+    cmd, cwd, env, staging_dir = prepare_nanowakeword_stage(
+        phrase=phrase,
+        safe_word=safe_word,
+        architecture=architecture,
+        data_dir=DATA_DIR,
+        generated_positive_dir=DATA_DIR / "work" / "wake_word_samples",
+        personal_dir=PERSONAL_DIR,
+        negative_dir=NEGATIVE_DIR,
+        log=_append_train_log,
+    )
+    _append_train_log("")
+    _append_train_log(f"===== NanoWakeWord {architecture.upper()} model =====")
+    _append_train_log(f"→ Running: {' '.join(cmd)}")
+    proc: subprocess.Popen | None = None
+    try:
+        with log_path.open("a", encoding="utf-8") as log_file:
+            proc = subprocess.Popen(
+                cmd,
+                cwd=str(cwd),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                env=env,
+                start_new_session=(os.name == "posix"),
+            )
+            with TRAINING_RUNTIME_LOCK:
+                TRAINING_PROCESS = proc
+            if TRAINING_STOP_EVENT.is_set():
+                _terminate_training_process_tree(proc)
+            assert proc.stdout is not None
+            try:
+                for line in proc.stdout:
+                    log_file.write(line)
+                    log_file.flush()
+                    _append_train_log(line)
+            finally:
+                with contextlib.suppress(Exception):
+                    proc.stdout.close()
+            rc = proc.wait()
+    finally:
+        with TRAINING_RUNTIME_LOCK:
+            if TRAINING_PROCESS is proc:
+                TRAINING_PROCESS = None
+    if rc != 0:
+        _append_train_log(f"✗ NanoWakeWord {architecture.upper()} training failed (exit_code={rc}); other model outputs were preserved")
+        return rc
+    bundle = publish_nanowakeword_artifacts(
+        staging_dir=staging_dir,
+        trained_dir=TRAINED_WAKE_WORDS_DIR,
+        safe_word=safe_word,
+        phrase=phrase,
+        architecture=architecture,
+    )
+    _append_train_log(f"✓ NanoWakeWord {architecture.upper()} added to bundle: {bundle.name}")
     return 0
 
 
@@ -3315,7 +3410,10 @@ def _run_training_background(
     auto_run: bool = False,
     tts_mode: str = DEFAULT_SERVER_TTS_MODE,
     english_accent: str = DEFAULT_SERVER_ENGLISH_ACCENT,
-    train_openwakeword: bool = True,
+    train_microwakeword: bool = True,
+    train_openwakeword: bool = False,
+    train_nanowakeword_cnn: bool = False,
+    train_nanowakeword_gru: bool = False,
 ):
     global TRAINING_PROCESS, TRAINING_THREAD
     language = (language or DEFAULT_LANGUAGE).strip().lower() or DEFAULT_LANGUAGE
@@ -3327,6 +3425,11 @@ def _run_training_background(
         raw_phrase = STATE.get("raw_phrase") or ""
 
     wake_word_title = _title_from_phrase(raw_phrase)
+    selected_nano = [
+        architecture
+        for architecture, enabled in (("cnn", train_nanowakeword_cnn), ("gru", train_nanowakeword_gru))
+        if enabled
+    ]
 
     with DATA_MANAGEMENT_LOCK:
         with STATE_LOCK:
@@ -3356,8 +3459,11 @@ def _run_training_background(
         pass
 
     try:
-        _ensure_training_venv(log_path)
-        _ensure_training_datasets(log_path)
+        needs_shared_tts = train_microwakeword or bool(selected_nano)
+        if needs_shared_tts:
+            _ensure_training_venv(log_path)
+        if train_microwakeword:
+            _ensure_training_datasets(log_path)
         if language != "en" and tts_mode == "piper":
             _ensure_non_english_language_voices(language, _append_train_log)
         elif language != "en" and tts_mode == "hybrid":
@@ -3372,17 +3478,23 @@ def _run_training_background(
             f"--english-accent={english_accent}",
             f"--tts-mode={tts_mode}",
             f"--artifact-slug={safe_word}",
-            training_phrase,
         ]
-        if wake_word_title:
+        if not train_microwakeword:
+            command_args.append("--generate-only")
+        command_args.append(training_phrase)
+        if wake_word_title and train_microwakeword:
             command_args.append(wake_word_title)
         cmd_str = f"{TRAIN_CMD} " + " ".join(shlex.quote(argument) for argument in command_args)
 
         env, removed_recorder_library_paths = _training_subprocess_environment()
         env["MWW_ALLOW_NO_PERSONAL"] = "true" if allow_no_personal else "false"
 
-        _append_train_log("===== Training (train_wake_word) =====")
-        _append_train_log(f"→ Running: {cmd_str}")
+        selected_labels = [
+            *(["MicroWakeWord"] if train_microwakeword else []),
+            *(["openWakeWord"] if train_openwakeword else []),
+            *(f"NanoWakeWord {item.upper()}" for item in selected_nano),
+        ]
+        _append_train_log(f"→ Selected models: {', '.join(selected_labels)}")
         if removed_recorder_library_paths:
             _append_train_log(
                 "→ Isolated TensorFlow training from "
@@ -3392,33 +3504,37 @@ def _run_training_background(
         if language == "en":
             _append_train_log(f"→ English accent emphasis: {english_accent}")
 
-        with open(log_path, "a", encoding="utf-8") as lf:
-            proc = subprocess.Popen(
-                ["bash", "-lc", cmd_str],
-                cwd=str(DATA_DIR),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                env=env,
-                start_new_session=(os.name == "posix"),
-            )
-            with TRAINING_RUNTIME_LOCK:
-                TRAINING_PROCESS = proc
-            if TRAINING_STOP_EVENT.is_set():
-                _append_train_log("→ Session stop requested; stopping the active training run.")
-                _terminate_training_process_tree(proc)
-            assert proc.stdout is not None
-            try:
-                for line in proc.stdout:
-                    lf.write(line)
-                    lf.flush()
-                    _append_train_log(line)
-            finally:
-                with contextlib.suppress(Exception):
-                    proc.stdout.close()
-
-            rc = proc.wait()
+        if needs_shared_tts:
+            _append_train_log("===== Shared TTS / MicroWakeWord stage =====")
+            _append_train_log(f"→ Running: {cmd_str}")
+            with open(log_path, "a", encoding="utf-8") as lf:
+                proc = subprocess.Popen(
+                    ["bash", "-lc", cmd_str],
+                    cwd=str(DATA_DIR),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    env=env,
+                    start_new_session=(os.name == "posix"),
+                )
+                with TRAINING_RUNTIME_LOCK:
+                    TRAINING_PROCESS = proc
+                if TRAINING_STOP_EVENT.is_set():
+                    _append_train_log("→ Session stop requested; stopping the active training run.")
+                    _terminate_training_process_tree(proc)
+                assert proc.stdout is not None
+                try:
+                    for line in proc.stdout:
+                        lf.write(line)
+                        lf.flush()
+                        _append_train_log(line)
+                finally:
+                    with contextlib.suppress(Exception):
+                        proc.stdout.close()
+                rc = proc.wait()
+        else:
+            rc = 0
 
         if TRAINING_STOP_EVENT.is_set() and rc != 0:
             _append_train_log(f"→ Training stopped for session stop (exit_code={rc})")
@@ -3428,15 +3544,30 @@ def _run_training_background(
             STATE["training"]["exit_code"] = rc
 
         if rc == 0 and not TRAINING_STOP_EVENT.is_set():
-            _normalize_output_artifacts(safe_word, log_path)
+            if train_microwakeword:
+                _normalize_output_artifacts(safe_word, log_path)
+                _sync_trained_wake_word_artifacts()
+            stage_results: list[int] = []
             if train_openwakeword:
-                rc = _run_openwakeword_training(
-                    phrase=training_phrase,
-                    safe_word=safe_word,
-                    log_path=log_path,
+                stage_results.append(
+                    _run_openwakeword_training(
+                        phrase=training_phrase,
+                        safe_word=safe_word,
+                        log_path=log_path,
+                    )
                 )
-            else:
-                _append_train_log("→ openWakeWord stage disabled; published microWakeWord only")
+            for architecture in selected_nano:
+                if TRAINING_STOP_EVENT.is_set():
+                    break
+                stage_results.append(
+                    _run_nanowakeword_training(
+                        phrase=training_phrase,
+                        safe_word=safe_word,
+                        architecture=architecture,
+                        log_path=log_path,
+                    )
+                )
+            rc = next((result for result in stage_results if result != 0), 0)
             with STATE_LOCK:
                 STATE["training"]["exit_code"] = rc
 
@@ -3525,6 +3656,19 @@ def update_auto_train(payload: Dict[str, Any] = None):
         if normalized["enabled"] and not normalized["wake_phrase"]:
             return JSONResponse(
                 {"ok": False, "error": "Enter the wake phrase before enabling Auto Training."},
+                status_code=400,
+            )
+        if not any(
+            normalized.get(key)
+            for key in (
+                "train_microwakeword",
+                "train_openwakeword",
+                "train_nanowakeword_cnn",
+                "train_nanowakeword_gru",
+            )
+        ):
+            return JSONResponse(
+                {"ok": False, "error": "Select at least one wake-word model to train."},
                 status_code=400,
             )
         AUTO_TRAIN_CONFIG.clear()
@@ -4230,20 +4374,21 @@ def trained_wake_word_artifact(filename: str):
     _sync_trained_wake_word_artifacts()
     if safe_filename.endswith(ESPHOME_MANIFEST_SUFFIX):
         source_stem = safe_filename[: -len(ESPHOME_MANIFEST_SUFFIX)]
-        source_path = TRAINED_WAKE_WORDS_DIR / f"{source_stem}.json"
-        if not source_stem or not source_path.is_file():
+        bundle = load_bundle(TRAINED_WAKE_WORDS_DIR, source_stem)
+        metadata = bundle.get("micro_wake_word") if isinstance(bundle.get("micro_wake_word"), dict) else {}
+        if not metadata:
+            legacy_path = TRAINED_WAKE_WORDS_DIR / f"{source_stem}.json"
+            if legacy_path.is_file():
+                migrate_legacy_micro_manifest(TRAINED_WAKE_WORDS_DIR, legacy_path)
+                bundle = load_bundle(TRAINED_WAKE_WORDS_DIR, source_stem)
+                metadata = bundle.get("micro_wake_word") if isinstance(bundle.get("micro_wake_word"), dict) else {}
+        if not source_stem or not metadata:
             return JSONResponse({"ok": False, "error": "Wake word artifact not found."}, status_code=404)
-        try:
-            metadata = json.loads(source_path.read_text(encoding="utf-8"))
-        except Exception:
-            return JSONResponse({"ok": False, "error": "Wake word package is invalid."}, status_code=422)
-        if not isinstance(metadata, dict):
-            return JSONResponse({"ok": False, "error": "Wake word package is invalid."}, status_code=422)
         model_name = Path(str(metadata.get("model") or f"{source_stem}.tflite")).name
         if not (TRAINED_WAKE_WORDS_DIR / model_name).is_file():
             return JSONResponse({"ok": False, "error": "Wake word model not found."}, status_code=404)
         return JSONResponse(
-            _esphome_manifest(metadata),
+            bundle_esphome_manifest(metadata),
             headers={"Cache-Control": "no-store, max-age=0"},
         )
     artifact_path = TRAINED_WAKE_WORDS_DIR / safe_filename
@@ -4257,9 +4402,12 @@ def trained_wake_word_artifact(filename: str):
 def train_now(payload: Dict[str, Any] = None):
     payload = payload or {}
     allow_no_personal = bool(payload.get("allow_no_personal", False))
-    train_openwakeword = normalize_train_openwakeword(
-        payload.get("train_openwakeword"), True
-    )
+    train_microwakeword = _config_bool(payload.get("train_microwakeword"), True)
+    train_openwakeword = normalize_train_openwakeword(payload.get("train_openwakeword"), False)
+    train_nanowakeword_cnn = normalize_train_nanowakeword(payload.get("train_nanowakeword_cnn"), False)
+    train_nanowakeword_gru = normalize_train_nanowakeword(payload.get("train_nanowakeword_gru"), False)
+    if not any((train_microwakeword, train_openwakeword, train_nanowakeword_cnn, train_nanowakeword_gru)):
+        return JSONResponse({"ok": False, "error": "Select at least one wake-word model to train."}, status_code=400)
 
     with STATE_LOCK:
         safe_word = STATE["safe_word"]
@@ -4303,7 +4451,10 @@ def train_now(payload: Dict[str, Any] = None):
             False,
             tts_mode,
             english_accent,
-            train_openwakeword,
+            train_microwakeword=train_microwakeword,
+            train_openwakeword=train_openwakeword,
+            train_nanowakeword_cnn=train_nanowakeword_cnn,
+            train_nanowakeword_gru=train_nanowakeword_gru,
         )
     except Exception as exc:
         with STATE_LOCK:
@@ -4322,7 +4473,10 @@ def train_now(payload: Dict[str, Any] = None):
         "tts_mode": tts_mode,
         "personal_samples_used": takes_received > 0,
         "allow_no_personal": allow_no_personal,
+        "train_microwakeword": train_microwakeword,
         "train_openwakeword": train_openwakeword,
+        "train_nanowakeword_cnn": train_nanowakeword_cnn,
+        "train_nanowakeword_gru": train_nanowakeword_gru,
     }
 
 

@@ -107,6 +107,20 @@ class AutoTrainTests(unittest.TestCase):
         )
         return audio_path
 
+    def test_auto_training_requires_at_least_one_model(self):
+        response = trainer.update_auto_train(
+            {
+                "train_microwakeword": False,
+                "train_openwakeword": False,
+                "train_nanowakeword_cnn": False,
+                "train_nanowakeword_gru": False,
+            }
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Select at least one", response.body.decode("utf-8"))
+        self.assertTrue(trainer.AUTO_TRAIN_CONFIG["train_microwakeword"])
+
     def test_phrase_matching_normalizes_case_punctuation_and_underscores(self):
         self.assertTrue(trainer._transcript_contains_wake_phrase("Okay, HEY TATER!", "hey_tater"))
         self.assertFalse(trainer._transcript_contains_wake_phrase("Turn on the television", "hey tater"))
@@ -591,7 +605,7 @@ class AutoTrainTests(unittest.TestCase):
             },
         )
 
-    def test_trained_word_catalog_keeps_url_alias_for_json_package(self):
+    def test_trained_word_catalog_points_url_alias_at_canonical_bundle(self):
         with tempfile.TemporaryDirectory() as directory:
             trained_dir = Path(directory)
             (trained_dir / "hey_tater.tflite").write_bytes(b"model")
@@ -607,7 +621,7 @@ class AutoTrainTests(unittest.TestCase):
 
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["url"], rows[0]["json_url"])
-        self.assertTrue(rows[0]["json_url"].endswith("/api/trained_wake_words/hey_tater.json"))
+        self.assertTrue(rows[0]["json_url"].endswith("/api/trained_wake_words/hey_tater.wake-bundle.json"))
         self.assertTrue(
             rows[0]["esphome_json_url"].endswith(
                 "/api/trained_wake_words/hey_tater.esphome.json"

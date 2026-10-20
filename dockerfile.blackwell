@@ -43,7 +43,11 @@ COPY --chown=root:root --chmod=0755 \
     requirements.txt \
     /root/mww-scripts/
 
-COPY --chown=root:root --chmod=0644 tts_config.py /root/mww-scripts/tts_config.py
+COPY --chown=root:root --chmod=0644 \
+    tts_config.py \
+    nanowakeword_stage.py \
+    wake_bundle.py \
+    /root/mww-scripts/
 
 # CLI folder
 COPY --chown=root:root cli/ /root/mww-scripts/cli/

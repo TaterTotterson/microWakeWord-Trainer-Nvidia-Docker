@@ -12,6 +12,7 @@ from openwakeword_stage import (
     publish_openwakeword_artifacts,
     _oww_runtime_policy,
 )
+from wake_bundle import publish_micro_wake_word
 
 
 class OpenWakeWordStageTests(unittest.TestCase):
@@ -75,9 +76,12 @@ class OpenWakeWordStageTests(unittest.TestCase):
             staging.mkdir()
             trained.mkdir()
             (trained / "hey_tater.tflite").write_bytes(b"mww")
-            (trained / "hey_tater.json").write_text(
-                json.dumps({"wake_word": "Hey Tater", "model": "hey_tater.tflite"}),
-                encoding="utf-8",
+            publish_micro_wake_word(
+                trained_dir=trained,
+                safe_word="hey_tater",
+                phrase="hey tater",
+                metadata={"wake_word": "Hey Tater", "model": "hey_tater.tflite"},
+                model_path=trained / "hey_tater.tflite",
             )
             (staging / "hey_tater.onnx").write_bytes(b"oww-onnx")
             (staging / "hey_tater.json").write_text(
@@ -105,12 +109,14 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual((trained / "hey_tater.oww.onnx").read_bytes(), b"oww-onnx")
             bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
             self.assertEqual(bundle["type"], "tater_wake_word_bundle")
+            self.assertEqual(bundle["schema_version"], 3)
+            self.assertEqual(bundle["micro_wake_word"]["model"], "hey_tater.tflite")
             self.assertEqual(bundle["open_wake_word"]["recommended_threshold"], 0.91)
             self.assertEqual(bundle["open_wake_word"]["recommended_patience"], 4)
             self.assertEqual(bundle["open_wake_word"]["recommended_confirmation_threshold"], 0.86)
             self.assertEqual(bundle["open_wake_word"]["recommended_confirmation_patience"], 2)
-            metadata = json.loads((trained / "hey_tater.oww.json").read_text(encoding="utf-8"))
-            self.assertEqual(metadata["trainer_revision"], OWW_TRAINER_REVISION)
+            self.assertEqual(bundle["open_wake_word"]["trainer_revision"], OWW_TRAINER_REVISION)
+            self.assertFalse((trained / "hey_tater.oww.json").exists())
 
             catalog = bundle_catalog_fields(trained, "hey_tater", "http://trainer.test")
             self.assertTrue(catalog["dual_model"])

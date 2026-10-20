@@ -80,6 +80,22 @@ class VueTrainerUiTests(unittest.TestCase):
         self.assertIn('@scroll.passive="onConsoleScroll"', app)
         self.assertIn("Jump to latest", app)
 
+    def test_all_wake_word_model_targets_are_selectable(self) -> None:
+        app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
+        store = (REPO_ROOT / "frontend" / "src" / "trainerStore.ts").read_text(encoding="utf-8")
+        styles = (REPO_ROOT / "frontend" / "src" / "trainer.css").read_text(encoding="utf-8")
+        for target in ("trainMicroWakeWord", "trainOpenWakeWord", "trainNanoWakeWordCnn", "trainNanoWakeWordGru"):
+            self.assertIn(target, app)
+            self.assertIn(target, store)
+        for field in ("train_microwakeword", "train_openwakeword", "train_nanowakeword_cnn", "train_nanowakeword_gru"):
+            self.assertIn(field, store)
+        self.assertEqual(app.count('class="model-choice-grid"'), 2)
+        self.assertEqual(app.count('class="nano-architecture-grid"'), 2)
+        self.assertIn("toggleManualNano", app)
+        self.assertIn("toggleAutoNano", app)
+        self.assertIn(".model-choice.active", styles)
+        self.assertIn(".nano-architecture-panel", styles)
+
     def test_saved_positive_and_negative_cards_keep_stt_results_visible(self) -> None:
         app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
         types = (REPO_ROOT / "frontend" / "src" / "types.ts").read_text(encoding="utf-8")
@@ -113,6 +129,8 @@ class VueTrainerUiTests(unittest.TestCase):
                 continue
             source = dockerfile.read_text(encoding="utf-8")
             self.assertIn("COPY --chown=root:root static/ /root/mww-scripts/static/", source)
+            self.assertIn("nanowakeword_stage.py", source)
+            self.assertIn("wake_bundle.py", source)
             self.assertNotIn("npm install", source)
 
         macos_builder = REPO_ROOT / "macos" / "WakeWordTrainer" / "scripts" / "build_app.sh"

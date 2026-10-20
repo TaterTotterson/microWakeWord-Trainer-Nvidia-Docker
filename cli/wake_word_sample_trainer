@@ -392,34 +392,43 @@ else
   export TF_GPU_ALLOCATOR="${TF_GPU_ALLOCATOR:-cuda_malloc_async}"
 fi
 
-# Prefer CUDA libraries installed with the selected TensorFlow interpreter.
-# The dedicated Blackwell wheel uses the preserved system CUDA path instead.
+# Prefer every CUDA library directory installed with the selected TensorFlow
+# interpreter. TensorFlow's pip CUDA stack is split across namespace packages
+# such as cublas, cudnn, cusolver, cusparse, cufft, and nvjitlink; adding only
+# cublas/cudnn can make TensorFlow silently register no GPU devices. The
+# dedicated Blackwell wheel can still use the preserved system CUDA path.
 TRAINING_CUDA_LIBRARY_PATH="$("${PYTHON_BIN:-python}" - <<'PY'
 from importlib.util import find_spec
 from pathlib import Path
 
 
-def package_directory(name):
+def namespace_directories(name):
     try:
         spec = find_spec(name)
     except (ImportError, AttributeError, ValueError):
-        return ""
+        return []
     if spec is None:
-        return ""
-    for location in spec.submodule_search_locations or ():
-        if location:
-            return str(Path(location).resolve())
+        return []
+
+    locations = [
+        Path(location).resolve()
+        for location in spec.submodule_search_locations or ()
+        if location
+    ]
     origin = spec.origin
     if origin and origin not in {"built-in", "frozen"}:
-        return str(Path(origin).resolve().parent)
-    return ""
+        locations.append(Path(origin).resolve().parent)
+    return list(dict.fromkeys(locations))
 
 
-paths = [
-    package_directory("nvidia.cublas.lib"),
-    package_directory("nvidia.cudnn.lib"),
-]
-print(":".join(dict.fromkeys(path for path in paths if path)))
+paths = []
+for nvidia_root in namespace_directories("nvidia"):
+    paths.extend(
+        library_dir.resolve()
+        for library_dir in sorted(nvidia_root.glob("*/lib"))
+        if library_dir.is_dir()
+    )
+print(":".join(str(path) for path in dict.fromkeys(paths)))
 PY
 )"
 if [ -n "${TRAINING_CUDA_LIBRARY_PATH}" ]; then

@@ -6,20 +6,25 @@ microWakeWord JSON/TFLite URLs remain stable for Tater and ESPHome clients.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import shutil
 import subprocess
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
+
+from wake_bundle import (
+    BUNDLE_SUFFIX,
+    bundle_catalog_fields as canonical_bundle_catalog_fields,
+    publish_open_wake_word,
+    sha256_file,
+)
 
 
 OWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/openWakeWord-Trainer.git"
 OWW_TRAINER_REVISION = "d4329f76ecf09da7ca8fdf29b32f92f2a7f0d57b"
-OWW_BUNDLE_SUFFIX = ".wake-bundle.json"
+OWW_BUNDLE_SUFFIX = BUNDLE_SUFFIX
 OWW_METADATA_SUFFIX = ".oww.json"
 
 
@@ -154,14 +159,6 @@ def prepare_openwakeword_stage(
     return cmd, trainer_root, env, staging_dir
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def _read_json(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -220,7 +217,6 @@ def publish_openwakeword_artifacts(
 
     mappings: list[tuple[Path, Path]] = [
         (source_onnx, destination / f"{safe_word}.oww.onnx"),
-        (source_metadata, destination / f"{safe_word}{OWW_METADATA_SUFFIX}"),
     ]
     optional = (
         (staging / f"{safe_word}.onnx.data", destination / f"{safe_word}.oww.onnx.data"),
@@ -236,16 +232,14 @@ def publish_openwakeword_artifacts(
         shutil.copy2(source, temporary)
         temporary.replace(target)
 
-    oww_metadata_path = destination / f"{safe_word}{OWW_METADATA_SUFFIX}"
     oww_metadata = _read_json(source_metadata)
     oww_artifacts = {
         target.suffix.lstrip(".") or target.name: {
             "file": target.name,
-            "sha256": _sha256(target),
+            "sha256": sha256_file(target),
             "size_bytes": target.stat().st_size,
         }
-        for source, target in mappings
-        if source != source_metadata
+        for _source, target in mappings
     }
     oww_metadata.update(
         {
@@ -256,83 +250,22 @@ def publish_openwakeword_artifacts(
             "trainer_revision": OWW_TRAINER_REVISION,
         }
     )
-    temporary_metadata = oww_metadata_path.with_name(oww_metadata_path.name + ".tmp")
-    temporary_metadata.write_text(json.dumps(oww_metadata, indent=2) + "\n", encoding="utf-8")
-    temporary_metadata.replace(oww_metadata_path)
-
-    mww_metadata_path = destination / f"{safe_word}.json"
-    mww_metadata = _read_json(mww_metadata_path)
-    mww_model_name = Path(str(mww_metadata.get("model") or f"{safe_word}.tflite")).name
-    mww_model_path = destination / mww_model_name
-    if not mww_metadata_path.is_file() or not mww_model_path.is_file():
-        raise RuntimeError("microWakeWord artifacts disappeared before bundle publication")
-
     calibration = oww_metadata.get("calibration")
     if not isinstance(calibration, dict):
         calibration = {}
     threshold, patience, confirmation_threshold, confirmation_patience = _oww_runtime_policy(calibration)
-    bundle = {
-        "schema_version": 1,
-        "type": "tater_wake_word_bundle",
-        "wake_word": str(mww_metadata.get("wake_word") or phrase),
-        "key": safe_word,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "micro_wake_word": {
-            "manifest": mww_metadata_path.name,
-            "model": mww_model_path.name,
-            "manifest_sha256": _sha256(mww_metadata_path),
-            "model_sha256": _sha256(mww_model_path),
-        },
-        "open_wake_word": {
-            "metadata": oww_metadata_path.name,
-            "metadata_sha256": _sha256(oww_metadata_path),
-            "artifacts": oww_artifacts,
-            "recommended_threshold": threshold,
-            "recommended_patience": patience,
-            "recommended_confirmation_threshold": confirmation_threshold,
-            "recommended_confirmation_patience": confirmation_patience,
-        },
-    }
-    bundle_path = destination / f"{safe_word}{OWW_BUNDLE_SUFFIX}"
-    temporary_bundle = bundle_path.with_name(bundle_path.name + ".tmp")
-    temporary_bundle.write_text(json.dumps(bundle, indent=2) + "\n", encoding="utf-8")
-    temporary_bundle.replace(bundle_path)
-    return bundle_path
+    return publish_open_wake_word(
+        trained_dir=destination,
+        safe_word=safe_word,
+        phrase=phrase,
+        metadata=oww_metadata,
+        artifacts=oww_artifacts,
+        recommended_threshold=threshold,
+        recommended_patience=patience,
+        recommended_confirmation_threshold=confirmation_threshold,
+        recommended_confirmation_patience=confirmation_patience,
+    )
 
 
 def bundle_catalog_fields(trained_dir: Path, safe_word: str, base_url: str = "") -> dict[str, Any]:
-    destination = Path(trained_dir).resolve()
-    bundle_path = destination / f"{safe_word}{OWW_BUNDLE_SUFFIX}"
-    if not bundle_path.is_file():
-        return {"dual_model": False}
-    bundle = _read_json(bundle_path)
-    oww = bundle.get("open_wake_word") if isinstance(bundle.get("open_wake_word"), dict) else {}
-    prefix = str(base_url or "").rstrip("/")
-
-    def url_for(filename: Any) -> str:
-        from urllib.parse import quote
-
-        name = Path(str(filename or "")).name
-        if not name:
-            return ""
-        path = f"/api/trained_wake_words/{quote(name)}"
-        return f"{prefix}{path}" if prefix else path
-
-    artifacts = oww.get("artifacts") if isinstance(oww.get("artifacts"), dict) else {}
-    onnx = next(
-        (row for row in artifacts.values() if isinstance(row, dict) and str(row.get("file", "")).endswith(".onnx")),
-        {},
-    )
-    micro = bundle.get("micro_wake_word") if isinstance(bundle.get("micro_wake_word"), dict) else {}
-    if not onnx or not str(micro.get("manifest") or "").endswith(".json") or not str(micro.get("model") or "").endswith(".tflite"):
-        return {"dual_model": False}
-    return {
-        "dual_model": True,
-        "bundle_url": url_for(bundle_path.name),
-        "openwakeword_metadata_url": url_for(oww.get("metadata")),
-        "openwakeword_model_url": url_for(onnx.get("file")),
-        "openwakeword_threshold": oww.get("recommended_threshold"),
-        "openwakeword_patience": oww.get("recommended_patience"),
-        "openwakeword_confirmation_threshold": oww.get("recommended_confirmation_threshold"),
-        "openwakeword_confirmation_patience": oww.get("recommended_confirmation_patience"),
-    }
+    return canonical_bundle_catalog_fields(trained_dir, safe_word, base_url)

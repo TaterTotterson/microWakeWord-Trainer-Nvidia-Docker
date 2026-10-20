@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import os
+import re
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,6 +13,18 @@ import trainer_server as trainer
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _training_cuda_path_probe() -> str:
+    source = (REPO_ROOT / "cli" / "wake_word_sample_trainer").read_text(encoding="utf-8")
+    match = re.search(
+        r'TRAINING_CUDA_LIBRARY_PATH="\$\("\$\{PYTHON_BIN:-python\}" - <<\'PY\'\n(?P<probe>.*?)\nPY\n\)"',
+        source,
+        flags=re.DOTALL,
+    )
+    if match is None:
+        raise AssertionError("Could not locate the TensorFlow CUDA library path probe")
+    return match.group("probe")
 
 
 class TrainingEnvironmentTests(unittest.TestCase):
@@ -48,8 +63,35 @@ class TrainingEnvironmentTests(unittest.TestCase):
         self.assertIn("TensorFlow GPU preflight", trainer_script)
         self.assertIn("NVIDIA GPU passthrough is present", trainer_script)
         self.assertIn('${INITIAL_TRAINING_DEVICE} training', trainer_script)
-        self.assertIn('package_directory("nvidia.cublas.lib")', trainer_script)
-        self.assertIn('package_directory("nvidia.cudnn.lib")', trainer_script)
+        self.assertIn('namespace_directories("nvidia")', trainer_script)
+        self.assertIn('nvidia_root.glob("*/lib")', trainer_script)
+
+        entrypoint = (REPO_ROOT / "train_wake_word").read_text(encoding="utf-8")
+        self.assertIn('TF_CPP_MIN_LOG_LEVEL="${TF_CPP_MIN_LOG_LEVEL:-2}"', entrypoint)
+
+    def test_tensorflow_cuda_probe_includes_every_pip_nvidia_library(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            expected = [
+                root / "nvidia" / package / "lib"
+                for package in ("cublas", "cudnn", "cufft", "cusolver", "cusparse", "nvjitlink")
+            ]
+            for library_dir in expected:
+                library_dir.mkdir(parents=True)
+            (root / "nvidia" / "not-a-library").mkdir(parents=True)
+
+            env = dict(os.environ, PYTHONPATH=str(root))
+            result = subprocess.run(
+                [sys.executable, "-S", "-"],
+                input=_training_cuda_path_probe(),
+                text=True,
+                capture_output=True,
+                check=False,
+                env=env,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip().split(os.pathsep), [str(path.resolve()) for path in expected])
 
     def test_blackwell_setup_explicitly_installs_and_checks_tensorboard(self) -> None:
         setup = (REPO_ROOT / "cli" / "setup_blackwell_venv").read_text(encoding="utf-8")

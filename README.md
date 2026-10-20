@@ -9,7 +9,7 @@
   </a>
 </p>
 
-Train paired microWakeWord and openWakeWord models in Docker with NVIDIA/CUDA acceleration, modern multilingual MWW TTS ensembles, device-captured samples, reviewed false-wake negatives, live training logs, and local wake-word links for Tater Native satellites.
+Train any mix of microWakeWord, openWakeWord, NanoWakeWord CNN, and NanoWakeWord GRU models in Docker with NVIDIA/CUDA acceleration, modern multilingual TTS, device-captured samples, reviewed false-wake negatives, live training logs, and local wake-word links for Tater Native satellites.
 
 Real samples come from device-captured wake audio, close misses, or manual uploads. Every saved sample is normalized to `16 kHz / mono / 16-bit PCM WAV` before training.
 
@@ -24,7 +24,7 @@ docker pull ghcr.io/tatertotterson/microwakeword:latest
 Tagged releases also publish matching immutable image tags:
 
 ```bash
-docker pull ghcr.io/tatertotterson/microwakeword:v17
+docker pull ghcr.io/tatertotterson/microwakeword:v38
 ```
 
 The release tag must match `VERSION`. Update `WHATS_NEW.md` before tagging; the Docker workflow prepends it to GitHub's automatically generated release notes.
@@ -34,7 +34,7 @@ Python 3.13 TensorFlow build for `sm_120`:
 
 ```bash
 docker pull ghcr.io/tatertotterson/microwakeword:blackwell
-docker pull ghcr.io/tatertotterson/microwakeword:v17-blackwell
+docker pull ghcr.io/tatertotterson/microwakeword:v38-blackwell
 ```
 
 Use the Blackwell image only for RTX 50-series cards. It includes the
@@ -56,9 +56,9 @@ docker run -d \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v17` when you want to pin a known release instead of tracking `latest`.
+Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v38` when you want to pin a known release instead of tracking `latest`.
 For RTX 50-series cards, use `ghcr.io/tatertotterson/microwakeword:blackwell`
-or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v17-blackwell`
+or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v38-blackwell`
 in the same `docker run` command.
 
 The flags:
@@ -84,7 +84,7 @@ If you change `REC_PORT`, open that port instead and use the same port in the sa
 ## What The UI Does
 
 - The entire interface is reactive Vue 3 + TypeScript, following the same typed component pattern as Tater's newer UI surfaces.
-- `Trainer` starts a wake-word session, shows positive/negative sample counts, and launches an MWW + OWW build by default.
+- `Trainer` starts a wake-word session, shows positive/negative sample counts, and lets you select MWW, OWW, NWW-CNN, NWW-GRU, or any combination. MWW is the safe default.
 - `Auto Training` transcribes real wake triggers, promotes phrase-misses to hard negatives, schedules retraining, and refreshes Tater Native satellites.
 - `Captured Audio` reviews clips sent by Tater Native or ESPHome sats, including wake hits, close misses, and false wakes.
 - `Samples` plays, removes, clears, and manually imports personal or negative samples.
@@ -214,16 +214,18 @@ The default Tater URL, `http://127.0.0.1:8501`, assumes the documented host netw
 2. Choose the language and TTS source.
 3. Optionally check browser pronunciation with `System preview`.
 4. Review the positive and negative sample counts.
-5. Leave `Build the openWakeWord companion model` enabled for a dual-model bundle, or turn it off for an MWW-only run.
+5. Select any combination of `MicroWakeWord`, `openWakeWord`, `NanoWakeWord · CNN`, and `NanoWakeWord · GRU`. Selecting every option trains every model.
 6. Click `Start training` and watch the popup training console.
 
 Personal samples are optional. Training can run with zero personal samples after confirmation, using generated TTS samples and the stock negative datasets.
 
 Reviewed negative samples are converted into `/data/work/reviewed_negative_features/` and inserted into the training YAML as a hard-negative feature set when present.
 
-The first dual-model run downloads a pinned revision of Tater's openWakeWord trainer and creates a separate environment under `/data/openwakeword`. Those assets are cached for later runs. OWW training starts only after MWW succeeds, publishes through a staging directory, and cannot overwrite the existing MWW JSON/TFLite pair. Calibration automatically packages a stricter OWW-only threshold and a separate recall-preserving threshold for MWW + OWW confirmation; users do not enter these values manually. The upstream OWW custom-training path is strongest for English; validate other languages carefully or use the MWW-only checkbox.
+The first OWW or NWW run downloads its separate trainer stack and caches it for later runs. NanoWakeWord reuses the direct-generated positive TTS corpus under `/data/work/wake_word_samples`, then adds personal positives, reviewed negatives, and its own adversarial negatives and held-out validation clips. CNN is the lightweight default architecture; GRU can be selected alone or alongside CNN. The streaming gate automatically calibrates threshold and consecutive-hit patience, and the validated policy is stored with each model in the bundle. Each successful stage updates only its section of the canonical Tater bundle while removing obsolete NWW architectures.
 
 On RTX 50-series / Blackwell GPUs, the Blackwell Docker image keeps sample generation and augmentation in the normal Python 3.12 trainer environment, then runs only the TensorFlow training/export stage in `/data/.venv-blackwell` with Python 3.13 and the Blackwell-native TensorFlow wheel.
+
+Immediately before TensorFlow starts, the trainer adds every pip-installed NVIDIA runtime library from the selected training environment—including cuSolver, cuSPARSE, cuFFT, and nvJitLink—to the child process library path. A GPU preflight prints the number of TensorFlow devices it registered, so a visible NVIDIA GPU cannot fall back to CPU without an explicit warning in the training log.
 
 ---
 
@@ -289,44 +291,49 @@ The trainer also syncs Tater-ready wake-word artifacts into:
 
 ```text
 /data/trained_wake_words/<wake_word>.tflite
-/data/trained_wake_words/<wake_word>.json
-/data/trained_wake_words/<wake_word>.oww.onnx         # Echo openWakeWord classifier
-/data/trained_wake_words/<wake_word>.oww.json
+/data/trained_wake_words/<wake_word>.oww.onnx         # openWakeWord classifier
 /data/trained_wake_words/<wake_word>.oww.verifier.pkl # when positive + negative clips exist
+/data/trained_wake_words/<wake_word>.nww.cnn.onnx     # NanoWakeWord CNN classifier
+/data/trained_wake_words/<wake_word>.nww.gru.onnx     # NanoWakeWord GRU classifier
 /data/trained_wake_words/<wake_word>.wake-bundle.json
+/data/trained_wake_words/<wake_word>.esphome.json     # MWW-only ESPHome manifest
 ```
 
-The original `<wake_word>.json` and `<wake_word>.tflite` names are unchanged for existing Tater and ESPHome clients. The additive bundle manifest links the MWW TFLite and OWW ONNX models, their SHA-256 hashes, and the calibrated OWW threshold/patience. The `Wake Words` tab exposes the MWW, OWW, and bundle links.
+Tater always receives `<wake_word>.wake-bundle.json`. Schema v3 embeds the complete metadata for every model that has been built, including hashes, thresholds, validation results, and available NWW architectures; it does not point at a second MWW metadata JSON. ESPHome remains deliberately separate and MWW-only through `<wake_word>.esphome.json`.
 
-The JSON keeps the standard microWakeWord fields for compatibility:
+When MWW is selected, the bundle's `micro_wake_word` section keeps the standard microWakeWord fields:
 
 ```json
 {
-  "micro": {
-    "probability_cutoff": 0.97,
-    "sliding_window_size": 6
+  "micro_wake_word": {
+    "micro": {
+      "probability_cutoff": 0.97,
+      "sliding_window_size": 6
+    }
   }
 }
 ```
 
-It also includes Tater Native metadata used by newer satellites and the Tater settings UI:
+That same embedded section includes Tater Native metadata used by newer satellites and the Tater settings UI:
 
 ```json
 {
-  "model_format": "tflite_stream_state_internal_quant",
-  "quantization": "int8",
-  "sample_rate": 16000,
-  "tater_native": {
-    "format_version": 1,
-    "wake_threshold": 0.97,
-    "wake_sliding_window": 6,
-    "close_miss_threshold": 0.80,
-    "frontend": {
-      "name": "tflm_microfrontend",
-      "sample_rate": 16000,
-      "feature_duration_ms": 30,
-      "feature_step_ms": 10,
-      "feature_size": 40
+  "micro_wake_word": {
+    "model_format": "tflite_stream_state_internal_quant",
+    "quantization": "int8",
+    "sample_rate": 16000,
+    "tater_native": {
+      "format_version": 1,
+      "wake_threshold": 0.97,
+      "wake_sliding_window": 6,
+      "close_miss_threshold": 0.80,
+      "frontend": {
+        "name": "tflm_microfrontend",
+        "sample_rate": 16000,
+        "feature_duration_ms": 30,
+        "feature_step_ms": 10,
+        "feature_size": 40
+      }
     }
   }
 }

@@ -37,7 +37,10 @@ const defaultAutoForm = (): AutoTrainForm => ({
   advertised_base_url: "",
   tater_url: "http://127.0.0.1:8501",
   notify_satellites: true,
-  train_openwakeword: true,
+  train_microwakeword: true,
+  train_openwakeword: false,
+  train_nanowakeword_cnn: false,
+  train_nanowakeword_gru: false,
 });
 
 export const trainer = reactive({
@@ -48,7 +51,10 @@ export const trainer = reactive({
   language: "en",
   englishAccent: "mixed",
   ttsMode: "hybrid",
-  trainOpenWakeWord: true,
+  trainMicroWakeWord: true,
+  trainOpenWakeWord: false,
+  trainNanoWakeWordCnn: false,
+  trainNanoWakeWordGru: false,
   languages: [{ code: "en", label: "English (en)", engines: ["omnivoice"] }] as LanguageOption[],
   englishAccents: [
     { code: "mixed", label: "Mixed English" },
@@ -374,6 +380,15 @@ export async function refreshAuto(populate = false): Promise<AutoTrainPayload> {
 }
 
 export async function saveAuto(): Promise<void> {
+  if (![
+    trainer.autoForm.train_microwakeword,
+    trainer.autoForm.train_openwakeword,
+    trainer.autoForm.train_nanowakeword_cnn,
+    trainer.autoForm.train_nanowakeword_gru,
+  ].some(Boolean)) {
+    notify("Select at least one model for Auto Training.", "warning");
+    return;
+  }
   setBusy("auto", true);
   try {
     const payload = await putJson<AutoTrainPayload>("/api/auto_train", trainer.autoForm);
@@ -487,6 +502,15 @@ export async function copyWakeWord(url: string): Promise<void> {
 }
 
 export async function startTraining(): Promise<void> {
+  if (![
+    trainer.trainMicroWakeWord,
+    trainer.trainOpenWakeWord,
+    trainer.trainNanoWakeWordCnn,
+    trainer.trainNanoWakeWordGru,
+  ].some(Boolean)) {
+    notify("Select at least one wake-word model to train.", "warning");
+    return;
+  }
   await Promise.all([refreshSession(), refreshSamples(true)]);
   let allowNoPersonal = false;
   if (!personalCount.value) {
@@ -499,7 +523,10 @@ export async function startTraining(): Promise<void> {
   try {
     await postJson("/api/train", {
       allow_no_personal: allowNoPersonal,
+      train_microwakeword: trainer.trainMicroWakeWord,
       train_openwakeword: trainer.trainOpenWakeWord,
+      train_nanowakeword_cnn: trainer.trainNanoWakeWordCnn,
+      train_nanowakeword_gru: trainer.trainNanoWakeWordGru,
     });
     beginTrainingPoll();
   } catch (error) {
