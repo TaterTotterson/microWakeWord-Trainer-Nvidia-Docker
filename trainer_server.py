@@ -2865,6 +2865,20 @@ def _append_train_log(line: str):
             del buf[: (len(buf) - 250)]
 
 
+def _append_persistent_train_log(log_path: Path, line: str) -> None:
+    """Record server-side stage messages in both the UI and saved log."""
+    clean_line = (line or "").rstrip("\n")
+    _append_train_log(clean_line)
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as log_file:
+            log_file.write(clean_line + "\n")
+            log_file.flush()
+    except Exception:
+        # A logging failure must not hide the original training result.
+        pass
+
+
 def _clear_training_log():
     log_path = DATA_DIR / "recorder_training.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -3333,12 +3347,20 @@ def _run_openwakeword_training(
     if rc != 0:
         _append_train_log(f"✗ openWakeWord training failed (exit_code={rc}); microWakeWord was preserved")
         return rc
-    bundle_path = publish_openwakeword_artifacts(
-        staging_dir=staging_dir,
-        trained_dir=TRAINED_WAKE_WORDS_DIR,
-        safe_word=safe_word,
-        phrase=phrase,
-    )
+    try:
+        bundle_path = publish_openwakeword_artifacts(
+            staging_dir=staging_dir,
+            trained_dir=TRAINED_WAKE_WORDS_DIR,
+            safe_word=safe_word,
+            phrase=phrase,
+        )
+    except Exception as error:
+        _append_persistent_train_log(
+            log_path,
+            "✗ openWakeWord model was not published: "
+            f"{error}. Other selected model stages will continue.",
+        )
+        return 1
     _append_train_log(f"✓ openWakeWord added to bundle: {bundle_path.name}")
     return 0
 
@@ -3576,7 +3598,7 @@ def _run_training_background(
         if TRAINING_STOP_EVENT.is_set():
             _append_train_log("→ Training stopped cleanly for session stop.")
         else:
-            _append_train_log(f"✗ Training crashed: {e!r}")
+            _append_persistent_train_log(log_path, f"✗ Training crashed: {e!r}")
         with STATE_LOCK:
             STATE["training"]["exit_code"] = rc
 

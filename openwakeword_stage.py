@@ -23,9 +23,16 @@ from wake_bundle import (
 
 
 OWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/openWakeWord-Trainer.git"
-OWW_TRAINER_REVISION = "d4329f76ecf09da7ca8fdf29b32f92f2a7f0d57b"
+OWW_TRAINER_REVISION = "6bba88e0fd2e2e949b9985d6d6974be455e21f65"
 OWW_BUNDLE_SUFFIX = BUNDLE_SUFFIX
 OWW_METADATA_SUFFIX = ".oww.json"
+OWW_FEATURE_CACHE_POLICY = "cpu-onnx-v1"
+OWW_GENERATED_FEATURE_FILES = (
+    "positive_features_train.npy",
+    "negative_features_train.npy",
+    "positive_features_test.npy",
+    "negative_features_test.npy",
+)
 
 
 def normalize_train_openwakeword(value: Any, default: bool = True) -> bool:
@@ -40,6 +47,34 @@ def _valid_trainer_root(path: Path) -> bool:
     return (path / "train_openwakeword.sh").is_file() and (
         path / "scripts" / "train_openwakeword.py"
     ).is_file()
+
+
+def _apply_feature_cache_policy(oww_root: Path, safe_word: str, *, log=lambda _line: None) -> None:
+    """Invalidate legacy CUDA embeddings once so training matches CPU ONNX runtime."""
+    feature_dir = Path(oww_root) / "output" / safe_word / safe_word
+    marker = feature_dir / ".tater-feature-cache-policy"
+    try:
+        if marker.read_text(encoding="utf-8").strip() == OWW_FEATURE_CACHE_POLICY:
+            return
+    except OSError:
+        pass
+
+    removed = 0
+    for name in OWW_GENERATED_FEATURE_FILES:
+        feature_path = feature_dir / name
+        try:
+            feature_path.unlink()
+            removed += 1
+        except FileNotFoundError:
+            pass
+
+    feature_dir.mkdir(parents=True, exist_ok=True)
+    marker.write_text(OWW_FEATURE_CACHE_POLICY + "\n", encoding="utf-8")
+    if removed:
+        log(
+            "→ Rebuilding cached openWakeWord embeddings once with CPU ONNX "
+            "to match satellite inference"
+        )
 
 
 def ensure_openwakeword_trainer(
@@ -117,6 +152,7 @@ def prepare_openwakeword_stage(
     if staging_dir.exists():
         shutil.rmtree(staging_dir)
     staging_dir.mkdir(parents=True, exist_ok=True)
+    _apply_feature_cache_policy(oww_root, safe_word, log=log)
 
     env = dict(base_env)
     env.update(
@@ -128,10 +164,12 @@ def prepare_openwakeword_stage(
             "OWW_PERSONAL_DIR": str(Path(personal_dir).resolve()),
             "OWW_NEGATIVE_DIR": str(Path(negative_dir).resolve()),
             "OWW_TRAINED_DIR": str(staging_dir),
+            "OWW_FEATURE_DEVICE": "cpu",
         }
     )
-    # Keep the class balance identical to the validated Apple trainer. The
-    # upstream GPU default made the NVIDIA model overly conservative.
+    # Match the validated Apple class balance while CUDA remains dedicated to
+    # model optimization. Feature extraction stays on CPU ONNX above so its
+    # embeddings match calibration and satellite inference.
     env.setdefault("OWW_DEFAULT_NEGATIVE_BATCH", "256")
     env.setdefault("OWW_DEFAULT_VALIDATION_BATCH", "2048")
     if env.get("MWW_BLACKWELL_IMAGE") == "1":

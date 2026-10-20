@@ -69,6 +69,65 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual(env["OWW_EXPORT_DIR"], str(staging))
             self.assertEqual(env["OWW_DEFAULT_NEGATIVE_BATCH"], "256")
             self.assertEqual(env["OWW_DEFAULT_VALIDATION_BATCH"], "2048")
+            self.assertEqual(env["OWW_FEATURE_DEVICE"], "cpu")
+
+            feature_dir = root / "data" / "openwakeword" / "output" / "hey_tater" / "hey_tater"
+            self.assertEqual(
+                (feature_dir / ".tater-feature-cache-policy").read_text(encoding="utf-8").strip(),
+                "cpu-onnx-v1",
+            )
+
+    def test_prepare_invalidates_legacy_cuda_feature_cache_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            trainer_root = root / "oww-trainer"
+            (trainer_root / "scripts").mkdir(parents=True)
+            (trainer_root / "train_openwakeword.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+            (trainer_root / "scripts" / "train_openwakeword.py").write_text("", encoding="utf-8")
+            personal = root / "personal"
+            negative = root / "negative"
+            personal.mkdir()
+            negative.mkdir()
+            feature_dir = root / "data" / "openwakeword" / "output" / "hey_tater" / "hey_tater"
+            feature_dir.mkdir(parents=True)
+            feature_paths = [
+                feature_dir / name
+                for name in (
+                    "positive_features_train.npy",
+                    "negative_features_train.npy",
+                    "positive_features_test.npy",
+                    "negative_features_test.npy",
+                )
+            ]
+            for path in feature_paths:
+                path.write_bytes(b"legacy-gpu-features")
+
+            messages = []
+            prepare_openwakeword_stage(
+                phrase="hey tater",
+                safe_word="hey_tater",
+                data_dir=root / "data",
+                personal_dir=personal,
+                negative_dir=negative,
+                trained_dir=root / "trained",
+                environ={**os.environ, "TATER_OWW_TRAINER_DIR": str(trainer_root)},
+                log=messages.append,
+            )
+
+            self.assertFalse(any(path.exists() for path in feature_paths))
+            self.assertTrue(any("CPU ONNX" in message for message in messages))
+
+            feature_paths[0].write_bytes(b"new-cpu-features")
+            prepare_openwakeword_stage(
+                phrase="hey tater",
+                safe_word="hey_tater",
+                data_dir=root / "data",
+                personal_dir=personal,
+                negative_dir=negative,
+                trained_dir=root / "trained",
+                environ={**os.environ, "TATER_OWW_TRAINER_DIR": str(trainer_root)},
+            )
+            self.assertTrue(feature_paths[0].exists())
 
     def test_publish_keeps_mww_urls_and_adds_dual_bundle(self):
         with tempfile.TemporaryDirectory() as tmp:
