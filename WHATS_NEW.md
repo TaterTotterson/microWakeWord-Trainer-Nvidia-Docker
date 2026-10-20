@@ -1,5 +1,5 @@
-- Added selectable MicroWakeWord, openWakeWord, NanoWakeWord CNN, and NanoWakeWord GRU training, including training every selected model in one run.
-- Added one canonical Tater wake bundle that can carry any trained model combination while retaining the separate MicroWakeWord-only ESPHome manifest.
-- Pinned NanoWakeWord training to Tater's tested helper revision with shared TTS, personal positive/negative samples, streaming validation, calibrated runtime policy, and corrective retry support.
-- Fixed TensorFlow GPU discovery for both regular NVIDIA and Blackwell images by exposing the complete pip-installed CUDA library set, including cuSolver, cuSPARSE, cuFFT, and nvJitLink.
-- Removed local paths and bulky training diagnostics from published bundles and pruned obsolete companion metadata and DNN artifacts.
+- Fixed NanoWakeWord training on NVIDIA by generating features on the same CPU path used by satellite runtime validation while retaining CUDA acceleration for augmentation and model training.
+- Invalidated incompatible NVIDIA NanoWakeWord feature caches once so affected models are rebuilt from correct features; later training runs continue to reuse the corrected cache.
+- Aligned openWakeWord negative sampling with the successful Apple trainer configuration to restore wake-word recall without weakening its quality gate.
+- Pinned NanoWakeWord to PyTorch 2.8 with CUDA 12.6 for standard NVIDIA cards and CUDA 12.8 for Blackwell cards, preventing dependency installation from silently replacing the tested runtime.
+- Added publication safeguards so failed openWakeWord or NanoWakeWord quality validation preserves the last known-good model and bundle entry.
