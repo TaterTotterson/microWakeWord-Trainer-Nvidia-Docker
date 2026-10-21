@@ -120,7 +120,19 @@ def publish_nanowakeword_artifacts(*, staging_dir: Path, trained_dir: Path, safe
     if not isinstance(metadata, dict):
         raise RuntimeError("NanoWakeWord produced invalid metadata")
     validation = metadata.get("validation")
-    if not isinstance(validation, dict) or validation.get("passed") is not True:
+    quality = metadata.get("quality")
+    if isinstance(quality, dict):
+        validation = quality.get("validation")
+        validation_passed = (
+            quality.get("passed") is True
+            and isinstance(validation, dict)
+            and validation.get("passed") is True
+        )
+    else:
+        # Retain compatibility with NanoWakeWord trainer revisions that wrote
+        # the streaming report directly under the legacy validation key.
+        validation_passed = isinstance(validation, dict) and validation.get("passed") is True
+    if not validation_passed:
         raise RuntimeError(
             "NanoWakeWord failed streaming validation; the existing published model was preserved"
         )

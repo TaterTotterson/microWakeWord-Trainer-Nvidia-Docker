@@ -23,7 +23,7 @@ from wake_bundle import (
 
 
 OWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/openWakeWord-Trainer.git"
-OWW_TRAINER_REVISION = "6bba88e0fd2e2e949b9985d6d6974be455e21f65"
+OWW_TRAINER_REVISION = "e6f3eba4d421c8a53f489b4f7bdda7b189ccb8d3"
 OWW_BUNDLE_SUFFIX = BUNDLE_SUFFIX
 OWW_METADATA_SUFFIX = ".oww.json"
 OWW_FEATURE_CACHE_POLICY = "cpu-onnx-v1"

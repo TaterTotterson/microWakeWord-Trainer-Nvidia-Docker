@@ -83,6 +83,41 @@ class NanoWakeWordStageTests(unittest.TestCase):
             self.assertEqual(variant["recommended_threshold"], 0.99)
             self.assertEqual(variant["recommended_patience"], 3)
 
+    def test_publish_accepts_nested_quality_report_from_pinned_trainer(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            staging = root / "staging"
+            trained = root / "trained"
+            staging.mkdir()
+            (staging / "hey_tater.onnx").write_bytes(b"cnn")
+            (staging / "hey_tater.json").write_text(
+                json.dumps(
+                    {
+                        "quality": {
+                            "passed": True,
+                            "validation": {"passed": True},
+                            "failures": [],
+                        },
+                        "recommended_threshold": 0.99,
+                        "recommended_patience": 4,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            bundle_path = publish_nanowakeword_artifacts(
+                staging_dir=staging,
+                trained_dir=trained,
+                safe_word="hey_tater",
+                phrase="hey tater",
+                architecture="cnn",
+            )
+
+            variant = json.loads(bundle_path.read_text(encoding="utf-8"))["nano_wake_word"]["variants"]["cnn"]
+            self.assertEqual((trained / "hey_tater.nww.cnn.onnx").read_bytes(), b"cnn")
+            self.assertEqual(variant["recommended_threshold"], 0.99)
+            self.assertEqual(variant["recommended_patience"], 4)
+
     def test_stage_uses_nanowakeword_compatible_cuda_wheels(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

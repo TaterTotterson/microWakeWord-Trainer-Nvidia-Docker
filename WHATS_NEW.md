@@ -1,3 +1,3 @@
-- Fixed NVIDIA openWakeWord training by generating embeddings through the same CPU ONNX path used for calibration and satellite inference while retaining CUDA acceleration for model training.
-- Added a one-time rebuild of incompatible cached openWakeWord embeddings without regenerating the existing TTS audio corpus.
-- Replaced the ambiguous `Exit 999` response for model quality rejection with a clear saved-log message, while preserving the existing published model and continuing any other selected model stages.
+- Stabilized NVIDIA openWakeWord results by using a reproducible training seed and correctly tracking validation false positives before increasing negative-example weighting.
+- Fixed successful NanoWakeWord models being rejected when the pinned trainer reports streaming validation under its current nested quality schema.
+- Kept validation bounded to one pass with no automatic retry loop; failed models leave the previously published model untouched and report the quality failure clearly.
