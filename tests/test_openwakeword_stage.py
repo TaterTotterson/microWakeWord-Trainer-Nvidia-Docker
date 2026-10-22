@@ -235,7 +235,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual(catalog["openwakeword_confirmation_threshold"], 0.86)
             self.assertTrue(catalog["openwakeword_confirmation_required"])
 
-    def test_publish_rejects_confirmation_required_model_without_micro(self):
+    def test_publish_warns_but_allows_confirmation_required_model_without_micro(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             staging = root / "staging"
@@ -255,13 +255,16 @@ class OpenWakeWordStageTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with self.assertRaisesRegex(RuntimeError, "requires MicroWakeWord confirmation"):
-                publish_openwakeword_artifacts(
-                    staging_dir=staging,
-                    trained_dir=trained,
-                    safe_word="hey_tater",
-                    phrase="hey tater",
-                )
+            bundle_path = publish_openwakeword_artifacts(
+                staging_dir=staging,
+                trained_dir=trained,
+                safe_word="hey_tater",
+                phrase="hey tater",
+            )
+
+            bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+            self.assertTrue(bundle["open_wake_word"]["confirmation_required"])
+            self.assertEqual(bundle["open_wake_word"]["quality_status"], "passed")
 
     def test_publish_refuses_missing_onnx_companion(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -285,7 +288,28 @@ class OpenWakeWordStageTests(unittest.TestCase):
                     phrase="hey tater",
                 )
 
-    def test_publish_rejects_failed_calibration_without_replacing_model(self):
+    def test_publish_allows_model_without_quality_results(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            staging = root / "staging"
+            trained = root / "trained"
+            staging.mkdir()
+            trained.mkdir()
+            (staging / "hey_tater.onnx").write_bytes(b"oww-onnx")
+            (staging / "hey_tater.json").write_text("{}", encoding="utf-8")
+
+            bundle_path = publish_openwakeword_artifacts(
+                staging_dir=staging,
+                trained_dir=trained,
+                safe_word="hey_tater",
+                phrase="hey tater",
+            )
+
+            bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+            self.assertEqual(bundle["open_wake_word"]["quality_status"], "not_evaluated")
+            self.assertFalse(bundle["open_wake_word"]["quality_evaluated"])
+
+    def test_publish_allows_failed_calibration_with_quality_warning(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             staging = root / "staging"
@@ -300,15 +324,17 @@ class OpenWakeWordStageTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            with self.assertRaisesRegex(RuntimeError, "failed deployment calibration"):
-                publish_openwakeword_artifacts(
-                    staging_dir=staging,
-                    trained_dir=trained,
-                    safe_word="hey_tater",
-                    phrase="hey tater",
-                )
+            bundle_path = publish_openwakeword_artifacts(
+                staging_dir=staging,
+                trained_dir=trained,
+                safe_word="hey_tater",
+                phrase="hey tater",
+            )
 
-            self.assertEqual(published.read_bytes(), b"known-good")
+            self.assertEqual(published.read_bytes(), b"bad-new-model")
+            bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+            self.assertFalse(bundle["open_wake_word"]["quality_passed"])
+            self.assertEqual(bundle["open_wake_word"]["quality_status"], "low_quality")
 
 
 if __name__ == "__main__":

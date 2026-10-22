@@ -1,4 +1,3 @@
-- openWakeWord now keeps zero tolerance for real-device false wakes while allowing no more than 1% generated challenge triggers at 90% or better recall.
-- Models with a nonzero generated challenge tail are published only when a MicroWakeWord confirmation model is present, and the bundle explicitly marks confirmation as required.
-- The openWakeWord DNN is wider, and up to two corrective passes accumulate hard negatives while validating against fresh partitions.
-- Training summaries now separate real-device false wakes from generated stress-test triggers.
+- openWakeWord quality validation is now advisory: the trainer still tests and retries every candidate, but publishes the best produced model even when it misses the quality target.
+- Low-quality and unevaluated models are clearly labeled in the training summary and wake-word bundle instead of being reported as a training failure.
+- Exact recall, real-device false wakes, generated stress-test triggers, threshold, patience, and confirmation requirements remain visible so users can make the final deployment choice.

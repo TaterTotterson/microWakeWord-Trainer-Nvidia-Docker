@@ -24,6 +24,7 @@ class TrainingSummaryTests(unittest.TestCase):
             })
             write_json(root / "openwakeword/publish-staging/hey_tater/hey_tater.json", {
                 "calibration": {
+                    "deployment_ready": True,
                     "recommended_threshold": 0.85,
                     "recommended_patience": 3,
                     "generated_negative_clip_count": 500,
@@ -77,6 +78,36 @@ class TrainingSummaryTests(unittest.TestCase):
             model = summary["models"][0]
             self.assertEqual(model["failure_kind"], "quality_rejected")
             self.assertTrue(model["previous_published_model_active"])
+
+    def test_openwakeword_low_quality_is_published_with_warning(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_json(root / "openwakeword/publish-staging/wake/wake.json", {
+                "calibration": {
+                    "deployment_ready": False,
+                    "generated_negative_clip_count": 100,
+                    "recommended_metrics": {
+                        "positive_recall": 0.72,
+                        "generated_false_positive_rate": 0.08,
+                        "generated_false_positive_clips": 8,
+                        "real_device_false_positive_clips": 1,
+                    },
+                }
+            })
+
+            summary = build_training_summary(
+                data_dir=root,
+                trained_dir=root / "trained",
+                safe_word="wake",
+                phrase="wake",
+                selected_models=["open"],
+                outcomes={"open": 0},
+            )
+
+            model = summary["models"][0]
+            self.assertEqual(model["status"], "passed")
+            self.assertEqual(model["rating"], "Low quality")
+            self.assertIn("published with quality warnings", model["message"])
 
     def test_marks_unreached_models_not_completed(self):
         with tempfile.TemporaryDirectory() as temporary:

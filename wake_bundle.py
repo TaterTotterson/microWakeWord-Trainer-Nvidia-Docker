@@ -34,6 +34,7 @@ OPEN_PUBLIC_KEYS = (
     "artifacts", "recommended_threshold", "recommended_patience",
     "recommended_confirmation_threshold", "recommended_confirmation_patience",
     "confirmation_required",
+    "quality_evaluated", "quality_passed", "quality_status",
 )
 NANO_PUBLIC_KEYS = (
     "type", "name", "phrase", "created_at", "trained_at", "synced_at",
@@ -262,6 +263,8 @@ def bundle_catalog_fields(trained_dir: Path, safe_word: str, base_url: str = "")
                 "openwakeword_confirmation_threshold": oww.get("recommended_confirmation_threshold"),
                 "openwakeword_confirmation_patience": oww.get("recommended_confirmation_patience"),
                 "openwakeword_confirmation_required": bool(oww.get("confirmation_required")),
+                "openwakeword_quality_status": oww.get("quality_status"),
+                "openwakeword_quality_passed": oww.get("quality_passed"),
             })
     nano = bundle.get("nano_wake_word")
     variants = nano.get("variants") if isinstance(nano, dict) and isinstance(nano.get("variants"), dict) else {}

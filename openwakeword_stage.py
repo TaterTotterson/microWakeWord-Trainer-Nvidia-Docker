@@ -304,18 +304,11 @@ def publish_openwakeword_artifacts(
         raise RuntimeError("openWakeWord did not produce its required ONNX and metadata artifacts")
 
     oww_metadata = _read_json(source_metadata)
-    calibration = oww_metadata.get("calibration")
-    if not isinstance(calibration, dict) or calibration.get("deployment_ready") is not True:
-        raise RuntimeError(
-            "openWakeWord failed deployment calibration; the existing published model was preserved"
-        )
+    calibration = oww_metadata.get("calibration") if isinstance(oww_metadata.get("calibration"), dict) else {}
+    quality_evaluated = bool(calibration)
+    quality_passed = calibration.get("deployment_ready") is True
+    quality_status = "passed" if quality_passed else "low_quality" if quality_evaluated else "not_evaluated"
     confirmation_required = calibration.get("confirmation_required") is True
-    existing_bundle = _read_json(destination / f"{safe_word}.wake-bundle.json")
-    if confirmation_required and not isinstance(existing_bundle.get("micro_wake_word"), dict):
-        raise RuntimeError(
-            "openWakeWord requires MicroWakeWord confirmation for this operating point; "
-            "the existing published model was preserved"
-        )
 
     mappings: list[tuple[Path, Path]] = [
         (source_onnx, destination / f"{safe_word}.oww.onnx"),
@@ -350,6 +343,9 @@ def publish_openwakeword_artifacts(
             "artifacts": oww_artifacts,
             "trainer_revision": OWW_TRAINER_REVISION,
             "confirmation_required": confirmation_required,
+            "quality_evaluated": quality_evaluated,
+            "quality_passed": quality_passed,
+            "quality_status": quality_status,
         }
     )
     threshold, patience, confirmation_threshold, confirmation_patience = _oww_runtime_policy(calibration)

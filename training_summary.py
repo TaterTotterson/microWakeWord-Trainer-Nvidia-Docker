@@ -123,7 +123,11 @@ def _successful_model(
             metrics.append(_metric("Threshold", f"{threshold:.2f}"))
         if patience is not None:
             metrics.append(_metric("Patience", str(patience)))
-        if calibration.get("confirmation_required") is True:
+        if not calibration:
+            message = "Model published, but quality validation results were unavailable."
+        elif calibration.get("deployment_ready") is not True:
+            message = "Model published with quality warnings; review the test results before deployment."
+        elif calibration.get("confirmation_required") is True:
             message = "Quality validation passed; MicroWakeWord confirmation is required."
 
     else:
@@ -149,6 +153,11 @@ def _successful_model(
             metrics.append(_metric("Patience", str(patience)))
 
     rating, tone = _rating(recall, negative_value, negative_kind=negative_kind)
+    if model_id == "open":
+        if not calibration:
+            rating, tone = "Not evaluated", "warning"
+        elif calibration.get("deployment_ready") is not True:
+            rating, tone = "Low quality", "warning"
     return {
         "id": model_id,
         "label": MODEL_LABELS.get(model_id, model_id),
