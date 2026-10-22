@@ -3,6 +3,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from openwakeword_stage import (
     OWW_TRAINER_REVISION,
@@ -16,6 +17,21 @@ from wake_bundle import publish_micro_wake_word
 
 
 class OpenWakeWordStageTests(unittest.TestCase):
+    def setUp(self):
+        self.bank_patch = patch(
+            "openwakeword_stage.ensure_shared_negative_feature_bank",
+            side_effect=lambda data_dir, **_kwargs: Path(data_dir) / "shared_feature_banks" / "bank.npy",
+        )
+        self.bank_patch.start()
+        self.addCleanup(self.bank_patch.stop)
+
+    @staticmethod
+    def write_contract(root: Path) -> None:
+        (root / "trainer_contract.json").write_text(json.dumps({
+            "api_version": 2,
+            "capabilities": ["shared-positive-tts", "multiple-background-dirs", "multiple-rir-dirs", "shared-negative-feature-bank"],
+        }), encoding="utf-8")
+
     def test_legacy_calibration_table_derives_both_runtime_policies(self):
         self.assertEqual(
             _oww_runtime_policy(
@@ -45,6 +61,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
             (trainer_root / "scripts").mkdir(parents=True)
             (trainer_root / "train_openwakeword.sh").write_text("#!/bin/sh\n", encoding="utf-8")
             (trainer_root / "scripts" / "train_openwakeword.py").write_text("", encoding="utf-8")
+            self.write_contract(trainer_root)
             personal = root / "personal"
             negative = root / "negative"
             personal.mkdir()
@@ -81,6 +98,8 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual(env["OWW_DEFAULT_VALIDATION_BATCH"], "2048")
             self.assertEqual(env["OWW_FEATURE_DEVICE"], "gpu")
             self.assertEqual(env["OWW_POSITIVE_TTS_DIR"], str(generated.resolve()))
+            self.assertIn("--feature-bank-dir", cmd)
+            self.assertIn("shared_feature_banks", env["OWW_FEATURE_BANK_DIR"])
             self.assertIn("hey later", cmd)
             self.assertIn(str(background.resolve()), cmd)
             self.assertIn(str(rir.resolve()), cmd)
@@ -98,6 +117,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
             (trainer_root / "scripts").mkdir(parents=True)
             (trainer_root / "train_openwakeword.sh").write_text("#!/bin/sh\n", encoding="utf-8")
             (trainer_root / "scripts" / "train_openwakeword.py").write_text("", encoding="utf-8")
+            self.write_contract(trainer_root)
             personal = root / "personal"
             negative = root / "negative"
             personal.mkdir()

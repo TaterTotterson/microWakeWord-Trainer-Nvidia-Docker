@@ -543,6 +543,22 @@ export async function startTraining(): Promise<void> {
   }
 }
 
+export async function revalidateNanoWakeWord(architecture: string, safeWord = ""): Promise<void> {
+  const normalized = architecture.toLowerCase();
+  setBusy("nww-revalidate", true);
+  trainer.training = { running: true, exit_code: null, log_lines: [`Revalidating existing NanoWakeWord ${normalized.toUpperCase()} candidate…`] };
+  trainer.consoleOpen = true;
+  try {
+    await postJson("/api/revalidate_nanowakeword", { architecture: normalized, safe_word: safeWord });
+    beginTrainingPoll();
+  } catch (error) {
+    trainer.training = { running: false, exit_code: 1, log_lines: [error instanceof Error ? error.message : String(error)] };
+    reportError(error, "NanoWakeWord candidate revalidation could not start.");
+  } finally {
+    setBusy("nww-revalidate", false);
+  }
+}
+
 export function beginTrainingPoll(): void {
   if (trainingTimer) return;
   const poll = async () => {

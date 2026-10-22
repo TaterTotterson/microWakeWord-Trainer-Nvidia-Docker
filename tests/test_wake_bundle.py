@@ -88,6 +88,26 @@ class WakeBundleTests(unittest.TestCase):
             catalog = bundle_catalog_fields(root, "hey_tater")
             self.assertEqual(catalog["available_engines"], ["micro_wake_word", "open_wake_word", "nano_wake_word"])
 
+    def test_nano_default_uses_streaming_quality_instead_of_fixed_cnn(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cnn = root / "wake.nww.cnn.onnx"
+            gru = root / "wake.nww.gru.onnx"
+            cnn.write_bytes(b"cnn")
+            gru.write_bytes(b"gru")
+            publish_nano_wake_word(
+                trained_dir=root, safe_word="wake", phrase="wake", architecture="cnn",
+                metadata={"quality_summary": {"recall": 0.97, "negative_rate": 0.065}},
+                model_path=cnn, recommended_patience=3,
+            )
+            bundle_path = publish_nano_wake_word(
+                trained_dir=root, safe_word="wake", phrase="wake", architecture="gru",
+                metadata={"quality_summary": {"recall": 0.96, "negative_rate": 0.015}},
+                model_path=gru, recommended_patience=3,
+            )
+            bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+            self.assertEqual(bundle["nano_wake_word"]["default_architecture"], "gru")
+
 
 if __name__ == "__main__":
     unittest.main()

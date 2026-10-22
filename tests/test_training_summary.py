@@ -46,10 +46,25 @@ class TrainingSummaryTests(unittest.TestCase):
             )
 
             self.assertEqual(summary["overall"], "Needs attention")
-            self.assertEqual([item["rating"] for item in summary["models"]], ["Excellent", "Excellent", "Excellent", "Failed"])
+            self.assertEqual([item["rating"] for item in summary["models"]], ["Excellent", "Excellent", "Excellent", "Failed before publish"])
             self.assertIn({"label": "Recall", "value": "97.0%"}, summary["models"][2]["metrics"])
             lines = training_summary_log_lines(summary)
-            self.assertTrue(any("NanoWakeWord GRU — Failed" in line for line in lines))
+            self.assertTrue(any("NanoWakeWord GRU — Failed before publish" in line for line in lines))
+
+    def test_distinguishes_quality_rejection_and_preserved_published_model(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_json(root / "nanowakeword/output/cnn/wake/wake.quality.json", {"passed": False})
+            write_json(root / "trained/wake.wake-bundle.json", {
+                "nano_wake_word": {"variants": {"cnn": {"model": "wake.nww.cnn.onnx"}}}
+            })
+            summary = build_training_summary(
+                data_dir=root, trained_dir=root / "trained", safe_word="wake", phrase="wake",
+                selected_models=["nano_cnn"], outcomes={"nano_cnn": 2},
+            )
+            model = summary["models"][0]
+            self.assertEqual(model["failure_kind"], "quality_rejected")
+            self.assertTrue(model["previous_published_model_active"])
 
     def test_marks_unreached_models_not_completed(self):
         with tempfile.TemporaryDirectory() as temporary:

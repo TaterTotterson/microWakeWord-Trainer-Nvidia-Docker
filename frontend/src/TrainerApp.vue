@@ -7,7 +7,7 @@ import {
   disposeTrainer, ensureSupportedTtsMode, formatBytes, formatTimestamp, hasConsole, initializeTrainer,
   isBusy, itemAudioUrl, negativeCount, notify, personalCount, previewPhrase, refreshAuto,
   refreshCaptured, refreshManagedData, refreshSamples, refreshWakeWords, removeSample, revertSample, reviewCaptured,
-  runAutoAction, saveAuto, selectFiles, selectedSamples, startSession, startTraining, stopSession, sttEngines,
+  revalidateNanoWakeWord, runAutoAction, saveAuto, selectFiles, selectedSamples, startSession, startTraining, stopSession, sttEngines,
   trainer, ttsRoute, unlinkTater, uploadSelectedFiles,
 } from "./trainerStore";
 import type { AudioItem, ManagedDataItem, SampleBucket, ViewName } from "./types";
@@ -60,6 +60,10 @@ const autoStatus = computed(() => {
   return { text: "Disabled", tone: "neutral" };
 });
 const consoleLines = computed(() => trainer.training.log_lines?.length ? trainer.training.log_lines : ["No training output yet."]);
+const retryableNanoWakeWord = computed(() => {
+  const models = Array.isArray(trainer.training.summary?.models) ? trainer.training.summary.models : [];
+  return models.find((model) => model.failure_kind === "quality_rejected" && String(model.id || "").startsWith("nano_"));
+});
 const dataCategories = computed(() => {
   const groups = new Map<string, ManagedDataItem[]>();
   for (const item of trainer.managedData.items || []) {
@@ -283,7 +287,7 @@ function consoleTone(line: string): string {
                 </article>
               </div>
             </section>
-            <div class="train-action"><button type="button" class="button primary large" :disabled="!trainer.session.safe_word || trainer.training.running || isBusy('training-start')" @click="startTraining">{{ trainer.training.running ? "Training in progress" : "Start training" }}</button></div>
+            <div class="train-action"><button type="button" class="button primary large" :disabled="!trainer.session.safe_word || trainer.training.running || isBusy('training-start')" @click="startTraining">{{ trainer.training.running ? "Training in progress" : "Start training" }}</button><button v-if="retryableNanoWakeWord" type="button" :disabled="trainer.training.running || isBusy('nww-revalidate')" @click="revalidateNanoWakeWord(String(retryableNanoWakeWord.id || '').replace('nano_', ''), String(trainer.session.safe_word || ''))">{{ isBusy('nww-revalidate') ? "Checking NWW…" : `Revalidate ${String(retryableNanoWakeWord.label || 'NWW')} candidate` }}</button></div>
             <footer class="panel-footer"><span>Training opens the console automatically and continues if the window is closed.</span><button type="button" :disabled="!hasConsole" @click="trainer.consoleOpen = true">Open console</button></footer>
           </section>
         </template>

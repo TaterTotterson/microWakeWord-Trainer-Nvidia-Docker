@@ -148,6 +148,38 @@ def _successful_model(
     }
 
 
+def _failed_model(model_id: str, *, code: int, data_dir: Path, trained_dir: Path, safe_word: str) -> dict[str, Any]:
+    failure_kind = "start_or_training_failed"
+    rating = "Failed before publish"
+    if model_id.startswith("nano_"):
+        architecture = model_id.removeprefix("nano_")
+        report = _read_json(data_dir / "nanowakeword" / "output" / architecture / safe_word / f"{safe_word}.quality.json")
+        if report and report.get("passed") is False:
+            failure_kind = "quality_rejected"
+            rating = "Quality rejected"
+    elif model_id == "open":
+        metadata = _read_json(data_dir / "openwakeword" / "publish-staging" / safe_word / f"{safe_word}.json")
+        calibration = metadata.get("calibration") if isinstance(metadata.get("calibration"), dict) else {}
+        if calibration and calibration.get("deployment_ready") is False:
+            failure_kind = "quality_rejected"
+            rating = "Quality rejected"
+    bundle = _read_json(trained_dir / f"{safe_word}.wake-bundle.json")
+    if model_id == "open":
+        previous_active = isinstance(bundle.get("open_wake_word"), dict)
+    elif model_id.startswith("nano_"):
+        variants = bundle.get("nano_wake_word", {}).get("variants", {}) if isinstance(bundle.get("nano_wake_word"), dict) else {}
+        previous_active = model_id.removeprefix("nano_") in variants
+    else:
+        previous_active = isinstance(bundle.get("micro_wake_word"), dict)
+    preserved = "The previous published model remains active." if previous_active else "No model was published."
+    return {
+        "id": model_id, "label": MODEL_LABELS.get(model_id, model_id), "status": "failed",
+        "failure_kind": failure_kind, "rating": rating, "tone": "error",
+        "metrics": [_metric("Exit code", str(code))], "message": f"{rating}. {preserved}",
+        "previous_published_model_active": previous_active,
+    }
+
+
 def build_training_summary(
     *,
     data_dir: Path,
@@ -171,15 +203,7 @@ def build_training_summary(
                 "message": "A required earlier stage did not finish.",
             })
         elif int(code) != 0:
-            models.append({
-                "id": model_id,
-                "label": MODEL_LABELS.get(model_id, model_id),
-                "status": "failed",
-                "rating": "Failed",
-                "tone": "error",
-                "metrics": [_metric("Exit code", str(code))],
-                "message": "The previous published model was preserved.",
-            })
+            models.append(_failed_model(model_id, code=int(code), data_dir=Path(data_dir), trained_dir=Path(trained_dir), safe_word=safe_word))
         else:
             models.append(_successful_model(
                 model_id,
