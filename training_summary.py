@@ -160,7 +160,11 @@ def _successful_model(
             metrics.append(_metric("Patience", str(patience)))
 
     rating, tone = _rating(recall, negative_value, negative_kind=negative_kind)
-    if model_id == "open":
+    if model_id == "micro":
+        if not calibration:
+            rating, tone = "Not evaluated", "warning"
+            message = "Model published, but quality validation results were unavailable."
+    elif model_id == "open":
         if not calibration:
             rating, tone = "Not evaluated", "warning"
         elif calibration.get("deployment_ready") is not True:
@@ -241,7 +245,11 @@ def build_training_summary(
 
     if any(model["status"] == "failed" for model in models):
         overall, tone = "Needs attention", "error"
-    elif any(model["status"] == "skipped" or model["rating"] == "Needs attention" for model in models):
+    elif any(
+        model["status"] == "skipped"
+        or model["rating"] in {"Needs attention", "Low quality", "Not evaluated"}
+        for model in models
+    ):
         overall, tone = "Needs attention", "warning"
     elif models and all(model["rating"] == "Excellent" for model in models):
         overall, tone = "Excellent", "success"
@@ -250,14 +258,22 @@ def build_training_summary(
     else:
         overall, tone = "No result", "neutral"
 
-    passed = sum(model["status"] == "passed" for model in models)
+    published = sum(model["status"] == "passed" for model in models)
+    if any(model["status"] == "failed" for model in models):
+        message = f"{published} of {len(models)} selected model{'s' if len(models) != 1 else ''} published; one or more failed before publication."
+    elif overall == "Needs attention":
+        message = f"{published} of {len(models)} selected model{'s' if len(models) != 1 else ''} published; review the yellow quality results before deployment."
+    elif models:
+        message = f"{published} of {len(models)} selected model{'s' if len(models) != 1 else ''} published with passing quality results."
+    else:
+        message = "No model result was produced."
     return {
         "wake_word": phrase or safe_word.replace("_", " "),
         "safe_word": safe_word,
         "completed_at": datetime.now(timezone.utc).isoformat(),
         "overall": overall,
         "tone": tone,
-        "message": f"{passed} of {len(models)} selected model{'s' if len(models) != 1 else ''} passed quality validation.",
+        "message": message,
         "models": models,
     }
 

@@ -1,3 +1,3 @@
-- NanoWakeWord CNN and GRU quality validation is now advisory: both architectures still test and retry, then publish the best completed model even when it misses the quality target.
-- MicroWakeWord already published its calibrated model or safe defaults; NanoWakeWord now matches that behavior and the openWakeWord advisory flow.
-- Low-quality and unevaluated models remain clearly labeled with their recall, false-trigger, threshold, patience, and confirmation results. Only genuine training, missing-artifact, or export failures block publication.
+- The overall training badge now turns yellow and says Needs attention whenever any published model is low quality or was not evaluated.
+- The summary now distinguishes models that were successfully published from models that actually passed their quality targets.
+- MicroWakeWord runs without calibration results are explicitly labeled Not evaluated instead of appearing as a successful quality result.

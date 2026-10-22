@@ -76,6 +76,9 @@ class TrainingSummaryTests(unittest.TestCase):
             self.assertEqual(model["status"], "passed")
             self.assertEqual(model["rating"], "Low quality")
             self.assertIn("published with quality warnings", model["message"])
+            self.assertEqual(summary["overall"], "Needs attention")
+            self.assertEqual(summary["tone"], "warning")
+            self.assertIn("review the yellow quality results", summary["message"])
 
     def test_openwakeword_low_quality_is_published_with_warning(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -106,6 +109,25 @@ class TrainingSummaryTests(unittest.TestCase):
             self.assertEqual(model["status"], "passed")
             self.assertEqual(model["rating"], "Low quality")
             self.assertIn("published with quality warnings", model["message"])
+            self.assertEqual(summary["overall"], "Needs attention")
+            self.assertEqual(summary["tone"], "warning")
+
+    def test_microwakeword_without_calibration_is_not_evaluated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_json(root / "trained/wake.wake-bundle.json", {
+                "micro_wake_word": {"micro": {"probability_cutoff": 0.97, "sliding_window_size": 5}}
+            })
+            summary = build_training_summary(
+                data_dir=root, trained_dir=root / "trained", safe_word="wake", phrase="wake",
+                selected_models=["micro"], outcomes={"micro": 0},
+            )
+            model = summary["models"][0]
+            self.assertEqual(model["status"], "passed")
+            self.assertEqual(model["rating"], "Not evaluated")
+            self.assertEqual(model["tone"], "warning")
+            self.assertEqual(summary["overall"], "Needs attention")
+            self.assertEqual(summary["tone"], "warning")
 
     def test_marks_unreached_models_not_completed(self):
         with tempfile.TemporaryDirectory() as temporary:
