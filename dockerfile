@@ -32,6 +32,7 @@ COPY --chown=root:root --chmod=0755 \
 COPY --chown=root:root --chmod=0644 \
     tts_config.py \
     nanowakeword_stage.py \
+    training_summary.py \
     wake_bundle.py \
     /root/mww-scripts/
 

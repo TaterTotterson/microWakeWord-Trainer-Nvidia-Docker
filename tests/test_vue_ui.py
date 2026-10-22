@@ -130,6 +130,7 @@ class VueTrainerUiTests(unittest.TestCase):
             source = dockerfile.read_text(encoding="utf-8")
             self.assertIn("COPY --chown=root:root static/ /root/mww-scripts/static/", source)
             self.assertIn("nanowakeword_stage.py", source)
+            self.assertIn("training_summary.py", source)
             self.assertIn("wake_bundle.py", source)
             self.assertNotIn("npm install", source)
 

@@ -1,6 +1,2 @@
-- Improved openWakeWord and NanoWakeWord training by sharing the same four-engine positive TTS corpus, personal recordings, reviewed negatives, backgrounds, and room responses used by the trainer pipeline.
-- Restored GPU-backed openWakeWord and NanoWakeWord feature extraction on NVIDIA systems while retaining explicit CPU fallbacks for troubleshooting.
-- Added optional generated hard-negative phrases for MicroWakeWord, openWakeWord, and NanoWakeWord, with reusable caches and balanced weighting that keeps reviewed real-world false wakes strongest.
-- Added a polished Hard Negative Training section to manual and automatic training so similar-sounding phrases can be entered once and applied to every selected engine.
-- Added an end-of-run quality summary for every selected model, including recall, false accepts or false triggers, runtime tuning, and clear Excellent, Good, Needs attention, Failed, or Not completed ratings.
-- Improved quality-report compatibility and failure handling so unsuccessful validation is reported clearly while the previously published working model remains untouched.
+- Fixed the v41 Docker containers failing at startup because the new training-quality summary module was not copied into the runtime image.
+- Added packaging coverage for both the standard NVIDIA and Blackwell Dockerfiles so required trainer modules cannot be omitted unnoticed.
