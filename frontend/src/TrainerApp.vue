@@ -73,6 +73,16 @@ const manualNanoSelected = computed(() => trainer.trainNanoWakeWordCnn || traine
 const autoNanoSelected = computed(() => (
   trainer.autoForm.train_nanowakeword_cnn || trainer.autoForm.train_nanowakeword_gru
 ));
+const manualSelectedEngines = computed(() => [
+  ...(trainer.trainMicroWakeWord ? ["MWW"] : []),
+  ...(trainer.trainOpenWakeWord ? ["OWW"] : []),
+  ...(manualNanoSelected.value ? ["NWW"] : []),
+]);
+const autoSelectedEngines = computed(() => [
+  ...(trainer.autoForm.train_microwakeword ? ["MWW"] : []),
+  ...(trainer.autoForm.train_openwakeword ? ["OWW"] : []),
+  ...(autoNanoSelected.value ? ["NWW"] : []),
+]);
 
 watch([() => trainer.language, () => trainer.ttsMode], ensureSupportedTtsMode);
 watch(() => trainer.toast.serial, () => window.setTimeout(() => { trainer.toast.message = ""; }, 4500));
@@ -144,6 +154,14 @@ function toggleAutoNano(): void {
   } else {
     trainer.autoForm.train_nanowakeword_cnn = true;
   }
+}
+function generatedPhraseCount(value: string): number {
+  return new Set(
+    String(value || "")
+      .split(/[\n,]+/)
+      .map((phrase) => phrase.trim().toLocaleLowerCase())
+      .filter(Boolean),
+  ).size;
 }
 function openLink(): void {
   linkUrl.value = trainer.autoForm.tater_url || "http://127.0.0.1:8501";
@@ -248,7 +266,23 @@ function consoleTone(line: string): string {
                   <button type="button" class="architecture-choice" :class="{ active: trainer.trainNanoWakeWordGru }" :aria-pressed="trainer.trainNanoWakeWordGru" @click="trainer.trainNanoWakeWordGru = !trainer.trainNanoWakeWordGru"><i>GRU</i><span><strong>GRU</strong><small>Recurrent model tuned for fewer false triggers.</small></span><b>✓</b></button>
                 </div>
               </div>
+              <section v-if="manualSelectedEngines.length" class="hard-negative-card">
+                <header class="hard-negative-head"><div class="hard-negative-icon">−</div><div><span class="eyebrow">Optional precision tuning</span><strong>Hard negative training</strong><small>Teach the selected models which similar-sounding phrases must not wake the assistant.</small></div><b>{{ generatedPhraseCount(trainer.generatedNegativePhrases) ? `${generatedPhraseCount(trainer.generatedNegativePhrases)} phrase${generatedPhraseCount(trainer.generatedNegativePhrases) === 1 ? "" : "s"}` : "Optional" }}</b></header>
+                <div class="hard-negative-engines"><span>Applied to</span><i v-for="engine in ['MWW', 'OWW', 'NWW']" :key="engine" :class="{ active: manualSelectedEngines.includes(engine) }">{{ engine }}</i></div>
+                <label class="field"><span>Phrases to reject</span><textarea v-model="trainer.generatedNegativePhrases" rows="4" placeholder="hey later&#10;hey waiter&#10;okay tater"></textarea><small>One phrase per line. Each selected engine synthesizes and validates these near-misses alongside reviewed recordings and its broad negative data.</small></label>
+                <footer><span>Unchanged phrases reuse their cached audio on later runs.</span><strong>The actual wake phrase is ignored automatically.</strong></footer>
+              </section>
             </div>
+            <section v-if="!trainer.training.running && trainer.training.summary?.models?.length" class="training-summary-card">
+              <header><div class="summary-mark" :class="trainer.training.summary.tone">{{ trainer.training.summary.tone === 'success' ? '✓' : trainer.training.summary.tone === 'error' ? '×' : '!' }}</div><div><span class="eyebrow">Last completed run</span><h4>{{ trainer.training.summary.wake_word }}</h4><p>{{ trainer.training.summary.message }}<template v-if="trainer.training.summary.completed_at"> · {{ formatTimestamp(trainer.training.summary.completed_at) }}</template></p></div><span class="pill" :class="trainer.training.summary.tone">{{ trainer.training.summary.overall }}</span></header>
+              <div class="training-summary-grid">
+                <article v-for="model in trainer.training.summary.models" :key="model.id" :class="model.tone">
+                  <header><div><span>{{ model.id.replaceAll('_', ' ') }}</span><strong>{{ model.label }}</strong></div><b>{{ model.rating }}</b></header>
+                  <p>{{ model.message }}</p>
+                  <div v-if="model.metrics?.length" class="summary-metrics"><span v-for="metric in model.metrics" :key="`${metric.label}-${metric.value}`"><small>{{ metric.label }}</small><strong>{{ metric.value }}</strong></span></div>
+                </article>
+              </div>
+            </section>
             <div class="train-action"><button type="button" class="button primary large" :disabled="!trainer.session.safe_word || trainer.training.running || isBusy('training-start')" @click="startTraining">{{ trainer.training.running ? "Training in progress" : "Start training" }}</button></div>
             <footer class="panel-footer"><span>Training opens the console automatically and continues if the window is closed.</span><button type="button" :disabled="!hasConsole" @click="trainer.consoleOpen = true">Open console</button></footer>
           </section>
@@ -289,7 +323,17 @@ function consoleTone(line: string): string {
                   <button type="button" class="architecture-choice" :class="{ active: trainer.autoForm.train_nanowakeword_gru }" :aria-pressed="trainer.autoForm.train_nanowakeword_gru" @click="trainer.autoForm.train_nanowakeword_gru = !trainer.autoForm.train_nanowakeword_gru"><i>GRU</i><span><strong>GRU</strong><small>Recurrent model tuned for fewer false triggers.</small></span><b>✓</b></button>
                 </div>
               </div>
+              <section v-if="autoSelectedEngines.length" class="hard-negative-card">
+                <header class="hard-negative-head"><div class="hard-negative-icon">−</div><div><span class="eyebrow">Optional precision tuning</span><strong>Hard negative training</strong><small>Keep near-miss protection consistent whenever Auto Training refreshes a model.</small></div><b>{{ generatedPhraseCount(trainer.autoForm.generated_negative_phrases) ? `${generatedPhraseCount(trainer.autoForm.generated_negative_phrases)} phrase${generatedPhraseCount(trainer.autoForm.generated_negative_phrases) === 1 ? "" : "s"}` : "Optional" }}</b></header>
+                <div class="hard-negative-engines"><span>Applied to</span><i v-for="engine in ['MWW', 'OWW', 'NWW']" :key="engine" :class="{ active: autoSelectedEngines.includes(engine) }">{{ engine }}</i></div>
+                <label class="field"><span>Phrases to reject</span><textarea v-model="trainer.autoForm.generated_negative_phrases" rows="4" placeholder="hey later&#10;hey waiter&#10;okay tater"></textarea><small>One phrase per line. Saved with the schedule and synthesized for every selected model.</small></label>
+                <footer><span>Reviewed false wakes still receive the strongest model weight.</span><strong>The actual wake phrase is ignored automatically.</strong></footer>
+              </section>
             </div>
+            <section v-if="!trainer.training.running && trainer.training.summary?.models?.length" class="training-summary-card">
+              <header><div class="summary-mark" :class="trainer.training.summary.tone">{{ trainer.training.summary.tone === 'success' ? '✓' : trainer.training.summary.tone === 'error' ? '×' : '!' }}</div><div><span class="eyebrow">Last completed run</span><h4>{{ trainer.training.summary.wake_word }}</h4><p>{{ trainer.training.summary.message }}<template v-if="trainer.training.summary.completed_at"> · {{ formatTimestamp(trainer.training.summary.completed_at) }}</template></p></div><span class="pill" :class="trainer.training.summary.tone">{{ trainer.training.summary.overall }}</span></header>
+              <div class="training-summary-grid"><article v-for="model in trainer.training.summary.models" :key="`auto-${model.id}`" :class="model.tone"><header><div><span>{{ model.id.replaceAll('_', ' ') }}</span><strong>{{ model.label }}</strong></div><b>{{ model.rating }}</b></header><p>{{ model.message }}</p><div v-if="model.metrics?.length" class="summary-metrics"><span v-for="metric in model.metrics" :key="`${metric.label}-${metric.value}`"><small>{{ metric.label }}</small><strong>{{ metric.value }}</strong></span></div></article></div>
+            </section>
             <div class="stats"><article><span>Pending negatives</span><strong>{{ Number(autoState.pending_negative_count || 0) }}</strong></article><article><span>Next check</span><strong class="format-value">{{ autoState.next_run_at ? formatTimestamp(autoState.next_run_at) : "Manual" }}</strong></article><article><span>Last training</span><strong class="format-value">{{ autoState.last_train_finished_at ? formatTimestamp(autoState.last_train_finished_at) : "Never" }}</strong></article></div>
           </section>
           <section class="panel">

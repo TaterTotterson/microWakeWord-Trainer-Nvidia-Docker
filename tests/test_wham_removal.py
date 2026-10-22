@@ -20,7 +20,7 @@ class WhamRemovalTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         training_script = (root / "train_wake_word").read_text()
 
-        self.assertIn('AUGMENTATION_CACHE_VERSION="2"', training_script)
+        self.assertIn('AUGMENTATION_CACHE_VERSION="3"', training_script)
         self.assertIn(".augmentation_version", training_script)
 
 

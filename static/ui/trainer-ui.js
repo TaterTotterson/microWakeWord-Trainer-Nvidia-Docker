@@ -988,13 +988,13 @@ function En(e) {
 function Dn(e, t = wn, n) {
 	if (!t || e._n) return e;
 	let r = (...n) => {
-		r._d && ta(-1);
-		let i = En(t), a = Zi.length, o;
+		r._d && ea(-1);
+		let i = En(t), a = Xi.length, o;
 		try {
 			o = e(...n);
 		} finally {
-			for (let e = Zi.length; e > a; e--) $i();
-			En(i), r._d && ta(1);
+			for (let e = Xi.length; e > a; e--) Qi();
+			En(i), r._d && ea(1);
 		}
 		return o;
 	};
@@ -1034,9 +1034,9 @@ function On(e, t, n, r) {
 	}
 }
 function kn(e, t) {
-	if (J) {
-		let n = J.provides, r = J.parent && J.parent.provides;
-		r === n && (n = J.provides = Object.create(r)), n[e] = t;
+	if (ba) {
+		let n = ba.provides, r = ba.parent && ba.parent.provides;
+		r === n && (n = ba.provides = Object.create(r)), n[e] = t;
 	}
 }
 function An(e, t, n = !1) {
@@ -1062,7 +1062,7 @@ function Pn(e, n, i = t) {
 			return e.stop = r, e.resume = r, e.pause = r, e;
 		}
 	}
-	let p = J;
+	let p = ba;
 	u.call = (e, t, n) => on(e, p, t, n);
 	let m = !1;
 	c === "post" ? u.scheduler = (e) => {
@@ -1229,21 +1229,21 @@ var er = [Function, Array], tr = {
 	setup(e, { slots: t }) {
 		let n = xa(), r = $n();
 		return () => {
-			let i = t.default && dr(t.default(), !0), a = i && i.length ? ir(i) : n.subTree ? q() : void 0;
+			let i = t.default && dr(t.default(), !0), a = i && i.length ? ir(i) : n.subTree ? J() : void 0;
 			if (!a) return;
 			let o = /* @__PURE__ */ P(e), { mode: s } = o;
 			if (r.isLeaving) return cr(a);
 			let c = lr(a);
 			if (!c) return cr(a);
 			let l = sr(c, o, r, n, (e) => l = e);
-			c.type !== Yi && ur(c, l);
+			c.type !== U && ur(c, l);
 			let u = n.subTree && lr(n.subTree);
-			if (u && u.type !== Yi && !aa(u, c) && nr(n).type !== Yi) {
+			if (u && u.type !== U && !ia(u, c) && nr(n).type !== U) {
 				let e = sr(u, o, r, n);
-				if (ur(u, e), s === "out-in" && c.type !== Yi) return r.isLeaving = !0, e.afterLeave = () => {
+				if (ur(u, e), s === "out-in" && c.type !== U) return r.isLeaving = !0, e.afterLeave = () => {
 					r.isLeaving = !1, n.job.flags & 8 || n.update(), delete e.afterLeave, u = void 0;
 				}, cr(a);
-				s === "in-out" && c.type !== Yi ? e.delayLeave = (e, t, n) => {
+				s === "in-out" && c.type !== U ? e.delayLeave = (e, t, n) => {
 					let i = or(r, u);
 					i[String(u.key)] = u, e[Zn] = () => {
 						t(), e[Zn] = void 0, delete l.delayedLeave, u = void 0;
@@ -1259,7 +1259,7 @@ var er = [Function, Array], tr = {
 function ir(e) {
 	let t = e[0];
 	if (e.length > 1) {
-		for (let n of e) if (n.type !== Yi) {
+		for (let n of e) if (n.type !== U) {
 			t = n;
 			break;
 		}
@@ -1286,7 +1286,7 @@ function sr(e, t, n, r, i) {
 			else return;
 			t[Zn] && t[Zn](!0);
 			let i = S[x];
-			i && aa(e, i) && i.el[Zn] && i.el[Zn](), C(r, [t]);
+			i && ia(e, i) && i.el[Zn] && i.el[Zn](), C(r, [t]);
 		},
 		enter(t) {
 			if (S[x] === e) return;
@@ -1319,7 +1319,7 @@ function sr(e, t, n, r, i) {
 	return ee;
 }
 function cr(e) {
-	if (yr(e)) return e = ua(e), e.children = null, e;
+	if (yr(e)) return e = la(e), e.children = null, e;
 }
 function lr(e) {
 	if (!yr(e)) return zn(e.type) && e.children ? ir(e.children) : e;
@@ -1337,7 +1337,7 @@ function dr(e, t = !1, n) {
 	let r = [], i = 0;
 	for (let a = 0; a < e.length; a++) {
 		let o = e[a], s = n == null ? o.key : String(n) + String(o.key == null ? a : o.key);
-		o.type === H ? (o.patchFlag & 128 && i++, r = r.concat(dr(o.children, t, s))) : (t || o.type !== Yi) && r.push(s == null ? o : ua(o, { key: s }));
+		o.type === H ? (o.patchFlag & 128 && i++, r = r.concat(dr(o.children, t, s))) : (t || o.type !== U) && r.push(s == null ? o : la(o, { key: s }));
 	}
 	if (i > 1) for (let e = 0; e < r.length; e++) r[e].patchFlag = -2;
 	return r;
@@ -1412,7 +1412,7 @@ function br(e, t) {
 function xr(e, t) {
 	Sr(e, "da", t);
 }
-function Sr(e, t, n = J) {
+function Sr(e, t, n = ba) {
 	let r = e.__wdc ||= () => {
 		let t = n;
 		for (; t;) {
@@ -1432,7 +1432,7 @@ function Cr(e, t, n, r) {
 		c(r[t], i);
 	}, n);
 }
-function wr(e, t, n = J, r = !1) {
+function wr(e, t, n = ba, r = !1) {
 	if (n) {
 		let i = n[e] || (n[e] = []), a = t.__weh ||= (...r) => {
 			Ue();
@@ -1442,10 +1442,10 @@ function wr(e, t, n = J, r = !1) {
 		return r ? i.unshift(a) : i.push(a), a;
 	}
 }
-var Tr = (e) => (t, n = J) => {
+var Tr = (e) => (t, n = ba) => {
 	(!Da || e === "sp") && wr(e, (...e) => t(...e), n);
 }, Er = Tr("bm"), Dr = Tr("m"), Or = Tr("bu"), kr = Tr("u"), Ar = Tr("bum"), jr = Tr("um"), Mr = Tr("sp"), Nr = Tr("rtg"), Pr = Tr("rtc");
-function Fr(e, t = J) {
+function Fr(e, t = ba) {
 	wr("ec", e, t);
 }
 var Ir = /* @__PURE__ */ Symbol.for("v-ndc");
@@ -1724,7 +1724,7 @@ function ii(e, t) {
 			},
 			mount(a, o, s) {
 				if (!c) {
-					let u = l._ceVNode || K(n, r);
+					let u = l._ceVNode || q(n, r);
 					return u.appContext = i, s === !0 ? s = "svg" : s === !1 && (s = void 0), o && t ? t(u, a) : e(u, a, s), c = !0, l._container = a, a.__vue_app__ = l, Ia(u.component);
 				}
 			},
@@ -1786,24 +1786,24 @@ function di(e) {
 	try {
 		if (n.shapeFlag & 4) {
 			let e = i || r, t = e;
-			v = pa(u.call(t, e, d, f, m, p, h)), y = c;
+			v = fa(u.call(t, e, d, f, m, p, h)), y = c;
 		} else {
 			let e = t;
-			v = pa(e.length > 1 ? e(f, {
+			v = fa(e.length > 1 ? e(f, {
 				attrs: c,
 				slots: s,
 				emit: l
 			}) : e(f, null)), y = t.props ? c : fi(c);
 		}
 	} catch (t) {
-		Zi.length = 0, sn(t, e, 1), v = K(Yi);
+		Xi.length = 0, sn(t, e, 1), v = q(U);
 	}
 	let b = v;
 	if (y && g !== !1) {
 		let e = Object.keys(y), { shapeFlag: t } = b;
-		e.length && t & 7 && (a && e.some(o) && (y = pi(y, a)), b = ua(b, y, !1, !0));
+		e.length && t & 7 && (a && e.some(o) && (y = pi(y, a)), b = la(b, y, !1, !0));
 	}
-	return n.dirs && (b = ua(b, null, !1, !0), b.dirs = b.dirs ? b.dirs.concat(n.dirs) : n.dirs), n.transition && ur(b, n.transition), v = b, En(_), v;
+	return n.dirs && (b = la(b, null, !1, !0), b.dirs = b.dirs ? b.dirs.concat(n.dirs) : n.dirs), n.transition && ur(b, n.transition), v = b, En(_), v;
 }
 var fi = (e) => {
 	let t;
@@ -1959,7 +1959,7 @@ function Ei(e, r, i = !1) {
 function Di(e) {
 	return e[0] !== "$" && !ee(e);
 }
-var Oi = (e) => e === "_" || e === "_ctx" || e === "$stable", ki = (e) => d(e) ? e.map(pa) : [pa(e)], Ai = (e, t, n) => {
+var Oi = (e) => e === "_" || e === "_ctx" || e === "$stable", ki = (e) => d(e) ? e.map(fa) : [fa(e)], Ai = (e, t, n) => {
 	if (t._n) return t;
 	let r = Dn((...e) => ki(t(...e)), n);
 	return r._c = !1, r;
@@ -2001,16 +2001,16 @@ function Li(e, i) {
 	a.__VUE__ = !0;
 	let { insert: o, remove: s, patchProp: c, createElement: l, createText: u, createComment: d, setText: f, setElementText: p, parentNode: m, nextSibling: h, setScopeId: g = r, insertStaticContent: _ } = e, v = (e, t, n, r = null, i = null, a = null, o = void 0, s = null, c = !!t.dynamicChildren) => {
 		if (e === t) return;
-		e && !aa(e, t) && (r = ye(e), he(e, i, a, !0), e = null), t.patchFlag === -2 && (c = !1, t.dynamicChildren = null);
+		e && !ia(e, t) && (r = ye(e), he(e, i, a, !0), e = null), t.patchFlag === -2 && (c = !1, t.dynamicChildren = null);
 		let { type: l, ref: u, shapeFlag: d } = t;
 		switch (l) {
 			case Ji:
 				y(e, t, n, r);
 				break;
-			case Yi:
+			case U:
 				b(e, t, n, r);
 				break;
-			case Xi:
+			case Yi:
 				e ?? x(t, n, r, o);
 				break;
 			case H:
@@ -2051,13 +2051,13 @@ function Li(e, i) {
 		let d, f, { props: m, shapeFlag: h, transition: g, dirs: _ } = e;
 		if (d = e.el = l(e.type, a, m && m.is, m), h & 8 ? p(d, e.children) : h & 16 && T(e.children, d, null, r, i, Ri(e, a), s, u), _ && On(e, null, r, "created"), ne(d, e, e.scopeId, s, r), m) {
 			for (let e in m) e !== "value" && !ee(e) && c(d, e, null, m[e], a, r);
-			"value" in m && c(d, "value", null, m.value, a), (f = m.onVnodeBeforeMount) && _a(f, r, e);
+			"value" in m && c(d, "value", null, m.value, a), (f = m.onVnodeBeforeMount) && ga(f, r, e);
 		}
 		_ && On(e, null, r, "beforeMount");
 		let v = Bi(i, g);
 		v && g.beforeEnter(d), o(d, t, n), ((f = m && m.onVnodeMounted) || v || _) && V(() => {
 			try {
-				f && _a(f, r, e), v && g.enter(d), _ && On(e, null, r, "mounted");
+				f && ga(f, r, e), v && g.enter(d), _ && On(e, null, r, "mounted");
 			} finally {}
 		}, i);
 	}, ne = (e, t, n, r, i) => {
@@ -2071,14 +2071,14 @@ function Li(e, i) {
 		}
 	}, T = (e, t, n, r, i, a, o, s, c = 0) => {
 		for (let l = c; l < e.length; l++) {
-			let c = e[l] = s ? ma(e[l]) : pa(e[l]);
+			let c = e[l] = s ? pa(e[l]) : fa(e[l]);
 			v(null, c, t, n, r, i, a, o, s);
 		}
 	}, re = (e, n, r, i, a, o, s) => {
 		let l = n.el = e.el, { patchFlag: u, dynamicChildren: d, dirs: f } = n;
 		u |= e.patchFlag & 16;
 		let m = e.props || t, h = n.props || t, g;
-		if (r && zi(r, !1), (g = h.onVnodeBeforeUpdate) && _a(g, r, n, e), f && On(n, e, r, "beforeUpdate"), r && zi(r, !0), d && (!e.dynamicChildren || e.dynamicChildren.length !== d.length) && (u = 0, s = !1, d = null), (m.innerHTML && h.innerHTML == null || m.textContent && h.textContent == null) && p(l, ""), d ? E(e.dynamicChildren, d, l, r, i, Ri(n, a), o) : s || de(e, n, l, null, r, i, Ri(n, a), o, !1), u > 0) {
+		if (r && zi(r, !1), (g = h.onVnodeBeforeUpdate) && ga(g, r, n, e), f && On(n, e, r, "beforeUpdate"), r && zi(r, !0), d && (!e.dynamicChildren || e.dynamicChildren.length !== d.length) && (u = 0, s = !1, d = null), (m.innerHTML && h.innerHTML == null || m.textContent && h.textContent == null) && p(l, ""), d ? E(e.dynamicChildren, d, l, r, i, Ri(n, a), o) : s || de(e, n, l, null, r, i, Ri(n, a), o, !1), u > 0) {
 			if (u & 16) ie(l, m, h, r, a);
 			else if (u & 2 && m.class !== h.class && c(l, "class", null, h.class, a), u & 4 && c(l, "style", m.style, h.style, a), u & 8) {
 				let e = n.dynamicProps;
@@ -2090,11 +2090,11 @@ function Li(e, i) {
 			u & 1 && e.children !== n.children && p(l, n.children);
 		} else !s && d == null && ie(l, m, h, r, a);
 		((g = h.onVnodeUpdated) || f) && V(() => {
-			g && _a(g, r, n, e), f && On(n, e, r, "updated");
+			g && ga(g, r, n, e), f && On(n, e, r, "updated");
 		}, i);
 	}, E = (e, t, n, r, i, a, o) => {
 		for (let s = 0; s < t.length; s++) {
-			let c = e[s], l = t[s], u = c.el && (c.type === H || !aa(c, l) || c.shapeFlag & 198) ? m(c.el) : n;
+			let c = e[s], l = t[s], u = c.el && (c.type === H || !ia(c, l) || c.shapeFlag & 198) ? m(c.el) : n;
 			v(c, l, u, null, r, i, a, o, !0);
 		}
 	}, ie = (e, n, r, i, a) => {
@@ -2113,10 +2113,10 @@ function Li(e, i) {
 	}, D = (e, t, n, r, i, a, o, s, c) => {
 		t.slotScopeIds = s, e == null ? t.shapeFlag & 512 ? i.ctx.activate(t, n, r, o, c) : O(t, n, r, i, a, o, c) : se(e, t, c);
 	}, O = (e, t, n, r, i, a, o) => {
-		let s = e.component = ba(e, r, i);
+		let s = e.component = ya(e, r, i);
 		if (yr(e) && (s.ctx.renderer = Se), Oa(s, !1, o), s.asyncDep) {
 			if (i && i.registerDep(s, ce, o), !e.el) {
-				let r = s.subTree = K(Yi);
+				let r = s.subTree = q(U);
 				b(null, r, t, n), e.placeholder = r.el;
 			}
 		} else ce(s, e, t, n, i, a, o);
@@ -2143,12 +2143,12 @@ function Li(e, i) {
 					}
 				}
 				let u = t, d;
-				zi(e, !1), t ? (t.el = c.el, le(e, t, o)) : t = c, n && oe(n), (d = t.props && t.props.onVnodeBeforeUpdate) && _a(d, s, t, c), zi(e, !0);
+				zi(e, !1), t ? (t.el = c.el, le(e, t, o)) : t = c, n && oe(n), (d = t.props && t.props.onVnodeBeforeUpdate) && ga(d, s, t, c), zi(e, !0);
 				let f = di(e), p = e.subTree;
-				e.subTree = f, v(p, f, m(p.el), ye(p), e, i, a), t.el = f.el, u === null && _i(e, f.el), r && V(r, i), (d = t.props && t.props.onVnodeUpdated) && V(() => _a(d, s, t, c), i);
+				e.subTree = f, v(p, f, m(p.el), ye(p), e, i, a), t.el = f.el, u === null && _i(e, f.el), r && V(r, i), (d = t.props && t.props.onVnodeUpdated) && V(() => ga(d, s, t, c), i);
 			} else {
 				let o, { el: s, props: c } = t, { bm: l, m: u, parent: d, root: f, type: p } = e, m = vr(t);
-				if (zi(e, !1), l && oe(l), !m && (o = c && c.onVnodeBeforeMount) && _a(o, d, t), zi(e, !0), s && Ce) {
+				if (zi(e, !1), l && oe(l), !m && (o = c && c.onVnodeBeforeMount) && ga(o, d, t), zi(e, !0), s && Ce) {
 					let t = () => {
 						e.subTree = di(e), Ce(s, e.subTree, e, i, null);
 					};
@@ -2160,7 +2160,7 @@ function Li(e, i) {
 				}
 				if (u && V(u, i), !m && (o = c && c.onVnodeMounted)) {
 					let e = t;
-					V(() => _a(o, d, e), i);
+					V(() => ga(o, d, e), i);
 				}
 				(t.shapeFlag & 256 || d && vr(d.vnode) && d.vnode.shapeFlag & 256) && e.a && V(e.a, i), e.isMounted = !0, t = n = r = null;
 			}
@@ -2191,34 +2191,34 @@ function Li(e, i) {
 		e ||= n, t ||= n;
 		let u = e.length, d = t.length, f = Math.min(u, d), p;
 		for (p = 0; p < f; p++) {
-			let n = t[p] = l ? ma(t[p]) : pa(t[p]);
+			let n = t[p] = l ? pa(t[p]) : fa(t[p]);
 			v(e[p], n, r, null, a, o, s, c, l);
 		}
 		u > d ? ve(e, a, o, !0, !1, f) : T(t, r, i, a, o, s, c, l, f);
 	}, pe = (e, t, r, i, a, o, s, c, l) => {
 		let u = 0, d = t.length, f = e.length - 1, p = d - 1;
 		for (; u <= f && u <= p;) {
-			let n = e[u], i = t[u] = l ? ma(t[u]) : pa(t[u]);
-			if (aa(n, i)) v(n, i, r, null, a, o, s, c, l);
+			let n = e[u], i = t[u] = l ? pa(t[u]) : fa(t[u]);
+			if (ia(n, i)) v(n, i, r, null, a, o, s, c, l);
 			else break;
 			u++;
 		}
 		for (; u <= f && u <= p;) {
-			let n = e[f], i = t[p] = l ? ma(t[p]) : pa(t[p]);
-			if (aa(n, i)) v(n, i, r, null, a, o, s, c, l);
+			let n = e[f], i = t[p] = l ? pa(t[p]) : fa(t[p]);
+			if (ia(n, i)) v(n, i, r, null, a, o, s, c, l);
 			else break;
 			f--, p--;
 		}
 		if (u > f) {
 			if (u <= p) {
 				let e = p + 1, n = e < d ? t[e].el : i;
-				for (; u <= p;) v(null, t[u] = l ? ma(t[u]) : pa(t[u]), r, n, a, o, s, c, l), u++;
+				for (; u <= p;) v(null, t[u] = l ? pa(t[u]) : fa(t[u]), r, n, a, o, s, c, l), u++;
 			}
 		} else if (u > p) for (; u <= f;) he(e[u], a, o, !0), u++;
 		else {
 			let m = u, h = u, g = /* @__PURE__ */ new Map();
 			for (u = h; u <= p; u++) {
-				let e = t[u] = l ? ma(t[u]) : pa(t[u]);
+				let e = t[u] = l ? pa(t[u]) : fa(t[u]);
 				e.key != null && g.set(e.key, u);
 			}
 			let _, y = 0, b = p - h + 1, x = !1, S = 0, C = Array(b);
@@ -2231,7 +2231,7 @@ function Li(e, i) {
 				}
 				let i;
 				if (n.key != null) i = g.get(n.key);
-				else for (_ = h; _ <= p; _++) if (C[_ - h] === 0 && aa(n, t[_])) {
+				else for (_ = h; _ <= p; _++) if (C[_ - h] === 0 && ia(n, t[_])) {
 					i = _;
 					break;
 				}
@@ -2263,7 +2263,7 @@ function Li(e, i) {
 			o(e.anchor, t, n);
 			return;
 		}
-		if (c === Xi) {
+		if (c === Yi) {
 			S(e, t, n);
 			return;
 		}
@@ -2287,7 +2287,7 @@ function Li(e, i) {
 			return;
 		}
 		let h = u & 1 && f, g = !vr(e), _;
-		if (g && (_ = o && o.onVnodeBeforeUnmount) && _a(_, t, e), u & 6) _e(e.component, n, r);
+		if (g && (_ = o && o.onVnodeBeforeUnmount) && ga(_, t, e), u & 6) _e(e.component, n, r);
 		else {
 			if (u & 128) {
 				e.suspense.unmount(n, r);
@@ -2297,7 +2297,7 @@ function Li(e, i) {
 		}
 		let v = m != null && p == null;
 		(g && (_ = o && o.onVnodeUnmounted) || h || v) && V(() => {
-			_ && _a(_, t, e), h && On(e, null, t, "unmounted"), v && (e.el = null);
+			_ && ga(_, t, e), h && On(e, null, t, "unmounted"), v && (e.el = null);
 		}, n);
 	}, k = (e) => {
 		let { type: t, el: n, anchor: r, transition: i } = e;
@@ -2305,7 +2305,7 @@ function Li(e, i) {
 			ge(n, r);
 			return;
 		}
-		if (t === Xi) {
+		if (t === Yi) {
 			C(e);
 			return;
 		}
@@ -2366,7 +2366,7 @@ function Vi(e, t, n = !1) {
 	let r = e.children, i = t.children;
 	if (d(r) && d(i)) for (let e = 0; e < r.length; e++) {
 		let t = r[e], a = i[e];
-		a.shapeFlag & 1 && !a.dynamicChildren && ((a.patchFlag <= 0 || a.patchFlag === 32) && (a = i[e] = ma(i[e]), a.el = t.el), !n && a.patchFlag !== -2 && Vi(t, a)), a.type === Ji && (a.patchFlag === -1 && (a = i[e] = ma(a)), a.el = t.el), a.type === Yi && !a.el && (a.el = t.el);
+		a.shapeFlag & 1 && !a.dynamicChildren && ((a.patchFlag <= 0 || a.patchFlag === 32) && (a = i[e] = pa(i[e]), a.el = t.el), !n && a.patchFlag !== -2 && Vi(t, a)), a.type === Ji && (a.patchFlag === -1 && (a = i[e] = pa(a)), a.el = t.el), a.type === U && !a.el && (a.el = t.el);
 	}
 }
 function Hi(e) {
@@ -2401,46 +2401,46 @@ var Ki = (e) => e.__isSuspense;
 function qi(e, t) {
 	t && t.pendingBranch ? d(e) ? t.effects.push(...e) : t.effects.push(e) : yn(e);
 }
-var H = /* @__PURE__ */ Symbol.for("v-fgt"), Ji = /* @__PURE__ */ Symbol.for("v-txt"), Yi = /* @__PURE__ */ Symbol.for("v-cmt"), Xi = /* @__PURE__ */ Symbol.for("v-stc"), Zi = [], Qi = null;
-function U(e = !1) {
-	Zi.push(Qi = e ? null : []);
+var H = /* @__PURE__ */ Symbol.for("v-fgt"), Ji = /* @__PURE__ */ Symbol.for("v-txt"), U = /* @__PURE__ */ Symbol.for("v-cmt"), Yi = /* @__PURE__ */ Symbol.for("v-stc"), Xi = [], Zi = null;
+function W(e = !1) {
+	Xi.push(Zi = e ? null : []);
 }
-function $i() {
-	Zi.pop(), Qi = Zi[Zi.length - 1] || null;
+function Qi() {
+	Xi.pop(), Zi = Xi[Xi.length - 1] || null;
 }
-var ea = 1;
-function ta(e, t = !1) {
-	ea += e, e < 0 && Qi && t && (Qi.hasOnce = !0);
+var $i = 1;
+function ea(e, t = !1) {
+	$i += e, e < 0 && Zi && t && (Zi.hasOnce = !0);
 }
-function na(e) {
-	return e.dynamicChildren = ea > 0 ? Qi || n : null, $i(), ea > 0 && Qi && Qi.push(e), e;
+function ta(e) {
+	return e.dynamicChildren = $i > 0 ? Zi || n : null, Qi(), $i > 0 && Zi && Zi.push(e), e;
 }
-function W(e, t, n, r, i, a) {
-	return na(G(e, t, n, r, i, a, !0));
+function G(e, t, n, r, i, a) {
+	return ta(K(e, t, n, r, i, a, !0));
 }
-function ra(e, t, n, r, i) {
-	return na(K(e, t, n, r, i, !0));
+function na(e, t, n, r, i) {
+	return ta(q(e, t, n, r, i, !0));
 }
-function ia(e) {
+function ra(e) {
 	return e ? e.__v_isVNode === !0 : !1;
 }
-function aa(e, t) {
+function ia(e, t) {
 	return e.type === t.type && e.key === t.key;
 }
-var oa = ({ key: e }) => e ?? null, sa = ({ ref: e, ref_key: t, ref_for: n }) => (typeof e == "number" && (e = "" + e), e == null ? null : g(e) || /* @__PURE__ */ F(e) || h(e) ? {
+var aa = ({ key: e }) => e ?? null, oa = ({ ref: e, ref_key: t, ref_for: n }) => (typeof e == "number" && (e = "" + e), e == null ? null : g(e) || /* @__PURE__ */ F(e) || h(e) ? {
 	i: wn,
 	r: e,
 	k: t,
 	f: !!n
 } : e);
-function G(e, t = null, n = null, r = 0, i = null, a = e === H ? 0 : 1, o = !1, s = !1) {
+function K(e, t = null, n = null, r = 0, i = null, a = e === H ? 0 : 1, o = !1, s = !1) {
 	let c = {
 		__v_isVNode: !0,
 		__v_skip: !0,
 		type: e,
 		props: t,
-		key: t && oa(t),
-		ref: t && sa(t),
+		key: t && aa(t),
+		ref: t && oa(t),
 		scopeId: Tn,
 		slotScopeIds: null,
 		children: n,
@@ -2463,33 +2463,33 @@ function G(e, t = null, n = null, r = 0, i = null, a = e === H ? 0 : 1, o = !1, 
 		appContext: null,
 		ctx: wn
 	};
-	return s ? (ha(c, n), a & 128 && e.normalize(c)) : n && (c.shapeFlag |= g(n) ? 8 : 16), ea > 0 && !o && Qi && (c.patchFlag > 0 || a & 6) && c.patchFlag !== 32 && Qi.push(c), c;
+	return s ? (ma(c, n), a & 128 && e.normalize(c)) : n && (c.shapeFlag |= g(n) ? 8 : 16), $i > 0 && !o && Zi && (c.patchFlag > 0 || a & 6) && c.patchFlag !== 32 && Zi.push(c), c;
 }
-var K = ca;
-function ca(e, t = null, n = null, r = 0, i = null, a = !1) {
-	if ((!e || e === Ir) && (e = Yi), ia(e)) {
-		let r = ua(e, t, !0);
-		return n && ha(r, n), ea > 0 && !a && Qi && (r.shapeFlag & 6 ? Qi[Qi.indexOf(e)] = r : Qi.push(r)), r.patchFlag = -2, r;
+var q = sa;
+function sa(e, t = null, n = null, r = 0, i = null, a = !1) {
+	if ((!e || e === Ir) && (e = U), ra(e)) {
+		let r = la(e, t, !0);
+		return n && ma(r, n), $i > 0 && !a && Zi && (r.shapeFlag & 6 ? Zi[Zi.indexOf(e)] = r : Zi.push(r)), r.patchFlag = -2, r;
 	}
 	if (La(e) && (e = e.__vccOpts), t) {
-		t = la(t);
+		t = ca(t);
 		let { class: e, style: n } = t;
 		e && !g(e) && (t.class = k(e)), v(n) && (/* @__PURE__ */ Vt(n) && !d(n) && (n = s({}, n)), t.style = de(n));
 	}
 	let o = g(e) ? 1 : Ki(e) ? 128 : zn(e) ? 64 : v(e) ? 4 : h(e) ? 2 : 0;
-	return G(e, t, n, r, i, o, a, !0);
+	return K(e, t, n, r, i, o, a, !0);
 }
-function la(e) {
+function ca(e) {
 	return e ? /* @__PURE__ */ Vt(e) || bi(e) ? s({}, e) : e : null;
 }
-function ua(e, t, n = !1, r = !1) {
-	let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e, l = t ? ga(i || {}, t) : i, u = {
+function la(e, t, n = !1, r = !1) {
+	let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e, l = t ? ha(i || {}, t) : i, u = {
 		__v_isVNode: !0,
 		__v_skip: !0,
 		type: e.type,
 		props: l,
-		key: l && oa(l),
-		ref: t && t.ref ? n && a ? d(a) ? a.concat(sa(t)) : [a, sa(t)] : sa(t) : a,
+		key: l && aa(l),
+		ref: t && t.ref ? n && a ? d(a) ? a.concat(oa(t)) : [a, oa(t)] : oa(t) : a,
 		scopeId: e.scopeId,
 		slotScopeIds: e.slotScopeIds,
 		children: s,
@@ -2506,8 +2506,8 @@ function ua(e, t, n = !1, r = !1) {
 		transition: c,
 		component: e.component,
 		suspense: e.suspense,
-		ssContent: e.ssContent && ua(e.ssContent),
-		ssFallback: e.ssFallback && ua(e.ssFallback),
+		ssContent: e.ssContent && la(e.ssContent),
+		ssFallback: e.ssFallback && la(e.ssFallback),
 		placeholder: e.placeholder,
 		el: e.el,
 		anchor: e.anchor,
@@ -2516,29 +2516,29 @@ function ua(e, t, n = !1, r = !1) {
 	};
 	return c && r && ur(u, c.clone(u)), u;
 }
-function da(e = " ", t = 0) {
-	return K(Ji, null, e, t);
+function ua(e = " ", t = 0) {
+	return q(Ji, null, e, t);
 }
-function fa(e, t) {
-	let n = K(Xi, null, e);
+function da(e, t) {
+	let n = q(Yi, null, e);
 	return n.staticCount = t, n;
 }
-function q(e = "", t = !1) {
-	return t ? (U(), ra(Yi, null, e)) : K(Yi, null, e);
+function J(e = "", t = !1) {
+	return t ? (W(), na(U, null, e)) : q(U, null, e);
+}
+function fa(e) {
+	return e == null || typeof e == "boolean" ? q(U) : d(e) ? q(H, null, e.slice()) : ra(e) ? pa(e) : q(Ji, null, String(e));
 }
 function pa(e) {
-	return e == null || typeof e == "boolean" ? K(Yi) : d(e) ? K(H, null, e.slice()) : ia(e) ? ma(e) : K(Ji, null, String(e));
+	return e.el === null && e.patchFlag !== -1 || e.memo ? e : la(e);
 }
-function ma(e) {
-	return e.el === null && e.patchFlag !== -1 || e.memo ? e : ua(e);
-}
-function ha(e, t) {
+function ma(e, t) {
 	let n = 0, { shapeFlag: r } = e;
 	if (t == null) t = null;
 	else if (d(t)) n = 16;
 	else if (typeof t == "object") if (r & 65) {
 		let n = t.default;
-		n && (n._c && (n._d = !1), ha(e, n()), n._c && (n._d = !0));
+		n && (n._c && (n._d = !1), ma(e, n()), n._c && (n._d = !0));
 		return;
 	} else {
 		n = 32;
@@ -2547,17 +2547,17 @@ function ha(e, t) {
 	}
 	else if (h(t)) {
 		if (r & 65) {
-			ha(e, { default: t });
+			ma(e, { default: t });
 			return;
 		}
 		t = {
 			default: t,
 			_ctx: wn
 		}, n = 32;
-	} else t = String(t), r & 64 ? (n = 16, t = [da(t)]) : n = 8;
+	} else t = String(t), r & 64 ? (n = 16, t = [ua(t)]) : n = 8;
 	e.children = t, e.shapeFlag |= n;
 }
-function ga(...e) {
+function ha(...e) {
 	let t = {};
 	for (let n = 0; n < e.length; n++) {
 		let r = e[n];
@@ -2570,13 +2570,13 @@ function ga(...e) {
 	}
 	return t;
 }
-function _a(e, t, n, r = null) {
+function ga(e, t, n, r = null) {
 	on(e, t, 7, [n, r]);
 }
-var va = ni(), ya = 0;
-function ba(e, n, r) {
-	let i = e.type, a = (n ? n.appContext : e.appContext) || va, o = {
-		uid: ya++,
+var _a = ni(), va = 0;
+function ya(e, n, r) {
+	let i = e.type, a = (n ? n.appContext : e.appContext) || _a, o = {
+		uid: va++,
 		vnode: e,
 		type: i,
 		parent: n,
@@ -2641,7 +2641,7 @@ function ba(e, n, r) {
 	};
 	return o.ctx = { _: o }, o.root = n ? n.root : o, o.emit = si.bind(null, o), e.ce && e.ce(o), o;
 }
-var J = null, xa = () => J || wn, Sa, Ca;
+var ba = null, xa = () => ba || wn, Sa, Ca;
 {
 	let e = ue(), t = (t, n) => {
 		let r;
@@ -2649,15 +2649,15 @@ var J = null, xa = () => J || wn, Sa, Ca;
 			r.length > 1 ? r.forEach((t) => t(e)) : r[0](e);
 		};
 	};
-	Sa = t("__VUE_INSTANCE_SETTERS__", (e) => J = e), Ca = t("__VUE_SSR_SETTERS__", (e) => Da = e);
+	Sa = t("__VUE_INSTANCE_SETTERS__", (e) => ba = e), Ca = t("__VUE_SSR_SETTERS__", (e) => Da = e);
 }
 var wa = (e) => {
-	let t = J;
+	let t = ba;
 	return Sa(e), e.scope.on(), () => {
 		e.scope.off(), Sa(t);
 	};
 }, Ta = () => {
-	J && J.scope.off(), Sa(null);
+	ba && ba.scope.off(), Sa(null);
 };
 function Ea(e) {
 	return e.vnode.shapeFlag & 4;
@@ -2746,11 +2746,11 @@ function La(e) {
 var Y = (e, t) => /* @__PURE__ */ Zt(e, t, Da);
 function Ra(e, t, n) {
 	try {
-		ta(-1);
+		ea(-1);
 		let r = arguments.length;
-		return r === 2 ? v(t) && !d(t) ? ia(t) ? K(e, null, [t]) : K(e, t) : K(e, null, t) : (r > 3 ? n = Array.prototype.slice.call(arguments, 2) : r === 3 && ia(n) && (n = [n]), K(e, t, n));
+		return r === 2 ? v(t) && !d(t) ? ra(t) ? q(e, null, [t]) : q(e, t) : q(e, null, t) : (r > 3 ? n = Array.prototype.slice.call(arguments, 2) : r === 3 && ra(n) && (n = [n]), q(e, t, n));
 	} finally {
-		ta(1);
+		ea(1);
 	}
 }
 var za = "3.5.40", Ba = void 0, Va = typeof window < "u" && window.trustedTypes;
@@ -3313,7 +3313,8 @@ var vs = () => ({
 	train_microwakeword: !0,
 	train_openwakeword: !1,
 	train_nanowakeword_cnn: !1,
-	train_nanowakeword_gru: !1
+	train_nanowakeword_gru: !1,
+	generated_negative_phrases: ""
 }), X = /* @__PURE__ */ Pt({
 	activeView: "trainer",
 	initialized: !1,
@@ -3326,6 +3327,7 @@ var vs = () => ({
 	trainOpenWakeWord: !1,
 	trainNanoWakeWordCnn: !1,
 	trainNanoWakeWordGru: !1,
+	generatedNegativePhrases: "",
 	languages: [{
 		code: "en",
 		label: "English (en)",
@@ -3611,7 +3613,7 @@ function Xs(e, t) {
 	X.auto = e || {}, t && (X.autoForm = {
 		...Ss(),
 		...e.config || {}
-	}, X.autoForm.wake_phrase || (X.autoForm.wake_phrase = X.session.raw_phrase || ""), X.autoForm.language || (X.autoForm.language = X.session.language || "en"), X.autoForm.english_accent || (X.autoForm.english_accent = X.session.english_accent || "mixed"), String(X.autoForm.language).toLowerCase().startsWith("en") || (X.autoForm.english_accent = "mixed"));
+	}, Array.isArray(e.config?.generated_negative_phrases) && (X.autoForm.generated_negative_phrases = e.config.generated_negative_phrases.join("\n")), X.autoForm.wake_phrase || (X.autoForm.wake_phrase = X.session.raw_phrase || ""), X.autoForm.language || (X.autoForm.language = X.session.language || "en"), X.autoForm.english_accent || (X.autoForm.english_accent = X.session.english_accent || "mixed"), String(X.autoForm.language).toLowerCase().startsWith("en") || (X.autoForm.english_accent = "mixed"));
 }
 async function Zs(e = !1) {
 	let t = await hs("/api/auto_train");
@@ -3748,7 +3750,8 @@ async function oc() {
 				train_microwakeword: X.trainMicroWakeWord,
 				train_openwakeword: X.trainOpenWakeWord,
 				train_nanowakeword_cnn: X.trainNanoWakeWordCnn,
-				train_nanowakeword_gru: X.trainNanoWakeWordGru
+				train_nanowakeword_gru: X.trainNanoWakeWordGru,
+				generated_negative_phrases: X.generatedNegativePhrases
 			}), sc();
 		} catch (e) {
 			X.training = {
@@ -3966,24 +3969,24 @@ var hc = {
 		function h() {
 			X.trimItem && d();
 		}
-		return window.addEventListener("resize", h), Ar(() => window.removeEventListener("resize", h)), (e, n) => (U(), ra(Jn, { to: "body" }, [I(X).trimItem ? (U(), W("div", {
+		return window.addEventListener("resize", h), Ar(() => window.removeEventListener("resize", h)), (e, n) => (W(), na(Jn, { to: "body" }, [I(X).trimItem ? (W(), G("div", {
 			key: 0,
 			class: "modal-backdrop",
 			onClick: as(l, ["self"])
-		}, [G("section", hc, [
-			G("header", gc, [G("div", null, [n[2] ||= G("span", { class: "eyebrow" }, "Audio editor", -1), G("h2", null, "Trim " + A(I(X).trimItem.saved_as), 1)]), G("button", {
+		}, [K("section", hc, [
+			K("header", gc, [K("div", null, [n[2] ||= K("span", { class: "eyebrow" }, "Audio editor", -1), K("h2", null, "Trim " + A(I(X).trimItem.saved_as), 1)]), K("button", {
 				type: "button",
 				class: "button ghost",
 				onClick: l
 			}, "Close")]),
-			n[3] ||= G("p", { class: "muted" }, "Keep the spoken wake phrase and remove excess silence or noise. VAD markers appear in green.", -1),
-			s.value ? (U(), W("div", _c, "Loading waveform…")) : (U(), W(H, { key: 1 }, [
-				G("canvas", {
+			n[3] ||= K("p", { class: "muted" }, "Keep the spoken wake phrase and remove excess silence or noise. VAD markers appear in green.", -1),
+			s.value ? (W(), G("div", _c, "Loading waveform…")) : (W(), G(H, { key: 1 }, [
+				K("canvas", {
 					ref_key: "canvas",
 					ref: t,
 					class: "waveform"
 				}, null, 512),
-				G("div", vc, [G("label", null, [G("span", null, "Start · " + A(i.value.toFixed(2)) + "s", 1), R(G("input", {
+				K("div", vc, [K("label", null, [K("span", null, "Start · " + A(i.value.toFixed(2)) + "s", 1), R(K("input", {
 					"onUpdate:modelValue": n[0] ||= (e) => i.value = e,
 					type: "range",
 					min: "0",
@@ -3994,7 +3997,7 @@ var hc = {
 					i.value,
 					void 0,
 					{ number: !0 }
-				]])]), G("label", null, [G("span", null, "End · " + A(a.value.toFixed(2)) + "s", 1), R(G("input", {
+				]])]), K("label", null, [K("span", null, "End · " + A(a.value.toFixed(2)) + "s", 1), R(K("input", {
 					"onUpdate:modelValue": n[1] ||= (e) => a.value = e,
 					type: "range",
 					min: Math.min(r.value, i.value + .01),
@@ -4006,18 +4009,18 @@ var hc = {
 					void 0,
 					{ number: !0 }
 				]])])]),
-				G("div", xc, [G("span", Sc, "Selection " + A(Math.max(0, a.value - i.value).toFixed(2)) + "s", 1), o.value.length ? (U(), W("span", Cc, A(o.value.length) + " speech segment" + A(o.value.length === 1 ? "" : "s"), 1)) : q("", !0)]),
-				G("div", wc, [
-					G("button", {
+				K("div", xc, [K("span", Sc, "Selection " + A(Math.max(0, a.value - i.value).toFixed(2)) + "s", 1), o.value.length ? (W(), G("span", Cc, A(o.value.length) + " speech segment" + A(o.value.length === 1 ? "" : "s"), 1)) : J("", !0)]),
+				K("div", wc, [
+					K("button", {
 						type: "button",
 						onClick: f
 					}, "Play selection"),
-					o.value.length ? (U(), W("button", {
+					o.value.length ? (W(), G("button", {
 						key: 0,
 						type: "button",
 						onClick: u
-					}, "Select first VAD")) : q("", !0),
-					G("button", {
+					}, "Select first VAD")) : J("", !0),
+					K("button", {
 						type: "button",
 						class: "button primary",
 						disabled: c.value,
@@ -4025,7 +4028,7 @@ var hc = {
 					}, A(c.value ? "Saving…" : "Save trim"), 9, Tc)
 				])
 			], 64))
-		])])) : q("", !0)]));
+		])])) : J("", !0)]));
 	}
 }), Dc = { class: "app-shell" }, Oc = { class: "app-header" }, kc = { class: "header-status" }, Ac = {
 	key: 0,
@@ -4050,97 +4053,115 @@ var hc = {
 	class: "nano-architecture-grid",
 	role: "group",
 	"aria-label": "NanoWakeWord architectures"
-}, hl = ["aria-pressed"], gl = ["aria-pressed"], _l = { class: "train-action" }, vl = ["disabled"], yl = { class: "panel-footer" }, bl = ["disabled"], xl = { class: "hero auto-hero" }, Sl = { class: "panel" }, Cl = { class: "toggle-list" }, wl = { class: "form-grid" }, Tl = { class: "field" }, El = { class: "field" }, Dl = {
+}, hl = ["aria-pressed"], gl = ["aria-pressed"], _l = {
+	key: 1,
+	class: "hard-negative-card"
+}, vl = { class: "hard-negative-head" }, yl = { class: "hard-negative-engines" }, bl = { class: "field" }, xl = {
+	key: 0,
+	class: "training-summary-card"
+}, Sl = { class: "training-summary-grid" }, Cl = {
+	key: 0,
+	class: "summary-metrics"
+}, wl = { class: "train-action" }, Tl = ["disabled"], El = { class: "panel-footer" }, Dl = ["disabled"], Ol = { class: "hero auto-hero" }, kl = { class: "panel" }, Al = { class: "toggle-list" }, jl = { class: "form-grid" }, Ml = { class: "field" }, Nl = { class: "field" }, Pl = {
 	key: 0,
 	class: "field"
-}, Ol = ["value"], kl = { class: "field wide" }, Al = ["value"], jl = { class: "field" }, Ml = { class: "panel" }, Nl = { class: "form-grid" }, Pl = { class: "field" }, Fl = { class: "field" }, Il = { class: "model-picker" }, Ll = {
+}, Fl = ["value"], Il = { class: "field wide" }, Ll = ["value"], Rl = { class: "field" }, zl = { class: "panel" }, Bl = { class: "form-grid" }, Vl = { class: "field" }, Hl = { class: "field" }, Ul = { class: "model-picker" }, Wl = {
 	class: "model-choice-grid",
 	role: "group",
 	"aria-label": "Auto Training wake-word models"
-}, Rl = ["aria-pressed"], zl = ["aria-pressed"], Bl = ["aria-pressed"], Vl = {
+}, Gl = ["aria-pressed"], Kl = ["aria-pressed"], ql = ["aria-pressed"], Jl = {
 	key: 0,
 	class: "nano-architecture-panel"
-}, Hl = { class: "nano-architecture-heading" }, Ul = {
+}, Yl = { class: "nano-architecture-heading" }, Xl = {
 	class: "nano-architecture-grid",
 	role: "group",
 	"aria-label": "Auto Training NanoWakeWord architectures"
-}, Wl = ["aria-pressed"], Gl = ["aria-pressed"], Kl = { class: "stats" }, ql = { class: "format-value" }, Jl = { class: "format-value" }, Yl = { class: "panel" }, Xl = { class: "form-grid" }, Zl = { class: "field wide" }, Ql = { class: "field wide" }, $l = { class: "link-row" }, eu = ["disabled"], tu = ["disabled"], nu = { class: "toggle-list compact" }, ru = { class: "panel action-panel" }, iu = { class: "action-grid" }, au = ["disabled"], ou = ["disabled"], su = ["disabled"], cu = ["disabled"], lu = { class: "audit" }, uu = { class: "hero capture-hero" }, du = { class: "panel" }, fu = { class: "panel-head" }, pu = ["disabled"], mu = { class: "stats" }, hu = { class: "panel" }, gu = {
+}, Zl = ["aria-pressed"], Ql = ["aria-pressed"], $l = {
+	key: 1,
+	class: "hard-negative-card"
+}, eu = { class: "hard-negative-head" }, tu = { class: "hard-negative-engines" }, nu = { class: "field" }, ru = {
+	key: 0,
+	class: "training-summary-card"
+}, iu = { class: "training-summary-grid" }, au = {
+	key: 0,
+	class: "summary-metrics"
+}, ou = { class: "stats" }, su = { class: "format-value" }, cu = { class: "format-value" }, lu = { class: "panel" }, uu = { class: "form-grid" }, du = { class: "field wide" }, fu = { class: "field wide" }, pu = { class: "link-row" }, mu = ["disabled"], hu = ["disabled"], gu = { class: "toggle-list compact" }, _u = { class: "panel action-panel" }, vu = { class: "action-grid" }, yu = ["disabled"], bu = ["disabled"], xu = ["disabled"], Su = ["disabled"], Cu = { class: "audit" }, wu = { class: "hero capture-hero" }, Tu = { class: "panel" }, Eu = { class: "panel-head" }, Du = ["disabled"], Ou = { class: "stats" }, ku = { class: "panel" }, Au = {
 	key: 0,
 	class: "empty-state"
-}, _u = {
+}, ju = {
 	key: 1,
 	class: "audio-list"
-}, vu = {
+}, Mu = {
 	key: 0,
 	class: "meta-row"
-}, yu = {
+}, Nu = {
 	key: 1,
 	class: "transcript"
-}, bu = {
+}, Pu = {
 	key: 2,
 	class: "transcript"
-}, xu = ["src"], Su = ["disabled", "onClick"], Cu = ["disabled", "onClick"], wu = ["disabled", "onClick"], Tu = { class: "hero samples-hero" }, Eu = { class: "pill hero-pill" }, Du = { class: "panel" }, Ou = { class: "panel-head sample-head" }, ku = { class: "segment-control" }, Au = { class: "row toolbar" }, ju = ["disabled"], Mu = ["disabled"], Nu = ["disabled"], Pu = {
+}, Fu = ["src"], Iu = ["disabled", "onClick"], Lu = ["disabled", "onClick"], Ru = ["disabled", "onClick"], zu = { class: "hero samples-hero" }, Bu = { class: "pill hero-pill" }, Vu = { class: "panel" }, Hu = { class: "panel-head sample-head" }, Uu = { class: "segment-control" }, Wu = { class: "row toolbar" }, Gu = ["disabled"], Ku = ["disabled"], qu = ["disabled"], Ju = {
 	key: 0,
 	class: "empty-state"
-}, Fu = {
+}, Yu = {
 	key: 1,
 	class: "audio-list compact-list"
-}, Iu = { class: "row" }, Lu = {
+}, Xu = { class: "row" }, Zu = {
 	key: 0,
 	class: "pill warning"
-}, Ru = {
+}, Qu = {
 	key: 0,
 	class: "transcript"
-}, zu = {
+}, $u = {
 	key: 1,
 	class: "transcript"
-}, Bu = ["src"], Vu = ["onClick"], Hu = ["onClick"], Uu = ["disabled", "onClick"], Wu = {
+}, ed = ["src"], td = ["onClick"], nd = ["onClick"], rd = ["disabled", "onClick"], id = {
 	key: 2,
 	class: "pagination"
-}, Gu = ["disabled"], Ku = ["disabled"], qu = { class: "panel" }, Ju = { class: "dropzone" }, Yu = ["disabled"], Xu = { class: "progress-card" }, Zu = { class: "progress-track" }, Qu = { class: "hero data-hero" }, $u = { class: "pill hero-pill" }, ed = { class: "panel" }, td = { class: "panel-head" }, nd = ["disabled"], rd = { class: "stats" }, id = { class: "format-value" }, ad = {
+}, ad = ["disabled"], od = ["disabled"], sd = { class: "panel" }, cd = { class: "dropzone" }, ld = ["disabled"], ud = { class: "progress-card" }, dd = { class: "progress-track" }, fd = { class: "hero data-hero" }, pd = { class: "pill hero-pill" }, md = { class: "panel" }, hd = { class: "panel-head" }, gd = ["disabled"], _d = { class: "stats" }, vd = { class: "format-value" }, yd = {
 	key: 0,
 	class: "data-warning"
-}, od = { class: "panel-head" }, sd = { class: "number" }, cd = { class: "data-list" }, ld = { class: "data-copy" }, ud = { class: "data-title" }, dd = {
+}, bd = { class: "panel-head" }, xd = { class: "number" }, Sd = { class: "data-list" }, Cd = { class: "data-copy" }, wd = { class: "data-title" }, Td = {
 	key: 0,
 	class: "data-note"
-}, fd = { class: "data-usage" }, pd = ["disabled", "onClick"], md = {
+}, Ed = { class: "data-usage" }, Dd = ["disabled", "onClick"], Od = {
 	key: 0,
 	class: "panel empty-state"
-}, hd = { class: "hero firmware-hero" }, gd = { class: "panel" }, _d = { class: "panel-head" }, vd = ["disabled"], yd = {
+}, kd = { class: "hero firmware-hero" }, Ad = { class: "panel" }, jd = { class: "panel-head" }, Md = ["disabled"], Nd = {
 	key: 0,
 	class: "empty-state"
-}, bd = {
+}, Pd = {
 	key: 1,
 	class: "word-list"
-}, xd = ["href"], Sd = {
+}, Fd = ["href"], Id = {
 	key: 1,
 	class: "muted"
-}, Cd = ["href"], wd = ["href"], Td = ["href"], Ed = { class: "meta-row" }, Dd = { key: 0 }, Od = { key: 1 }, kd = { key: 2 }, Ad = ["disabled", "onClick"], jd = { class: "panel compatibility-panel" }, Md = {
+}, Ld = ["href"], Rd = ["href"], zd = ["href"], Bd = { class: "meta-row" }, Vd = { key: 0 }, Hd = { key: 1 }, Ud = { key: 2 }, Wd = ["disabled", "onClick"], Gd = { class: "panel compatibility-panel" }, Kd = {
 	key: 0,
 	class: "empty-state"
-}, Nd = {
+}, qd = {
 	key: 1,
 	class: "word-list"
-}, Pd = ["href"], Fd = {
+}, Jd = ["href"], Yd = {
 	key: 1,
 	class: "muted"
-}, Id = ["disabled", "onClick"], Ld = {
+}, Xd = ["disabled", "onClick"], Zd = {
 	class: "modal console-modal",
 	role: "dialog",
 	"aria-modal": "true",
 	"aria-label": "Training console"
-}, Rd = { class: "modal-head" }, zd = { class: "row console-actions" }, Bd = {
+}, Qd = { class: "modal-head" }, $d = { class: "row console-actions" }, ef = {
 	class: "modal link-modal",
 	role: "dialog",
 	"aria-modal": "true",
 	"aria-label": "Link Tater"
-}, Vd = { class: "modal-head" }, Hd = {
+}, tf = { class: "modal-head" }, nf = {
 	key: 0,
 	class: "link-success"
-}, Ud = {
+}, rf = {
 	key: 1,
 	class: "stack"
-}, Wd = { class: "field" }, Gd = { class: "field" }, Kd = ["disabled"], qd = "/static/images/tater-wake-word-trainer.png", Jd = 50, Yd = /* @__PURE__ */ fr({
+}, af = { class: "field" }, of = { class: "field" }, sf = ["disabled"], cf = "/static/images/tater-wake-word-trainer.png", lf = 50, uf = /* @__PURE__ */ fr({
 	__name: "TrainerApp",
 	setup(e) {
 		let t = /* @__PURE__ */ Gt(null), n = /* @__PURE__ */ Gt(null), r = /* @__PURE__ */ Gt(!0), i = /* @__PURE__ */ Gt(""), a = /* @__PURE__ */ Gt(""), o = /* @__PURE__ */ Gt(!1), s = [
@@ -4176,8 +4197,8 @@ var hc = {
 			}
 		], c = Y(() => {
 			let e = X.samplePage[X.sampleBucket];
-			return As.value.slice(e * Jd, (e + 1) * Jd);
-		}), l = Y(() => Math.max(1, Math.ceil(As.value.length / Jd))), u = Y(() => X.auto.state || {}), d = Y(() => X.auto.runtime || {}), f = Y(() => {
+			return As.value.slice(e * lf, (e + 1) * lf);
+		}), l = Y(() => Math.max(1, Math.ceil(As.value.length / lf))), u = Y(() => X.auto.state || {}), d = Y(() => X.auto.runtime || {}), f = Y(() => {
 			let e = u.value, t = [];
 			return e.last_review_result && t.push(`Last review: ${String(e.last_review_result).replaceAll("_", " ")}`), e.last_review_file && t.push(String(e.last_review_file)), e.last_review_transcript && t.push(`STT: “${e.last_review_transcript}”`), e.last_review_error && t.push(`Error: ${e.last_review_error}`), e.last_stt_engine && t.push(`STT engine: ${String(e.last_stt_engine).replaceAll("_", " ")}`), e.last_notify_at && t.push(e.last_notify_error ? `Publish failed: ${e.last_notify_error}` : `Wake word published ${uc(e.last_notify_at)}`), t.join(" · ") || "No automatic review has run yet.";
 		}), p = Y(() => X.training.running ? {
@@ -4214,319 +4235,378 @@ var hc = {
 				name: e,
 				items: t
 			}));
-		}), _ = Y(() => X.trainNanoWakeWordCnn || X.trainNanoWakeWordGru), v = Y(() => X.autoForm.train_nanowakeword_cnn || X.autoForm.train_nanowakeword_gru);
+		}), _ = Y(() => X.trainNanoWakeWordCnn || X.trainNanoWakeWordGru), v = Y(() => X.autoForm.train_nanowakeword_cnn || X.autoForm.train_nanowakeword_gru), y = Y(() => [
+			...X.trainMicroWakeWord ? ["MWW"] : [],
+			...X.trainOpenWakeWord ? ["OWW"] : [],
+			..._.value ? ["NWW"] : []
+		]), b = Y(() => [
+			...X.autoForm.train_microwakeword ? ["MWW"] : [],
+			...X.autoForm.train_openwakeword ? ["OWW"] : [],
+			...v.value ? ["NWW"] : []
+		]);
 		Nn([() => X.language, () => X.ttsMode], Bs), Nn(() => X.toast.serial, () => window.setTimeout(() => {
 			X.toast.message = "";
 		}, 4500)), Nn(h, async () => {
 			r.value && (await hn(), r.value && n.value && (n.value.scrollTop = n.value.scrollHeight));
 		}), Nn(() => X.consoleOpen, async (e) => {
-			e && (r.value = !0, await hn(), x());
+			e && (r.value = !0, await hn(), C());
 		}), Dr(() => {
-			cc(), document.addEventListener("keydown", y);
+			cc(), document.addEventListener("keydown", x);
 		}), Ar(() => {
-			lc(), document.removeEventListener("keydown", y);
+			lc(), document.removeEventListener("keydown", x);
 		});
-		function y(e) {
+		function x(e) {
 			e.key === "Escape" && (X.consoleOpen = !1, X.taterLinkOpen = !1, X.trimItem = null);
 		}
-		function b() {
+		function S() {
 			let e = n.value;
 			if (!e) return;
 			let t = e.scrollHeight - e.clientHeight - e.scrollTop;
 			r.value = t <= 32;
 		}
-		function x() {
+		function C() {
 			let e = n.value;
 			e && (r.value = !0, e.scrollTop = e.scrollHeight);
 		}
-		function S(e) {
+		function w(e) {
 			X.activeView = e, (e === "auto" ? Zs(!1) : e === "captured" ? Hs() : e === "samples" ? Vs() : e === "firmware" ? nc() : e === "data" ? rc() : Promise.resolve()).catch((e) => $(e instanceof Error ? e.message : "Refresh failed.", "error"));
 		}
-		function C(e) {
+		function ee(e) {
 			X.sampleBucket = e;
 		}
-		function w(e, t) {
+		function te(e, t) {
 			X.trimBucket = t, X.trimItem = e;
 		}
-		function ee() {
+		function ne() {
 			_.value ? (X.trainNanoWakeWordCnn = !1, X.trainNanoWakeWordGru = !1) : X.trainNanoWakeWordCnn = !0;
 		}
-		function te() {
+		function T() {
 			v.value ? (X.autoForm.train_nanowakeword_cnn = !1, X.autoForm.train_nanowakeword_gru = !1) : X.autoForm.train_nanowakeword_cnn = !0;
 		}
-		function ne() {
+		function re(e) {
+			return new Set(String(e || "").split(/[\n,]+/).map((e) => e.trim().toLocaleLowerCase()).filter(Boolean)).size;
+		}
+		function E() {
 			i.value = X.autoForm.tater_url || "http://127.0.0.1:8501", a.value = "", o.value = !1, X.taterLinkOpen = !0, hn(() => document.querySelector("#pairing-code")?.focus());
 		}
-		function T() {
+		function ie() {
 			let e = a.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
 			a.value = e.length > 4 ? `${e.slice(0, 4)}-${e.slice(4)}` : e;
 		}
-		async function re() {
+		async function ae() {
 			if (!i.value.trim() || !a.value.trim()) {
 				$("Tater address and pairing code are required.", "warning");
 				return;
 			}
 			o.value = await ec(i.value, a.value);
 		}
-		function E(e) {
+		function D(e) {
 			let t = [];
 			return e.source_device && t.push(String(e.source_device)), e.wake_word && t.push(String(e.wake_word)), e.max_probability !== null && e.max_probability !== void 0 && t.push(`max ${e.max_probability}`), e.average_probability !== null && e.average_probability !== void 0 && t.push(`avg ${e.average_probability}`), e.detection_profile && t.push(`profile ${String(e.detection_profile).replaceAll("_", " ")}`), e.auto_review_status && t.push(`auto ${String(e.auto_review_status).replaceAll("_", " ")}`), e.vad_max_probability !== null && e.vad_max_probability !== void 0 && t.push(`VAD ${e.vad_max_probability}`), t;
 		}
-		function ie(e) {
+		function oe(e) {
 			let t = [];
 			e.original_name && e.original_name !== e.saved_as && t.push(`From ${e.original_name}`);
 			let n = uc(e.reviewed_at || e.received_at || e.created_at);
 			return n && t.push(`Saved ${n}`), e.message && t.push(String(e.message)), e.auto_negative && t.push("Auto-reviewed false positive"), e.auto_positive && t.push("Auto-promoted close miss"), t.join(" · ") || "Training sample";
 		}
-		function ae(e) {
+		function O(e) {
 			return String(e.json_url || e.url || e.jsonUrl || "");
 		}
-		function D(e) {
+		function se(e) {
 			return String(e.esphome_json_url || e.esphomeJsonUrl || "");
 		}
-		function oe(e) {
+		function ce(e) {
 			return String(e.model_url || e.modelUrl || "");
 		}
-		function O(e) {
+		function le(e) {
 			return String(e.openwakeword_model_url || "");
 		}
-		function se(e) {
+		function ue(e) {
 			return e.nanowakeword_models && typeof e.nanowakeword_models == "object" ? e.nanowakeword_models : {};
 		}
-		function ce(e) {
+		function fe(e) {
 			let t = e.trim().toLowerCase();
 			return /^(✓|✅)|success|finished/.test(t) ? "success" : /^(✗|❌)|error|failed|traceback/.test(t) ? "error" : /^(⚠|warning)/.test(t) ? "warning" : /^={4,}|^-----|^=====/.test(t) ? "heading" : "";
 		}
-		return (e, d) => (U(), W("div", Dc, [
-			d[144] ||= G("div", {
+		return (e, d) => (W(), G("div", Dc, [
+			d[160] ||= K("div", {
 				class: "ambient ambient-one",
 				"aria-hidden": "true"
 			}, null, -1),
-			d[145] ||= G("div", {
+			d[161] ||= K("div", {
 				class: "ambient ambient-two",
 				"aria-hidden": "true"
 			}, null, -1),
-			G("header", Oc, [G("div", { class: "brand" }, [G("div", {
+			K("header", Oc, [K("div", { class: "brand" }, [K("div", {
 				class: "brand-mark",
 				"aria-hidden": "true"
-			}, [G("img", {
-				src: qd,
+			}, [K("img", {
+				src: cf,
 				alt: ""
-			})]), d[54] ||= G("div", null, [
-				G("span", { class: "eyebrow" }, "Tater tools"),
-				G("h1", null, "Wake Word Studio"),
-				G("p", null, "Generate voices, curate real recordings, train, and publish.")
-			], -1)]), G("div", kc, [d[55] ||= G("span", { class: "live-dot" }, [G("i"), da("Local trainer")], -1), I(X).session.safe_word ? (U(), W("span", Ac, A(I(X).session.safe_word) + " · " + A(I(X).language), 1)) : q("", !0)])]),
-			G("nav", jc, [(U(), W(H, null, z(s, (e) => G("button", {
+			})]), d[56] ||= K("div", null, [
+				K("span", { class: "eyebrow" }, "Tater tools"),
+				K("h1", null, "Wake Word Studio"),
+				K("p", null, "Generate voices, curate real recordings, train, and publish.")
+			], -1)]), K("div", kc, [d[57] ||= K("span", { class: "live-dot" }, [K("i"), ua("Local trainer")], -1), I(X).session.safe_word ? (W(), G("span", Ac, A(I(X).session.safe_word) + " · " + A(I(X).language), 1)) : J("", !0)])]),
+			K("nav", jc, [(W(), G(H, null, z(s, (e) => K("button", {
 				key: e.id,
 				type: "button",
 				class: k({ active: I(X).activeView === e.id }),
-				onClick: (t) => S(e.id)
+				onClick: (t) => w(e.id)
 			}, [
-				G("span", Nc, A(e.label), 1),
-				G("span", Pc, A(e.short), 1),
-				e.id === "captured" && I(X).captured.captured_count ? (U(), W("b", Fc, A(I(X).captured.captured_count), 1)) : q("", !0)
+				K("span", Nc, A(e.label), 1),
+				K("span", Pc, A(e.short), 1),
+				e.id === "captured" && I(X).captured.captured_count ? (W(), G("b", Fc, A(I(X).captured.captured_count), 1)) : J("", !0)
 			], 10, Mc)), 64))]),
-			G("main", Ic, [I(X).initialized ? (U(), W(H, { key: 1 }, [I(X).activeView === "trainer" ? (U(), W(H, { key: 0 }, [
-				d[77] ||= fa("<section class=\"hero training-hero\"><div><span class=\"eyebrow\">Training studio</span><h2>Build a personal wake word</h2><p>Choose a multilingual voice route, check your real samples, then follow the model pipeline live.</p></div><div class=\"step-row\"><span><b>1</b> Phrase</span><span><b>2</b> Samples</span><span><b>3</b> Train</span></div></section>", 1),
-				G("section", Rc, [
-					G("header", zc, [
-						d[57] ||= G("div", { class: "number" }, "1", -1),
-						d[58] ||= G("div", null, [G("h3", null, "Phrase + voice"), G("p", null, "The phrase and voice route lock while a session is active.")], -1),
-						G("span", { class: k(["pill", I(X).session.safe_word ? "success" : ""]) }, A(I(X).session.safe_word ? `Session · ${I(X).session.safe_word}` : "No session"), 3)
+			K("main", Ic, [I(X).initialized ? (W(), G(H, { key: 1 }, [I(X).activeView === "trainer" ? (W(), G(H, { key: 0 }, [
+				d[86] ||= da("<section class=\"hero training-hero\"><div><span class=\"eyebrow\">Training studio</span><h2>Build a personal wake word</h2><p>Choose a multilingual voice route, check your real samples, then follow the model pipeline live.</p></div><div class=\"step-row\"><span><b>1</b> Phrase</span><span><b>2</b> Samples</span><span><b>3</b> Train</span></div></section>", 1),
+				K("section", Rc, [
+					K("header", zc, [
+						d[59] ||= K("div", { class: "number" }, "1", -1),
+						d[60] ||= K("div", null, [K("h3", null, "Phrase + voice"), K("p", null, "The phrase and voice route lock while a session is active.")], -1),
+						K("span", { class: k(["pill", I(X).session.safe_word ? "success" : ""]) }, A(I(X).session.safe_word ? `Session · ${I(X).session.safe_word}` : "No session"), 3)
 					]),
-					G("div", Bc, [
-						G("label", Vc, [d[59] ||= G("span", null, "Wake phrase", -1), R(G("input", {
+					K("div", Bc, [
+						K("label", Vc, [d[61] ||= K("span", null, "Wake phrase", -1), R(K("input", {
 							"onUpdate:modelValue": d[0] ||= (e) => I(X).phrase = e,
 							type: "text",
 							placeholder: "e.g. \"hey tater\"",
 							disabled: !!I(X).session.safe_word || I(Z)("session"),
 							onKeyup: d[1] ||= ss((...e) => I(Ls) && I(Ls)(...e), ["enter"])
 						}, null, 40, Hc), [[Xo, I(X).phrase]])]),
-						G("label", Uc, [
-							d[60] ||= G("span", null, "Language", -1),
-							R(G("select", {
+						K("label", Uc, [
+							d[62] ||= K("span", null, "Language", -1),
+							R(K("select", {
 								"onUpdate:modelValue": d[2] ||= (e) => I(X).language = e,
 								disabled: !!I(X).session.safe_word || I(Z)("session")
-							}, [(U(!0), W(H, null, z(I(X).languages, (e) => (U(), W("option", {
+							}, [(W(!0), G(H, null, z(I(X).languages, (e) => (W(), G("option", {
 								key: e.code,
 								value: e.code
 							}, A(e.label), 9, Gc))), 128))], 8, Wc), [[$o, I(X).language]]),
-							G("small", null, A(I(Os)), 1)
+							K("small", null, A(I(Os)), 1)
 						]),
-						I(X).language === "en" && I(X).ttsMode !== "piper" ? (U(), W("label", Kc, [
-							d[61] ||= G("span", null, "English accent emphasis", -1),
-							R(G("select", {
+						I(X).language === "en" && I(X).ttsMode !== "piper" ? (W(), G("label", Kc, [
+							d[63] ||= K("span", null, "English accent emphasis", -1),
+							R(K("select", {
 								"onUpdate:modelValue": d[3] ||= (e) => I(X).englishAccent = e,
 								disabled: !!I(X).session.safe_word || I(Z)("session")
-							}, [(U(!0), W(H, null, z(I(X).englishAccents, (e) => (U(), W("option", {
+							}, [(W(!0), G(H, null, z(I(X).englishAccents, (e) => (W(), G("option", {
 								key: e.code,
 								value: e.code
 							}, A(e.label), 9, Jc))), 128))], 8, qc), [[$o, I(X).englishAccent]]),
-							d[62] ||= G("small", null, "Qwen emphasizes this accent; MOSS carries it through accepted references. OmniVoice and Piper keep broad English coverage.", -1)
-						])) : q("", !0),
-						G("label", Yc, [
-							d[63] ||= G("span", null, "TTS source", -1),
-							R(G("select", {
+							d[64] ||= K("small", null, "Qwen emphasizes this accent; MOSS carries it through accepted references. OmniVoice and Piper keep broad English coverage.", -1)
+						])) : J("", !0),
+						K("label", Yc, [
+							d[65] ||= K("span", null, "TTS source", -1),
+							R(K("select", {
 								"onUpdate:modelValue": d[4] ||= (e) => I(X).ttsMode = e,
 								disabled: !!I(X).session.safe_word || I(Z)("session")
 							}, [
-								G("option", {
+								K("option", {
 									value: "hybrid",
 									disabled: !I(X).languages.find((e) => e.code === I(X).language)?.engines?.includes("piper")
 								}, "Four-provider ensemble · recommended", 8, Zc),
-								G("option", {
+								K("option", {
 									value: "modern",
 									disabled: !I(X).languages.find((e) => e.code === I(X).language)?.engines?.some((e) => e !== "piper")
 								}, "Modern only · no Piper", 8, Qc),
-								G("option", {
+								K("option", {
 									value: "piper",
 									disabled: !I(X).languages.find((e) => e.code === I(X).language)?.engines?.includes("piper")
 								}, "Piper only · legacy", 8, $c)
 							], 8, Xc), [[$o, I(X).ttsMode]]),
-							d[64] ||= G("small", null, "Models download once and stay cached.", -1)
+							d[66] ||= K("small", null, "Models download once and stay cached.", -1)
 						])
 					]),
-					G("div", el, [I(X).session.safe_word ? (U(), W("button", {
+					K("div", el, [I(X).session.safe_word ? (W(), G("button", {
 						key: 1,
 						type: "button",
 						class: "button danger",
 						disabled: I(Z)("session"),
 						onClick: d[6] ||= (...e) => I(Rs) && I(Rs)(...e)
-					}, A(I(Z)("session") ? "Stopping…" : I(X).training.running ? "Stop session + training" : "Stop session"), 9, nl)) : (U(), W("button", {
+					}, A(I(Z)("session") ? "Stopping…" : I(X).training.running ? "Stop session + training" : "Stop session"), 9, nl)) : (W(), G("button", {
 						key: 0,
 						type: "button",
 						class: "button primary",
 						disabled: I(Z)("session") || !I(X).phrase.trim(),
 						onClick: d[5] ||= (...e) => I(Ls) && I(Ls)(...e)
-					}, A(I(Z)("session") ? "Starting…" : "Start session"), 9, tl)), G("button", {
+					}, A(I(Z)("session") ? "Starting…" : "Start session"), 9, tl)), K("button", {
 						type: "button",
 						disabled: !I(X).phrase.trim(),
 						onClick: d[7] ||= (...e) => I(zs) && I(zs)(...e)
 					}, "System preview", 8, rl)])
 				]),
-				G("section", il, [
-					G("header", al, [
-						d[65] ||= G("div", { class: "number" }, "2", -1),
-						d[66] ||= G("div", null, [G("h3", null, "Train wake word"), G("p", null, "Personal positives and reviewed false-wake negatives are automatically included.")], -1),
-						G("span", { class: k(["pill", p.value.tone]) }, A(p.value.text), 3)
+				K("section", il, [
+					K("header", al, [
+						d[67] ||= K("div", { class: "number" }, "2", -1),
+						d[68] ||= K("div", null, [K("h3", null, "Train wake word"), K("p", null, "Personal positives and reviewed false-wake negatives are automatically included.")], -1),
+						K("span", { class: k(["pill", p.value.tone]) }, A(p.value.text), 3)
 					]),
-					G("div", ol, [
-						G("article", null, [d[67] ||= G("span", null, "Positive samples", -1), G("strong", null, A(I(Ts)), 1)]),
-						G("article", null, [d[68] ||= G("span", null, "Negative samples", -1), G("strong", null, A(I(Es)), 1)]),
-						d[69] ||= G("article", null, [G("span", null, "Training format"), G("strong", { class: "format-value" }, "16 kHz · mono · WAV")], -1)
+					K("div", ol, [
+						K("article", null, [d[69] ||= K("span", null, "Positive samples", -1), K("strong", null, A(I(Ts)), 1)]),
+						K("article", null, [d[70] ||= K("span", null, "Negative samples", -1), K("strong", null, A(I(Es)), 1)]),
+						d[71] ||= K("article", null, [K("span", null, "Training format"), K("strong", { class: "format-value" }, "16 kHz · mono · WAV")], -1)
 					]),
-					G("div", sl, [G("div", cl, [
-						G("button", {
+					K("div", sl, [
+						K("div", cl, [
+							K("button", {
+								type: "button",
+								class: k(["model-choice", { active: I(X).trainMicroWakeWord }]),
+								"aria-pressed": I(X).trainMicroWakeWord,
+								onClick: d[8] ||= (e) => I(X).trainMicroWakeWord = !I(X).trainMicroWakeWord
+							}, [...d[72] ||= [
+								K("i", null, "MWW", -1),
+								K("span", null, [K("strong", null, "MicroWakeWord"), K("small", null, "TFLite for ESP32 satellites and ESPHome.")], -1),
+								K("b", null, "✓", -1)
+							]], 10, ll),
+							K("button", {
+								type: "button",
+								class: k(["model-choice", { active: I(X).trainOpenWakeWord }]),
+								"aria-pressed": I(X).trainOpenWakeWord,
+								onClick: d[9] ||= (e) => I(X).trainOpenWakeWord = !I(X).trainOpenWakeWord
+							}, [...d[73] ||= [
+								K("i", null, "OWW", -1),
+								K("span", null, [K("strong", null, "openWakeWord"), K("small", null, "ONNX for satellites with OWW support.")], -1),
+								K("b", null, "✓", -1)
+							]], 10, ul),
+							K("button", {
+								type: "button",
+								class: k(["model-choice", { active: _.value }]),
+								"aria-pressed": _.value,
+								onClick: ne
+							}, [...d[74] ||= [
+								K("i", null, "NWW", -1),
+								K("span", null, [K("strong", null, "NanoWakeWord"), K("small", null, "ONNX with selectable CNN and GRU builds.")], -1),
+								K("b", null, "✓", -1)
+							]], 10, dl)
+						]),
+						_.value ? (W(), G("div", fl, [K("div", pl, [d[75] ||= K("div", null, [K("strong", null, "NanoWakeWord architectures"), K("small", null, "Select either architecture or train both.")], -1), K("span", null, A(I(X).trainNanoWakeWordCnn && I(X).trainNanoWakeWordGru ? "2 selected" : "1 selected"), 1)]), K("div", ml, [K("button", {
 							type: "button",
-							class: k(["model-choice", { active: I(X).trainMicroWakeWord }]),
-							"aria-pressed": I(X).trainMicroWakeWord,
-							onClick: d[8] ||= (e) => I(X).trainMicroWakeWord = !I(X).trainMicroWakeWord
-						}, [...d[70] ||= [
-							G("i", null, "MWW", -1),
-							G("span", null, [G("strong", null, "MicroWakeWord"), G("small", null, "TFLite for ESP32 satellites and ESPHome.")], -1),
-							G("b", null, "✓", -1)
-						]], 10, ll),
-						G("button", {
+							class: k(["architecture-choice", { active: I(X).trainNanoWakeWordCnn }]),
+							"aria-pressed": I(X).trainNanoWakeWordCnn,
+							onClick: d[10] ||= (e) => I(X).trainNanoWakeWordCnn = !I(X).trainNanoWakeWordCnn
+						}, [...d[76] ||= [
+							K("i", null, "CNN", -1),
+							K("span", null, [K("strong", null, "CNN"), K("small", null, "Recommended default with stronger recall.")], -1),
+							K("b", null, "✓", -1)
+						]], 10, hl), K("button", {
 							type: "button",
-							class: k(["model-choice", { active: I(X).trainOpenWakeWord }]),
-							"aria-pressed": I(X).trainOpenWakeWord,
-							onClick: d[9] ||= (e) => I(X).trainOpenWakeWord = !I(X).trainOpenWakeWord
-						}, [...d[71] ||= [
-							G("i", null, "OWW", -1),
-							G("span", null, [G("strong", null, "openWakeWord"), G("small", null, "ONNX for satellites with OWW support.")], -1),
-							G("b", null, "✓", -1)
-						]], 10, ul),
-						G("button", {
-							type: "button",
-							class: k(["model-choice", { active: _.value }]),
-							"aria-pressed": _.value,
-							onClick: ee
-						}, [...d[72] ||= [
-							G("i", null, "NWW", -1),
-							G("span", null, [G("strong", null, "NanoWakeWord"), G("small", null, "ONNX with selectable CNN and GRU builds.")], -1),
-							G("b", null, "✓", -1)
-						]], 10, dl)
-					]), _.value ? (U(), W("div", fl, [G("div", pl, [d[73] ||= G("div", null, [G("strong", null, "NanoWakeWord architectures"), G("small", null, "Select either architecture or train both.")], -1), G("span", null, A(I(X).trainNanoWakeWordCnn && I(X).trainNanoWakeWordGru ? "2 selected" : "1 selected"), 1)]), G("div", ml, [G("button", {
-						type: "button",
-						class: k(["architecture-choice", { active: I(X).trainNanoWakeWordCnn }]),
-						"aria-pressed": I(X).trainNanoWakeWordCnn,
-						onClick: d[10] ||= (e) => I(X).trainNanoWakeWordCnn = !I(X).trainNanoWakeWordCnn
-					}, [...d[74] ||= [
-						G("i", null, "CNN", -1),
-						G("span", null, [G("strong", null, "CNN"), G("small", null, "Recommended default with stronger recall.")], -1),
-						G("b", null, "✓", -1)
-					]], 10, hl), G("button", {
-						type: "button",
-						class: k(["architecture-choice", { active: I(X).trainNanoWakeWordGru }]),
-						"aria-pressed": I(X).trainNanoWakeWordGru,
-						onClick: d[11] ||= (e) => I(X).trainNanoWakeWordGru = !I(X).trainNanoWakeWordGru
-					}, [...d[75] ||= [
-						G("i", null, "GRU", -1),
-						G("span", null, [G("strong", null, "GRU"), G("small", null, "Recurrent model tuned for fewer false triggers.")], -1),
-						G("b", null, "✓", -1)
-					]], 10, gl)])])) : q("", !0)]),
-					G("div", _l, [G("button", {
+							class: k(["architecture-choice", { active: I(X).trainNanoWakeWordGru }]),
+							"aria-pressed": I(X).trainNanoWakeWordGru,
+							onClick: d[11] ||= (e) => I(X).trainNanoWakeWordGru = !I(X).trainNanoWakeWordGru
+						}, [...d[77] ||= [
+							K("i", null, "GRU", -1),
+							K("span", null, [K("strong", null, "GRU"), K("small", null, "Recurrent model tuned for fewer false triggers.")], -1),
+							K("b", null, "✓", -1)
+						]], 10, gl)])])) : J("", !0),
+						y.value.length ? (W(), G("section", _l, [
+							K("header", vl, [
+								d[78] ||= K("div", { class: "hard-negative-icon" }, "−", -1),
+								d[79] ||= K("div", null, [
+									K("span", { class: "eyebrow" }, "Optional precision tuning"),
+									K("strong", null, "Hard negative training"),
+									K("small", null, "Teach the selected models which similar-sounding phrases must not wake the assistant.")
+								], -1),
+								K("b", null, A(re(I(X).generatedNegativePhrases) ? `${re(I(X).generatedNegativePhrases)} phrase${re(I(X).generatedNegativePhrases) === 1 ? "" : "s"}` : "Optional"), 1)
+							]),
+							K("div", yl, [d[80] ||= K("span", null, "Applied to", -1), (W(), G(H, null, z([
+								"MWW",
+								"OWW",
+								"NWW"
+							], (e) => K("i", {
+								key: e,
+								class: k({ active: y.value.includes(e) })
+							}, A(e), 3)), 64))]),
+							K("label", bl, [
+								d[81] ||= K("span", null, "Phrases to reject", -1),
+								R(K("textarea", {
+									"onUpdate:modelValue": d[12] ||= (e) => I(X).generatedNegativePhrases = e,
+									rows: "4",
+									placeholder: "hey later\nhey waiter\nokay tater"
+								}, null, 512), [[Xo, I(X).generatedNegativePhrases]]),
+								d[82] ||= K("small", null, "One phrase per line. Each selected engine synthesizes and validates these near-misses alongside reviewed recordings and its broad negative data.", -1)
+							]),
+							d[83] ||= K("footer", null, [K("span", null, "Unchanged phrases reuse their cached audio on later runs."), K("strong", null, "The actual wake phrase is ignored automatically.")], -1)
+						])) : J("", !0)
+					]),
+					!I(X).training.running && I(X).training.summary?.models?.length ? (W(), G("section", xl, [K("header", null, [
+						K("div", { class: k(["summary-mark", I(X).training.summary.tone]) }, A(I(X).training.summary.tone === "success" ? "✓" : I(X).training.summary.tone === "error" ? "×" : "!"), 3),
+						K("div", null, [
+							d[84] ||= K("span", { class: "eyebrow" }, "Last completed run", -1),
+							K("h4", null, A(I(X).training.summary.wake_word), 1),
+							K("p", null, [ua(A(I(X).training.summary.message), 1), I(X).training.summary.completed_at ? (W(), G(H, { key: 0 }, [ua(" · " + A(I(uc)(I(X).training.summary.completed_at)), 1)], 64)) : J("", !0)])
+						]),
+						K("span", { class: k(["pill", I(X).training.summary.tone]) }, A(I(X).training.summary.overall), 3)
+					]), K("div", Sl, [(W(!0), G(H, null, z(I(X).training.summary.models, (e) => (W(), G("article", {
+						key: e.id,
+						class: k(e.tone)
+					}, [
+						K("header", null, [K("div", null, [K("span", null, A(e.id.replaceAll("_", " ")), 1), K("strong", null, A(e.label), 1)]), K("b", null, A(e.rating), 1)]),
+						K("p", null, A(e.message), 1),
+						e.metrics?.length ? (W(), G("div", Cl, [(W(!0), G(H, null, z(e.metrics, (e) => (W(), G("span", { key: `${e.label}-${e.value}` }, [K("small", null, A(e.label), 1), K("strong", null, A(e.value), 1)]))), 128))])) : J("", !0)
+					], 2))), 128))])])) : J("", !0),
+					K("div", wl, [K("button", {
 						type: "button",
 						class: "button primary large",
 						disabled: !I(X).session.safe_word || I(X).training.running || I(Z)("training-start"),
-						onClick: d[12] ||= (...e) => I(oc) && I(oc)(...e)
-					}, A(I(X).training.running ? "Training in progress" : "Start training"), 9, vl)]),
-					G("footer", yl, [d[76] ||= G("span", null, "Training opens the console automatically and continues if the window is closed.", -1), G("button", {
+						onClick: d[13] ||= (...e) => I(oc) && I(oc)(...e)
+					}, A(I(X).training.running ? "Training in progress" : "Start training"), 9, Tl)]),
+					K("footer", El, [d[85] ||= K("span", null, "Training opens the console automatically and continues if the window is closed.", -1), K("button", {
 						type: "button",
 						disabled: !I(ks),
-						onClick: d[13] ||= (e) => I(X).consoleOpen = !0
-					}, "Open console", 8, bl)])
+						onClick: d[14] ||= (e) => I(X).consoleOpen = !0
+					}, "Open console", 8, Dl)])
 				])
-			], 64)) : I(X).activeView === "auto" ? (U(), W(H, { key: 1 }, [
-				G("section", xl, [d[78] ||= G("div", null, [
-					G("span", { class: "eyebrow" }, "False-positive loop"),
-					G("h2", null, "Auto Training"),
-					G("p", null, "Transcribe captures, sort negatives, recover close misses, retrain on schedule, and publish through Tater.")
-				], -1), G("span", { class: k(["pill hero-pill", m.value.tone]) }, A(m.value.text), 3)]),
-				G("section", Sl, [
-					d[88] ||= G("header", { class: "panel-head" }, [G("div", { class: "number" }, "1"), G("div", null, [G("h3", null, "Review rules"), G("p", null, "Conservative local STT keeps uncertain clips in the manual inbox.")])], -1),
-					G("div", Cl, [
-						G("label", null, [R(G("input", {
-							"onUpdate:modelValue": d[14] ||= (e) => I(X).autoForm.enabled = e,
+			], 64)) : I(X).activeView === "auto" ? (W(), G(H, { key: 1 }, [
+				K("section", Ol, [d[87] ||= K("div", null, [
+					K("span", { class: "eyebrow" }, "False-positive loop"),
+					K("h2", null, "Auto Training"),
+					K("p", null, "Transcribe captures, sort negatives, recover close misses, retrain on schedule, and publish through Tater.")
+				], -1), K("span", { class: k(["pill hero-pill", m.value.tone]) }, A(m.value.text), 3)]),
+				K("section", kl, [
+					d[97] ||= K("header", { class: "panel-head" }, [K("div", { class: "number" }, "1"), K("div", null, [K("h3", null, "Review rules"), K("p", null, "Conservative local STT keeps uncertain clips in the manual inbox.")])], -1),
+					K("div", Al, [
+						K("label", null, [R(K("input", {
+							"onUpdate:modelValue": d[15] ||= (e) => I(X).autoForm.enabled = e,
 							type: "checkbox"
-						}, null, 512), [[Zo, I(X).autoForm.enabled]]), d[79] ||= G("span", null, [G("strong", null, "Enable Auto Training"), G("small", null, "Queue eligible wake triggers for local transcription.")], -1)]),
-						G("label", null, [R(G("input", {
-							"onUpdate:modelValue": d[15] ||= (e) => I(X).autoForm.delete_confirmed_wakes = e,
+						}, null, 512), [[Zo, I(X).autoForm.enabled]]), d[88] ||= K("span", null, [K("strong", null, "Enable Auto Training"), K("small", null, "Queue eligible wake triggers for local transcription.")], -1)]),
+						K("label", null, [R(K("input", {
+							"onUpdate:modelValue": d[16] ||= (e) => I(X).autoForm.delete_confirmed_wakes = e,
 							type: "checkbox"
-						}, null, 512), [[Zo, I(X).autoForm.delete_confirmed_wakes]]), d[80] ||= G("span", null, [G("strong", null, "Delete confirmed good wakes"), G("small", null, "Remove normal triggers when STT confirms the phrase.")], -1)]),
-						G("label", null, [R(G("input", {
-							"onUpdate:modelValue": d[16] ||= (e) => I(X).autoForm.promote_close_misses = e,
+						}, null, 512), [[Zo, I(X).autoForm.delete_confirmed_wakes]]), d[89] ||= K("span", null, [K("strong", null, "Delete confirmed good wakes"), K("small", null, "Remove normal triggers when STT confirms the phrase.")], -1)]),
+						K("label", null, [R(K("input", {
+							"onUpdate:modelValue": d[17] ||= (e) => I(X).autoForm.promote_close_misses = e,
 							type: "checkbox"
-						}, null, 512), [[Zo, I(X).autoForm.promote_close_misses]]), d[81] ||= G("span", null, [G("strong", null, "Promote confirmed close misses"), G("small", null, "Move verified close misses into positive samples.")], -1)])
+						}, null, 512), [[Zo, I(X).autoForm.promote_close_misses]]), d[90] ||= K("span", null, [K("strong", null, "Promote confirmed close misses"), K("small", null, "Move verified close misses into positive samples.")], -1)])
 					]),
-					G("div", wl, [
-						G("label", Tl, [d[82] ||= G("span", null, "Wake phrase", -1), R(G("input", {
-							"onUpdate:modelValue": d[17] ||= (e) => I(X).autoForm.wake_phrase = e,
+					K("div", jl, [
+						K("label", Ml, [d[91] ||= K("span", null, "Wake phrase", -1), R(K("input", {
+							"onUpdate:modelValue": d[18] ||= (e) => I(X).autoForm.wake_phrase = e,
 							type: "text"
 						}, null, 512), [[Xo, I(X).autoForm.wake_phrase]])]),
-						G("label", El, [d[83] ||= G("span", null, "STT language", -1), R(G("input", {
-							"onUpdate:modelValue": d[18] ||= (e) => I(X).autoForm.language = e,
+						K("label", Nl, [d[92] ||= K("span", null, "STT language", -1), R(K("input", {
+							"onUpdate:modelValue": d[19] ||= (e) => I(X).autoForm.language = e,
 							type: "text"
 						}, null, 512), [[Xo, I(X).autoForm.language]])]),
-						String(I(X).autoForm.language).toLowerCase().startsWith("en") ? (U(), W("label", Dl, [
-							d[84] ||= G("span", null, "English accent emphasis", -1),
-							R(G("select", { "onUpdate:modelValue": d[19] ||= (e) => I(X).autoForm.english_accent = e }, [(U(!0), W(H, null, z(I(X).englishAccents, (e) => (U(), W("option", {
+						String(I(X).autoForm.language).toLowerCase().startsWith("en") ? (W(), G("label", Pl, [
+							d[93] ||= K("span", null, "English accent emphasis", -1),
+							R(K("select", { "onUpdate:modelValue": d[20] ||= (e) => I(X).autoForm.english_accent = e }, [(W(!0), G(H, null, z(I(X).englishAccents, (e) => (W(), G("option", {
 								key: e.code,
 								value: e.code
-							}, A(e.label), 9, Ol))), 128))], 512), [[$o, I(X).autoForm.english_accent]]),
-							d[85] ||= G("small", null, "Used when Auto Training needs to regenerate English TTS.", -1)
-						])) : q("", !0),
-						G("label", kl, [
-							d[86] ||= G("span", null, "STT engine", -1),
-							R(G("select", { "onUpdate:modelValue": d[20] ||= (e) => I(X).autoForm.stt_engine = e }, [(U(!0), W(H, null, z(I(Ms), (e) => (U(), W("option", {
+							}, A(e.label), 9, Fl))), 128))], 512), [[$o, I(X).autoForm.english_accent]]),
+							d[94] ||= K("small", null, "Used when Auto Training needs to regenerate English TTS.", -1)
+						])) : J("", !0),
+						K("label", Il, [
+							d[95] ||= K("span", null, "STT engine", -1),
+							R(K("select", { "onUpdate:modelValue": d[21] ||= (e) => I(X).autoForm.stt_engine = e }, [(W(!0), G(H, null, z(I(Ms), (e) => (W(), G("option", {
 								key: e.id || e.value,
 								value: e.id || e.value
-							}, A(e.label || e.name || e.id), 9, Al))), 128))], 512), [[$o, I(X).autoForm.stt_engine]]),
-							G("small", null, A(I(Ms).find((e) => (e.id || e.value) === I(X).autoForm.stt_engine)?.description || "Runs locally on this trainer."), 1)
+							}, A(e.label || e.name || e.id), 9, Ll))), 128))], 512), [[$o, I(X).autoForm.stt_engine]]),
+							K("small", null, A(I(Ms).find((e) => (e.id || e.value) === I(X).autoForm.stt_engine)?.description || "Runs locally on this trainer."), 1)
 						]),
-						G("label", jl, [d[87] ||= G("span", null, "Minimum transcript characters", -1), R(G("input", {
-							"onUpdate:modelValue": d[21] ||= (e) => I(X).autoForm.minimum_transcript_chars = e,
+						K("label", Rl, [d[96] ||= K("span", null, "Minimum transcript characters", -1), R(K("input", {
+							"onUpdate:modelValue": d[22] ||= (e) => I(X).autoForm.minimum_transcript_chars = e,
 							min: "1",
 							max: "100",
 							type: "number"
@@ -4538,22 +4618,22 @@ var hc = {
 						]])])
 					])
 				]),
-				G("section", Ml, [
-					d[101] ||= G("header", { class: "panel-head" }, [G("div", { class: "number" }, "2"), G("div", null, [G("h3", null, "Training schedule"), G("p", null, "A run starts only after enough newly reviewed negatives accumulate.")])], -1),
-					G("div", Nl, [G("label", Pl, [d[90] ||= G("span", null, "Run training", -1), R(G("select", { "onUpdate:modelValue": d[22] ||= (e) => I(X).autoForm.schedule_hours = e }, [...d[89] ||= [
-						G("option", { value: 0 }, "Manually only", -1),
-						G("option", { value: 6 }, "Every 6 hours", -1),
-						G("option", { value: 12 }, "Every 12 hours", -1),
-						G("option", { value: 24 }, "Every day", -1),
-						G("option", { value: 48 }, "Every 2 days", -1),
-						G("option", { value: 168 }, "Every week", -1)
+				K("section", zl, [
+					d[117] ||= K("header", { class: "panel-head" }, [K("div", { class: "number" }, "2"), K("div", null, [K("h3", null, "Training schedule"), K("p", null, "A run starts only after enough newly reviewed negatives accumulate.")])], -1),
+					K("div", Bl, [K("label", Vl, [d[99] ||= K("span", null, "Run training", -1), R(K("select", { "onUpdate:modelValue": d[23] ||= (e) => I(X).autoForm.schedule_hours = e }, [...d[98] ||= [
+						K("option", { value: 0 }, "Manually only", -1),
+						K("option", { value: 6 }, "Every 6 hours", -1),
+						K("option", { value: 12 }, "Every 12 hours", -1),
+						K("option", { value: 24 }, "Every day", -1),
+						K("option", { value: 48 }, "Every 2 days", -1),
+						K("option", { value: 168 }, "Every week", -1)
 					]], 512), [[
 						$o,
 						I(X).autoForm.schedule_hours,
 						void 0,
 						{ number: !0 }
-					]])]), G("label", Fl, [d[91] ||= G("span", null, "Minimum new negatives", -1), R(G("input", {
-						"onUpdate:modelValue": d[23] ||= (e) => I(X).autoForm.minimum_new_negatives = e,
+					]])]), K("label", Hl, [d[100] ||= K("span", null, "Minimum new negatives", -1), R(K("input", {
+						"onUpdate:modelValue": d[24] ||= (e) => I(X).autoForm.minimum_new_negatives = e,
 						min: "1",
 						max: "10000",
 						type: "number"
@@ -4563,470 +4643,518 @@ var hc = {
 						void 0,
 						{ number: !0 }
 					]])])]),
-					G("div", Il, [G("div", Ll, [
-						G("button", {
+					K("div", Ul, [
+						K("div", Wl, [
+							K("button", {
+								type: "button",
+								class: k(["model-choice", { active: I(X).autoForm.train_microwakeword }]),
+								"aria-pressed": I(X).autoForm.train_microwakeword,
+								onClick: d[25] ||= (e) => I(X).autoForm.train_microwakeword = !I(X).autoForm.train_microwakeword
+							}, [...d[101] ||= [
+								K("i", null, "MWW", -1),
+								K("span", null, [K("strong", null, "MicroWakeWord"), K("small", null, "Refresh the ESP32 and ESPHome model.")], -1),
+								K("b", null, "✓", -1)
+							]], 10, Gl),
+							K("button", {
+								type: "button",
+								class: k(["model-choice", { active: I(X).autoForm.train_openwakeword }]),
+								"aria-pressed": I(X).autoForm.train_openwakeword,
+								onClick: d[26] ||= (e) => I(X).autoForm.train_openwakeword = !I(X).autoForm.train_openwakeword
+							}, [...d[102] ||= [
+								K("i", null, "OWW", -1),
+								K("span", null, [K("strong", null, "openWakeWord"), K("small", null, "Refresh the openWakeWord ONNX model.")], -1),
+								K("b", null, "✓", -1)
+							]], 10, Kl),
+							K("button", {
+								type: "button",
+								class: k(["model-choice", { active: v.value }]),
+								"aria-pressed": v.value,
+								onClick: T
+							}, [...d[103] ||= [
+								K("i", null, "NWW", -1),
+								K("span", null, [K("strong", null, "NanoWakeWord"), K("small", null, "Refresh selected CNN and GRU models.")], -1),
+								K("b", null, "✓", -1)
+							]], 10, ql)
+						]),
+						v.value ? (W(), G("div", Jl, [K("div", Yl, [d[104] ||= K("div", null, [K("strong", null, "NanoWakeWord architectures"), K("small", null, "Select either architecture or retrain both.")], -1), K("span", null, A(I(X).autoForm.train_nanowakeword_cnn && I(X).autoForm.train_nanowakeword_gru ? "2 selected" : "1 selected"), 1)]), K("div", Xl, [K("button", {
 							type: "button",
-							class: k(["model-choice", { active: I(X).autoForm.train_microwakeword }]),
-							"aria-pressed": I(X).autoForm.train_microwakeword,
-							onClick: d[24] ||= (e) => I(X).autoForm.train_microwakeword = !I(X).autoForm.train_microwakeword
-						}, [...d[92] ||= [
-							G("i", null, "MWW", -1),
-							G("span", null, [G("strong", null, "MicroWakeWord"), G("small", null, "Refresh the ESP32 and ESPHome model.")], -1),
-							G("b", null, "✓", -1)
-						]], 10, Rl),
-						G("button", {
+							class: k(["architecture-choice", { active: I(X).autoForm.train_nanowakeword_cnn }]),
+							"aria-pressed": I(X).autoForm.train_nanowakeword_cnn,
+							onClick: d[27] ||= (e) => I(X).autoForm.train_nanowakeword_cnn = !I(X).autoForm.train_nanowakeword_cnn
+						}, [...d[105] ||= [
+							K("i", null, "CNN", -1),
+							K("span", null, [K("strong", null, "CNN"), K("small", null, "Recommended default with stronger recall.")], -1),
+							K("b", null, "✓", -1)
+						]], 10, Zl), K("button", {
 							type: "button",
-							class: k(["model-choice", { active: I(X).autoForm.train_openwakeword }]),
-							"aria-pressed": I(X).autoForm.train_openwakeword,
-							onClick: d[25] ||= (e) => I(X).autoForm.train_openwakeword = !I(X).autoForm.train_openwakeword
-						}, [...d[93] ||= [
-							G("i", null, "OWW", -1),
-							G("span", null, [G("strong", null, "openWakeWord"), G("small", null, "Refresh the openWakeWord ONNX model.")], -1),
-							G("b", null, "✓", -1)
-						]], 10, zl),
-						G("button", {
-							type: "button",
-							class: k(["model-choice", { active: v.value }]),
-							"aria-pressed": v.value,
-							onClick: te
-						}, [...d[94] ||= [
-							G("i", null, "NWW", -1),
-							G("span", null, [G("strong", null, "NanoWakeWord"), G("small", null, "Refresh selected CNN and GRU models.")], -1),
-							G("b", null, "✓", -1)
-						]], 10, Bl)
-					]), v.value ? (U(), W("div", Vl, [G("div", Hl, [d[95] ||= G("div", null, [G("strong", null, "NanoWakeWord architectures"), G("small", null, "Select either architecture or retrain both.")], -1), G("span", null, A(I(X).autoForm.train_nanowakeword_cnn && I(X).autoForm.train_nanowakeword_gru ? "2 selected" : "1 selected"), 1)]), G("div", Ul, [G("button", {
-						type: "button",
-						class: k(["architecture-choice", { active: I(X).autoForm.train_nanowakeword_cnn }]),
-						"aria-pressed": I(X).autoForm.train_nanowakeword_cnn,
-						onClick: d[26] ||= (e) => I(X).autoForm.train_nanowakeword_cnn = !I(X).autoForm.train_nanowakeword_cnn
-					}, [...d[96] ||= [
-						G("i", null, "CNN", -1),
-						G("span", null, [G("strong", null, "CNN"), G("small", null, "Recommended default with stronger recall.")], -1),
-						G("b", null, "✓", -1)
-					]], 10, Wl), G("button", {
-						type: "button",
-						class: k(["architecture-choice", { active: I(X).autoForm.train_nanowakeword_gru }]),
-						"aria-pressed": I(X).autoForm.train_nanowakeword_gru,
-						onClick: d[27] ||= (e) => I(X).autoForm.train_nanowakeword_gru = !I(X).autoForm.train_nanowakeword_gru
-					}, [...d[97] ||= [
-						G("i", null, "GRU", -1),
-						G("span", null, [G("strong", null, "GRU"), G("small", null, "Recurrent model tuned for fewer false triggers.")], -1),
-						G("b", null, "✓", -1)
-					]], 10, Gl)])])) : q("", !0)]),
-					G("div", Kl, [
-						G("article", null, [d[98] ||= G("span", null, "Pending negatives", -1), G("strong", null, A(Number(u.value.pending_negative_count || 0)), 1)]),
-						G("article", null, [d[99] ||= G("span", null, "Next check", -1), G("strong", ql, A(u.value.next_run_at ? I(uc)(u.value.next_run_at) : "Manual"), 1)]),
-						G("article", null, [d[100] ||= G("span", null, "Last training", -1), G("strong", Jl, A(u.value.last_train_finished_at ? I(uc)(u.value.last_train_finished_at) : "Never"), 1)])
+							class: k(["architecture-choice", { active: I(X).autoForm.train_nanowakeword_gru }]),
+							"aria-pressed": I(X).autoForm.train_nanowakeword_gru,
+							onClick: d[28] ||= (e) => I(X).autoForm.train_nanowakeword_gru = !I(X).autoForm.train_nanowakeword_gru
+						}, [...d[106] ||= [
+							K("i", null, "GRU", -1),
+							K("span", null, [K("strong", null, "GRU"), K("small", null, "Recurrent model tuned for fewer false triggers.")], -1),
+							K("b", null, "✓", -1)
+						]], 10, Ql)])])) : J("", !0),
+						b.value.length ? (W(), G("section", $l, [
+							K("header", eu, [
+								d[107] ||= K("div", { class: "hard-negative-icon" }, "−", -1),
+								d[108] ||= K("div", null, [
+									K("span", { class: "eyebrow" }, "Optional precision tuning"),
+									K("strong", null, "Hard negative training"),
+									K("small", null, "Keep near-miss protection consistent whenever Auto Training refreshes a model.")
+								], -1),
+								K("b", null, A(re(I(X).autoForm.generated_negative_phrases) ? `${re(I(X).autoForm.generated_negative_phrases)} phrase${re(I(X).autoForm.generated_negative_phrases) === 1 ? "" : "s"}` : "Optional"), 1)
+							]),
+							K("div", tu, [d[109] ||= K("span", null, "Applied to", -1), (W(), G(H, null, z([
+								"MWW",
+								"OWW",
+								"NWW"
+							], (e) => K("i", {
+								key: e,
+								class: k({ active: b.value.includes(e) })
+							}, A(e), 3)), 64))]),
+							K("label", nu, [
+								d[110] ||= K("span", null, "Phrases to reject", -1),
+								R(K("textarea", {
+									"onUpdate:modelValue": d[29] ||= (e) => I(X).autoForm.generated_negative_phrases = e,
+									rows: "4",
+									placeholder: "hey later\nhey waiter\nokay tater"
+								}, null, 512), [[Xo, I(X).autoForm.generated_negative_phrases]]),
+								d[111] ||= K("small", null, "One phrase per line. Saved with the schedule and synthesized for every selected model.", -1)
+							]),
+							d[112] ||= K("footer", null, [K("span", null, "Reviewed false wakes still receive the strongest model weight."), K("strong", null, "The actual wake phrase is ignored automatically.")], -1)
+						])) : J("", !0)
+					]),
+					!I(X).training.running && I(X).training.summary?.models?.length ? (W(), G("section", ru, [K("header", null, [
+						K("div", { class: k(["summary-mark", I(X).training.summary.tone]) }, A(I(X).training.summary.tone === "success" ? "✓" : I(X).training.summary.tone === "error" ? "×" : "!"), 3),
+						K("div", null, [
+							d[113] ||= K("span", { class: "eyebrow" }, "Last completed run", -1),
+							K("h4", null, A(I(X).training.summary.wake_word), 1),
+							K("p", null, [ua(A(I(X).training.summary.message), 1), I(X).training.summary.completed_at ? (W(), G(H, { key: 0 }, [ua(" · " + A(I(uc)(I(X).training.summary.completed_at)), 1)], 64)) : J("", !0)])
+						]),
+						K("span", { class: k(["pill", I(X).training.summary.tone]) }, A(I(X).training.summary.overall), 3)
+					]), K("div", iu, [(W(!0), G(H, null, z(I(X).training.summary.models, (e) => (W(), G("article", {
+						key: `auto-${e.id}`,
+						class: k(e.tone)
+					}, [
+						K("header", null, [K("div", null, [K("span", null, A(e.id.replaceAll("_", " ")), 1), K("strong", null, A(e.label), 1)]), K("b", null, A(e.rating), 1)]),
+						K("p", null, A(e.message), 1),
+						e.metrics?.length ? (W(), G("div", au, [(W(!0), G(H, null, z(e.metrics, (e) => (W(), G("span", { key: `${e.label}-${e.value}` }, [K("small", null, A(e.label), 1), K("strong", null, A(e.value), 1)]))), 128))])) : J("", !0)
+					], 2))), 128))])])) : J("", !0),
+					K("div", ou, [
+						K("article", null, [d[114] ||= K("span", null, "Pending negatives", -1), K("strong", null, A(Number(u.value.pending_negative_count || 0)), 1)]),
+						K("article", null, [d[115] ||= K("span", null, "Next check", -1), K("strong", su, A(u.value.next_run_at ? I(uc)(u.value.next_run_at) : "Manual"), 1)]),
+						K("article", null, [d[116] ||= K("span", null, "Last training", -1), K("strong", cu, A(u.value.last_train_finished_at ? I(uc)(u.value.last_train_finished_at) : "Never"), 1)])
 					])
 				]),
-				G("section", Yl, [
-					d[105] ||= G("header", { class: "panel-head" }, [G("div", { class: "number" }, "3"), G("div", null, [G("h3", null, "Publish to Tater"), G("p", null, "Securely activate successful models across every connected satellite.")])], -1),
-					G("div", Xl, [G("label", Zl, [
-						d[102] ||= G("span", null, "Trainer public URL", -1),
-						R(G("input", {
-							"onUpdate:modelValue": d[28] ||= (e) => I(X).autoForm.advertised_base_url = e,
+				K("section", lu, [
+					d[121] ||= K("header", { class: "panel-head" }, [K("div", { class: "number" }, "3"), K("div", null, [K("h3", null, "Publish to Tater"), K("p", null, "Securely activate successful models across every connected satellite.")])], -1),
+					K("div", uu, [K("label", du, [
+						d[118] ||= K("span", null, "Trainer public URL", -1),
+						R(K("input", {
+							"onUpdate:modelValue": d[30] ||= (e) => I(X).autoForm.advertised_base_url = e,
 							type: "text",
 							placeholder: "Auto-detect LAN address"
 						}, null, 512), [[Xo, I(X).autoForm.advertised_base_url]]),
-						G("small", null, A(I(X).autoForm.advertised_base_url ? `Configured: ${I(X).autoForm.advertised_base_url}` : `Detected: ${I(X).auto.advertised_base_url || "unavailable"}`), 1)
-					]), G("label", Ql, [d[103] ||= G("span", null, "Tater URL", -1), R(G("input", {
-						"onUpdate:modelValue": d[29] ||= (e) => I(X).autoForm.tater_url = e,
+						K("small", null, A(I(X).autoForm.advertised_base_url ? `Configured: ${I(X).autoForm.advertised_base_url}` : `Detected: ${I(X).auto.advertised_base_url || "unavailable"}`), 1)
+					]), K("label", fu, [d[119] ||= K("span", null, "Tater URL", -1), R(K("input", {
+						"onUpdate:modelValue": d[31] ||= (e) => I(X).autoForm.tater_url = e,
 						type: "text"
 					}, null, 512), [[Xo, I(X).autoForm.tater_url]])])]),
-					G("div", $l, [
-						G("span", { class: k(["pill", I(js) ? "success" : "warning"]) }, A(I(js) ? `Linked${I(X).auto.trainer_link?.tater_name ? ` · ${I(X).auto.trainer_link.tater_name}` : ""}` : "Not linked"), 3),
-						G("button", {
+					K("div", pu, [
+						K("span", { class: k(["pill", I(js) ? "success" : "warning"]) }, A(I(js) ? `Linked${I(X).auto.trainer_link?.tater_name ? ` · ${I(X).auto.trainer_link.tater_name}` : ""}` : "Not linked"), 3),
+						K("button", {
 							type: "button",
 							class: "button primary",
 							disabled: I(Z)("auto"),
-							onClick: ne
-						}, A(I(js) ? "Relink Tater" : "Link Tater"), 9, eu),
-						I(js) ? (U(), W("button", {
+							onClick: E
+						}, A(I(js) ? "Relink Tater" : "Link Tater"), 9, mu),
+						I(js) ? (W(), G("button", {
 							key: 0,
 							type: "button",
 							class: "button danger",
 							disabled: I(Z)("auto"),
-							onClick: d[30] ||= (...e) => I(tc) && I(tc)(...e)
-						}, "Unlink", 8, tu)) : q("", !0)
+							onClick: d[32] ||= (...e) => I(tc) && I(tc)(...e)
+						}, "Unlink", 8, hu)) : J("", !0)
 					]),
-					G("div", nu, [G("label", null, [R(G("input", {
-						"onUpdate:modelValue": d[31] ||= (e) => I(X).autoForm.notify_satellites = e,
+					K("div", gu, [K("label", null, [R(K("input", {
+						"onUpdate:modelValue": d[33] ||= (e) => I(X).autoForm.notify_satellites = e,
 						type: "checkbox"
-					}, null, 512), [[Zo, I(X).autoForm.notify_satellites]]), d[104] ||= G("span", null, [G("strong", null, "Activate after successful training"), G("small", null, "Tater applies the new word globally.")], -1)])])
+					}, null, 512), [[Zo, I(X).autoForm.notify_satellites]]), d[120] ||= K("span", null, [K("strong", null, "Activate after successful training"), K("small", null, "Tater applies the new word globally.")], -1)])])
 				]),
-				G("section", ru, [G("div", iu, [
-					G("button", {
+				K("section", _u, [K("div", vu, [
+					K("button", {
 						type: "button",
 						class: "button primary",
 						disabled: I(Z)("auto"),
-						onClick: d[32] ||= (...e) => I(Qs) && I(Qs)(...e)
-					}, "Save Auto Training", 8, au),
-					G("button", {
+						onClick: d[34] ||= (...e) => I(Qs) && I(Qs)(...e)
+					}, "Save Auto Training", 8, yu),
+					K("button", {
 						type: "button",
 						disabled: I(Z)("auto"),
-						onClick: d[33] ||= (e) => I($s)("review_now")
-					}, "Review inbox now", 8, ou),
-					G("button", {
+						onClick: d[35] ||= (e) => I($s)("review_now")
+					}, "Review inbox now", 8, bu),
+					K("button", {
 						type: "button",
 						disabled: I(Z)("auto") || I(X).training.running,
-						onClick: d[34] ||= (e) => I($s)("train_now")
-					}, "Train now", 8, su),
-					G("button", {
+						onClick: d[36] ||= (e) => I($s)("train_now")
+					}, "Train now", 8, xu),
+					K("button", {
 						type: "button",
 						disabled: I(Z)("auto") || !I(js),
-						onClick: d[35] ||= (e) => I($s)("notify_now")
-					}, "Publish current word", 8, cu)
-				]), G("p", lu, A(f.value), 1)])
-			], 64)) : I(X).activeView === "captured" ? (U(), W(H, { key: 2 }, [
-				G("section", uu, [d[106] ||= G("div", null, [
-					G("span", { class: "eyebrow" }, "Capture review"),
-					G("h2", null, "Captured Audio"),
-					G("p", null, "Listen to clips from your satellites and turn every real-world event into a better model.")
-				], -1), G("span", { class: k(["pill hero-pill", I(X).captured.captured_count ? "warning" : ""]) }, A(I(X).captured.captured_count ? `${I(X).captured.captured_count} waiting` : "Inbox idle"), 3)]),
-				G("section", du, [G("header", fu, [
-					d[107] ||= G("div", { class: "number" }, "1", -1),
-					d[108] ||= G("div", null, [G("h3", null, "Review queue"), G("p", null, "Approve good phrases, keep false positives as negatives, or discard noise.")], -1),
-					G("button", {
+						onClick: d[37] ||= (e) => I($s)("notify_now")
+					}, "Publish current word", 8, Su)
+				]), K("p", Cu, A(f.value), 1)])
+			], 64)) : I(X).activeView === "captured" ? (W(), G(H, { key: 2 }, [
+				K("section", wu, [d[122] ||= K("div", null, [
+					K("span", { class: "eyebrow" }, "Capture review"),
+					K("h2", null, "Captured Audio"),
+					K("p", null, "Listen to clips from your satellites and turn every real-world event into a better model.")
+				], -1), K("span", { class: k(["pill hero-pill", I(X).captured.captured_count ? "warning" : ""]) }, A(I(X).captured.captured_count ? `${I(X).captured.captured_count} waiting` : "Inbox idle"), 3)]),
+				K("section", Tu, [K("header", Eu, [
+					d[123] ||= K("div", { class: "number" }, "1", -1),
+					d[124] ||= K("div", null, [K("h3", null, "Review queue"), K("p", null, "Approve good phrases, keep false positives as negatives, or discard noise.")], -1),
+					K("button", {
 						type: "button",
 						disabled: I(Z)("captured"),
-						onClick: d[36] ||= (e) => I(Hs)()
-					}, A(I(Z)("captured") ? "Refreshing…" : "Refresh inbox"), 9, pu)
-				]), G("div", mu, [
-					G("article", null, [d[109] ||= G("span", null, "Inbox", -1), G("strong", null, A(I(X).captured.captured_count), 1)]),
-					G("article", null, [d[110] ||= G("span", null, "Reviewed negatives", -1), G("strong", null, A(I(Es)), 1)]),
-					G("article", null, [d[111] ||= G("span", null, "Personal samples", -1), G("strong", null, A(I(Ts)), 1)])
+						onClick: d[38] ||= (e) => I(Hs)()
+					}, A(I(Z)("captured") ? "Refreshing…" : "Refresh inbox"), 9, Du)
+				]), K("div", Ou, [
+					K("article", null, [d[125] ||= K("span", null, "Inbox", -1), K("strong", null, A(I(X).captured.captured_count), 1)]),
+					K("article", null, [d[126] ||= K("span", null, "Reviewed negatives", -1), K("strong", null, A(I(Es)), 1)]),
+					K("article", null, [d[127] ||= K("span", null, "Personal samples", -1), K("strong", null, A(I(Ts)), 1)])
 				])]),
-				G("section", hu, [d[114] ||= G("header", { class: "panel-head" }, [G("div", { class: "number" }, "2"), G("div", null, [G("h3", null, "Listen + sort"), G("p", null, "Metadata remains visible so borderline detections are easy to understand.")])], -1), I(X).captured.items?.length ? (U(), W("div", _u, [(U(!0), W(H, null, z(I(X).captured.items, (e) => (U(), W("article", {
+				K("section", ku, [d[130] ||= K("header", { class: "panel-head" }, [K("div", { class: "number" }, "2"), K("div", null, [K("h3", null, "Listen + sort"), K("p", null, "Metadata remains visible so borderline detections are easy to understand.")])], -1), I(X).captured.items?.length ? (W(), G("div", ju, [(W(!0), G(H, null, z(I(X).captured.items, (e) => (W(), G("article", {
 					key: e.saved_as,
 					class: "audio-card"
 				}, [
-					G("header", null, [G("div", null, [G("strong", null, A(e.original_name || e.saved_as), 1), G("small", null, A(I(uc)(e.captured_at || e.received_at)) + " " + A(e.message || ""), 1)]), G("span", { class: k(["pill", I(pc)(e).tone]) }, A(I(pc)(e).label), 3)]),
-					E(e).length ? (U(), W("div", vu, [(U(!0), W(H, null, z(E(e), (e) => (U(), W("span", { key: e }, A(e), 1))), 128))])) : q("", !0),
-					e.transcript ? (U(), W("div", yu, [d[112] ||= G("b", null, "STT", -1), da(" " + A(e.transcript), 1)])) : q("", !0),
-					e.auto_review_guided_transcript ? (U(), W("div", bu, [d[113] ||= G("b", null, "Guided wake check", -1), da(" " + A(e.auto_review_guided_transcript), 1)])) : q("", !0),
-					G("audio", {
+					K("header", null, [K("div", null, [K("strong", null, A(e.original_name || e.saved_as), 1), K("small", null, A(I(uc)(e.captured_at || e.received_at)) + " " + A(e.message || ""), 1)]), K("span", { class: k(["pill", I(pc)(e).tone]) }, A(I(pc)(e).label), 3)]),
+					D(e).length ? (W(), G("div", Mu, [(W(!0), G(H, null, z(D(e), (e) => (W(), G("span", { key: e }, A(e), 1))), 128))])) : J("", !0),
+					e.transcript ? (W(), G("div", Nu, [d[128] ||= K("b", null, "STT", -1), ua(" " + A(e.transcript), 1)])) : J("", !0),
+					e.auto_review_guided_transcript ? (W(), G("div", Pu, [d[129] ||= K("b", null, "Guided wake check", -1), ua(" " + A(e.auto_review_guided_transcript), 1)])) : J("", !0),
+					K("audio", {
 						controls: "",
 						preload: "none",
 						src: I(mc)(e, "captured")
-					}, null, 8, xu),
-					G("footer", null, [G("span", null, A(e.saved_as) + " · " + A(I(fc)(e.final_format)), 1), G("div", null, [
-						G("button", {
+					}, null, 8, Fu),
+					K("footer", null, [K("span", null, A(e.saved_as) + " · " + A(I(fc)(e.final_format)), 1), K("div", null, [
+						K("button", {
 							type: "button",
 							disabled: I(Z)("review"),
 							onClick: (t) => I(Ks)(e, "approve_personal")
-						}, "Add positive", 8, Su),
-						G("button", {
+						}, "Add positive", 8, Iu),
+						K("button", {
 							type: "button",
 							disabled: I(Z)("review"),
 							onClick: (t) => I(Ks)(e, "mark_negative")
-						}, "Mark negative", 8, Cu),
-						G("button", {
+						}, "Mark negative", 8, Lu),
+						K("button", {
 							type: "button",
 							class: "button danger ghost",
 							disabled: I(Z)("review"),
 							onClick: (t) => I(Ks)(e, "discard")
-						}, "Discard", 8, wu)
+						}, "Discard", 8, Ru)
 					])])
-				]))), 128))])) : (U(), W("div", gu, "No captured audio yet. Clips sent by satellites will appear here."))])
-			], 64)) : I(X).activeView === "samples" ? (U(), W(H, { key: 3 }, [
-				G("section", Tu, [d[115] ||= G("div", null, [
-					G("span", { class: "eyebrow" }, "Sample library"),
-					G("h2", null, "Current Training Samples"),
-					G("p", null, "Audit positives and negatives, trim recordings precisely, and import seed audio.")
-				], -1), G("span", Eu, A(I(Ts) + I(Es)) + " total", 1)]),
-				G("section", Du, [
-					G("header", Ou, [
-						d[118] ||= G("div", { class: "number" }, "1", -1),
-						d[119] ||= G("div", null, [G("h3", null, "Saved samples"), G("p", null, "Personal clips are positives. Negative clips are false wakes and hard negatives.")], -1),
-						G("div", ku, [G("button", {
+				]))), 128))])) : (W(), G("div", Au, "No captured audio yet. Clips sent by satellites will appear here."))])
+			], 64)) : I(X).activeView === "samples" ? (W(), G(H, { key: 3 }, [
+				K("section", zu, [d[131] ||= K("div", null, [
+					K("span", { class: "eyebrow" }, "Sample library"),
+					K("h2", null, "Current Training Samples"),
+					K("p", null, "Audit positives and negatives, trim recordings precisely, and import seed audio.")
+				], -1), K("span", Bu, A(I(Ts) + I(Es)) + " total", 1)]),
+				K("section", Vu, [
+					K("header", Hu, [
+						d[134] ||= K("div", { class: "number" }, "1", -1),
+						d[135] ||= K("div", null, [K("h3", null, "Saved samples"), K("p", null, "Personal clips are positives. Negative clips are false wakes and hard negatives.")], -1),
+						K("div", Uu, [K("button", {
 							type: "button",
 							class: k({ active: I(X).sampleBucket === "personal" }),
-							onClick: d[37] ||= (e) => C("personal")
-						}, [d[116] ||= da("Personal ", -1), G("b", null, A(I(Ts)), 1)], 2), G("button", {
+							onClick: d[39] ||= (e) => ee("personal")
+						}, [d[132] ||= ua("Personal ", -1), K("b", null, A(I(Ts)), 1)], 2), K("button", {
 							type: "button",
 							class: k({ active: I(X).sampleBucket === "negative" }),
-							onClick: d[38] ||= (e) => C("negative")
-						}, [d[117] ||= da("Negative ", -1), G("b", null, A(I(Es)), 1)], 2)])
+							onClick: d[40] ||= (e) => ee("negative")
+						}, [d[133] ||= ua("Negative ", -1), K("b", null, A(I(Es)), 1)], 2)])
 					]),
-					G("div", Au, [
-						G("button", {
+					K("div", Wu, [
+						K("button", {
 							type: "button",
 							disabled: I(Z)("samples"),
-							onClick: d[39] ||= (e) => I(Vs)()
-						}, "Refresh", 8, ju),
-						G("button", {
+							onClick: d[41] ||= (e) => I(Vs)()
+						}, "Refresh", 8, Gu),
+						K("button", {
 							type: "button",
 							class: "button danger ghost",
 							disabled: I(Z)("review") || I(Ts) === 0,
-							onClick: d[40] ||= (e) => I(Ys)("personal")
-						}, "Clear positives", 8, Mu),
-						G("button", {
+							onClick: d[42] ||= (e) => I(Ys)("personal")
+						}, "Clear positives", 8, Ku),
+						K("button", {
 							type: "button",
 							class: "button danger ghost",
 							disabled: I(Z)("review") || I(Es) === 0,
-							onClick: d[41] ||= (e) => I(Ys)("negative")
-						}, "Clear negatives", 8, Nu)
+							onClick: d[43] ||= (e) => I(Ys)("negative")
+						}, "Clear negatives", 8, qu)
 					]),
-					I(As).length ? (U(), W("div", Fu, [(U(!0), W(H, null, z(c.value, (e) => (U(), W("article", {
+					I(As).length ? (W(), G("div", Yu, [(W(!0), G(H, null, z(c.value, (e) => (W(), G("article", {
 						key: e.saved_as,
 						class: "audio-card"
 					}, [
-						G("header", null, [G("div", null, [G("strong", null, A(e.saved_as), 1), G("small", null, A(ie(e)), 1)]), G("div", Iu, [e.trimmed ? (U(), W("span", Lu, "Trimmed")) : q("", !0), G("span", { class: k(["pill", I(X).sampleBucket === "personal" ? "success" : "error"]) }, A(I(X).sampleBucket === "personal" ? "Positive" : "Negative"), 3)])]),
-						e.transcript ? (U(), W("div", Ru, [d[120] ||= G("b", null, "STT", -1), da(" " + A(e.transcript), 1)])) : q("", !0),
-						e.auto_review_guided_transcript ? (U(), W("div", zu, [d[121] ||= G("b", null, "Guided wake check", -1), da(" " + A(e.auto_review_guided_transcript), 1)])) : q("", !0),
-						G("audio", {
+						K("header", null, [K("div", null, [K("strong", null, A(e.saved_as), 1), K("small", null, A(oe(e)), 1)]), K("div", Xu, [e.trimmed ? (W(), G("span", Zu, "Trimmed")) : J("", !0), K("span", { class: k(["pill", I(X).sampleBucket === "personal" ? "success" : "error"]) }, A(I(X).sampleBucket === "personal" ? "Positive" : "Negative"), 3)])]),
+						e.transcript ? (W(), G("div", Qu, [d[136] ||= K("b", null, "STT", -1), ua(" " + A(e.transcript), 1)])) : J("", !0),
+						e.auto_review_guided_transcript ? (W(), G("div", $u, [d[137] ||= K("b", null, "Guided wake check", -1), ua(" " + A(e.auto_review_guided_transcript), 1)])) : J("", !0),
+						K("audio", {
 							controls: "",
 							preload: "none",
 							src: I(mc)(e, I(X).sampleBucket)
-						}, null, 8, Bu),
-						G("footer", null, [G("span", null, A(I(fc)(e.final_format)), 1), G("div", null, [
-							G("button", {
+						}, null, 8, ed),
+						K("footer", null, [K("span", null, A(I(fc)(e.final_format)), 1), K("div", null, [
+							K("button", {
 								type: "button",
-								onClick: (t) => w(e, I(X).sampleBucket)
-							}, "Trim", 8, Vu),
-							e.trimmed ? (U(), W("button", {
+								onClick: (t) => te(e, I(X).sampleBucket)
+							}, "Trim", 8, td),
+							e.trimmed ? (W(), G("button", {
 								key: 0,
 								type: "button",
 								onClick: (t) => I(Js)(e, I(X).sampleBucket)
-							}, "Revert", 8, Hu)) : q("", !0),
-							G("button", {
+							}, "Revert", 8, nd)) : J("", !0),
+							K("button", {
 								type: "button",
 								class: "button danger ghost",
 								disabled: I(Z)("review"),
 								onClick: (t) => I(qs)(e, I(X).sampleBucket)
-							}, "Remove", 8, Uu)
+							}, "Remove", 8, rd)
 						])])
-					]))), 128))])) : (U(), W("div", Pu, "No " + A(I(X).sampleBucket) + " samples saved yet.", 1)),
-					l.value > 1 ? (U(), W("div", Wu, [
-						G("button", {
+					]))), 128))])) : (W(), G("div", Ju, "No " + A(I(X).sampleBucket) + " samples saved yet.", 1)),
+					l.value > 1 ? (W(), G("div", id, [
+						K("button", {
 							type: "button",
 							disabled: I(X).samplePage[I(X).sampleBucket] === 0,
-							onClick: d[42] ||= (e) => I(X).samplePage[I(X).sampleBucket]--
-						}, "Previous", 8, Gu),
-						G("span", null, "Page " + A(I(X).samplePage[I(X).sampleBucket] + 1) + " of " + A(l.value), 1),
-						G("button", {
+							onClick: d[44] ||= (e) => I(X).samplePage[I(X).sampleBucket]--
+						}, "Previous", 8, ad),
+						K("span", null, "Page " + A(I(X).samplePage[I(X).sampleBucket] + 1) + " of " + A(l.value), 1),
+						K("button", {
 							type: "button",
 							disabled: I(X).samplePage[I(X).sampleBucket] >= l.value - 1,
-							onClick: d[43] ||= (e) => I(X).samplePage[I(X).sampleBucket]++
-						}, "Next", 8, Ku)
-					])) : q("", !0)
+							onClick: d[45] ||= (e) => I(X).samplePage[I(X).sampleBucket]++
+						}, "Next", 8, od)
+					])) : J("", !0)
 				]),
-				G("section", qu, [
-					d[123] ||= G("header", { class: "panel-head" }, [G("div", { class: "number" }, "2"), G("div", null, [G("h3", null, "Manual sample import"), G("p", null, "Optional seed recordings are normalized to the trainer’s required WAV format.")])], -1),
-					G("label", Ju, [
-						G("input", {
+				K("section", sd, [
+					d[139] ||= K("header", { class: "panel-head" }, [K("div", { class: "number" }, "2"), K("div", null, [K("h3", null, "Manual sample import"), K("p", null, "Optional seed recordings are normalized to the trainer’s required WAV format.")])], -1),
+					K("label", cd, [
+						K("input", {
 							ref_key: "uploadInput",
 							ref: t,
 							type: "file",
 							multiple: "",
 							accept: "audio/*,.wav,.mp3,.m4a,.flac,.ogg,.aac,.webm,.opus",
-							onChange: d[44] ||= (...e) => I(Us) && I(Us)(...e)
+							onChange: d[46] ||= (...e) => I(Us) && I(Us)(...e)
 						}, null, 544),
-						d[122] ||= G("span", null, [G("strong", null, "Choose one or many audio files"), G("small", null, "WAV, MP3, M4A, FLAC, OGG, AAC, OPUS, and WEBM")], -1),
-						G("b", null, A(I(X).selectedFiles.length ? `${I(X).selectedFiles.length} selected` : "Browse"), 1)
+						d[138] ||= K("span", null, [K("strong", null, "Choose one or many audio files"), K("small", null, "WAV, MP3, M4A, FLAC, OGG, AAC, OPUS, and WEBM")], -1),
+						K("b", null, A(I(X).selectedFiles.length ? `${I(X).selectedFiles.length} selected` : "Browse"), 1)
 					]),
-					G("button", {
+					K("button", {
 						type: "button",
 						class: "button primary",
 						disabled: !I(X).session.safe_word || !I(X).selectedFiles.length || I(Z)("upload"),
-						onClick: d[45] ||= (e) => I(Gs)(t.value)
-					}, A(I(Z)("upload") ? "Uploading…" : "Upload selected samples"), 9, Yu),
-					G("div", Xu, [
-						G("div", null, [G("strong", null, A(I(X).uploadLabel), 1), G("span", null, A(I(X).uploadProgress) + "%", 1)]),
-						G("div", Zu, [G("i", { style: de({ width: `${I(X).uploadProgress}%` }) }, null, 4)]),
-						G("small", null, A(I(X).uploadDetail), 1)
+						onClick: d[47] ||= (e) => I(Gs)(t.value)
+					}, A(I(Z)("upload") ? "Uploading…" : "Upload selected samples"), 9, ld),
+					K("div", ud, [
+						K("div", null, [K("strong", null, A(I(X).uploadLabel), 1), K("span", null, A(I(X).uploadProgress) + "%", 1)]),
+						K("div", dd, [K("i", { style: de({ width: `${I(X).uploadProgress}%` }) }, null, 4)]),
+						K("small", null, A(I(X).uploadDetail), 1)
 					])
 				])
-			], 64)) : I(X).activeView === "data" ? (U(), W(H, { key: 4 }, [
-				G("section", Qu, [d[124] ||= G("div", null, [
-					G("span", { class: "eyebrow" }, "Local storage"),
-					G("h2", null, "Data Management"),
-					G("p", null, "See exactly what the trainer has downloaded, generated, recorded, and produced.")
-				], -1), G("span", $u, A(I(dc)(I(X).managedData.total_size_bytes)) + " total", 1)]),
-				G("section", ed, [
-					G("header", td, [
-						d[125] ||= G("div", { class: "number" }, "i", -1),
-						d[126] ||= G("div", null, [G("h3", null, "Trainer storage"), G("p", null, "Deleting an item is permanent. Required downloads and generated caches will be rebuilt the next time training needs them.")], -1),
-						G("button", {
+			], 64)) : I(X).activeView === "data" ? (W(), G(H, { key: 4 }, [
+				K("section", fd, [d[140] ||= K("div", null, [
+					K("span", { class: "eyebrow" }, "Local storage"),
+					K("h2", null, "Data Management"),
+					K("p", null, "See exactly what the trainer has downloaded, generated, recorded, and produced.")
+				], -1), K("span", pd, A(I(dc)(I(X).managedData.total_size_bytes)) + " total", 1)]),
+				K("section", md, [
+					K("header", hd, [
+						d[141] ||= K("div", { class: "number" }, "i", -1),
+						d[142] ||= K("div", null, [K("h3", null, "Trainer storage"), K("p", null, "Deleting an item is permanent. Required downloads and generated caches will be rebuilt the next time training needs them.")], -1),
+						K("button", {
 							type: "button",
 							disabled: I(Z)("data") || I(Z)("data-delete"),
-							onClick: d[46] ||= (e) => I(rc)()
-						}, A(I(Z)("data") ? "Scanning…" : "Refresh sizes"), 9, nd)
+							onClick: d[48] ||= (e) => I(rc)()
+						}, A(I(Z)("data") ? "Scanning…" : "Refresh sizes"), 9, gd)
 					]),
-					G("div", rd, [
-						G("article", null, [d[127] ||= G("span", null, "Space used", -1), G("strong", id, A(I(dc)(I(X).managedData.total_size_bytes)), 1)]),
-						G("article", null, [d[128] ||= G("span", null, "Files", -1), G("strong", null, A(Number(I(X).managedData.total_file_count || 0).toLocaleString()), 1)]),
-						G("article", null, [d[129] ||= G("span", null, "Individual items", -1), G("strong", null, A(I(X).managedData.items.length), 1)])
+					K("div", _d, [
+						K("article", null, [d[143] ||= K("span", null, "Space used", -1), K("strong", vd, A(I(dc)(I(X).managedData.total_size_bytes)), 1)]),
+						K("article", null, [d[144] ||= K("span", null, "Files", -1), K("strong", null, A(Number(I(X).managedData.total_file_count || 0).toLocaleString()), 1)]),
+						K("article", null, [d[145] ||= K("span", null, "Individual items", -1), K("strong", null, A(I(X).managedData.items.length), 1)])
 					]),
-					I(X).training.running ? (U(), W("p", ad, "Stop the active training session before deleting data.")) : q("", !0)
+					I(X).training.running ? (W(), G("p", yd, "Stop the active training session before deleting data.")) : J("", !0)
 				]),
-				(U(!0), W(H, null, z(g.value, (e, t) => (U(), W("section", {
+				(W(!0), G(H, null, z(g.value, (e, t) => (W(), G("section", {
 					key: e.name,
 					class: "panel data-panel"
-				}, [G("header", od, [G("div", sd, A(t + 1), 1), G("div", null, [G("h3", null, A(e.name), 1), G("p", null, A(e.items.length) + " separately managed item" + A(e.items.length === 1 ? "" : "s"), 1)])]), G("div", cd, [(U(!0), W(H, null, z(e.items, (e) => (U(), W("article", {
+				}, [K("header", bd, [K("div", xd, A(t + 1), 1), K("div", null, [K("h3", null, A(e.name), 1), K("p", null, A(e.items.length) + " separately managed item" + A(e.items.length === 1 ? "" : "s"), 1)])]), K("div", Sd, [(W(!0), G(H, null, z(e.items, (e) => (W(), G("article", {
 					key: e.id,
 					class: k(["data-row", { empty: !e.file_count }])
 				}, [
-					G("div", ld, [
-						G("div", ud, [G("strong", null, A(e.label), 1), G("code", null, A(e.location), 1)]),
-						G("small", null, A(e.description), 1),
-						e.rebuild_note ? (U(), W("span", dd, A(e.rebuild_note), 1)) : q("", !0)
+					K("div", Cd, [
+						K("div", wd, [K("strong", null, A(e.label), 1), K("code", null, A(e.location), 1)]),
+						K("small", null, A(e.description), 1),
+						e.rebuild_note ? (W(), G("span", Td, A(e.rebuild_note), 1)) : J("", !0)
 					]),
-					G("div", fd, [G("strong", null, A(I(dc)(e.size_bytes)), 1), G("span", null, A(Number(e.file_count || 0).toLocaleString()) + " file" + A(e.file_count === 1 ? "" : "s"), 1)]),
-					G("button", {
+					K("div", Ed, [K("strong", null, A(I(dc)(e.size_bytes)), 1), K("span", null, A(Number(e.file_count || 0).toLocaleString()) + " file" + A(e.file_count === 1 ? "" : "s"), 1)]),
+					K("button", {
 						type: "button",
 						class: "button danger ghost",
 						disabled: !e.file_count || I(X).training.running || I(Z)("data") || I(Z)("data-delete"),
 						onClick: (t) => I(ic)(e)
-					}, A(I(Z)("data-delete") ? "Please wait…" : "Delete"), 9, pd)
+					}, A(I(Z)("data-delete") ? "Please wait…" : "Delete"), 9, Dd)
 				], 2))), 128))])]))), 128)),
-				!I(Z)("data") && !I(X).managedData.items.length ? (U(), W("section", md, "No managed trainer data was found.")) : q("", !0)
-			], 64)) : I(X).activeView === "firmware" ? (U(), W(H, { key: 5 }, [
-				G("section", hd, [d[130] ||= G("div", null, [
-					G("span", { class: "eyebrow" }, "Wake-word catalog"),
-					G("h2", null, "Trained Wake Words"),
-					G("p", null, "Copy a local JSON package URL into Tater to switch every native satellite live.")
-				], -1), G("span", { class: k(["pill hero-pill", I(X).wakeWords.length ? "success" : "warning"]) }, A(I(X).wakeWords.length ? `${I(X).wakeWords.length} trained` : "Catalog empty"), 3)]),
-				d[135] ||= G("div", { class: "native-notice" }, [G("strong", null, "Tater Native"), G("span", null, "These packages include model metadata and a direct model URL for live satellite updates.")], -1),
-				G("section", gd, [G("header", _d, [
-					d[131] ||= G("div", { class: "number" }, "v1", -1),
-					d[132] ||= G("div", null, [G("h3", null, "Published model URLs"), G("p", null, "URLs stay local and are refreshed after each successful run.")], -1),
-					G("button", {
+				!I(Z)("data") && !I(X).managedData.items.length ? (W(), G("section", Od, "No managed trainer data was found.")) : J("", !0)
+			], 64)) : I(X).activeView === "firmware" ? (W(), G(H, { key: 5 }, [
+				K("section", kd, [d[146] ||= K("div", null, [
+					K("span", { class: "eyebrow" }, "Wake-word catalog"),
+					K("h2", null, "Trained Wake Words"),
+					K("p", null, "Copy a local JSON package URL into Tater to switch every native satellite live.")
+				], -1), K("span", { class: k(["pill hero-pill", I(X).wakeWords.length ? "success" : "warning"]) }, A(I(X).wakeWords.length ? `${I(X).wakeWords.length} trained` : "Catalog empty"), 3)]),
+				d[151] ||= K("div", { class: "native-notice" }, [K("strong", null, "Tater Native"), K("span", null, "These packages include model metadata and a direct model URL for live satellite updates.")], -1),
+				K("section", Ad, [K("header", jd, [
+					d[147] ||= K("div", { class: "number" }, "v1", -1),
+					d[148] ||= K("div", null, [K("h3", null, "Published model URLs"), K("p", null, "URLs stay local and are refreshed after each successful run.")], -1),
+					K("button", {
 						type: "button",
 						disabled: I(Z)("firmware"),
-						onClick: d[47] ||= (e) => I(nc)()
-					}, "Refresh", 8, vd)
-				]), I(X).wakeWords.length ? (U(), W("div", bd, [(U(!0), W(H, null, z(I(X).wakeWords, (e) => (U(), W("article", { key: e.key || ae(e) }, [G("div", null, [
-					G("strong", null, A(e.label || e.name || "Trained wake word"), 1),
-					ae(e) ? (U(), W("a", {
+						onClick: d[49] ||= (e) => I(nc)()
+					}, "Refresh", 8, Md)
+				]), I(X).wakeWords.length ? (W(), G("div", Pd, [(W(!0), G(H, null, z(I(X).wakeWords, (e) => (W(), G("article", { key: e.key || O(e) }, [K("div", null, [
+					K("strong", null, A(e.label || e.name || "Trained wake word"), 1),
+					O(e) ? (W(), G("a", {
 						key: 0,
-						href: ae(e),
-						target: "_blank",
-						rel: "noreferrer"
-					}, "Tater wake-word bundle · " + A(ae(e)), 9, xd)) : (U(), W("span", Sd, "Bundle URL unavailable")),
-					oe(e) ? (U(), W("a", {
-						key: 2,
-						href: oe(e),
-						target: "_blank",
-						rel: "noreferrer"
-					}, "MicroWakeWord model · " + A(oe(e)), 9, Cd)) : q("", !0),
-					O(e) ? (U(), W("a", {
-						key: 3,
 						href: O(e),
 						target: "_blank",
 						rel: "noreferrer"
-					}, "openWakeWord model · " + A(O(e)), 9, wd)) : q("", !0),
-					(U(!0), W(H, null, z(se(e), (e, t) => (U(), W("a", {
+					}, "Tater wake-word bundle · " + A(O(e)), 9, Fd)) : (W(), G("span", Id, "Bundle URL unavailable")),
+					ce(e) ? (W(), G("a", {
+						key: 2,
+						href: ce(e),
+						target: "_blank",
+						rel: "noreferrer"
+					}, "MicroWakeWord model · " + A(ce(e)), 9, Ld)) : J("", !0),
+					le(e) ? (W(), G("a", {
+						key: 3,
+						href: le(e),
+						target: "_blank",
+						rel: "noreferrer"
+					}, "openWakeWord model · " + A(le(e)), 9, Rd)) : J("", !0),
+					(W(!0), G(H, null, z(ue(e), (e, t) => (W(), G("a", {
 						key: t,
 						href: e,
 						target: "_blank",
 						rel: "noreferrer"
-					}, "NanoWakeWord " + A(String(t).toUpperCase()) + " model · " + A(e), 9, Td))), 128)),
-					G("div", Ed, [
-						(U(!0), W(H, null, z(e.available_engines || [], (e) => (U(), W("span", { key: e }, A(String(e).replaceAll("_", " ")), 1))), 128)),
-						e.language ? (U(), W("span", Dd, A(e.language), 1)) : q("", !0),
-						e.trained_at ? (U(), W("span", Od, A(I(uc)(e.trained_at)), 1)) : q("", !0),
-						e.recall === void 0 ? q("", !0) : (U(), W("span", kd, "recall " + A(e.recall), 1))
+					}, "NanoWakeWord " + A(String(t).toUpperCase()) + " model · " + A(e), 9, zd))), 128)),
+					K("div", Bd, [
+						(W(!0), G(H, null, z(e.available_engines || [], (e) => (W(), G("span", { key: e }, A(String(e).replaceAll("_", " ")), 1))), 128)),
+						e.language ? (W(), G("span", Vd, A(e.language), 1)) : J("", !0),
+						e.trained_at ? (W(), G("span", Hd, A(I(uc)(e.trained_at)), 1)) : J("", !0),
+						e.recall === void 0 ? J("", !0) : (W(), G("span", Ud, "recall " + A(e.recall), 1))
 					])
-				]), G("button", {
+				]), K("button", {
 					type: "button",
-					disabled: !ae(e),
-					onClick: (t) => I(ac)(ae(e))
-				}, "Copy bundle URL", 8, Ad)]))), 128))])) : (U(), W("div", yd, "Train a wake word and its package will appear here."))]),
-				d[136] ||= G("div", { class: "native-notice esphome-notice" }, [G("strong", null, "ESPHome"), G("span", null, "Strict micro_wake_word manifest without Tater Native or calibration extensions.")], -1),
-				G("section", jd, [d[134] ||= G("header", { class: "panel-head" }, [G("div", { class: "number" }, "ESP"), G("div", null, [G("h3", null, "ESPHome JSON"), G("p", null, "Use this URL as the model in an ESPHome micro_wake_word configuration.")])], -1), I(X).wakeWords.length ? (U(), W("div", Nd, [(U(!0), W(H, null, z(I(X).wakeWords, (e) => (U(), W("article", { key: `esphome-${e.key || D(e)}` }, [G("div", null, [
-					G("strong", null, A(e.label || e.name || "Trained wake word"), 1),
-					D(e) ? (U(), W("a", {
+					disabled: !O(e),
+					onClick: (t) => I(ac)(O(e))
+				}, "Copy bundle URL", 8, Wd)]))), 128))])) : (W(), G("div", Nd, "Train a wake word and its package will appear here."))]),
+				d[152] ||= K("div", { class: "native-notice esphome-notice" }, [K("strong", null, "ESPHome"), K("span", null, "Strict micro_wake_word manifest without Tater Native or calibration extensions.")], -1),
+				K("section", Gd, [d[150] ||= K("header", { class: "panel-head" }, [K("div", { class: "number" }, "ESP"), K("div", null, [K("h3", null, "ESPHome JSON"), K("p", null, "Use this URL as the model in an ESPHome micro_wake_word configuration.")])], -1), I(X).wakeWords.length ? (W(), G("div", qd, [(W(!0), G(H, null, z(I(X).wakeWords, (e) => (W(), G("article", { key: `esphome-${e.key || se(e)}` }, [K("div", null, [
+					K("strong", null, A(e.label || e.name || "Trained wake word"), 1),
+					se(e) ? (W(), G("a", {
 						key: 0,
-						href: D(e),
+						href: se(e),
 						target: "_blank",
 						rel: "noreferrer"
-					}, "ESPHome JSON · " + A(D(e)), 9, Pd)) : (U(), W("span", Fd, "ESPHome package URL unavailable")),
-					d[133] ||= G("div", { class: "meta-row" }, [G("span", null, "Schema v2"), G("span", null, "Same TFLite model")], -1)
-				]), G("button", {
+					}, "ESPHome JSON · " + A(se(e)), 9, Jd)) : (W(), G("span", Yd, "ESPHome package URL unavailable")),
+					d[149] ||= K("div", { class: "meta-row" }, [K("span", null, "Schema v2"), K("span", null, "Same TFLite model")], -1)
+				]), K("button", {
 					type: "button",
-					disabled: !D(e),
-					onClick: (t) => I(ac)(D(e))
-				}, "Copy ESPHome URL", 8, Id)]))), 128))])) : (U(), W("div", Md, "ESPHome links appear after a wake word is trained."))])
-			], 64)) : q("", !0)], 64)) : (U(), W("div", Lc, [...d[56] ||= [G("span", { class: "spinner" }, null, -1), G("strong", null, "Connecting to the local trainer…", -1)]]))]),
-			(U(), ra(Jn, { to: "body" }, [I(X).consoleOpen ? (U(), W("div", {
+					disabled: !se(e),
+					onClick: (t) => I(ac)(se(e))
+				}, "Copy ESPHome URL", 8, Xd)]))), 128))])) : (W(), G("div", Kd, "ESPHome links appear after a wake word is trained."))])
+			], 64)) : J("", !0)], 64)) : (W(), G("div", Lc, [...d[58] ||= [K("span", { class: "spinner" }, null, -1), K("strong", null, "Connecting to the local trainer…", -1)]]))]),
+			(W(), na(Jn, { to: "body" }, [I(X).consoleOpen ? (W(), G("div", {
 				key: 0,
 				class: "modal-backdrop console-backdrop",
-				onClick: d[49] ||= as((e) => I(X).consoleOpen = !1, ["self"])
-			}, [G("section", Ld, [G("header", Rd, [d[137] ||= G("div", null, [
-				G("span", { class: "eyebrow" }, "Live pipeline"),
-				G("h2", null, "Training Console"),
-				G("p", null, "Closing this window does not interrupt training.")
-			], -1), G("div", zd, [
-				r.value ? q("", !0) : (U(), W("button", {
+				onClick: d[51] ||= as((e) => I(X).consoleOpen = !1, ["self"])
+			}, [K("section", Zd, [K("header", Qd, [d[153] ||= K("div", null, [
+				K("span", { class: "eyebrow" }, "Live pipeline"),
+				K("h2", null, "Training Console"),
+				K("p", null, "Closing this window does not interrupt training.")
+			], -1), K("div", $d, [
+				r.value ? J("", !0) : (W(), G("button", {
 					key: 0,
 					type: "button",
 					class: "console-follow",
-					onClick: x
+					onClick: C
 				}, "Jump to latest")),
-				G("span", { class: k(["pill", p.value.tone]) }, A(p.value.text), 3),
-				G("button", {
+				K("span", { class: k(["pill", p.value.tone]) }, A(p.value.text), 3),
+				K("button", {
 					type: "button",
-					onClick: d[48] ||= (e) => I(X).consoleOpen = !1
+					onClick: d[50] ||= (e) => I(X).consoleOpen = !1
 				}, "Close")
-			])]), G("pre", {
+			])]), K("pre", {
 				ref_key: "consoleLog",
 				ref: n,
 				class: "console-log",
-				onScrollPassive: b
-			}, [(U(!0), W(H, null, z(h.value, (e, t) => (U(), W("span", {
+				onScrollPassive: S
+			}, [(W(!0), G(H, null, z(h.value, (e, t) => (W(), G("span", {
 				key: `${t}-${e}`,
-				class: k(ce(e))
-			}, A(e), 3))), 128))], 544)])])) : q("", !0)])),
-			(U(), ra(Jn, { to: "body" }, [I(X).taterLinkOpen ? (U(), W("div", {
+				class: k(fe(e))
+			}, A(e), 3))), 128))], 544)])])) : J("", !0)])),
+			(W(), na(Jn, { to: "body" }, [I(X).taterLinkOpen ? (W(), G("div", {
 				key: 0,
 				class: "modal-backdrop",
-				onClick: d[53] ||= as((e) => I(X).taterLinkOpen = !1, ["self"])
-			}, [G("section", Bd, [G("header", Vd, [G("div", null, [
-				d[138] ||= G("span", { class: "eyebrow" }, "Secure pairing", -1),
-				G("h2", null, A(o.value ? "Tater linked" : "Link Tater"), 1),
-				G("p", null, A(o.value ? "This trainer can securely publish wake-word updates." : "Enter the short-lived code shown in Tater Voice Settings."), 1)
-			]), G("button", {
+				onClick: d[55] ||= as((e) => I(X).taterLinkOpen = !1, ["self"])
+			}, [K("section", ef, [K("header", tf, [K("div", null, [
+				d[154] ||= K("span", { class: "eyebrow" }, "Secure pairing", -1),
+				K("h2", null, A(o.value ? "Tater linked" : "Link Tater"), 1),
+				K("p", null, A(o.value ? "This trainer can securely publish wake-word updates." : "Enter the short-lived code shown in Tater Voice Settings."), 1)
+			]), K("button", {
 				type: "button",
-				onClick: d[50] ||= (e) => I(X).taterLinkOpen = !1
-			}, "Close")]), o.value ? (U(), W("div", Hd, [
-				d[139] ||= G("i", null, "✓", -1),
-				G("strong", null, "Successfully linked" + A(I(X).auto.trainer_link?.tater_name ? ` to ${I(X).auto.trainer_link.tater_name}` : ""), 1),
-				d[140] ||= G("span", null, "The private link key is stored locally and is never displayed.", -1)
-			])) : (U(), W("div", Ud, [
-				G("label", Wd, [d[141] ||= G("span", null, "Tater address", -1), R(G("input", {
-					"onUpdate:modelValue": d[51] ||= (e) => i.value = e,
+				onClick: d[52] ||= (e) => I(X).taterLinkOpen = !1
+			}, "Close")]), o.value ? (W(), G("div", nf, [
+				d[155] ||= K("i", null, "✓", -1),
+				K("strong", null, "Successfully linked" + A(I(X).auto.trainer_link?.tater_name ? ` to ${I(X).auto.trainer_link.tater_name}` : ""), 1),
+				d[156] ||= K("span", null, "The private link key is stored locally and is never displayed.", -1)
+			])) : (W(), G("div", rf, [
+				K("label", af, [d[157] ||= K("span", null, "Tater address", -1), R(K("input", {
+					"onUpdate:modelValue": d[53] ||= (e) => i.value = e,
 					type: "text"
 				}, null, 512), [[Xo, i.value]])]),
-				G("label", Gd, [d[142] ||= G("span", null, "Tater pairing code", -1), R(G("input", {
+				K("label", of, [d[158] ||= K("span", null, "Tater pairing code", -1), R(K("input", {
 					id: "pairing-code",
-					"onUpdate:modelValue": d[52] ||= (e) => a.value = e,
+					"onUpdate:modelValue": d[54] ||= (e) => a.value = e,
 					class: "pairing-code",
 					maxlength: "9",
 					placeholder: "ABCD-EFGH",
 					autocomplete: "off",
-					onInput: T
+					onInput: ie
 				}, null, 544), [[Xo, a.value]])]),
-				d[143] ||= G("small", null, "In Tater, open Voice Settings → Wake Word Trainer → Link Trainer.", -1),
-				G("button", {
+				d[159] ||= K("small", null, "In Tater, open Voice Settings → Wake Word Trainer → Link Trainer.", -1),
+				K("button", {
 					type: "button",
 					class: "button primary",
 					disabled: I(Z)("link"),
-					onClick: re
-				}, A(I(Z)("link") ? "Linking securely…" : "Link Tater"), 9, Kd)
-			]))])])) : q("", !0)])),
-			K(Ec),
-			K($a, { name: "toast" }, {
-				default: Dn(() => [I(X).toast.message ? (U(), W("div", {
+					onClick: ae
+				}, A(I(Z)("link") ? "Linking securely…" : "Link Tater"), 9, sf)
+			]))])])) : J("", !0)])),
+			q(Ec),
+			q($a, { name: "toast" }, {
+				default: Dn(() => [I(X).toast.message ? (W(), G("div", {
 					key: 0,
 					class: k(["toast", I(X).toast.tone]),
 					role: "status"
-				}, A(I(X).toast.message), 3)) : q("", !0)]),
+				}, A(I(X).toast.message), 3)) : J("", !0)]),
 				_: 1
 			})
 		]));
 	}
-}), Xd = document.getElementById("trainer-app");
-if (!Xd) throw Error("Missing #trainer-app mount point");
-ds(Yd).mount(Xd);
+}), df = document.getElementById("trainer-app");
+if (!df) throw Error("Missing #trainer-app mount point");
+ds(uf).mount(df);
 //#endregion

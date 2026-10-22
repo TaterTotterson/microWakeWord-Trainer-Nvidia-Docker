@@ -142,19 +142,48 @@ if [[ "${GENERATE_ONLY:-false}" == "true" ]]; then
     exit 0
 fi
 
+# Build an optional, separately cached near-miss corpus for MicroWakeWord.
+# Reviewed real-world false wakes keep a stronger training weight than these
+# synthesized examples.
+python -u "${CLIDIR}/generate_negative_tts.py" \
+    --phrases-json="${MWW_GENERATED_NEGATIVE_PHRASES_JSON:-[]}" \
+    --target-phrase="${WAKE_WORD}" \
+    --root-dir="${DATA_DIR}/work/generated_negative_samples" \
+    --generator-script="${CLIDIR}/tts_generate_samples.py" \
+    --data-dir="${DATA_DIR}" \
+    --language="${LANGUAGE}" \
+    --english-accent="${ENGLISH_ACCENT}" \
+    --tts-mode="${TTS_MODE}" \
+    --batch-size="${BATCH_SIZE}" \
+    --voice-count="${TTS_VOICE_COUNT}" \
+    --ffmpeg="$(command -v ffmpeg || echo ffmpeg)"
+
 AUGMENT=false
 GENERATED_DIR="${DATA_DIR}/work/wake_word_samples"
 AUGMENTED_DIR="${DATA_DIR}/work/wake_word_samples_augmented"
-AUGMENTATION_CACHE_VERSION="2"
+GENERATED_NEGATIVE_DIR="${DATA_DIR}/work/generated_negative_samples/combined"
+GENERATED_NEGATIVE_MANIFEST="${DATA_DIR}/work/generated_negative_samples/.generation_manifest.json"
+GENERATED_NEGATIVE_FEATURES="${DATA_DIR}/work/generated_negative_features"
+AUGMENTATION_CACHE_VERSION="3"
 AUGMENTATION_CACHE_FILE="${AUGMENTED_DIR}/.augmentation_version"
 
 [ -d "${AUGMENTED_DIR}" ] || AUGMENT=true
 [ -f "${AUGMENTATION_CACHE_FILE}" ] || AUGMENT=true
 [ "$(cat "${AUGMENTATION_CACHE_FILE}" 2>/dev/null || :)" = "${AUGMENTATION_CACHE_VERSION}" ] || AUGMENT=true
 [ "${GENERATED_DIR}/0.wav" -nt "${AUGMENTED_DIR}/testing/wakeword_mmap/data.ninja" ] && AUGMENT=true || :
+if find "${GENERATED_NEGATIVE_DIR}" -maxdepth 1 -type f -name '*.wav' -print -quit 2>/dev/null | grep -q . ; then
+    [ -d "${GENERATED_NEGATIVE_FEATURES}/training" ] || AUGMENT=true
+    [ "${GENERATED_NEGATIVE_MANIFEST}" -nt "${GENERATED_NEGATIVE_FEATURES}/training/wakeword_mmap/data.ninja" ] && AUGMENT=true || :
+elif [ -d "${GENERATED_NEGATIVE_FEATURES}" ] ; then
+    AUGMENT=true
+fi
 
 if ${AUGMENT} ; then
-    rm -rf "${AUGMENTED_DIR}" || :
+    rm -rf \
+      "${AUGMENTED_DIR}" \
+      "${DATA_DIR}/work/personal_augmented_features" \
+      "${DATA_DIR}/work/reviewed_negative_features" \
+      "${GENERATED_NEGATIVE_FEATURES}" || :
     mkdir -p "${AUGMENTED_DIR}" || :
     python -u "${CLIDIR}/wake_word_sample_augmenter" --data-dir="${DATA_DIR}" || { rm -rf "${AUGMENTED_DIR}" ; exit 1 ; }
     printf '%s\n' "${AUGMENTATION_CACHE_VERSION}" > "${AUGMENTATION_CACHE_FILE}"
@@ -180,6 +209,8 @@ if ${CLEANUP_WORK_DIR} ; then
       "${DATA_DIR}/work/wake_word_samples_augmented" \
       "${DATA_DIR}/work/personal_augmented_features" \
       "${DATA_DIR}/work/reviewed_negative_features" \
+      "${DATA_DIR}/work/generated_negative_samples" \
+      "${DATA_DIR}/work/generated_negative_features" \
       "${DATA_DIR}/work/last_wake_word" || :
 fi
 

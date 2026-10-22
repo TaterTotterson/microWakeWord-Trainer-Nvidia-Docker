@@ -19,6 +19,31 @@ export interface TrainingState extends JsonRecord {
   running: boolean;
   exit_code: number | null;
   log_lines: string[];
+  summary?: TrainingSummary | null;
+}
+
+export interface TrainingSummaryMetric extends JsonRecord {
+  label: string;
+  value: string;
+}
+
+export interface TrainingSummaryModel extends JsonRecord {
+  id: string;
+  label: string;
+  status: string;
+  rating: string;
+  tone: string;
+  message: string;
+  metrics: TrainingSummaryMetric[];
+}
+
+export interface TrainingSummary extends JsonRecord {
+  wake_word: string;
+  completed_at?: string;
+  overall: string;
+  tone: string;
+  message: string;
+  models: TrainingSummaryModel[];
 }
 
 export interface SessionPayload extends JsonRecord {
@@ -77,6 +102,7 @@ export interface AutoTrainForm extends JsonRecord {
   train_openwakeword: boolean;
   train_nanowakeword_cnn: boolean;
   train_nanowakeword_gru: boolean;
+  generated_negative_phrases: string;
 }
 
 export interface AutoTrainPayload extends JsonRecord {

@@ -40,13 +40,17 @@ class NanoWakeWordStageTests(unittest.TestCase):
             generated = root / "work" / "wake_word_samples"
             personal = root / "personal"
             negative = root / "negative"
-            for directory in (generated, personal, negative):
+            background = root / "background"
+            rir = root / "rir"
+            for directory in (generated, personal, negative, background, rir):
                 directory.mkdir(parents=True)
             (generated / "tts.wav").write_bytes(b"wav")
             cmd, cwd, env, _staging = prepare_nanowakeword_stage(
                 phrase="hey tater", safe_word="hey_tater", architecture="gru",
                 data_dir=root / "data", generated_positive_dir=generated,
                 personal_dir=personal, negative_dir=negative,
+                generated_negative_phrases=["hey later"],
+                background_dirs=[background], rir_dirs=[rir],
                 environ={"TATER_NWW_TRAINER_DIR": str(checkout), "NWW_FORCE_CPU": "1"},
             )
             self.assertEqual(cwd, checkout.resolve())
@@ -54,6 +58,9 @@ class NanoWakeWordStageTests(unittest.TestCase):
             self.assertEqual(env["NWW_POSITIVE_TTS_DIR"], str(generated.resolve()))
             self.assertNotIn("NWW_TORCH_CUDA", env)
             self.assertEqual(env["NWW_FEATURE_DEVICE"], "cpu")
+            self.assertIn("hey later", cmd)
+            self.assertIn(str(background.resolve()), cmd)
+            self.assertIn(str(rir.resolve()), cmd)
 
     def test_publish_carries_calibrated_streaming_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -150,7 +157,7 @@ class NanoWakeWordStageTests(unittest.TestCase):
 
             self.assertEqual(env["NWW_TORCH_CUDA"], "cu126")
             self.assertEqual(env["NWW_TORCH_VERSION"], "2.8.0")
-            self.assertEqual(env["NWW_FEATURE_DEVICE"], "cpu")
+            self.assertEqual(env["NWW_FEATURE_DEVICE"], "auto")
 
     def test_publish_rejects_failed_validation_without_replacing_model(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

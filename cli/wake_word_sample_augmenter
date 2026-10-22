@@ -20,6 +20,8 @@ parser.add_argument("--personal-dir", type=str, help="Personal WAV dir. Default:
 parser.add_argument("--personal-output-dir", type=str, help="Personal features output dir. Default: <data-dir>/work/personal_augmented_features", required=False)
 parser.add_argument("--negative-dir", type=str, help="Reviewed negative WAV dir. Default: <data-dir>/negative_samples", required=False)
 parser.add_argument("--negative-output-dir", type=str, help="Reviewed negative features output dir. Default: <data-dir>/work/reviewed_negative_features", required=False)
+parser.add_argument("--generated-negative-dir", type=str, help="Generated near-miss WAV dir. Default: <data-dir>/work/generated_negative_samples/combined", required=False)
+parser.add_argument("--generated-negative-output-dir", type=str, help="Generated near-miss features output dir. Default: <data-dir>/work/generated_negative_features", required=False)
 
 # Dataset dirs
 parser.add_argument("--mit-rirs-16k-dir", type=str, help="MIT RIR input directory. Default: <data-dir>/training_datasets/mit_rirs_16k", required=False)
@@ -68,6 +70,17 @@ if not args.negative_output_dir:
     args.negative_output_dir = os.path.join(work_dir, "reviewed_negative_features")
 else:
     args.negative_output_dir = os.path.realpath(args.negative_output_dir)
+
+# Generated near-miss defaults
+if not args.generated_negative_dir:
+    args.generated_negative_dir = os.path.join(work_dir, "generated_negative_samples", "combined")
+else:
+    args.generated_negative_dir = os.path.realpath(args.generated_negative_dir)
+
+if not args.generated_negative_output_dir:
+    args.generated_negative_output_dir = os.path.join(work_dir, "generated_negative_features")
+else:
+    args.generated_negative_output_dir = os.path.realpath(args.generated_negative_output_dir)
 
 # Dataset defaults
 if not args.mit_rirs_16k_dir:
@@ -273,6 +286,15 @@ generate_feature_set(args.personal_dir, args.personal_output_dir, "personal")
 
 # Reviewed false-positive / hard-negative features
 generate_feature_set(args.negative_dir, args.negative_output_dir, "reviewed negatives", remove_silence=False)
+
+# Generated near-miss phrases are kept separate from reviewed real-world false
+# wakes so the trainer can assign them a deliberately lower hard-negative weight.
+generate_feature_set(
+    args.generated_negative_dir,
+    args.generated_negative_output_dir,
+    "generated hard negatives",
+    remove_silence=True,
+)
 
 END_TIME = datetime.now(timezone.utc).replace(microsecond=0)
 et = END_TIME - START_TIME

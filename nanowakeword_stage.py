@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from wake_bundle import publish_nano_wake_word
 
@@ -77,7 +77,7 @@ def ensure_nanowakeword_trainer(data_dir: Path, *, environ: Mapping[str, str] | 
         shutil.rmtree(temporary_root, ignore_errors=True)
     return root
 
-def prepare_nanowakeword_stage(*, phrase: str, safe_word: str, architecture: str, data_dir: Path, generated_positive_dir: Path, personal_dir: Path, negative_dir: Path, environ: Mapping[str, str] | None = None, log=lambda _line: None) -> tuple[list[str], Path, dict[str, str], Path]:
+def prepare_nanowakeword_stage(*, phrase: str, safe_word: str, architecture: str, data_dir: Path, generated_positive_dir: Path, personal_dir: Path, negative_dir: Path, generated_negative_phrases: Sequence[str] = (), background_dirs: Sequence[Path] = (), rir_dirs: Sequence[Path] = (), environ: Mapping[str, str] | None = None, log=lambda _line: None) -> tuple[list[str], Path, dict[str, str], Path]:
     architecture = str(architecture).strip().lower()
     if architecture not in NWW_ARCHITECTURES:
         raise ValueError(f"Unsupported NanoWakeWord architecture: {architecture}")
@@ -98,13 +98,20 @@ def prepare_nanowakeword_stage(*, phrase: str, safe_word: str, architecture: str
     elif not env.get("NWW_FORCE_CPU"):
         env.setdefault("NWW_TORCH_CUDA", "cu126")
         env.setdefault("NWW_TORCH_VERSION", "2.8.0")
-    env.setdefault("NWW_FEATURE_DEVICE", "cpu")
+    env.setdefault("NWW_FEATURE_DEVICE", "cpu" if env.get("NWW_FORCE_CPU") else "auto")
     env.update({
         "NWW_DATA_DIR": str(nww_root), "NWW_OUTPUT_ROOT": str(output_root),
         "NWW_EXPORT_DIR": str(staging_dir), "NWW_POSITIVE_TTS_DIR": str(generated),
         "NWW_PERSONAL_DIR": str(Path(personal_dir).resolve()), "NWW_NEGATIVE_DIR": str(Path(negative_dir).resolve()),
     })
     cmd = ["bash", str(trainer_root / "train_nanowakeword.sh"), phrase, "--model-type", architecture, "--output-root", str(output_root), "--export-dir", str(staging_dir), "--positive-tts-dir", str(generated), "--positive-dir", str(Path(personal_dir).resolve()), "--negative-dir", str(Path(negative_dir).resolve())]
+    for value in generated_negative_phrases:
+        if str(value).strip():
+            cmd.extend(["--custom-negative-phrase", str(value).strip()])
+    for directory in background_dirs:
+        cmd.extend(["--background-dir", str(Path(directory).resolve())])
+    for directory in rir_dirs:
+        cmd.extend(["--rir-dir", str(Path(directory).resolve())])
     return cmd, trainer_root, env, staging_dir
 
 def publish_nanowakeword_artifacts(*, staging_dir: Path, trained_dir: Path, safe_word: str, phrase: str, architecture: str) -> Path:

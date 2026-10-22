@@ -1,3 +1,6 @@
-- Stabilized NVIDIA openWakeWord results by using a reproducible training seed and correctly tracking validation false positives before increasing negative-example weighting.
-- Fixed successful NanoWakeWord models being rejected when the pinned trainer reports streaming validation under its current nested quality schema.
-- Kept validation bounded to one pass with no automatic retry loop; failed models leave the previously published model untouched and report the quality failure clearly.
+- Improved openWakeWord and NanoWakeWord training by sharing the same four-engine positive TTS corpus, personal recordings, reviewed negatives, backgrounds, and room responses used by the trainer pipeline.
+- Restored GPU-backed openWakeWord and NanoWakeWord feature extraction on NVIDIA systems while retaining explicit CPU fallbacks for troubleshooting.
+- Added optional generated hard-negative phrases for MicroWakeWord, openWakeWord, and NanoWakeWord, with reusable caches and balanced weighting that keeps reviewed real-world false wakes strongest.
+- Added a polished Hard Negative Training section to manual and automatic training so similar-sounding phrases can be entered once and applied to every selected engine.
+- Added an end-of-run quality summary for every selected model, including recall, false accepts or false triggers, runtime tuning, and clear Excellent, Good, Needs attention, Failed, or Not completed ratings.
+- Improved quality-report compatibility and failure handling so unsuccessful validation is reported clearly while the previously published working model remains untouched.

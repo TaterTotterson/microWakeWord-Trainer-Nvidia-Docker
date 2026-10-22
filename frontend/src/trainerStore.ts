@@ -41,6 +41,7 @@ const defaultAutoForm = (): AutoTrainForm => ({
   train_openwakeword: false,
   train_nanowakeword_cnn: false,
   train_nanowakeword_gru: false,
+  generated_negative_phrases: "",
 });
 
 export const trainer = reactive({
@@ -55,6 +56,7 @@ export const trainer = reactive({
   trainOpenWakeWord: false,
   trainNanoWakeWordCnn: false,
   trainNanoWakeWordGru: false,
+  generatedNegativePhrases: "",
   languages: [{ code: "en", label: "English (en)", engines: ["omnivoice"] }] as LanguageOption[],
   englishAccents: [
     { code: "mixed", label: "Mixed English" },
@@ -367,6 +369,9 @@ function applyAuto(payload: AutoTrainPayload, populate: boolean): void {
   trainer.auto = payload || {};
   if (!populate) return;
   trainer.autoForm = { ...defaultAutoForm(), ...(payload.config || {}) };
+  if (Array.isArray(payload.config?.generated_negative_phrases)) {
+    trainer.autoForm.generated_negative_phrases = payload.config.generated_negative_phrases.join("\n");
+  }
   if (!trainer.autoForm.wake_phrase) trainer.autoForm.wake_phrase = trainer.session.raw_phrase || "";
   if (!trainer.autoForm.language) trainer.autoForm.language = trainer.session.language || "en";
   if (!trainer.autoForm.english_accent) trainer.autoForm.english_accent = trainer.session.english_accent || "mixed";
@@ -527,6 +532,7 @@ export async function startTraining(): Promise<void> {
       train_openwakeword: trainer.trainOpenWakeWord,
       train_nanowakeword_cnn: trainer.trainNanoWakeWordCnn,
       train_nanowakeword_gru: trainer.trainNanoWakeWordGru,
+      generated_negative_phrases: trainer.generatedNegativePhrases,
     });
     beginTrainingPoll();
   } catch (error) {

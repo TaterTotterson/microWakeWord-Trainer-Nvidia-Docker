@@ -49,6 +49,12 @@ class OpenWakeWordStageTests(unittest.TestCase):
             negative = root / "negative"
             personal.mkdir()
             negative.mkdir()
+            generated = root / "generated"
+            background = root / "background"
+            rir = root / "rir"
+            generated.mkdir()
+            background.mkdir()
+            rir.mkdir()
             (personal / "positive.wav").write_bytes(b"positive")
             (negative / "false-wake.wav").write_bytes(b"negative")
 
@@ -59,6 +65,10 @@ class OpenWakeWordStageTests(unittest.TestCase):
                 personal_dir=personal,
                 negative_dir=negative,
                 trained_dir=root / "trained",
+                generated_positive_dir=generated,
+                generated_negative_phrases=["hey later"],
+                background_dirs=[background],
+                rir_dirs=[rir],
                 environ={**os.environ, "TATER_OWW_TRAINER_DIR": str(trainer_root)},
             )
 
@@ -69,15 +79,19 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual(env["OWW_EXPORT_DIR"], str(staging))
             self.assertEqual(env["OWW_DEFAULT_NEGATIVE_BATCH"], "256")
             self.assertEqual(env["OWW_DEFAULT_VALIDATION_BATCH"], "2048")
-            self.assertEqual(env["OWW_FEATURE_DEVICE"], "cpu")
+            self.assertEqual(env["OWW_FEATURE_DEVICE"], "gpu")
+            self.assertEqual(env["OWW_POSITIVE_TTS_DIR"], str(generated.resolve()))
+            self.assertIn("hey later", cmd)
+            self.assertIn(str(background.resolve()), cmd)
+            self.assertIn(str(rir.resolve()), cmd)
 
             feature_dir = root / "data" / "openwakeword" / "output" / "hey_tater" / "hey_tater"
             self.assertEqual(
                 (feature_dir / ".tater-feature-cache-policy").read_text(encoding="utf-8").strip(),
-                "cpu-onnx-v1",
+                "gpu-onnx-v1",
             )
 
-    def test_prepare_invalidates_legacy_cuda_feature_cache_once(self):
+    def test_prepare_invalidates_prior_cpu_feature_cache_once(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             trainer_root = root / "oww-trainer"
@@ -100,7 +114,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
                 )
             ]
             for path in feature_paths:
-                path.write_bytes(b"legacy-gpu-features")
+                path.write_bytes(b"prior-cpu-features")
 
             messages = []
             prepare_openwakeword_stage(
@@ -115,9 +129,9 @@ class OpenWakeWordStageTests(unittest.TestCase):
             )
 
             self.assertFalse(any(path.exists() for path in feature_paths))
-            self.assertTrue(any("CPU ONNX" in message for message in messages))
+            self.assertTrue(any("GPU ONNX" in message for message in messages))
 
-            feature_paths[0].write_bytes(b"new-cpu-features")
+            feature_paths[0].write_bytes(b"new-gpu-features")
             prepare_openwakeword_stage(
                 phrase="hey tater",
                 safe_word="hey_tater",

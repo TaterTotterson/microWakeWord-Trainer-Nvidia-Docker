@@ -142,6 +142,16 @@ else
   echo "ℹ️  No reviewed negative features found at ${REVIEWED_NEGATIVE_FEATURES_DIR}/training (continuing with stock negatives)"
 fi
 
+# Generated near-miss TTS features are optional and moderately weighted.
+GENERATED_NEGATIVE_FEATURES_DIR="${WORK_DIR}/generated_negative_features"
+HAS_GENERATED_NEGATIVE="false"
+if [ -d "${GENERATED_NEGATIVE_FEATURES_DIR}/training" ] ; then
+  HAS_GENERATED_NEGATIVE="true"
+  echo "✅ Found generated near-miss features: ${GENERATED_NEGATIVE_FEATURES_DIR}/training (will use moderate hard-negative weighting)"
+else
+  echo "ℹ️  No generated near-miss features found at ${GENERATED_NEGATIVE_FEATURES_DIR}/training"
+fi
+
 cd "${WORK_DIR}"
 
 echo "===== Starting ${TRAINING_STEPS} training steps ====="
@@ -165,6 +175,7 @@ features:
   type: mmap
 __PERSONAL_FEATURE_MARKER__
 __REVIEWED_NEGATIVE_FEATURE_MARKER__
+__GENERATED_NEGATIVE_FEATURE_MARKER__
 - features_dir: __NEG_SPEECH__
   penalty_weight: 1.0
   sampling_weight: 12.0
@@ -254,6 +265,23 @@ EOF
   perl -0777 -i -pe "s#__REVIEWED_NEGATIVE_FEATURE_MARKER__#${reviewed_negative_block}#g" "${YAML_PATH}"
 else
   sed -i -e "/__REVIEWED_NEGATIVE_FEATURE_MARKER__/d" "${YAML_PATH}"
+fi
+
+# Generated TTS near-misses complement reviewed negatives, but do not outweigh
+# real-world false-wake recordings.
+if [ "${HAS_GENERATED_NEGATIVE}" = "true" ]; then
+  generated_negative_block="$(cat <<EOF
+- features_dir: ${GENERATED_NEGATIVE_FEATURES_DIR}
+  penalty_weight: 1.1
+  sampling_weight: 4.0
+  truncation_strategy: random
+  truth: false
+  type: mmap
+EOF
+)"
+  perl -0777 -i -pe "s#__GENERATED_NEGATIVE_FEATURE_MARKER__#${generated_negative_block}#g" "${YAML_PATH}"
+else
+  sed -i -e "/__GENERATED_NEGATIVE_FEATURE_MARKER__/d" "${YAML_PATH}"
 fi
 
 echo "   Wrote training_parameters.yaml"

@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from wake_bundle import (
     BUNDLE_SUFFIX,
@@ -26,7 +26,7 @@ OWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/openWakeWord-Trainer
 OWW_TRAINER_REVISION = "e6f3eba4d421c8a53f489b4f7bdda7b189ccb8d3"
 OWW_BUNDLE_SUFFIX = BUNDLE_SUFFIX
 OWW_METADATA_SUFFIX = ".oww.json"
-OWW_FEATURE_CACHE_POLICY = "cpu-onnx-v1"
+OWW_FEATURE_CACHE_POLICY = "gpu-onnx-v1"
 OWW_GENERATED_FEATURE_FILES = (
     "positive_features_train.npy",
     "negative_features_train.npy",
@@ -50,7 +50,7 @@ def _valid_trainer_root(path: Path) -> bool:
 
 
 def _apply_feature_cache_policy(oww_root: Path, safe_word: str, *, log=lambda _line: None) -> None:
-    """Invalidate legacy CUDA embeddings once so training matches CPU ONNX runtime."""
+    """Invalidate the prior CPU-only embeddings once after restoring CUDA extraction."""
     feature_dir = Path(oww_root) / "output" / safe_word / safe_word
     marker = feature_dir / ".tater-feature-cache-policy"
     try:
@@ -72,8 +72,7 @@ def _apply_feature_cache_policy(oww_root: Path, safe_word: str, *, log=lambda _l
     marker.write_text(OWW_FEATURE_CACHE_POLICY + "\n", encoding="utf-8")
     if removed:
         log(
-            "→ Rebuilding cached openWakeWord embeddings once with CPU ONNX "
-            "to match satellite inference"
+            "→ Rebuilding cached openWakeWord embeddings once with GPU ONNX"
         )
 
 
@@ -142,6 +141,10 @@ def prepare_openwakeword_stage(
     personal_dir: Path,
     negative_dir: Path,
     trained_dir: Path,
+    generated_positive_dir: Path | None = None,
+    generated_negative_phrases: Sequence[str] = (),
+    background_dirs: Sequence[Path] = (),
+    rir_dirs: Sequence[Path] = (),
     environ: Mapping[str, str] | None = None,
     log=lambda _line: None,
 ) -> tuple[list[str], Path, dict[str, str], Path]:
@@ -164,12 +167,13 @@ def prepare_openwakeword_stage(
             "OWW_PERSONAL_DIR": str(Path(personal_dir).resolve()),
             "OWW_NEGATIVE_DIR": str(Path(negative_dir).resolve()),
             "OWW_TRAINED_DIR": str(staging_dir),
-            "OWW_FEATURE_DEVICE": "cpu",
+            "OWW_FEATURE_DEVICE": "gpu",
         }
     )
-    # Match the validated Apple class balance while CUDA remains dedicated to
-    # model optimization. Feature extraction stays on CPU ONNX above so its
-    # embeddings match calibration and satellite inference.
+    if normalize_train_openwakeword(env.get("OWW_FORCE_CPU"), default=False):
+        env["OWW_FEATURE_DEVICE"] = "cpu"
+    # Match the validated Apple class balance while restoring CUDA-backed
+    # feature extraction and model optimization on NVIDIA hosts.
     env.setdefault("OWW_DEFAULT_NEGATIVE_BATCH", "256")
     env.setdefault("OWW_DEFAULT_VALIDATION_BATCH", "2048")
     if env.get("MWW_BLACKWELL_IMAGE") == "1":
@@ -195,6 +199,19 @@ def prepare_openwakeword_stage(
         "--data-dir",
         str(oww_root / "assets"),
     ]
+    if generated_positive_dir is not None:
+        generated = str(Path(generated_positive_dir).resolve())
+        env["OWW_POSITIVE_TTS_DIR"] = generated
+        cmd.extend(["--positive-tts-dir", generated])
+    for value in generated_negative_phrases:
+        if str(value).strip():
+            cmd.extend(["--custom-negative-phrase", str(value).strip()])
+    for directory in background_dirs:
+        cmd.extend(["--background-dir", str(Path(directory).resolve())])
+    for directory in rir_dirs:
+        cmd.extend(["--rir-dir", str(Path(directory).resolve())])
+    if normalize_train_openwakeword(env.get("OWW_FORCE_CPU"), default=False):
+        cmd.append("--force-cpu")
     if any(Path(personal_dir).glob("*.wav")) and any(Path(negative_dir).glob("*.wav")):
         cmd.append("--train-verifier")
     Path(trained_dir).mkdir(parents=True, exist_ok=True)
