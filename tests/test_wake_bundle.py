@@ -108,6 +108,32 @@ class WakeBundleTests(unittest.TestCase):
             bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
             self.assertEqual(bundle["nano_wake_word"]["default_architecture"], "gru")
 
+    def test_nano_default_prefers_a_passing_variant(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cnn = root / "wake.nww.cnn.onnx"
+            gru = root / "wake.nww.gru.onnx"
+            cnn.write_bytes(b"cnn")
+            gru.write_bytes(b"gru")
+            publish_nano_wake_word(
+                trained_dir=root, safe_word="wake", phrase="wake", architecture="cnn",
+                metadata={
+                    "quality_status": "low_quality", "quality_passed": False,
+                    "quality_summary": {"recall": 0.99, "negative_rate": 0.0},
+                },
+                model_path=cnn, recommended_patience=2,
+            )
+            bundle_path = publish_nano_wake_word(
+                trained_dir=root, safe_word="wake", phrase="wake", architecture="gru",
+                metadata={
+                    "quality_status": "passed", "quality_passed": True,
+                    "quality_summary": {"recall": 0.95, "negative_rate": 0.04},
+                },
+                model_path=gru, recommended_patience=4,
+            )
+            bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+            self.assertEqual(bundle["nano_wake_word"]["default_architecture"], "gru")
+
 
 if __name__ == "__main__":
     unittest.main()

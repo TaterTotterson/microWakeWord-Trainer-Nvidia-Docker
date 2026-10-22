@@ -20,7 +20,7 @@ class NanoWakeWordStageTests(unittest.TestCase):
     def write_contract(root: Path) -> None:
         (root / "trainer_contract.json").write_text(json.dumps({
             "api_version": 2,
-            "capabilities": ["shared-positive-tts", "multiple-background-dirs", "multiple-rir-dirs", "shared-negative-feature-bank", "quality-patience-5", "validate-existing-candidate"],
+            "capabilities": ["shared-positive-tts", "multiple-background-dirs", "multiple-rir-dirs", "shared-negative-feature-bank", "quality-patience-5", "validate-existing-candidate", "advisory-quality-publication"],
         }), encoding="utf-8")
 
     def test_stale_checkout_without_shared_tts_support_is_rejected(self) -> None:
@@ -152,6 +152,9 @@ class NanoWakeWordStageTests(unittest.TestCase):
             self.assertEqual((trained / "hey_tater.nww.cnn.onnx").read_bytes(), b"cnn")
             self.assertEqual(variant["recommended_threshold"], 0.99)
             self.assertEqual(variant["recommended_patience"], 4)
+            self.assertTrue(variant["quality_evaluated"])
+            self.assertTrue(variant["quality_passed"])
+            self.assertEqual(variant["quality_status"], "passed")
 
     def test_stage_uses_nanowakeword_compatible_cuda_wheels(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -188,7 +191,7 @@ class NanoWakeWordStageTests(unittest.TestCase):
             self.assertEqual(env["NWW_TORCH_VERSION"], "2.8.0")
             self.assertEqual(env["NWW_FEATURE_DEVICE"], "auto")
 
-    def test_publish_rejects_failed_validation_without_replacing_model(self) -> None:
+    def test_publish_allows_failed_validation_with_quality_warning(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             staging = root / "staging"
@@ -197,22 +200,25 @@ class NanoWakeWordStageTests(unittest.TestCase):
             trained.mkdir()
             published = trained / "hey_tater.nww.cnn.onnx"
             published.write_bytes(b"known-good")
-            (staging / "hey_tater.onnx").write_bytes(b"bad-new-model")
+            (staging / "hey_tater.onnx").write_bytes(b"new-model")
             (staging / "hey_tater.json").write_text(
                 json.dumps({"validation": {"passed": False}}),
                 encoding="utf-8",
             )
 
-            with self.assertRaisesRegex(RuntimeError, "failed streaming validation"):
-                publish_nanowakeword_artifacts(
-                    staging_dir=staging,
-                    trained_dir=trained,
-                    safe_word="hey_tater",
-                    phrase="hey tater",
-                    architecture="cnn",
-                )
+            bundle_path = publish_nanowakeword_artifacts(
+                staging_dir=staging,
+                trained_dir=trained,
+                safe_word="hey_tater",
+                phrase="hey tater",
+                architecture="cnn",
+            )
 
-            self.assertEqual(published.read_bytes(), b"known-good")
+            variant = json.loads(bundle_path.read_text(encoding="utf-8"))["nano_wake_word"]["variants"]["cnn"]
+            self.assertEqual(published.read_bytes(), b"new-model")
+            self.assertTrue(variant["quality_evaluated"])
+            self.assertFalse(variant["quality_passed"])
+            self.assertEqual(variant["quality_status"], "low_quality")
 
 
 if __name__ == "__main__":

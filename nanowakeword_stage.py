@@ -14,12 +14,13 @@ from wake_bundle import publish_nano_wake_word
 from shared_feature_bank import FEATURE_BANK_FILENAME, ensure_shared_negative_feature_bank
 
 NWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/nanoWakeWord-Trainer.git"
-NWW_TRAINER_REVISION = "1c4c2814f3d21b045ce38d0fd4d45116d225f9a3"
+NWW_TRAINER_REVISION = "7e3a4c029733a7497af6ca3dec99a00698937f7d"
 NWW_ARCHITECTURES = ("cnn", "gru")
 NWW_TRAINER_API_VERSION = 2
 NWW_TRAINER_CAPABILITIES = {
     "shared-positive-tts", "multiple-background-dirs", "multiple-rir-dirs",
     "shared-negative-feature-bank", "quality-patience-5", "validate-existing-candidate",
+    "advisory-quality-publication",
 }
 
 def normalize_train_nanowakeword(value: Any, default: bool = False) -> bool:
@@ -141,9 +142,10 @@ def publish_nanowakeword_artifacts(*, staging_dir: Path, trained_dir: Path, safe
         raise RuntimeError("NanoWakeWord produced invalid metadata")
     validation = metadata.get("validation")
     quality = metadata.get("quality")
+    quality_evaluated = isinstance(quality, dict) or isinstance(validation, dict)
     if isinstance(quality, dict):
         validation = quality.get("validation")
-        validation_passed = (
+        quality_passed = (
             quality.get("passed") is True
             and isinstance(validation, dict)
             and validation.get("passed") is True
@@ -151,11 +153,12 @@ def publish_nanowakeword_artifacts(*, staging_dir: Path, trained_dir: Path, safe
     else:
         # Retain compatibility with NanoWakeWord trainer revisions that wrote
         # the streaming report directly under the legacy validation key.
-        validation_passed = isinstance(validation, dict) and validation.get("passed") is True
-    if not validation_passed:
-        raise RuntimeError(
-            "NanoWakeWord failed streaming validation; the existing published model was preserved"
-        )
+        quality_passed = isinstance(validation, dict) and validation.get("passed") is True
+    metadata["quality_evaluated"] = quality_evaluated
+    metadata["quality_passed"] = quality_passed
+    metadata["quality_status"] = (
+        "passed" if quality_passed else "low_quality" if quality_evaluated else "not_evaluated"
+    )
     destination = Path(trained_dir).resolve()
     destination.mkdir(parents=True, exist_ok=True)
     model_path = destination / f"{safe_word}.nww.{architecture}.onnx"

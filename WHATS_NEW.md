@@ -1,3 +1,3 @@
-- openWakeWord quality validation is now advisory: the trainer still tests and retries every candidate, but publishes the best produced model even when it misses the quality target.
-- Low-quality and unevaluated models are clearly labeled in the training summary and wake-word bundle instead of being reported as a training failure.
-- Exact recall, real-device false wakes, generated stress-test triggers, threshold, patience, and confirmation requirements remain visible so users can make the final deployment choice.
+- NanoWakeWord CNN and GRU quality validation is now advisory: both architectures still test and retry, then publish the best completed model even when it misses the quality target.
+- MicroWakeWord already published its calibrated model or safe defaults; NanoWakeWord now matches that behavior and the openWakeWord advisory flow.
+- Low-quality and unevaluated models remain clearly labeled with their recall, false-trigger, threshold, patience, and confirmation results. Only genuine training, missing-artifact, or export failures block publication.

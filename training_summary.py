@@ -72,6 +72,8 @@ def _successful_model(
     negative_value: float | None = None
     negative_kind = "rate"
     message = "Quality validation passed."
+    nano_quality_report: dict[str, Any] = {}
+    nano_quality_passed: bool | None = None
 
     if model_id == "micro":
         bundle = _read_json(trained_dir / f"{safe_word}.wake-bundle.json")
@@ -135,7 +137,12 @@ def _successful_model(
         report = _read_json(
             data_dir / "nanowakeword" / "output" / architecture / safe_word / f"{safe_word}.quality.json"
         )
+        nano_quality_report = report
         validation = report.get("validation") if isinstance(report.get("validation"), dict) else {}
+        if isinstance(report.get("passed"), bool):
+            nano_quality_passed = report["passed"]
+        elif isinstance(validation.get("passed"), bool):
+            nano_quality_passed = validation["passed"]
         positive = validation.get("positive") if isinstance(validation.get("positive"), dict) else {}
         negative = validation.get("negative") if isinstance(validation.get("negative"), dict) else {}
         contract = validation.get("streaming_contract") if isinstance(validation.get("streaming_contract"), dict) else {}
@@ -158,6 +165,13 @@ def _successful_model(
             rating, tone = "Not evaluated", "warning"
         elif calibration.get("deployment_ready") is not True:
             rating, tone = "Low quality", "warning"
+    elif model_id.startswith("nano_"):
+        if not nano_quality_report:
+            rating, tone = "Not evaluated", "warning"
+            message = "Model published, but quality validation results were unavailable."
+        elif nano_quality_passed is False:
+            rating, tone = "Low quality", "warning"
+            message = "Model published with quality warnings; review the test results before deployment."
     return {
         "id": model_id,
         "label": MODEL_LABELS.get(model_id, model_id),
@@ -165,25 +179,17 @@ def _successful_model(
         "rating": rating,
         "tone": tone,
         "metrics": metrics,
-        "message": message if metrics else "Training completed; detailed quality metrics were unavailable.",
+        "message": (
+            message
+            if metrics or message != "Quality validation passed."
+            else "Training completed; detailed quality metrics were unavailable."
+        ),
     }
 
 
 def _failed_model(model_id: str, *, code: int, data_dir: Path, trained_dir: Path, safe_word: str) -> dict[str, Any]:
     failure_kind = "start_or_training_failed"
     rating = "Failed before publish"
-    if model_id.startswith("nano_"):
-        architecture = model_id.removeprefix("nano_")
-        report = _read_json(data_dir / "nanowakeword" / "output" / architecture / safe_word / f"{safe_word}.quality.json")
-        if report and report.get("passed") is False:
-            failure_kind = "quality_rejected"
-            rating = "Quality rejected"
-    elif model_id == "open":
-        metadata = _read_json(data_dir / "openwakeword" / "publish-staging" / safe_word / f"{safe_word}.json")
-        calibration = metadata.get("calibration") if isinstance(metadata.get("calibration"), dict) else {}
-        if calibration and calibration.get("deployment_ready") is False:
-            failure_kind = "quality_rejected"
-            rating = "Quality rejected"
     bundle = _read_json(trained_dir / f"{safe_word}.wake-bundle.json")
     if model_id == "open":
         previous_active = isinstance(bundle.get("open_wake_word"), dict)

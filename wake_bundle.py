@@ -43,6 +43,7 @@ NANO_PUBLIC_KEYS = (
     "model_sha256", "model_size_bytes", "artifacts",
     "recommended_threshold", "recommended_patience",
     "quality_summary", "validated_existing_candidate", "seed", "loss_bias",
+    "quality_evaluated", "quality_passed", "quality_status",
 )
 
 def _select_nano_default(variants: Mapping[str, Any], current: str = "") -> str:
@@ -59,9 +60,13 @@ def _select_nano_default(variants: Mapping[str, Any], current: str = "") -> str:
             patience = int(variant.get("recommended_patience", 2))
         except (KeyError, TypeError, ValueError):
             continue
+        quality_status = str(variant.get("quality_status") or "").strip().lower()
+        quality_accepted = float(
+            quality_status in {"", "passed"} and variant.get("quality_passed") is not False
+        )
         preferred = float(recall >= 0.95 and negative_rate <= 0.05)
         utility = recall - negative_rate - 0.01 * patience
-        ranked.append(((preferred, utility, -negative_rate, recall, -patience, float(architecture == "cnn")), str(architecture)))
+        ranked.append(((quality_accepted, preferred, utility, -negative_rate, recall, -patience, float(architecture == "cnn")), str(architecture)))
     if ranked:
         return max(ranked)[1]
     if current in variants:
@@ -274,5 +279,13 @@ def bundle_catalog_fields(trained_dir: Path, safe_word: str, base_url: str = "")
         fields["nanowakeword_models"] = nano_urls
         fields["nanowakeword_architectures"] = list(nano_urls)
         fields["nanowakeword_default_architecture"] = nano.get("default_architecture")
+        fields["nanowakeword_quality_status"] = {
+            architecture: str(variants[architecture].get("quality_status") or "")
+            for architecture in nano_urls
+        }
+        fields["nanowakeword_quality_passed"] = {
+            architecture: variants[architecture].get("quality_passed") is True
+            for architecture in nano_urls
+        }
     fields["dual_model"] = "micro_wake_word" in fields["available_engines"] and "open_wake_word" in fields["available_engines"]
     return fields
