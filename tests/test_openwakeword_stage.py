@@ -38,6 +38,9 @@ class OpenWakeWordStageTests(unittest.TestCase):
                 "streaming-calibration-sweep",
                 "corrective-quality-retry",
                 "uploaded-audio-holdout",
+                "source-aware-deployment-gate",
+                "cumulative-corrective-retries",
+                "expanded-classifier-capacity",
             ],
         }), encoding="utf-8")
 
@@ -197,6 +200,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
                             "recommended_patience": 4,
                             "recommended_confirmation_threshold": 0.86,
                             "recommended_confirmation_patience": 2,
+                            "confirmation_required": True,
                         }
                     }
                 ),
@@ -220,6 +224,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual(bundle["open_wake_word"]["recommended_patience"], 4)
             self.assertEqual(bundle["open_wake_word"]["recommended_confirmation_threshold"], 0.86)
             self.assertEqual(bundle["open_wake_word"]["recommended_confirmation_patience"], 2)
+            self.assertTrue(bundle["open_wake_word"]["confirmation_required"])
             self.assertEqual(bundle["open_wake_word"]["trainer_revision"], OWW_TRAINER_REVISION)
             self.assertFalse((trained / "hey_tater.oww.json").exists())
 
@@ -228,6 +233,35 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertTrue(catalog["bundle_url"].endswith("hey_tater.wake-bundle.json"))
             self.assertTrue(catalog["openwakeword_model_url"].endswith("hey_tater.oww.onnx"))
             self.assertEqual(catalog["openwakeword_confirmation_threshold"], 0.86)
+            self.assertTrue(catalog["openwakeword_confirmation_required"])
+
+    def test_publish_rejects_confirmation_required_model_without_micro(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            staging = root / "staging"
+            trained = root / "trained"
+            staging.mkdir()
+            trained.mkdir()
+            (staging / "hey_tater.onnx").write_bytes(b"oww-onnx")
+            (staging / "hey_tater.json").write_text(
+                json.dumps(
+                    {
+                        "calibration": {
+                            "deployment_ready": True,
+                            "confirmation_required": True,
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "requires MicroWakeWord confirmation"):
+                publish_openwakeword_artifacts(
+                    staging_dir=staging,
+                    trained_dir=trained,
+                    safe_word="hey_tater",
+                    phrase="hey tater",
+                )
 
     def test_publish_refuses_missing_onnx_companion(self):
         with tempfile.TemporaryDirectory() as tmp:

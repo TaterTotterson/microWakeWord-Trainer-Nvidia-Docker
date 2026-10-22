@@ -1,5 +1,4 @@
-- Fixed the unavailable ONNX Runtime GPU dependency pin that caused openWakeWord and NanoWakeWord setup to fail before training.
-- Improved openWakeWord hard-negative training by weighting custom phrases and reviewed recordings separately from the broad negative bank.
-- Reserved uploaded recordings for an unseen validation holdout so quality checks better reflect real-device performance.
-- Added streaming calibration across patience 2 through 5 and now selects the shortest safe detection window automatically.
-- Added one corrective openWakeWord retry that learns from false triggers before a candidate is rejected.
+- openWakeWord now keeps zero tolerance for real-device false wakes while allowing no more than 1% generated challenge triggers at 90% or better recall.
+- Models with a nonzero generated challenge tail are published only when a MicroWakeWord confirmation model is present, and the bundle explicitly marks confirmation as required.
+- The openWakeWord DNN is wider, and up to two corrective passes accumulate hard negatives while validating against fresh partitions.
+- Training summaries now separate real-device false wakes from generated stress-test triggers.

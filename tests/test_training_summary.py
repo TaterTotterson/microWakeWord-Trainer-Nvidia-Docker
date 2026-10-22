@@ -26,7 +26,14 @@ class TrainingSummaryTests(unittest.TestCase):
                 "calibration": {
                     "recommended_threshold": 0.85,
                     "recommended_patience": 3,
-                    "recommended_metrics": {"positive_recall": 0.96, "false_positives_per_hour": 0.0},
+                    "generated_negative_clip_count": 500,
+                    "confirmation_required": True,
+                    "recommended_metrics": {
+                        "positive_recall": 0.96,
+                        "generated_false_positive_rate": 0.008,
+                        "generated_false_positive_clips": 4,
+                        "real_device_false_positive_clips": 0,
+                    },
                 }
             })
             write_json(root / "nanowakeword/output/cnn/hey_tater/hey_tater.quality.json", {
@@ -48,6 +55,11 @@ class TrainingSummaryTests(unittest.TestCase):
             self.assertEqual(summary["overall"], "Needs attention")
             self.assertEqual([item["rating"] for item in summary["models"]], ["Excellent", "Excellent", "Excellent", "Failed before publish"])
             self.assertIn({"label": "Recall", "value": "97.0%"}, summary["models"][2]["metrics"])
+            self.assertIn(
+                {"label": "Generated stress triggers", "value": "4/500 (0.8%)"},
+                summary["models"][1]["metrics"],
+            )
+            self.assertIn("confirmation is required", summary["models"][1]["message"])
             lines = training_summary_log_lines(summary)
             self.assertTrue(any("NanoWakeWord GRU — Failed before publish" in line for line in lines))
 

@@ -71,6 +71,7 @@ def _successful_model(
     recall: float | None = None
     negative_value: float | None = None
     negative_kind = "rate"
+    message = "Quality validation passed."
 
     if model_id == "micro":
         bundle = _read_json(trained_dir / f"{safe_word}.wake-bundle.json")
@@ -101,18 +102,29 @@ def _successful_model(
         calibration = metadata.get("calibration") if isinstance(metadata.get("calibration"), dict) else {}
         recommended = calibration.get("recommended_metrics") if isinstance(calibration.get("recommended_metrics"), dict) else {}
         recall = _number(recommended.get("positive_recall"))
-        negative_value = _number(recommended.get("false_positives_per_hour"))
-        negative_kind = "hour"
+        negative_value = _number(recommended.get("generated_false_positive_rate"))
+        real_false_wakes = _integer(recommended.get("real_device_false_positive_clips"))
+        generated_false_wakes = _integer(recommended.get("generated_false_positive_clips"))
+        generated_count = _integer(calibration.get("generated_negative_clip_count"))
         threshold = _number(calibration.get("recommended_threshold"))
         patience = _integer(calibration.get("recommended_patience"))
         if recall is not None:
             metrics.append(_metric("Recall", _percent(recall)))
+        if real_false_wakes is not None:
+            metrics.append(_metric("Real-device false wakes", str(real_false_wakes)))
         if negative_value is not None:
-            metrics.append(_metric("False accepts", f"{negative_value:.2f}/hr"))
+            generated_label = (
+                f"{generated_false_wakes}/{generated_count} ({_percent(negative_value)})"
+                if generated_false_wakes is not None and generated_count
+                else _percent(negative_value)
+            )
+            metrics.append(_metric("Generated stress triggers", generated_label))
         if threshold is not None:
             metrics.append(_metric("Threshold", f"{threshold:.2f}"))
         if patience is not None:
             metrics.append(_metric("Patience", str(patience)))
+        if calibration.get("confirmation_required") is True:
+            message = "Quality validation passed; MicroWakeWord confirmation is required."
 
     else:
         architecture = model_id.removeprefix("nano_")
@@ -144,7 +156,7 @@ def _successful_model(
         "rating": rating,
         "tone": tone,
         "metrics": metrics,
-        "message": "Quality validation passed." if metrics else "Training completed; detailed quality metrics were unavailable.",
+        "message": message if metrics else "Training completed; detailed quality metrics were unavailable.",
     }
 
 
