@@ -24,7 +24,7 @@ from shared_feature_bank import FEATURE_BANK_FILENAME, ensure_shared_negative_fe
 
 
 OWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/openWakeWord-Trainer.git"
-OWW_TRAINER_REVISION = "1774809eea3eb24ac15c2c3450281e4aa48c3a0f"
+OWW_TRAINER_REVISION = "c2d29b5a00568067381c17290178888ed018e435"
 OWW_BUNDLE_SUFFIX = BUNDLE_SUFFIX
 OWW_METADATA_SUFFIX = ".oww.json"
 OWW_FEATURE_CACHE_POLICY = "gpu-onnx-v1"
@@ -38,6 +38,10 @@ OWW_TRAINER_API_VERSION = 2
 OWW_TRAINER_CAPABILITIES = {
     "shared-positive-tts", "multiple-background-dirs", "multiple-rir-dirs",
     "shared-negative-feature-bank",
+    "weighted-hard-negative-sources",
+    "streaming-calibration-sweep",
+    "corrective-quality-retry",
+    "uploaded-audio-holdout",
 }
 
 

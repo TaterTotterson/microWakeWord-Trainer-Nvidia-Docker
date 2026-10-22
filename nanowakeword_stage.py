@@ -14,7 +14,7 @@ from wake_bundle import publish_nano_wake_word
 from shared_feature_bank import FEATURE_BANK_FILENAME, ensure_shared_negative_feature_bank
 
 NWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/nanoWakeWord-Trainer.git"
-NWW_TRAINER_REVISION = "9552c9b9e71c864591b7b3660c8d1654cec83aea"
+NWW_TRAINER_REVISION = "1c4c2814f3d21b045ce38d0fd4d45116d225f9a3"
 NWW_ARCHITECTURES = ("cnn", "gru")
 NWW_TRAINER_API_VERSION = 2
 NWW_TRAINER_CAPABILITIES = {

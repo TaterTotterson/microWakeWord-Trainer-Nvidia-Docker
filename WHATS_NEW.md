@@ -1,2 +1,5 @@
-- Fixed the v42 NVIDIA and Blackwell containers failing at startup because the shared feature-bank module was not copied into the runtime image.
-- Added packaging coverage so both Dockerfiles must include the shared feature-bank module.
+- Fixed the unavailable ONNX Runtime GPU dependency pin that caused openWakeWord and NanoWakeWord setup to fail before training.
+- Improved openWakeWord hard-negative training by weighting custom phrases and reviewed recordings separately from the broad negative bank.
+- Reserved uploaded recordings for an unseen validation holdout so quality checks better reflect real-device performance.
+- Added streaming calibration across patience 2 through 5 and now selects the shortest safe detection window automatically.
+- Added one corrective openWakeWord retry that learns from false triggers before a candidate is rejected.

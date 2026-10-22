@@ -29,7 +29,16 @@ class OpenWakeWordStageTests(unittest.TestCase):
     def write_contract(root: Path) -> None:
         (root / "trainer_contract.json").write_text(json.dumps({
             "api_version": 2,
-            "capabilities": ["shared-positive-tts", "multiple-background-dirs", "multiple-rir-dirs", "shared-negative-feature-bank"],
+            "capabilities": [
+                "shared-positive-tts",
+                "multiple-background-dirs",
+                "multiple-rir-dirs",
+                "shared-negative-feature-bank",
+                "weighted-hard-negative-sources",
+                "streaming-calibration-sweep",
+                "corrective-quality-retry",
+                "uploaded-audio-holdout",
+            ],
         }), encoding="utf-8")
 
     def test_legacy_calibration_table_derives_both_runtime_policies(self):
