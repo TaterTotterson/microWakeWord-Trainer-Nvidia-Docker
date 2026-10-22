@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import pathlib
 import unittest
@@ -123,15 +124,38 @@ class VueTrainerUiTests(unittest.TestCase):
         self.assertIn("esphome_json_url?: string", types)
 
     def test_runtime_packaging_uses_bundle_without_node(self) -> None:
+        pending = ["trainer_server"]
+        runtime_modules: set[str] = set()
+        while pending:
+            module = pending.pop()
+            if module in runtime_modules:
+                continue
+            module_path = REPO_ROOT / f"{module}.py"
+            if not module_path.is_file():
+                continue
+            runtime_modules.add(module)
+            tree = ast.parse(module_path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                imported: list[str] = []
+                if isinstance(node, ast.Import):
+                    imported = [alias.name.split(".", 1)[0] for alias in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                    imported = [node.module.split(".", 1)[0]]
+                pending.extend(
+                    name
+                    for name in imported
+                    if (REPO_ROOT / f"{name}.py").is_file() and name not in runtime_modules
+                )
+
         dockerfiles = [REPO_ROOT / "dockerfile", REPO_ROOT / "dockerfile.blackwell"]
         for dockerfile in dockerfiles:
             if not dockerfile.exists():
                 continue
             source = dockerfile.read_text(encoding="utf-8")
             self.assertIn("COPY --chown=root:root static/ /root/mww-scripts/static/", source)
-            self.assertIn("nanowakeword_stage.py", source)
-            self.assertIn("training_summary.py", source)
-            self.assertIn("wake_bundle.py", source)
+            for module in sorted(runtime_modules):
+                with self.subTest(dockerfile=dockerfile.name, module=module):
+                    self.assertIn(f"{module}.py", source)
             self.assertNotIn("npm install", source)
 
         macos_builder = REPO_ROOT / "macos" / "WakeWordTrainer" / "scripts" / "build_app.sh"

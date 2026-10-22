@@ -1,5 +1,2 @@
-- Improved NanoWakeWord CNN and GRU training with stronger hard-negative weighting, stable unseen holdouts, larger quality checks, and corrective retries based on real gate failures.
-- Added automatic threshold and detection-window calibration from patience 2 through 5, allowing responsive models to use shorter windows while retaining a safe fallback for difficult wake words.
-- Added one checksummed broad negative feature bank shared by openWakeWord and NanoWakeWord, including NanoWakeWord-only runs.
-- Added no-retrain NanoWakeWord candidate revalidation and clear reporting when the previously published model remains active after a rejected candidate.
-- Improved default-model selection to use measured recall, negative-trigger rate, and calibrated patience instead of always preferring CNN.
+- Fixed the v42 NVIDIA and Blackwell containers failing at startup because the shared feature-bank module was not copied into the runtime image.
+- Added packaging coverage so both Dockerfiles must include the shared feature-bank module.
