@@ -26,7 +26,7 @@ def candidate(cutoff, window, recall, false_accepts_per_hour):
 class CalibrationSelectionTests(unittest.TestCase):
     def test_defaults_are_conservative(self):
         self.assertEqual(calibrate_detector.DEFAULT_WINDOW_SIZES, [5, 6, 7])
-        self.assertEqual(calibrate_detector.DEFAULT_CUTOFF_MIN, 0.95)
+        self.assertEqual(calibrate_detector.DEFAULT_CUTOFF_MIN, 0.90)
         self.assertEqual(calibrate_detector.DEFAULT_RECALL_MARGIN, 0.005)
 
     def test_prefers_zero_false_accepts_within_recall_margin(self):

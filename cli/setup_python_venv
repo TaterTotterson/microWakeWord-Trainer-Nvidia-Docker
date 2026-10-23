@@ -212,11 +212,7 @@ pip_install "torch==2.9.1" "torchaudio==2.9.1" ${torchgpu}
 
 echo "   ===== Checking microwakeword ====="
 MWW="${DATA_DIR}/tools/microWakeWord"
-if [ ! -d "${MWW}" ] || [ -n "$(git -C "${MWW}" status --porcelain)" ] ; then
-    rm -rf "${MWW}" || :
-    echo "   Cloning micro-wake-word to ${DATA_DIR}/tools"
-    git clone https://github.com/TaterTotterson/micro-wake-word "${MWW}" &>/dev/null
-fi
+"${PROGDIR}/ensure_microwakeword_source" "${DATA_DIR}"
 echo "   Installing microwakeword"
 # The dependencies are installed explicitly above so pip cannot replace the
 # selected TensorFlow build while resolving microwakeword's generic TF floor.

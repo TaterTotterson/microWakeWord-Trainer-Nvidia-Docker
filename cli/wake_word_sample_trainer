@@ -161,6 +161,16 @@ mkdir -p "${WORK_DIR}/trained_models" || :
 
 # We write a YAML with a marker, then splice personal feature block in if it exists.
 YAML_PATH="${WORK_DIR}/trained_models/training_parameters.yaml"
+FINETUNE_STEPS=$(( TRAINING_STEPS / 4 ))
+PRIMARY_STEPS=$(( TRAINING_STEPS - FINETUNE_STEPS ))
+if [ "${FINETUNE_STEPS}" -lt 1 ]; then
+  FINETUNE_STEPS=1
+  PRIMARY_STEPS=$(( TRAINING_STEPS - 1 ))
+fi
+if [ "${PRIMARY_STEPS}" -lt 1 ]; then
+  echo "❌ MicroWakeWord training requires at least 2 training steps." >&2
+  exit 1
+fi
 
 cat <<'EOF' > "${YAML_PATH}"
 batch_size: 16
@@ -206,8 +216,10 @@ freq_mask_max_size:
 - 0
 learning_rates:
 - 0.001
+- 0.00025
 maximization_metric: average_viable_recall
 minimization_metric: null
+minimum_positive_samples_per_batch: 2
 negative_class_weight:
 - 20
 positive_class_weight:
@@ -219,7 +231,8 @@ time_mask_max_size:
 - 0
 train_dir: __TRAIN_DIR__
 training_steps:
-- __TRAINING_STEPS__
+- __PRIMARY_TRAINING_STEPS__
+- __FINETUNE_TRAINING_STEPS__
 window_step_ms: 10
 EOF
 
@@ -231,7 +244,8 @@ sed -i \
   -e "s|__NEG_NOSPEECH__|${TRAINING_DS}/negative_datasets/no_speech|g" \
   -e "s|__NEG_DINNER_EVAL__|${TRAINING_DS}/negative_datasets/dinner_party_eval|g" \
   -e "s|__TRAIN_DIR__|${WORK_DIR}/trained_models/wakeword|g" \
-  -e "s|__TRAINING_STEPS__|${TRAINING_STEPS}|g" \
+  -e "s|__PRIMARY_TRAINING_STEPS__|${PRIMARY_STEPS}|g" \
+  -e "s|__FINETUNE_TRAINING_STEPS__|${FINETUNE_STEPS}|g" \
   "${YAML_PATH}"
 
 # Insert/remove personal block
@@ -371,7 +385,13 @@ GPU_FALLBACK_MARKERS=(
 
 run_attempt() {
   local label="$1"
+  local -a tee_args
   shift
+  if [ "${MWW_APPEND_TRAIN_LOG:-false}" = "true" ]; then
+    tee_args=(-a "${TRAIN_LOG}")
+  else
+    tee_args=("${TRAIN_LOG}")
+  fi
   echo
   echo "================================================================================"
   echo "===== ${label} ====="
@@ -382,7 +402,7 @@ run_attempt() {
   "${PYTHON_BIN:-python}" "${TRAIN_ARGS[@]}" 2>&1 \
     | tr '\r' '\n' \
     | stdbuf -i0 -o0 sed -r -e "/^Validation Batch/d" \
-    | tee "${TRAIN_LOG}" \
+    | tee "${tee_args[@]}" \
     | sed -r -e "/^Validation Batch/d" -e "s/^INFO:absl:/   /g"
 
   return ${PIPESTATUS[0]}
@@ -590,25 +610,104 @@ if [ ! -f "${source_path}" ] ; then
     exit 1
 fi
 
+run_calibration() {
+  local model_path="$1"
+  local output_path="$2"
+  "${PYTHON_BIN:-python}" "${PROGDIR}/calibrate_detector.py" \
+      --training-config "${WORK_DIR}/trained_models/wakeword/training_config.yaml" \
+      --model "${model_path}" \
+      --output "${output_path}" \
+      --target-faph "${MWW_CALIBRATION_TARGET_FAPH:-0.25}" \
+      --recall-margin "${MWW_CALIBRATION_RECALL_MARGIN:-0.005}" \
+      --window-sizes "${MWW_CALIBRATION_WINDOW_SIZES:-5,6,7}" \
+      --cutoff-min "${MWW_CALIBRATION_CUTOFF_MIN:-0.90}" \
+      --cutoff-max "${MWW_CALIBRATION_CUTOFF_MAX:-1.00}"
+}
+
+calibration_needs_corrective_training() {
+  local report_path="$1"
+  "${PYTHON_BIN:-python}" - "$report_path" "${MWW_CALIBRATION_MIN_RECALL:-0.90}" <<'PY' >/dev/null
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+metrics = payload.get("selected_metrics") or {}
+recall = float(metrics.get("recall", 0.0))
+raise SystemExit(0 if recall < float(sys.argv[2]) else 1)
+PY
+}
+
 echo "🎯 Calibrating detector settings for on-device use…"
-if "${PYTHON_BIN:-python}" "${PROGDIR}/calibrate_detector.py" \
-    --training-config "${WORK_DIR}/trained_models/wakeword/training_config.yaml" \
-    --model "${source_path}" \
-    --output "${calibration_path}" \
-    --target-faph "${MWW_CALIBRATION_TARGET_FAPH:-0.25}" \
-    --recall-margin "${MWW_CALIBRATION_RECALL_MARGIN:-0.005}" \
-    --window-sizes "${MWW_CALIBRATION_WINDOW_SIZES:-5,6,7}" \
-    --cutoff-min "${MWW_CALIBRATION_CUTOFF_MIN:-0.95}" \
-    --cutoff-max "${MWW_CALIBRATION_CUTOFF_MAX:-1.00}"; then
+if run_calibration "${source_path}" "${calibration_path}"; then
     echo "✅ Detector calibration complete."
 else
     echo "⚠️  Detector calibration failed; packaging with default detector settings."
     rm -f "${calibration_path}" || :
 fi
 
+CANDIDATE_DIR="${WORK_DIR}/trained_models/mww_candidates"
+CANDIDATE_REPORT="${CANDIDATE_DIR}/selection.json"
+if [ -f "${calibration_path}" ] && calibration_needs_corrective_training "${calibration_path}"; then
+  echo "⚠️  Calibrated recall is below ${MWW_CALIBRATION_MIN_RECALL:-0.90}; running one corrective fine-tuning pass."
+  mkdir -p "${CANDIDATE_DIR}"
+  baseline_model="${CANDIDATE_DIR}/initial.tflite"
+  baseline_calibration="${CANDIDATE_DIR}/initial.calibration.json"
+  corrected_model="${CANDIDATE_DIR}/corrective.tflite"
+  corrected_calibration="${CANDIDATE_DIR}/corrective.calibration.json"
+  original_training_parameters="${CANDIDATE_DIR}/initial.training_parameters.yaml"
+  cp "${source_path}" "${baseline_model}"
+  cp "${calibration_path}" "${baseline_calibration}"
+  cp "${YAML_PATH}" "${original_training_parameters}"
+
+  "${PYTHON_BIN:-python}" - \
+      "${YAML_PATH}" \
+      "${MWW_CORRECTIVE_TRAINING_STEPS:-20000}" \
+      "${MWW_CORRECTIVE_LEARNING_RATE:-0.0001}" <<'PY'
+import sys
+from pathlib import Path
+
+import yaml
+
+path = Path(sys.argv[1])
+config = yaml.safe_load(path.read_text(encoding="utf-8"))
+config["training_steps"] = [int(sys.argv[2])]
+config["learning_rates"] = [float(sys.argv[3])]
+path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+PY
+
+  corrective_candidate_ready="false"
+  if MWW_APPEND_TRAIN_LOG=true run_attempt "Corrective training: ${MWW_CORRECTIVE_TRAINING_STEPS:-20000} additional low-rate steps"; then
+    cp "${source_path}" "${corrected_model}"
+    if run_calibration "${corrected_model}" "${corrected_calibration}"; then
+      if "${PYTHON_BIN:-python}" "${PROGDIR}/select_mww_candidate.py" \
+          --baseline-model "${baseline_model}" \
+          --baseline-calibration "${baseline_calibration}" \
+          --corrected-model "${corrected_model}" \
+          --corrected-calibration "${corrected_calibration}" \
+          --output-model "${source_path}" \
+          --output-calibration "${calibration_path}" \
+          --report "${CANDIDATE_REPORT}" \
+          --minimum-recall "${MWW_CALIBRATION_MIN_RECALL:-0.90}" \
+          --target-faph "${MWW_CALIBRATION_TARGET_FAPH:-0.25}" \
+          --recall-margin "${MWW_CALIBRATION_RECALL_MARGIN:-0.005}"; then
+        corrective_candidate_ready="true"
+      fi
+    fi
+  fi
+
+  cp "${original_training_parameters}" "${YAML_PATH}"
+  if [ "${corrective_candidate_ready}" != "true" ]; then
+    echo "⚠️  Corrective candidate was unavailable; preserving the initial calibrated model."
+    cp "${baseline_model}" "${source_path}"
+    cp "${baseline_calibration}" "${calibration_path}"
+  fi
+fi
+
 cp "${WORK_DIR}/trained_models/wakeword/model_summary.txt" "${OUTPUT_DIR}/logs/" || :
 cp -a "${WORK_DIR}/trained_models/wakeword/logs/train" "${OUTPUT_DIR}/logs/" || :
 cp -a "${WORK_DIR}/trained_models/wakeword/logs/validation" "${OUTPUT_DIR}/logs/" || :
+cp "${CANDIDATE_REPORT}" "${OUTPUT_DIR}/logs/mww_candidate_selection.json" 2>/dev/null || :
 
 echo -e "\n   Training complete!"
 echo "   Full log: ${TRAIN_LOG}"

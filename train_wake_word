@@ -66,6 +66,10 @@ fi
 # shellcheck source=/dev/null
 source "${DATA_DIR}/.venv/bin/activate"
 
+# Keep the persistent editable checkout aligned with the version validated by
+# this Docker release, even when the existing training venv is healthy.
+"${CLIDIR}/ensure_microwakeword_source" "${DATA_DIR}"
+
 cd "${DATA_DIR}"
 mkdir -p "${DATA_DIR}/work" || :
 

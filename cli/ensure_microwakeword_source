@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROGDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DATA_ROOT="${1:-${DATA_DIR:-/data}}"
+SOURCE_DIR="${DATA_ROOT}/tools/microWakeWord"
+REPOSITORY="https://github.com/TaterTotterson/micro-wake-word.git"
+REVISION="$(tr -d '[:space:]' < "${PROGDIR}/microwakeword_revision")"
+
+if ! [[ "${REVISION}" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "Invalid pinned microWakeWord revision: ${REVISION}" >&2
+  exit 1
+fi
+
+if [ -d "${SOURCE_DIR}/.git" ]; then
+  current_revision="$(git -C "${SOURCE_DIR}" rev-parse HEAD 2>/dev/null || true)"
+  current_origin="$(git -C "${SOURCE_DIR}" remote get-url origin 2>/dev/null || true)"
+  if [ "${current_revision}" = "${REVISION}" ] \
+      && [ "${current_origin}" = "${REPOSITORY}" ] \
+      && [ -z "$(git -C "${SOURCE_DIR}" status --porcelain)" ]; then
+    echo "✅ Pinned microWakeWord source ready: ${REVISION:0:7}"
+    exit 0
+  fi
+fi
+
+mkdir -p "$(dirname "${SOURCE_DIR}")"
+if [ ! -d "${SOURCE_DIR}/.git" ]; then
+  rm -rf "${SOURCE_DIR}"
+  echo "→ Cloning pinned microWakeWord source"
+  git clone --no-checkout "${REPOSITORY}" "${SOURCE_DIR}" >/dev/null
+else
+  echo "→ Updating persistent microWakeWord source to ${REVISION:0:7}"
+  git -C "${SOURCE_DIR}" remote set-url origin "${REPOSITORY}"
+fi
+
+git -C "${SOURCE_DIR}" fetch --depth=1 origin main >/dev/null
+git -C "${SOURCE_DIR}" checkout --detach --force "${REVISION}" >/dev/null
+git -C "${SOURCE_DIR}" clean -fd >/dev/null
+echo "✅ Pinned microWakeWord source ready: ${REVISION:0:7}"

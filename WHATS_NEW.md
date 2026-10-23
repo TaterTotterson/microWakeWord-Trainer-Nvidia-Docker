@@ -1,3 +1,4 @@
-- openWakeWord now repairs persistent environments where switching from GPU to CPU ONNX Runtime left package metadata but removed the importable module.
-- ONNX Runtime variants are removed together before the selected CPU or GPU wheel is installed, preventing the Piper preflight failure seen in v47.1.
-- Existing `/data/openwakeword/.venv` installations are checked and repaired automatically on the next OWW run; MicroWakeWord and NanoWakeWord behavior is unchanged.
+- MicroWakeWord keeps the VRAM-safe batch size of 16 while guaranteeing at least two positive examples in every training batch.
+- The default 80,000-step schedule now finishes with a lower learning rate, and low-recall models receive one guarded corrective fine-tuning pass.
+- Detector calibration now checks thresholds down to 0.90 and preserves whichever calibrated candidate has the better recall/false-accept tradeoff.
+- The validated MicroWakeWord source revision is pinned and refreshed even when the persistent trainer environment is reused.

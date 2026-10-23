@@ -28,6 +28,41 @@ def _training_cuda_path_probe() -> str:
 
 
 class TrainingEnvironmentTests(unittest.TestCase):
+    def test_microwakeword_source_is_pinned_for_existing_venvs(self) -> None:
+        revision = (REPO_ROOT / "cli" / "microwakeword_revision").read_text(
+            encoding="utf-8"
+        ).strip()
+        updater = (REPO_ROOT / "cli" / "ensure_microwakeword_source").read_text(
+            encoding="utf-8"
+        )
+        setup = (REPO_ROOT / "cli" / "setup_python_venv").read_text(
+            encoding="utf-8"
+        )
+        entrypoint = (REPO_ROOT / "train_wake_word").read_text(encoding="utf-8")
+
+        self.assertRegex(revision, r"^[0-9a-f]{40}$")
+        self.assertIn('checkout --detach --force "${REVISION}"', updater)
+        self.assertIn('"${PROGDIR}/ensure_microwakeword_source"', setup)
+        self.assertIn('"${CLIDIR}/ensure_microwakeword_source"', entrypoint)
+
+    def test_vram_safe_mww_profile_preserves_positive_examples_and_fine_tunes(self) -> None:
+        trainer_script = (REPO_ROOT / "cli" / "wake_word_sample_trainer").read_text(
+            encoding="utf-8"
+        )
+        defaults = (REPO_ROOT / "cli" / "shell.functions").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("DEFAULT_TRAINING_STEPS=80000", defaults)
+        self.assertIn("batch_size: 16", trainer_script)
+        self.assertIn("minimum_positive_samples_per_batch: 2", trainer_script)
+        self.assertIn("- 0.00025", trainer_script)
+        self.assertIn("__PRIMARY_TRAINING_STEPS__", trainer_script)
+        self.assertIn("__FINETUNE_TRAINING_STEPS__", trainer_script)
+        self.assertIn("MWW_CORRECTIVE_TRAINING_STEPS:-20000", trainer_script)
+        self.assertIn("MWW_CORRECTIVE_LEARNING_RATE:-0.0001", trainer_script)
+        self.assertIn("MWW_CALIBRATION_CUTOFF_MIN:-0.90", trainer_script)
+
     def test_training_subprocess_removes_only_recorder_cuda_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             data_dir = Path(directory)
