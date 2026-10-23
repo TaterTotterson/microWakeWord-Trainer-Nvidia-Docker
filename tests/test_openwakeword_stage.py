@@ -108,7 +108,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual(env["OWW_EXPORT_DIR"], str(staging))
             self.assertEqual(env["OWW_DEFAULT_NEGATIVE_BATCH"], "256")
             self.assertEqual(env["OWW_DEFAULT_VALIDATION_BATCH"], "2048")
-            self.assertEqual(env["OWW_FEATURE_DEVICE"], "gpu")
+            self.assertEqual(env["OWW_FEATURE_DEVICE"], "cpu")
             self.assertEqual(env["OWW_POSITIVE_TTS_DIR"], str(generated.resolve()))
             self.assertIn("--feature-bank-dir", cmd)
             self.assertIn("shared_feature_banks", env["OWW_FEATURE_BANK_DIR"])
@@ -119,7 +119,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
             feature_dir = root / "data" / "openwakeword" / "output" / "hey_tater" / "hey_tater"
             self.assertEqual(
                 (feature_dir / ".tater-feature-cache-policy").read_text(encoding="utf-8").strip(),
-                "gpu-onnx-v1",
+                "cpu-onnx-v2",
             )
 
     def test_prepare_invalidates_prior_cpu_feature_cache_once(self):
@@ -161,9 +161,9 @@ class OpenWakeWordStageTests(unittest.TestCase):
             )
 
             self.assertFalse(any(path.exists() for path in feature_paths))
-            self.assertTrue(any("GPU ONNX" in message for message in messages))
+            self.assertTrue(any("CPU ONNX" in message for message in messages))
 
-            feature_paths[0].write_bytes(b"new-gpu-features")
+            feature_paths[0].write_bytes(b"new-cpu-features")
             prepare_openwakeword_stage(
                 phrase="hey tater",
                 safe_word="hey_tater",

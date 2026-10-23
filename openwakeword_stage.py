@@ -27,7 +27,7 @@ OWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/openWakeWord-Trainer
 OWW_TRAINER_REVISION = "62952216d152a4d4c09f2f4ed7acde74e5d6a57a"
 OWW_BUNDLE_SUFFIX = BUNDLE_SUFFIX
 OWW_METADATA_SUFFIX = ".oww.json"
-OWW_FEATURE_CACHE_POLICY = "gpu-onnx-v1"
+OWW_FEATURE_CACHE_POLICY = "cpu-onnx-v2"
 OWW_GENERATED_FEATURE_FILES = (
     "positive_features_train.npy",
     "negative_features_train.npy",
@@ -68,7 +68,7 @@ def _valid_trainer_root(path: Path) -> bool:
 
 
 def _apply_feature_cache_policy(oww_root: Path, safe_word: str, *, log=lambda _line: None) -> None:
-    """Invalidate the prior CPU-only embeddings once after restoring CUDA extraction."""
+    """Invalidate embeddings once when changing the ONNX feature provider."""
     feature_dir = Path(oww_root) / "output" / safe_word / safe_word
     marker = feature_dir / ".tater-feature-cache-policy"
     try:
@@ -90,7 +90,7 @@ def _apply_feature_cache_policy(oww_root: Path, safe_word: str, *, log=lambda _l
     marker.write_text(OWW_FEATURE_CACHE_POLICY + "\n", encoding="utf-8")
     if removed:
         log(
-            "→ Rebuilding cached openWakeWord embeddings once with GPU ONNX"
+            "→ Rebuilding cached openWakeWord embeddings once with CPU ONNX"
         )
 
 
@@ -193,14 +193,17 @@ def prepare_openwakeword_stage(
             "OWW_PERSONAL_DIR": str(Path(personal_dir).resolve()),
             "OWW_NEGATIVE_DIR": str(Path(negative_dir).resolve()),
             "OWW_TRAINED_DIR": str(staging_dir),
-            "OWW_FEATURE_DEVICE": "gpu",
+            # Keep feature extraction on the portable CPU ONNX path used by
+            # Apple and deployment-time evaluation. CUDA remains enabled for
+            # PyTorch model optimization below.
+            "OWW_FEATURE_DEVICE": "cpu",
             "OWW_FEATURE_BANK_DIR": str(feature_bank.parent),
         }
     )
     if normalize_train_openwakeword(env.get("OWW_FORCE_CPU"), default=False):
         env["OWW_FEATURE_DEVICE"] = "cpu"
-    # Match the validated Apple class balance while restoring CUDA-backed
-    # feature extraction and model optimization on NVIDIA hosts.
+    # Match the validated Apple class balance while retaining CUDA-backed
+    # model optimization on NVIDIA hosts.
     env.setdefault("OWW_DEFAULT_NEGATIVE_BATCH", "256")
     env.setdefault("OWW_DEFAULT_VALIDATION_BATCH", "2048")
     if env.get("MWW_BLACKWELL_IMAGE") == "1":

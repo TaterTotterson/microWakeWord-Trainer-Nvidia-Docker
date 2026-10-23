@@ -14,7 +14,7 @@ from wake_bundle import publish_nano_wake_word
 from shared_feature_bank import FEATURE_BANK_FILENAME, ensure_shared_negative_feature_bank
 
 NWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/nanoWakeWord-Trainer.git"
-NWW_TRAINER_REVISION = "7e3a4c029733a7497af6ca3dec99a00698937f7d"
+NWW_TRAINER_REVISION = "7afb550665ed80810d58507f7676b4d6583ee209"
 NWW_ARCHITECTURES = ("cnn", "gru")
 NWW_TRAINER_API_VERSION = 2
 NWW_TRAINER_CAPABILITIES = {
@@ -109,7 +109,11 @@ def prepare_nanowakeword_stage(*, phrase: str, safe_word: str, architecture: str
     elif not env.get("NWW_FORCE_CPU"):
         env.setdefault("NWW_TORCH_CUDA", "cu126")
         env.setdefault("NWW_TORCH_VERSION", "2.8.0")
-    env.setdefault("NWW_FEATURE_DEVICE", "cpu" if env.get("NWW_FORCE_CPU") else "auto")
+    # NanoWakeWord's GPU AudioFeatures path is not compatible with the current
+    # two-second feature tensor shape and can leave partial .npy caches after
+    # failing. Keep feature extraction on the CPU ONNX path that is proven on
+    # Apple and at streaming evaluation time. PyTorch training still uses CUDA.
+    env["NWW_FEATURE_DEVICE"] = "cpu"
     env.update({
         "NWW_DATA_DIR": str(nww_root), "NWW_OUTPUT_ROOT": str(output_root),
         "NWW_EXPORT_DIR": str(staging_dir), "NWW_POSITIVE_TTS_DIR": str(generated),

@@ -189,7 +189,7 @@ class NanoWakeWordStageTests(unittest.TestCase):
 
             self.assertEqual(env["NWW_TORCH_CUDA"], "cu126")
             self.assertEqual(env["NWW_TORCH_VERSION"], "2.8.0")
-            self.assertEqual(env["NWW_FEATURE_DEVICE"], "auto")
+            self.assertEqual(env["NWW_FEATURE_DEVICE"], "cpu")
 
     def test_publish_allows_failed_validation_with_quality_warning(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

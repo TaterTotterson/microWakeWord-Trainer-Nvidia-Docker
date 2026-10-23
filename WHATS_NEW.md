@@ -1,3 +1,3 @@
-- The overall training badge now turns yellow and says Needs attention whenever any published model is low quality or was not evaluated.
-- The summary now distinguishes models that were successfully published from models that actually passed their quality targets.
-- MicroWakeWord runs without calibration results are explicitly labeled Not evaluated instead of appearing as a successful quality result.
+- NVIDIA keeps openWakeWord and NanoWakeWord feature extraction on the proven CPU ONNX path while retaining CUDA for model training.
+- Existing GPU feature caches are invalidated once so the next run rebuilds compatible OWW and NWW features.
+- NanoWakeWord feature-generation failures now stop immediately and remove partial caches instead of retrying into stale data.
