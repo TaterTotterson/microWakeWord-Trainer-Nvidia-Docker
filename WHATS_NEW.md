@@ -1,3 +1,3 @@
-- NVIDIA keeps openWakeWord and NanoWakeWord feature extraction on the proven CPU ONNX path while retaining CUDA for model training.
-- Existing GPU feature caches are invalidated once so the next run rebuilds compatible OWW and NWW features.
-- NanoWakeWord feature-generation failures now stop immediately and remove partial caches instead of retrying into stale data.
+- openWakeWord now repairs persistent environments where switching from GPU to CPU ONNX Runtime left package metadata but removed the importable module.
+- ONNX Runtime variants are removed together before the selected CPU or GPU wheel is installed, preventing the Piper preflight failure seen in v47.1.
+- Existing `/data/openwakeword/.venv` installations are checked and repaired automatically on the next OWW run; MicroWakeWord and NanoWakeWord behavior is unchanged.

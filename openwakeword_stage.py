@@ -24,7 +24,7 @@ from shared_feature_bank import FEATURE_BANK_FILENAME, ensure_shared_negative_fe
 
 
 OWW_TRAINER_REPOSITORY = "https://github.com/TaterTotterson/openWakeWord-Trainer.git"
-OWW_TRAINER_REVISION = "62952216d152a4d4c09f2f4ed7acde74e5d6a57a"
+OWW_TRAINER_REVISION = "8552177db7a6044e4b701c393ade063dd48dbad5"
 OWW_BUNDLE_SUFFIX = BUNDLE_SUFFIX
 OWW_METADATA_SUFFIX = ".oww.json"
 OWW_FEATURE_CACHE_POLICY = "cpu-onnx-v2"
