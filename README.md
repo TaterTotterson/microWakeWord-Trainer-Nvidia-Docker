@@ -383,3 +383,9 @@ Built on top of:
 - [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS)
 - [MOSS-TTS-Nano](https://github.com/OpenMOSS/MOSS-TTS-Nano)
 - [tensorflow-blackwell-python313](https://github.com/chivitiH/tensorflow-blackwell-python313) for the optional RTX 50-series / Blackwell image
+
+## License and trademarks
+
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+
+The Tater name and logo are governed by the [Tater Trademark Policy](TRADEMARKS.md).\n
