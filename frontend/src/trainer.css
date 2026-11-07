@@ -54,6 +54,8 @@ button:disabled { opacity: .43; cursor: not-allowed; }
 .brand p { font-size: 13px; }
 .eyebrow { color: var(--orange-2); font-size: 10px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
 .header-status { display: flex; align-items: center; gap: 10px; }
+.local-trainer-status { display: grid; justify-items: center; gap: 3px; }
+.local-trainer-status > small { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
 .live-dot, .session-chip { display: inline-flex; align-items: center; min-height: 34px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: rgba(24, 24, 25, .78); font-size: 12px; font-weight: 700; }
 .live-dot i { width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(68,221,165,.1); }
 

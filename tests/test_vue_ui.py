@@ -20,6 +20,17 @@ class VueTrainerUiTests(unittest.TestCase):
         self.assertIn('"../static/ui"', config)
         self.assertIn('fileName: () => "trainer-ui.js"', config)
 
+    def test_header_shows_version_from_release_file(self) -> None:
+        app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
+        styles = (REPO_ROOT / "frontend" / "src" / "trainer.css").read_text(encoding="utf-8")
+        config = (REPO_ROOT / "frontend" / "vite.config.ts").read_text(encoding="utf-8")
+
+        self.assertIn('"../VERSION"', config)
+        self.assertIn("__TRAINER_VERSION__", config)
+        self.assertIn("local-trainer-status", app)
+        self.assertIn("trainerVersion", app)
+        self.assertIn(".local-trainer-status", styles)
+
     def test_static_shell_loads_prebuilt_bundle(self) -> None:
         index = (REPO_ROOT / "static" / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="trainer-app"', index)

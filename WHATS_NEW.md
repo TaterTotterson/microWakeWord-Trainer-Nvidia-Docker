@@ -7,3 +7,4 @@
 - Boundary-only runs are now accepted without selecting another detector, preserve the existing bundle contents, and produce their own quality summary instead of appearing as a full MicroWakeWord run.
 - Added deterministic wake-plus-immediate-speech hard negatives and separate endpoint features so the boundary model learns where the wake phrase ends rather than duplicating the wake detector.
 - Updated both standard CUDA and Blackwell images to include the saved-word library and structured progress runtime used by the new trainer UI.
+- The current container trainer version is now shown directly under **Local trainer** in the header.

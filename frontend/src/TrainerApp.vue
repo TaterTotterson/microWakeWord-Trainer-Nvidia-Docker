@@ -19,6 +19,7 @@ const linkUrl = ref("");
 const linkCode = ref("");
 const linkComplete = ref(false);
 const mascotUrl = "/static/images/tater-wake-word-trainer.png";
+const trainerVersion = `v${__TRAINER_VERSION__}`;
 const pageSize = 50;
 const tabs: Array<{ id: ViewName; label: string; short: string }> = [
   { id: "trainer", label: "Trainer", short: "Train" },
@@ -265,7 +266,7 @@ function consoleTone(line: string): string {
     <div class="ambient ambient-one" aria-hidden="true" /><div class="ambient ambient-two" aria-hidden="true" />
     <header class="app-header">
       <div class="brand"><div class="brand-mark" aria-hidden="true"><img :src="mascotUrl" alt="" /></div><div><span class="eyebrow">Tater tools</span><h1>Wake Word Studio</h1><p>Generate voices, curate real recordings, train, and publish.</p></div></div>
-      <div class="header-status"><span class="live-dot"><i />Local trainer</span><span v-if="trainer.session.safe_word" class="session-chip">{{ trainer.session.safe_word }} · {{ trainer.language }}</span></div>
+      <div class="header-status"><div class="local-trainer-status"><span class="live-dot"><i />Local trainer</span><small>{{ trainerVersion }}</small></div><span v-if="trainer.session.safe_word" class="session-chip">{{ trainer.session.safe_word }} · {{ trainer.language }}</span></div>
     </header>
     <nav class="tabs" aria-label="Trainer areas">
       <button v-for="tab in tabs" :key="tab.id" type="button" :class="{ active: trainer.activeView === tab.id }" @click="changeView(tab.id)"><span class="tab-full">{{ tab.label }}</span><span class="tab-short">{{ tab.short }}</span><b v-if="tab.id === 'captured' && trainer.captured.captured_count">{{ trainer.captured.captured_count }}</b></button>
