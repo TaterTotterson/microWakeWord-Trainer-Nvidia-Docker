@@ -13,12 +13,6 @@ Train any mix of microWakeWord, openWakeWord, NanoWakeWord CNN, and NanoWakeWord
 
 Real samples come from device-captured wake audio, close misses, or manual uploads. Every saved sample is normalized to `16 kHz / mono / 16-bit PCM WAV` before training.
 
-## Feature Highlight: Wake-Boundary Model
-
-Fast speakers often begin their request immediately after the wake phrase. A fixed audio cutoff can either leave part of the wake phrase in the clip sent to speech-to-text or remove the first word of the request. When a full training run includes MicroWakeWord, the trainer also builds a small, separately trained `wake_boundary` TFLite model for that saved wake word. It is calibrated to locate the acoustic end of the phrase so Echo firmware can keep the wake phrase out of speech-to-text while preserving speech that starts immediately after it.
-
-The boundary model is detector-independent. Once it is included in the schema-v4 `.wake-bundle.json`, the same artifact works with MWW, OWW, NWW, MWW + OWW, and MWW + NWW detector modes. After one full MicroWakeWord run, **Retrain boundary only** can rebuild and recalibrate the boundary model from the saved word's cached dataset and features without retraining the wake-word detector models.
-
 ---
 
 ## Docker Image
@@ -87,10 +81,11 @@ If you change `REC_PORT`, open that port instead and use the same port in the sa
 
 ---
 
-## What The UI Does
+## Features
 
 - The entire interface is reactive Vue 3 + TypeScript, following the same typed component pattern as Tater's newer UI surfaces.
 - `Trainer` starts a wake-word session, shows positive/negative sample counts, and lets you select MWW, OWW, NWW-CNN, NWW-GRU, or any combination. MWW is the safe default.
+- `Wake boundary` builds a small, separately calibrated model for each wake word so Echo firmware can remove the wake phrase without cutting off speech that follows it immediately. The detector-independent model works with MWW, OWW, NWW, MWW + OWW, and MWW + NWW modes, and can be retrained by itself after one full MicroWakeWord run.
 - `Auto Training` transcribes real wake triggers, promotes phrase-misses to hard negatives, schedules retraining, and refreshes Tater Native satellites.
 - `Captured Audio` reviews clips sent by Tater Native or ESPHome sats, including wake hits, close misses, and false wakes.
 - `Samples` plays, removes, clears, and manually imports personal or negative samples.
