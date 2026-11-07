@@ -83,7 +83,6 @@ If you change `REC_PORT`, open that port instead and use the same port in the sa
 
 ## Features
 
-- The entire interface is reactive Vue 3 + TypeScript, following the same typed component pattern as Tater's newer UI surfaces.
 - `Trainer` starts a wake-word session, shows positive/negative sample counts, and lets you select MWW, OWW, NWW-CNN, NWW-GRU, or any combination. MWW is the safe default.
 - `Wake boundary` builds a small, separately calibrated model for each wake word so Echo firmware can remove the wake phrase without cutting off speech that follows it immediately. The detector-independent model works with MWW, OWW, NWW, MWW + OWW, and MWW + NWW modes, and can be retrained by itself after one full MicroWakeWord run.
 - `Auto Training` transcribes real wake triggers, promotes phrase-misses to hard negatives, schedules retraining, and refreshes Tater Native satellites.
