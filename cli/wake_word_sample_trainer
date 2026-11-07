@@ -4,7 +4,7 @@ set -e
 PROGPATH=$(realpath "$0")
 PROGDIR=$(dirname "${PROGPATH}")
 
-KNOWN_ARGS=( training-steps samples data-dir language artifact-slug )
+KNOWN_ARGS=( training-steps samples data-dir language artifact-slug boundary-only )
 source "${PROGDIR}/shell.functions"
 WAKE_WORD="${POSITIONAL_ARGS[0]}"
 
@@ -25,6 +25,10 @@ Usage: $0 [ --samples=<samples> ] [ --training-steps=<steps> ]
 
 --training-steps:   Number of training steps.
                     Default: ${DEFAULT_TRAINING_STEPS}
+
+--boundary-only:    Train and publish only the wake-end boundary model. The
+                    existing detector bundle and retained training config are
+                    preserved and reused.
 
 <wake_word>:        The word to train spelled phonetically.
                     Required.
@@ -152,6 +156,13 @@ else
   echo "ℹ️  No generated near-miss features found at ${GENERATED_NEGATIVE_FEATURES_DIR}/training"
 fi
 
+BOUNDARY_NEGATIVE_FEATURES_DIR="${WORK_DIR}/boundary_negative_features"
+if [ ! -d "${BOUNDARY_NEGATIVE_FEATURES_DIR}/training" ]; then
+  echo "❌ Wake endpoint features are missing: ${BOUNDARY_NEGATIVE_FEATURES_DIR}/training" >&2
+  exit 1
+fi
+echo "✅ Found wake endpoint hard-negative features: ${BOUNDARY_NEGATIVE_FEATURES_DIR}/training"
+
 cd "${WORK_DIR}"
 
 echo "===== Starting ${TRAINING_STEPS} training steps ====="
@@ -163,6 +174,14 @@ mkdir -p "${WORK_DIR}/trained_models" || :
 YAML_PATH="${WORK_DIR}/trained_models/training_parameters.yaml"
 FINETUNE_STEPS=$(( TRAINING_STEPS / 4 ))
 PRIMARY_STEPS=$(( TRAINING_STEPS - FINETUNE_STEPS ))
+EARLY_STOPPING_MIN_STEPS=$(( TRAINING_STEPS / 2 ))
+EARLY_STOPPING_PATIENCE_STEPS=$(( TRAINING_STEPS * 15 / 100 ))
+if [ "${EARLY_STOPPING_MIN_STEPS}" -lt 1000 ]; then
+  EARLY_STOPPING_MIN_STEPS=1000
+fi
+if [ "${EARLY_STOPPING_PATIENCE_STEPS}" -lt 1000 ]; then
+  EARLY_STOPPING_PATIENCE_STEPS=1000
+fi
 if [ "${FINETUNE_STEPS}" -lt 1 ]; then
   FINETUNE_STEPS=1
   PRIMARY_STEPS=$(( TRAINING_STEPS - 1 ))
@@ -176,6 +195,11 @@ cat <<'EOF' > "${YAML_PATH}"
 batch_size: 16
 clip_duration_ms: 1500
 eval_step_interval: 500
+early_stopping:
+  enabled: true
+  min_delta: 0.001
+  min_steps: __EARLY_STOPPING_MIN_STEPS__
+  patience_steps: __EARLY_STOPPING_PATIENCE_STEPS__
 features:
 - features_dir: __WAKEWORD_FEATURES__
   penalty_weight: 1.0
@@ -246,6 +270,8 @@ sed -i \
   -e "s|__TRAIN_DIR__|${WORK_DIR}/trained_models/wakeword|g" \
   -e "s|__PRIMARY_TRAINING_STEPS__|${PRIMARY_STEPS}|g" \
   -e "s|__FINETUNE_TRAINING_STEPS__|${FINETUNE_STEPS}|g" \
+  -e "s|__EARLY_STOPPING_MIN_STEPS__|${EARLY_STOPPING_MIN_STEPS}|g" \
+  -e "s|__EARLY_STOPPING_PATIENCE_STEPS__|${EARLY_STOPPING_PATIENCE_STEPS}|g" \
   "${YAML_PATH}"
 
 # Insert/remove personal block
@@ -299,7 +325,13 @@ else
 fi
 
 echo "   Wrote training_parameters.yaml"
-rm -rf "${WORK_DIR}/trained_models/wakeword"
+if [ "${BOUNDARY_ONLY:-false}" != "true" ]; then
+  rm -rf "${WORK_DIR}/trained_models/wakeword"
+elif [ ! -f "${WORK_DIR}/trained_models/wakeword/training_config.yaml" ]; then
+  echo "❌ Boundary-only training needs the retained detector training config for this word." >&2
+  echo "   Run one full MicroWakeWord training first." >&2
+  exit 1
+fi
 
 if [ "${IS_BLACKWELL}" = "true" ] && [ "${BLACKWELL_TF_MODE}" != "disabled" ]; then
   BLACKWELL_SETUP="${PROGDIR}/setup_blackwell_venv"
@@ -531,10 +563,13 @@ else
 fi
 
 TRAINING_DONE="false"
+source_path="${WORK_DIR}/trained_models/wakeword/tflite_stream_state_internal_quant/stream_state_internal_quant.tflite"
+calibration_path="${WORK_DIR}/trained_models/wakeword/tflite_stream_state_internal_quant/detection_calibration.json"
 
-echo "🏋️ Starting model training and TFLite export (this is the longest stage)…"
-echo "🧠 Model quality: high_accuracy_plus"
-if run_attempt "Attempt 1/3: ${INITIAL_TRAINING_DEVICE} training (default runtime profile)" ; then
+if [ "${BOUNDARY_ONLY:-false}" != "true" ]; then
+  echo "🏋️ Starting model training and TFLite export (this is the longest stage)…"
+  echo "🧠 Model quality: high_accuracy_plus"
+  if run_attempt "Attempt 1/3: ${INITIAL_TRAINING_DEVICE} training (default runtime profile)" ; then
   echo "✅ Training complete (${INITIAL_TRAINING_DEVICE} path)."
   TRAINING_DONE="true"
 else
@@ -568,7 +603,7 @@ else
   fi
 fi
 
-if [ "${TRAINING_DONE}" != "true" ]; then
+  if [ "${TRAINING_DONE}" != "true" ]; then
   if ! is_gpu_runtime_failure; then
     echo "❌ Training failed (does not look GPU/OOM/runtime). See: ${TRAIN_LOG}" >&2
     exit 1
@@ -600,15 +635,12 @@ if [ "${TRAINING_DONE}" != "true" ]; then
     echo "   See: ${TRAIN_LOG}" >&2
     exit 1
   fi
-fi
+  fi
 
-source_path="${WORK_DIR}/trained_models/wakeword/tflite_stream_state_internal_quant/stream_state_internal_quant.tflite"
-calibration_path="${WORK_DIR}/trained_models/wakeword/tflite_stream_state_internal_quant/detection_calibration.json"
-
-if [ ! -f "${source_path}" ] ; then
+  if [ ! -f "${source_path}" ] ; then
     echo "Output model not found! Training didn't complete successfully.  See ${TRAIN_LOG}"
     exit 1
-fi
+  fi
 
 run_calibration() {
   local model_path="$1"
@@ -638,17 +670,17 @@ raise SystemExit(0 if recall < float(sys.argv[2]) else 1)
 PY
 }
 
-echo "🎯 Calibrating detector settings for on-device use…"
-if run_calibration "${source_path}" "${calibration_path}"; then
+  echo "🎯 Calibrating detector settings for on-device use…"
+  if run_calibration "${source_path}" "${calibration_path}"; then
     echo "✅ Detector calibration complete."
 else
     echo "⚠️  Detector calibration failed; packaging with default detector settings."
     rm -f "${calibration_path}" || :
-fi
+  fi
 
 CANDIDATE_DIR="${WORK_DIR}/trained_models/mww_candidates"
 CANDIDATE_REPORT="${CANDIDATE_DIR}/selection.json"
-if [ -f "${calibration_path}" ] && calibration_needs_corrective_training "${calibration_path}"; then
+  if [ -f "${calibration_path}" ] && calibration_needs_corrective_training "${calibration_path}"; then
   echo "⚠️  Calibrated recall is below ${MWW_CALIBRATION_MIN_RECALL:-0.90}; running one corrective fine-tuning pass."
   mkdir -p "${CANDIDATE_DIR}"
   baseline_model="${CANDIDATE_DIR}/initial.tflite"
@@ -673,6 +705,7 @@ path = Path(sys.argv[1])
 config = yaml.safe_load(path.read_text(encoding="utf-8"))
 config["training_steps"] = [int(sys.argv[2])]
 config["learning_rates"] = [float(sys.argv[3])]
+config["early_stopping"] = {"enabled": False}
 path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
 PY
 
@@ -702,6 +735,69 @@ PY
     cp "${baseline_model}" "${source_path}"
     cp "${baseline_calibration}" "${calibration_path}"
   fi
+  fi
+fi
+
+BOUNDARY_CONFIG="${WORK_DIR}/trained_models/boundary_training_parameters.yaml"
+BOUNDARY_TRAIN_DIR="${WORK_DIR}/trained_models/wake_boundary"
+boundary_source_path="${BOUNDARY_TRAIN_DIR}/tflite_stream_state_internal_quant/stream_state_internal_quant.tflite"
+boundary_calibration_path="${BOUNDARY_TRAIN_DIR}/tflite_stream_state_internal_quant/boundary_calibration.json"
+rm -rf "${BOUNDARY_TRAIN_DIR}"
+"${PYTHON_BIN:-python}" "${PROGDIR}/write_boundary_training_yaml.py" \
+    --source "${YAML_PATH}" \
+    --output "${BOUNDARY_CONFIG}" \
+    --train-dir "${BOUNDARY_TRAIN_DIR}" \
+    --features-dir "${BOUNDARY_NEGATIVE_FEATURES_DIR}" \
+    --steps "${MWW_BOUNDARY_TRAINING_STEPS:-20000}"
+
+TRAIN_ARGS=(
+  -m microwakeword.model_train_eval
+  --training_config "${BOUNDARY_CONFIG}"
+  --train 1
+  --restore_checkpoint 1
+  --test_tf_nonstreaming 0
+  --test_tflite_nonstreaming 0
+  --test_tflite_nonstreaming_quantized 0
+  --test_tflite_streaming 0
+  --test_tflite_streaming_quantized 1
+  --use_weights best_weights
+  mixednet
+  --pointwise_filters "128,128,128,128"
+  --repeat_in_block "1,1,1,1"
+  --mixconv_kernel_sizes "[5], [7,11], [9,15], [23]"
+  --residual_connection "0,0,0,0"
+  --first_conv_filters 64
+  --first_conv_kernel_size 5
+  --stride 2
+)
+
+echo "🧭 Training dedicated wake-end boundary model…"
+if ! MWW_APPEND_TRAIN_LOG=true run_attempt "Wake endpoint boundary model training"; then
+  echo "❌ Wake endpoint boundary training failed. See: ${TRAIN_LOG}" >&2
+  exit 1
+fi
+if [ ! -f "${boundary_source_path}" ]; then
+  echo "❌ Dedicated wake boundary model was not exported: ${boundary_source_path}" >&2
+  exit 1
+fi
+if (( $(wc -c < "${boundary_source_path}") > 204800 )); then
+  echo "❌ Dedicated wake boundary model exceeds the 200 KiB Echo contract: ${boundary_source_path}" >&2
+  exit 1
+fi
+echo "🎯 Calibrating the per-word wake boundary threshold…"
+if "${PYTHON_BIN:-python}" "${PROGDIR}/calibrate_detector.py" \
+    --training-config "${WORK_DIR}/trained_models/wakeword/training_config.yaml" \
+    --model "${boundary_source_path}" \
+    --output "${boundary_calibration_path}" \
+    --target-faph "${MWW_BOUNDARY_CALIBRATION_TARGET_FAPH:-1.0}" \
+    --recall-margin "${MWW_BOUNDARY_CALIBRATION_RECALL_MARGIN:-0.01}" \
+    --window-sizes "1" \
+    --cutoff-min "${MWW_BOUNDARY_CALIBRATION_CUTOFF_MIN:-0.50}" \
+    --cutoff-max "${MWW_BOUNDARY_CALIBRATION_CUTOFF_MAX:-0.99}"; then
+  echo "✅ Wake boundary calibration complete."
+else
+  echo "⚠️ Wake boundary calibration failed; packaging with threshold 0.80."
+  rm -f "${boundary_calibration_path}" || :
 fi
 
 cp "${WORK_DIR}/trained_models/wakeword/model_summary.txt" "${OUTPUT_DIR}/logs/" || :
@@ -709,15 +805,34 @@ cp -a "${WORK_DIR}/trained_models/wakeword/logs/train" "${OUTPUT_DIR}/logs/" || 
 cp -a "${WORK_DIR}/trained_models/wakeword/logs/validation" "${OUTPUT_DIR}/logs/" || :
 cp "${CANDIDATE_REPORT}" "${OUTPUT_DIR}/logs/mww_candidate_selection.json" 2>/dev/null || :
 
+if [ "${BOUNDARY_ONLY:-false}" = "true" ]; then
+  boundary_tflite_path="${OUTPUT_DIR}/${wake_word_filename}.boundary.tflite"
+  cp "${boundary_source_path}" "${boundary_tflite_path}"
+  echo "📦 Publishing boundary-only model into the existing detector bundle…"
+  "${PYTHON_BIN:-python}" "${PROGDIR}/package_boundary_model.py" \
+      "${WAKE_WORD}" \
+      --safe-word "${wake_word_filename}" \
+      --output-dir "${TRAINED_WAKE_WORDS_DIR:-${DATA_DIR}/trained_wake_words}" \
+      --model "${boundary_source_path}" \
+      --calibration "${boundary_calibration_path}"
+  echo "   Boundary training complete!"
+  echo "   Full log: ${TRAIN_LOG}"
+  END_TS=$EPOCHSECONDS
+  print_elapsed_time "${START_TS}" "${END_TS}" "Boundary training completed."
+  exit 0
+fi
+
 echo -e "\n   Training complete!"
 echo "   Full log: ${TRAIN_LOG}"
 
 tflite_filename="${wake_word_filename}.tflite"
 tflite_path="${OUTPUT_DIR}/${tflite_filename}"
 cp "${source_path}" "${tflite_path}"
+boundary_tflite_path="${OUTPUT_DIR}/${wake_word_filename}.boundary.tflite"
+cp "${boundary_source_path}" "${boundary_tflite_path}"
 
 json_path="${OUTPUT_DIR}/${wake_word_filename}.json"
-export WAKE_WORD_TITLE LANGUAGE JSON_PATH="${json_path}" TFLITE_FILENAME="${tflite_filename}" CALIBRATION_PATH="${calibration_path}"
+export WAKE_WORD_TITLE LANGUAGE JSON_PATH="${json_path}" TFLITE_FILENAME="${tflite_filename}" CALIBRATION_PATH="${calibration_path}" BOUNDARY_CALIBRATION_PATH="${boundary_calibration_path}"
 echo "📦 Packaging final model artifacts…"
 "${PYTHON_BIN:-python}" - <<'PY'
 import json
@@ -731,6 +846,7 @@ probability_cutoff = 0.97
 sliding_window_size = 6
 strict_min_close_miss_threshold = 0.68
 calibration = {}
+boundary_calibration = {}
 
 if calibration_path.exists():
     try:
@@ -743,6 +859,18 @@ if calibration_path.exists():
         )
     except Exception as exc:
         print(f"⚠️ Failed to read detector calibration ({exc}); using defaults.")
+
+boundary_path = Path(os.environ.get("BOUNDARY_CALIBRATION_PATH", ""))
+boundary_threshold = 0.80
+if boundary_path.exists():
+    try:
+        boundary_calibration = json.loads(boundary_path.read_text(encoding="utf-8"))
+        boundary_threshold = float(boundary_calibration.get("probability_cutoff", boundary_threshold))
+        if not 0.0 < boundary_threshold <= 1.0:
+            boundary_threshold = 0.80
+    except Exception as exc:
+        print(f"⚠️ Failed to read wake boundary calibration ({exc}); using threshold 0.80.")
+        boundary_calibration = {}
 
 probability_cutoff = round(probability_cutoff, 3)
 sliding_window_size = max(1, min(10, int(sliding_window_size)))
@@ -801,6 +929,11 @@ meta = {
         "ambient_tracks": evaluation.get("ambient_tracks"),
         "generated_at": calibration.get("generated_at"),
     },
+}
+meta["tater_wake_boundary"] = {
+    "threshold": round(boundary_threshold, 3),
+    "quality_summary": boundary_calibration.get("selected_metrics", {}),
+    "training_strategy": "endpoint_hard_negative_v1",
 }
 json_path.write_text(json.dumps(meta, indent=4, ensure_ascii=False) + "\n", encoding="utf-8")
 PY

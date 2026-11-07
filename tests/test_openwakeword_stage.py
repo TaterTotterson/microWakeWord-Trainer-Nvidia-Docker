@@ -13,7 +13,7 @@ from openwakeword_stage import (
     publish_openwakeword_artifacts,
     _oww_runtime_policy,
 )
-from wake_bundle import publish_micro_wake_word
+from wake_bundle import BUNDLE_SCHEMA_VERSION, publish_micro_wake_word
 
 
 class OpenWakeWordStageTests(unittest.TestCase):
@@ -218,7 +218,7 @@ class OpenWakeWordStageTests(unittest.TestCase):
             self.assertEqual((trained / "hey_tater.oww.onnx").read_bytes(), b"oww-onnx")
             bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
             self.assertEqual(bundle["type"], "tater_wake_word_bundle")
-            self.assertEqual(bundle["schema_version"], 3)
+            self.assertEqual(bundle["schema_version"], BUNDLE_SCHEMA_VERSION)
             self.assertEqual(bundle["micro_wake_word"]["model"], "hey_tater.tflite")
             self.assertEqual(bundle["open_wake_word"]["recommended_threshold"], 0.91)
             self.assertEqual(bundle["open_wake_word"]["recommended_patience"], 4)

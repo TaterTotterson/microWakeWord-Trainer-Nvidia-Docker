@@ -48,7 +48,9 @@ COPY --chown=root:root --chmod=0644 \
     nanowakeword_stage.py \
     shared_feature_bank.py \
     training_summary.py \
+    training_progress.py \
     wake_bundle.py \
+    wake_word_library.py \
     /root/mww-scripts/
 
 # CLI folder

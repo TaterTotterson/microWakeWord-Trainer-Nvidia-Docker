@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from wake_bundle import bundle_catalog_fields, migrate_legacy_micro_manifest, publish_micro_wake_word, publish_nano_wake_word, publish_open_wake_word
+from wake_bundle import bundle_catalog_fields, migrate_legacy_micro_manifest, publish_micro_wake_word, publish_nano_wake_word, publish_open_wake_word, publish_wake_boundary
 
 
 class WakeBundleTests(unittest.TestCase):
@@ -82,11 +82,27 @@ class WakeBundleTests(unittest.TestCase):
             for architecture in ("cnn", "gru"):
                 publish_nano_wake_word(trained_dir=root, safe_word="hey_tater", phrase="hey tater", architecture=architecture, metadata={"validation": {"passed": True}}, model_path=models[architecture])
             bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
-            self.assertEqual(bundle["schema_version"], 3)
+            self.assertEqual(bundle["schema_version"], 4)
             self.assertNotIn("manifest", bundle["micro_wake_word"])
             self.assertEqual(set(bundle["nano_wake_word"]["variants"]), {"cnn", "gru"})
             catalog = bundle_catalog_fields(root, "hey_tater")
             self.assertEqual(catalog["available_engines"], ["micro_wake_word", "open_wake_word", "nano_wake_word"])
+
+    def test_boundary_model_is_hash_verified_and_catalogued(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            model = root / "hey_tater.boundary.tflite"
+            model.write_bytes(b"TFL3 boundary")
+            path = publish_wake_boundary(
+                trained_dir=root, safe_word="hey_tater", phrase="hey tater",
+                model_path=model,
+                metadata={"threshold": 0.82, "tensor_arena_size": 65536},
+            )
+            bundle = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(bundle["schema_version"], 4)
+            self.assertEqual(bundle["wake_boundary"]["model"], model.name)
+            self.assertEqual(len(bundle["wake_boundary"]["model_sha256"]), 64)
+            self.assertTrue(bundle_catalog_fields(root, "hey_tater")["wake_boundary_available"])
 
     def test_nano_default_uses_streaming_quality_instead_of_fixed_cnn(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

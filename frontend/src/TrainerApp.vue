@@ -6,9 +6,9 @@ import {
   autoLinked, captureTone, claimTater, clearSamples, copyWakeWord, deleteManagedData, describeFormat,
   disposeTrainer, ensureSupportedTtsMode, formatBytes, formatTimestamp, hasConsole, initializeTrainer,
   isBusy, itemAudioUrl, negativeCount, notify, personalCount, previewPhrase, refreshAuto,
-  refreshCaptured, refreshManagedData, refreshSamples, refreshWakeWords, removeSample, revertSample, reviewCaptured,
-  revalidateNanoWakeWord, runAutoAction, saveAuto, selectFiles, selectedSamples, startSession, startTraining, stopSession, sttEngines,
-  trainer, ttsRoute, unlinkTater, uploadSelectedFiles,
+  refreshCaptured, refreshManagedData, refreshSamples, refreshWakeWordLibrary, refreshWakeWords, removeSample, revertSample, reviewCaptured,
+  revalidateNanoWakeWord, runAutoAction, saveAuto, selectFiles, selectedSamples, startBoundaryTraining, startSession, startTraining, stopSession, sttEngines,
+  trainer, ttsRoute, unlinkTater, uploadSelectedFiles, useSavedWord,
 } from "./trainerStore";
 import type { AudioItem, ManagedDataItem, SampleBucket, ViewName } from "./types";
 
@@ -60,10 +60,47 @@ const autoStatus = computed(() => {
   return { text: "Disabled", tone: "neutral" };
 });
 const consoleLines = computed(() => trainer.training.log_lines?.length ? trainer.training.log_lines : ["No training output yet."]);
+const trainingProgress = computed(() => trainer.training.progress || null);
+const trainingProgressStage = computed(() => {
+  const stage = String(trainingProgress.value?.stage || "pipeline").split(":", 1)[0];
+  return ({
+    starting: "Getting ready", datasets: "Training data", tts: "Speech generation",
+    features: "Feature building", model: "Model training", boundary: "Wake boundary",
+    calibration: "Calibration", package: "Packaging", openwakeword: "openWakeWord",
+    nanowakeword: "NanoWakeWord", complete: "Finished", failed: "Needs attention",
+    worker: "Pipeline progress", pipeline: "Live pipeline",
+  } as Record<string, string>)[stage] || stage.replaceAll("-", " ");
+});
+const trainingProgressPercent = computed(() => {
+  const raw = trainingProgress.value?.percent;
+  if (raw === null || raw === undefined) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : null;
+});
+const trainingProgressFacts = computed(() => {
+  const progress = trainingProgress.value;
+  if (!progress) return [] as string[];
+  const facts: string[] = [];
+  const current = Number(progress.current);
+  const total = Number(progress.total);
+  const unit = String(progress.unit || "items");
+  if (Number.isFinite(current) && Number.isFinite(total) && total > 0) {
+    facts.push(`${Math.round(current).toLocaleString()} / ${Math.round(total).toLocaleString()} ${unit}`);
+  } else if (Number.isFinite(current) && current > 0) {
+    facts.push(`${Math.round(current).toLocaleString()} ${unit}`);
+  }
+  if (progress.elapsed) facts.push(`Elapsed ${progress.elapsed}`);
+  if (progress.eta) facts.push(`About ${progress.eta} left`);
+  if (progress.rate_text) facts.push(String(progress.rate_text));
+  else if (Number(progress.rate) > 0) facts.push(`${Number(progress.rate).toLocaleString()} ${unit}/sec`);
+  return facts;
+});
 const retryableNanoWakeWord = computed(() => {
   const models = Array.isArray(trainer.training.summary?.models) ? trainer.training.summary.models : [];
   return models.find((model) => model.failure_kind === "quality_rejected" && String(model.id || "").startsWith("nano_"));
 });
+const activeLibraryWord = computed(() => trainer.wakeWordLibrary.find((word) => word.safe_word === trainer.session.safe_word));
+const recentModelHistory = computed(() => trainer.modelHistory.slice(0, 16));
 const dataCategories = computed(() => {
   const groups = new Map<string, ManagedDataItem[]>();
   for (const item of trainer.managedData.items || []) {
@@ -136,7 +173,7 @@ function changeView(view: ViewName): void {
   const run = view === "auto" ? refreshAuto(false)
     : view === "captured" ? refreshCaptured()
       : view === "samples" ? refreshSamples()
-        : view === "firmware" ? refreshWakeWords()
+        : view === "firmware" ? Promise.all([refreshWakeWords(), refreshWakeWordLibrary()])
           : view === "data" ? refreshManagedData()
           : Promise.resolve();
   void run.catch((error) => notify(error instanceof Error ? error.message : "Refresh failed.", "error"));
@@ -207,6 +244,7 @@ function wordJsonUrl(item: JsonRecord): string { return String(item.json_url || 
 function wordEsphomeJsonUrl(item: JsonRecord): string { return String(item.esphome_json_url || item.esphomeJsonUrl || ""); }
 function wordModelUrl(item: JsonRecord): string { return String(item.model_url || item.modelUrl || ""); }
 function wordOpenWakeWordUrl(item: JsonRecord): string { return String(item.openwakeword_model_url || ""); }
+function wordWakeBoundaryUrl(item: JsonRecord): string { return String(item.wake_boundary_model_url || ""); }
 function wordNanoWakeWordModels(item: JsonRecord): Record<string, string> {
   return item.nanowakeword_models && typeof item.nanowakeword_models === "object"
     ? item.nanowakeword_models as Record<string, string>
@@ -239,6 +277,18 @@ function consoleTone(line: string): string {
           <section class="hero training-hero">
             <div><span class="eyebrow">Training studio</span><h2>Build a personal wake word</h2><p>Choose a multilingual voice route, check your real samples, then follow the model pipeline live.</p></div>
             <div class="step-row"><span><b>1</b> Phrase</span><span><b>2</b> Samples</span><span><b>3</b> Train</span></div>
+          </section>
+          <section class="panel word-library-panel">
+            <header class="panel-head"><div class="number">↺</div><div><h3>Saved wake words</h3><p>Switch words without regenerating their voices, features, or reviewed samples.</p></div><span class="pill" :class="trainer.wakeWordLibrary.length ? 'success' : ''">{{ trainer.wakeWordLibrary.length }} saved</span></header>
+            <div v-if="trainer.wakeWordLibrary.length" class="word-library-grid">
+              <article v-for="word in trainer.wakeWordLibrary" :key="word.safe_word" :class="{ active: word.safe_word === trainer.session.safe_word }">
+                <header><div class="library-monogram">{{ word.phrase.slice(0, 2).toUpperCase() }}</div><div><span>{{ word.active ? "Working set" : "Saved word" }}</span><strong>{{ word.phrase }}</strong></div><i v-if="word.has_published_bundle">Ready</i></header>
+                <div class="library-stats"><span><b>{{ Number(word.dataset_file_count || 0).toLocaleString() }}</b> cached files</span><span><b>{{ formatBytes(word.dataset_size_bytes) }}</b> retained</span><span><b>{{ word.run_count }}</b> runs</span></div>
+                <footer><small>{{ word.language || "language saved on next use" }}<template v-if="word.latest_run?.completed_at"> · latest {{ formatTimestamp(word.latest_run.completed_at) }}</template></small><button type="button" :class="{ primary: word.safe_word !== trainer.session.safe_word }" :disabled="Boolean(trainer.session.safe_word) && word.safe_word !== trainer.session.safe_word" @click="useSavedWord(word)">{{ word.safe_word === trainer.session.safe_word ? "Active" : "Use + retrain" }}</button></footer>
+              </article>
+            </div>
+            <div v-else class="library-empty"><div>＋</div><strong>Your first word will be saved automatically</strong><span>Its generated corpus and feature cache stay available for later retraining.</span></div>
+            <p v-if="trainer.session.safe_word && trainer.wakeWordLibrary.some((word) => word.safe_word !== trainer.session.safe_word)" class="library-hint">End the current session before selecting a different saved word. Nothing is deleted when you switch.</p>
           </section>
           <section class="panel">
             <header class="panel-head"><div class="number">1</div><div><h3>Phrase + voice</h3><p>The phrase and voice route lock while a session is active.</p></div><span class="pill" :class="trainer.session.safe_word ? 'success' : ''">{{ trainer.session.safe_word ? `Session · ${trainer.session.safe_word}` : "No session" }}</span></header>
@@ -287,7 +337,7 @@ function consoleTone(line: string): string {
                 </article>
               </div>
             </section>
-            <div class="train-action"><button type="button" class="button primary large" :disabled="!trainer.session.safe_word || trainer.training.running || isBusy('training-start')" @click="startTraining">{{ trainer.training.running ? "Training in progress" : "Start training" }}</button><button v-if="retryableNanoWakeWord" type="button" :disabled="trainer.training.running || isBusy('nww-revalidate')" @click="revalidateNanoWakeWord(String(retryableNanoWakeWord.id || '').replace('nano_', ''), String(trainer.session.safe_word || ''))">{{ isBusy('nww-revalidate') ? "Checking NWW…" : `Revalidate ${String(retryableNanoWakeWord.label || 'NWW')} candidate` }}</button></div>
+            <div class="train-action"><button type="button" class="button primary large" :disabled="!trainer.session.safe_word || trainer.training.running || isBusy('training-start')" @click="startTraining">{{ trainer.training.running ? "Training in progress" : "Start training" }}</button><button type="button" class="boundary-button" :disabled="!activeLibraryWord?.boundary_only_ready || trainer.training.running || isBusy('boundary-start')" @click="startBoundaryTraining">{{ isBusy('boundary-start') ? "Starting boundary…" : "Retrain boundary only" }}</button><button v-if="retryableNanoWakeWord" type="button" :disabled="trainer.training.running || isBusy('nww-revalidate')" @click="revalidateNanoWakeWord(String(retryableNanoWakeWord.id || '').replace('nano_', ''), String(trainer.session.safe_word || ''))">{{ isBusy('nww-revalidate') ? "Checking NWW…" : `Revalidate ${String(retryableNanoWakeWord.label || 'NWW')} candidate` }}</button></div>
             <footer class="panel-footer"><span>Training opens the console automatically and continues if the window is closed.</span><button type="button" :disabled="!hasConsole" @click="trainer.consoleOpen = true">Open console</button></footer>
           </section>
         </template>
@@ -403,9 +453,13 @@ function consoleTone(line: string): string {
         <template v-else-if="trainer.activeView === 'firmware'">
           <section class="hero firmware-hero"><div><span class="eyebrow">Wake-word catalog</span><h2>Trained Wake Words</h2><p>Copy a local JSON package URL into Tater to switch every native satellite live.</p></div><span class="pill hero-pill" :class="trainer.wakeWords.length ? 'success' : 'warning'">{{ trainer.wakeWords.length ? `${trainer.wakeWords.length} trained` : "Catalog empty" }}</span></section>
           <div class="native-notice"><strong>Tater Native</strong><span>These packages include model metadata and a direct model URL for live satellite updates.</span></div>
-          <section class="panel"><header class="panel-head"><div class="number">v1</div><div><h3>Published model URLs</h3><p>URLs stay local and are refreshed after each successful run.</p></div><button type="button" :disabled="isBusy('firmware')" @click="refreshWakeWords()">Refresh</button></header>
+          <section class="panel"><header class="panel-head"><div class="number">v1</div><div><h3>Published model URLs</h3><p>URLs stay local and are refreshed after each successful run.</p></div><button type="button" :disabled="isBusy('firmware') || isBusy('library')" @click="refreshWakeWords(); refreshWakeWordLibrary()">Refresh</button></header>
             <div v-if="!trainer.wakeWords.length" class="empty-state">Train a wake word and its package will appear here.</div>
-            <div v-else class="word-list"><article v-for="word in trainer.wakeWords" :key="word.key || wordJsonUrl(word)"><div><strong>{{ word.label || word.name || "Trained wake word" }}</strong><a v-if="wordJsonUrl(word)" :href="wordJsonUrl(word)" target="_blank" rel="noreferrer">Tater wake-word bundle · {{ wordJsonUrl(word) }}</a><span v-else class="muted">Bundle URL unavailable</span><a v-if="wordModelUrl(word)" :href="wordModelUrl(word)" target="_blank" rel="noreferrer">MicroWakeWord model · {{ wordModelUrl(word) }}</a><a v-if="wordOpenWakeWordUrl(word)" :href="wordOpenWakeWordUrl(word)" target="_blank" rel="noreferrer">openWakeWord model · {{ wordOpenWakeWordUrl(word) }}</a><a v-for="(url, architecture) in wordNanoWakeWordModels(word)" :key="architecture" :href="url" target="_blank" rel="noreferrer">NanoWakeWord {{ String(architecture).toUpperCase() }} model · {{ url }}</a><div class="meta-row"><span v-for="engine in word.available_engines || []" :key="engine">{{ String(engine).replaceAll('_', ' ') }}</span><span v-if="word.language">{{ word.language }}</span><span v-if="word.trained_at">{{ formatTimestamp(word.trained_at) }}</span><span v-if="word.recall !== undefined">recall {{ word.recall }}</span></div></div><button type="button" :disabled="!wordJsonUrl(word)" @click="copyWakeWord(wordJsonUrl(word))">Copy bundle URL</button></article></div>
+            <div v-else class="word-list"><article v-for="word in trainer.wakeWords" :key="word.key || wordJsonUrl(word)"><div><strong>{{ word.label || word.name || "Trained wake word" }}</strong><a v-if="wordJsonUrl(word)" :href="wordJsonUrl(word)" target="_blank" rel="noreferrer">Tater wake-word bundle · {{ wordJsonUrl(word) }}</a><span v-else class="muted">Bundle URL unavailable</span><a v-if="wordModelUrl(word)" :href="wordModelUrl(word)" target="_blank" rel="noreferrer">MicroWakeWord model · {{ wordModelUrl(word) }}</a><a v-if="wordOpenWakeWordUrl(word)" :href="wordOpenWakeWordUrl(word)" target="_blank" rel="noreferrer">openWakeWord model · {{ wordOpenWakeWordUrl(word) }}</a><a v-for="(url, architecture) in wordNanoWakeWordModels(word)" :key="architecture" :href="url" target="_blank" rel="noreferrer">NanoWakeWord {{ String(architecture).toUpperCase() }} model · {{ url }}</a><a v-if="wordWakeBoundaryUrl(word)" :href="wordWakeBoundaryUrl(word)" target="_blank" rel="noreferrer">Wake boundary model · {{ wordWakeBoundaryUrl(word) }}</a><div class="meta-row"><span v-for="engine in word.available_engines || []" :key="engine">{{ String(engine).replaceAll('_', ' ') }}</span><span v-if="word.wake_boundary_available">wake boundary · threshold {{ word.wake_boundary_threshold }}</span><span v-if="word.language">{{ word.language }}</span><span v-if="word.trained_at">{{ formatTimestamp(word.trained_at) }}</span><span v-if="word.recall !== undefined">recall {{ word.recall }}</span></div></div><button type="button" :disabled="!wordJsonUrl(word)" @click="copyWakeWord(wordJsonUrl(word))">Copy bundle URL</button></article></div>
+          </section>
+          <section class="panel history-panel"><header class="panel-head"><div class="number">↗</div><div><h3>Model history + quality</h3><p>Immutable snapshots let you compare each word’s detector and boundary results over time.</p></div><span class="pill" :class="recentModelHistory.length ? 'success' : ''">{{ trainer.modelHistory.length }} runs</span></header>
+            <div v-if="recentModelHistory.length" class="history-list"><article v-for="run in recentModelHistory" :key="run.run_id"><div class="history-rail"><i :class="run.summary?.tone || 'neutral'" /></div><div class="history-body"><header><div><span>{{ run.run_kind === 'boundary' ? 'Boundary only' : 'Model training' }}</span><strong>{{ run.wake_word }}</strong></div><b class="pill" :class="run.summary?.tone || ''">{{ run.summary?.overall || 'Completed' }}</b></header><p>{{ formatTimestamp(run.completed_at) }} · {{ (run.selected_models || []).map((model) => model.replaceAll('_', ' ')).join(' + ') }}</p><div class="history-models"><div v-for="model in run.summary?.models || []" :key="model.id" :class="model.tone"><span><strong>{{ model.label }}</strong><b>{{ model.rating }}</b></span><small v-for="metric in model.metrics || []" :key="`${metric.label}-${metric.value}`">{{ metric.label }} <b>{{ metric.value }}</b></small></div></div></div></article></div>
+            <div v-else class="empty-state">Completed training runs will appear here with their quality metrics.</div>
           </section>
           <div class="native-notice esphome-notice"><strong>ESPHome</strong><span>Strict micro_wake_word manifest without Tater Native or calibration extensions.</span></div>
           <section class="panel compatibility-panel"><header class="panel-head"><div class="number">ESP</div><div><h3>ESPHome JSON</h3><p>Use this URL as the model in an ESPHome micro_wake_word configuration.</p></div></header>
@@ -417,7 +471,7 @@ function consoleTone(line: string): string {
     </main>
     <Teleport to="body">
       <div v-if="trainer.consoleOpen" class="modal-backdrop console-backdrop" @click.self="trainer.consoleOpen = false">
-        <section class="modal console-modal" role="dialog" aria-modal="true" aria-label="Training console"><header class="modal-head"><div><span class="eyebrow">Live pipeline</span><h2>Training Console</h2><p>Closing this window does not interrupt training.</p></div><div class="row console-actions"><button v-if="!consoleFollowing" type="button" class="console-follow" @click="scrollConsoleToBottom">Jump to latest</button><span class="pill" :class="trainingStatus.tone">{{ trainingStatus.text }}</span><button type="button" @click="trainer.consoleOpen = false">Close</button></div></header><pre ref="consoleLog" class="console-log" @scroll.passive="onConsoleScroll"><span v-for="(line, index) in consoleLines" :key="`${index}-${line}`" :class="consoleTone(line)">{{ line }}</span></pre></section>
+        <section class="modal console-modal" role="dialog" aria-modal="true" aria-label="Training console"><header class="modal-head"><div><span class="eyebrow">Live pipeline</span><h2>Training Console</h2><p>Closing this window does not interrupt training.</p></div><div class="row console-actions"><button v-if="!consoleFollowing" type="button" class="console-follow" @click="scrollConsoleToBottom">Jump to latest</button><span class="pill" :class="trainingStatus.tone">{{ trainingStatus.text }}</span><button type="button" @click="trainer.consoleOpen = false">Close</button></div></header><div v-if="trainingProgress" class="console-progress" :class="{ indeterminate: trainingProgressPercent === null && !trainingProgress.status, complete: trainingProgress.status === 'complete', failed: trainingProgress.status === 'failed' }"><div class="console-progress-head"><div><span>{{ trainingProgressStage }}</span><strong>{{ trainingProgress.label || "Working…" }}</strong></div><b>{{ trainingProgress.status === 'failed' ? "Failed" : trainingProgress.status === 'complete' ? "Done" : trainingProgressPercent === null ? "Working" : `${trainingProgressPercent.toFixed(1)}%` }}</b></div><div class="console-progress-track"><i :style="{ width: trainingProgress.status ? '100%' : trainingProgressPercent === null ? '38%' : `${trainingProgressPercent}%` }" /></div><div v-if="trainingProgressFacts.length" class="console-progress-facts"><span v-for="fact in trainingProgressFacts" :key="fact">{{ fact }}</span></div></div><pre ref="consoleLog" class="console-log" @scroll.passive="onConsoleScroll"><span v-for="(line, index) in consoleLines" :key="`${index}-${line}`" :class="consoleTone(line)">{{ line }}</span></pre></section>
       </div>
     </Teleport>
     <Teleport to="body">

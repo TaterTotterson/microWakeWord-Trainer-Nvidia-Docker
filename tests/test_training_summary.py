@@ -143,6 +143,24 @@ class TrainingSummaryTests(unittest.TestCase):
             self.assertEqual(summary["models"][0]["status"], "failed")
             self.assertEqual(summary["models"][1]["rating"], "Not completed")
 
+    def test_boundary_only_summary_uses_endpoint_metrics(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_json(root / "trained/wake.wake-bundle.json", {
+                "wake_boundary": {
+                    "threshold": 0.74,
+                    "quality_summary": {"recall": 0.97, "false_accepts_per_hour": 0.1},
+                }
+            })
+            summary = build_training_summary(
+                data_dir=root, trained_dir=root / "trained", safe_word="wake", phrase="wake",
+                selected_models=["boundary"], outcomes={"boundary": 0},
+            )
+            model = summary["models"][0]
+            self.assertEqual(model["label"], "Wake boundary")
+            self.assertIn({"label": "Endpoint recall", "value": "97.0%"}, model["metrics"])
+            self.assertIn({"label": "Threshold", "value": "0.74"}, model["metrics"])
+
 
 if __name__ == "__main__":
     unittest.main()

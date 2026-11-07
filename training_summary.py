@@ -10,6 +10,7 @@ from typing import Any, Mapping, Sequence
 
 
 MODEL_LABELS = {
+    "boundary": "Wake boundary",
     "micro": "MicroWakeWord",
     "open": "openWakeWord",
     "nano_cnn": "NanoWakeWord CNN",
@@ -75,7 +76,23 @@ def _successful_model(
     nano_quality_report: dict[str, Any] = {}
     nano_quality_passed: bool | None = None
 
-    if model_id == "micro":
+    if model_id == "boundary":
+        bundle = _read_json(trained_dir / f"{safe_word}.wake-bundle.json")
+        boundary = bundle.get("wake_boundary") if isinstance(bundle.get("wake_boundary"), dict) else {}
+        quality = boundary.get("quality_summary") if isinstance(boundary.get("quality_summary"), dict) else {}
+        recall = _number(quality.get("recall"))
+        negative_value = _number(quality.get("false_accepts_per_hour"))
+        negative_kind = "hour"
+        threshold = _number(boundary.get("threshold"))
+        if recall is not None:
+            metrics.append(_metric("Endpoint recall", _percent(recall)))
+        if negative_value is not None:
+            metrics.append(_metric("False endpoints", f"{negative_value:.2f}/hr"))
+        if threshold is not None:
+            metrics.append(_metric("Threshold", f"{threshold:.2f}"))
+        if not boundary:
+            message = "Boundary training completed, but no boundary was published."
+    elif model_id == "micro":
         bundle = _read_json(trained_dir / f"{safe_word}.wake-bundle.json")
         micro = bundle.get("micro_wake_word") if isinstance(bundle.get("micro_wake_word"), dict) else {}
         calibration = micro.get("calibration") if isinstance(micro.get("calibration"), dict) else {}
@@ -160,7 +177,10 @@ def _successful_model(
             metrics.append(_metric("Patience", str(patience)))
 
     rating, tone = _rating(recall, negative_value, negative_kind=negative_kind)
-    if model_id == "micro":
+    if model_id == "boundary":
+        if not boundary:
+            rating, tone = "Not published", "warning"
+    elif model_id == "micro":
         if not calibration:
             rating, tone = "Not evaluated", "warning"
             message = "Model published, but quality validation results were unavailable."
@@ -195,7 +215,9 @@ def _failed_model(model_id: str, *, code: int, data_dir: Path, trained_dir: Path
     failure_kind = "start_or_training_failed"
     rating = "Failed before publish"
     bundle = _read_json(trained_dir / f"{safe_word}.wake-bundle.json")
-    if model_id == "open":
+    if model_id == "boundary":
+        previous_active = isinstance(bundle.get("wake_boundary"), dict)
+    elif model_id == "open":
         previous_active = isinstance(bundle.get("open_wake_word"), dict)
     elif model_id.startswith("nano_"):
         variants = bundle.get("nano_wake_word", {}).get("variants", {}) if isinstance(bundle.get("nano_wake_word"), dict) else {}

@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from argparse import ArgumentParser as ArgParser, ArgumentError
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from training_progress import tracked_generator
+
 default_data_dir = os.getcwd() if os.path.exists(".mww-data-dir") else "/data"
 
 parser = ArgParser(exit_on_error=False)
@@ -22,6 +25,8 @@ parser.add_argument("--negative-dir", type=str, help="Reviewed negative WAV dir.
 parser.add_argument("--negative-output-dir", type=str, help="Reviewed negative features output dir. Default: <data-dir>/work/reviewed_negative_features", required=False)
 parser.add_argument("--generated-negative-dir", type=str, help="Generated near-miss WAV dir. Default: <data-dir>/work/generated_negative_samples/combined", required=False)
 parser.add_argument("--generated-negative-output-dir", type=str, help="Generated near-miss features output dir. Default: <data-dir>/work/generated_negative_features", required=False)
+parser.add_argument("--boundary-negative-dir", type=str, help="Wake+speech endpoint-negative WAV dir. Default: <data-dir>/work/boundary_negative_samples", required=False)
+parser.add_argument("--boundary-negative-output-dir", type=str, help="Wake endpoint-negative features output dir. Default: <data-dir>/work/boundary_negative_features", required=False)
 
 # Dataset dirs
 parser.add_argument("--mit-rirs-16k-dir", type=str, help="MIT RIR input directory. Default: <data-dir>/training_datasets/mit_rirs_16k", required=False)
@@ -81,6 +86,16 @@ if not args.generated_negative_output_dir:
     args.generated_negative_output_dir = os.path.join(work_dir, "generated_negative_features")
 else:
     args.generated_negative_output_dir = os.path.realpath(args.generated_negative_output_dir)
+
+if not args.boundary_negative_dir:
+    args.boundary_negative_dir = os.path.join(work_dir, "boundary_negative_samples")
+else:
+    args.boundary_negative_dir = os.path.realpath(args.boundary_negative_dir)
+
+if not args.boundary_negative_output_dir:
+    args.boundary_negative_output_dir = os.path.join(work_dir, "boundary_negative_features")
+else:
+    args.boundary_negative_output_dir = os.path.realpath(args.boundary_negative_output_dir)
 
 # Dataset defaults
 if not args.mit_rirs_16k_dir:
@@ -223,6 +238,20 @@ def bind_wav_generator(clips_obj: Clips, wav_dir: str):
 
     clips_obj.audio_generator = types.MethodType(audio_generator_from_wavs, clips_obj)
 
+
+def split_file_count(file_count: int, split: str) -> int:
+    """Match bind_wav_generator's deterministic 80/10/10 slicing."""
+    n_val = max(1, int(0.10 * file_count))
+    n_test = max(1, int(0.10 * file_count))
+    n_train = max(0, file_count - n_val - n_test)
+    train_end = min(file_count, n_train)
+    validation_end = min(file_count, n_train + n_val)
+    return {
+        "train": train_end,
+        "validation": max(0, validation_end - train_end),
+        "test": max(0, file_count - validation_end),
+    }.get(split, 0)
+
 def generate_feature_set(input_wav_dir: str, out_root_dir: str, label: str, *, remove_silence: bool = True):
     files = glob.glob(os.path.join(input_wav_dir, "*.wav"))
     if not files:
@@ -261,9 +290,20 @@ def generate_feature_set(input_wav_dir: str, out_root_dir: str, label: str, *, r
             step_ms=10,
         )
 
-        gen = spectros.spectrogram_generator(
-            split=cfg["name"],
-            repeat=cfg["repetition"],
+        total = (
+            split_file_count(max_samples, cfg["name"])
+            * cfg["repetition"]
+            * cfg["slide_frames"]
+        )
+        gen = tracked_generator(
+            spectros.spectrogram_generator(
+                split=cfg["name"],
+                repeat=cfg["repetition"],
+            ),
+            total=total,
+            stage=f"features:{label.lower().replace(' ', '-')}:{split}",
+            label=f"{label.title()} · {split.title()} features",
+            unit="features",
         )
 
         RaggedMmap.from_generator(
@@ -295,6 +335,14 @@ generate_feature_set(
     "generated hard negatives",
     remove_silence=True,
 )
+
+if not generate_feature_set(
+    args.boundary_negative_dir,
+    args.boundary_negative_output_dir,
+    "wake endpoint hard negatives",
+    remove_silence=False,
+):
+    raise SystemExit("Wake boundary endpoint features are required")
 
 END_TIME = datetime.now(timezone.utc).replace(microsecond=0)
 et = END_TIME - START_TIME

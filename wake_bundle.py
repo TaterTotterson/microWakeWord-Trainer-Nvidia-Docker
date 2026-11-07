@@ -16,7 +16,7 @@ from typing import Any, Mapping
 from urllib.parse import quote
 
 BUNDLE_SUFFIX = ".wake-bundle.json"
-BUNDLE_SCHEMA_VERSION = 3
+BUNDLE_SCHEMA_VERSION = 4
 ESPHOME_MANIFEST_KEYS = ("type", "wake_word", "author", "website", "model", "trained_languages", "version", "micro")
 
 # A wake bundle is a runtime manifest, not a training report. Detailed quality
@@ -45,6 +45,14 @@ NANO_PUBLIC_KEYS = (
     "quality_summary", "validated_existing_candidate", "seed", "loss_bias",
     "quality_evaluated", "quality_passed", "quality_status",
 )
+BOUNDARY_PUBLIC_KEYS = (
+    "type", "model", "model_sha256", "model_size_bytes", "model_format",
+    "quantization", "sample_rate", "threshold", "tensor_arena_size",
+    "frontend", "search_before_ms", "search_after_ms", "endpoint_offset_ms",
+    "training_strategy", "quality_summary",
+)
+MAX_BOUNDARY_MODEL_BYTES = 200 * 1024
+MAX_BOUNDARY_ARENA_BYTES = 256 * 1024
 
 def _select_nano_default(variants: Mapping[str, Any], current: str = "") -> str:
     ranked: list[tuple[tuple[float, ...], str]] = []
@@ -122,6 +130,9 @@ def _sanitized_existing_bundle(existing: Mapping[str, Any]) -> dict[str, Any]:
             "default_architecture": str(nano.get("default_architecture") or ""),
             "variants": clean_variants,
         }
+    boundary = source.get("wake_boundary")
+    if isinstance(boundary, Mapping):
+        bundle["wake_boundary"] = _public_fields(boundary, BOUNDARY_PUBLIC_KEYS)
     return bundle
 
 def _base_bundle(existing: Mapping[str, Any], safe_word: str, phrase: str) -> dict[str, Any]:
@@ -158,10 +169,14 @@ def prune_unreferenced_companion_artifacts(trained_dir: Path, safe_word: str, bu
         for variant in variants.values():
             if isinstance(variant, Mapping):
                 referenced.add(Path(str(variant.get("model") or "")).name)
+    boundary = bundle.get("wake_boundary")
+    if isinstance(boundary, Mapping):
+        referenced.add(Path(str(boundary.get("model") or "")).name)
     candidates = {
         f"{safe_word}.oww.json", f"{safe_word}.nww.cnn.json",
         f"{safe_word}.nww.dnn.json", f"{safe_word}.nww.gru.json",
         f"{safe_word}.nww.dnn.onnx",
+        f"{safe_word}.boundary.tflite",
     }
     for name in candidates - referenced:
         try:
@@ -191,6 +206,42 @@ def publish_open_wake_word(*, trained_dir: Path, safe_word: str, phrase: str, me
     })
     bundle = _base_bundle(load_bundle(trained_dir, safe_word), safe_word, phrase)
     bundle["open_wake_word"] = section
+    path = _atomic_write(bundle_path(trained_dir, safe_word), bundle)
+    prune_unreferenced_companion_artifacts(trained_dir, safe_word, bundle)
+    return path
+
+def publish_wake_boundary(*, trained_dir: Path, safe_word: str, phrase: str, model_path: Path, metadata: Mapping[str, Any] | None = None) -> Path:
+    """Publish the causal wake-end scorer shared by every detector mode."""
+    model = Path(model_path).resolve()
+    if not model.is_file():
+        raise RuntimeError(f"wake boundary model not found: {model}")
+    if model.stat().st_size > MAX_BOUNDARY_MODEL_BYTES:
+        raise ValueError(f"wake boundary model exceeds {MAX_BOUNDARY_MODEL_BYTES} bytes")
+    source = dict(metadata or {})
+    threshold = float(source.get("threshold", 0.80))
+    arena = int(source.get("tensor_arena_size", 64 * 1024))
+    if not 0.0 < threshold <= 1.0:
+        raise ValueError("wake boundary threshold must be between 0 and 1")
+    if not 64 * 1024 <= arena <= MAX_BOUNDARY_ARENA_BYTES:
+        raise ValueError("wake boundary tensor arena must be between 65536 and 262144 bytes")
+    section = _public_fields(source, BOUNDARY_PUBLIC_KEYS)
+    section.update({
+        "type": "wake_word_end", "model": model.name,
+        "model_sha256": sha256_file(model), "model_size_bytes": model.stat().st_size,
+        "model_format": "tflite_stream_state_internal_quant", "quantization": "int8",
+        "sample_rate": 16000, "threshold": threshold, "tensor_arena_size": arena,
+        "search_before_ms": int(source.get("search_before_ms", 700)),
+        "search_after_ms": int(source.get("search_after_ms", 120)),
+        "endpoint_offset_ms": int(source.get("endpoint_offset_ms", 0)),
+            "training_strategy": str(source.get("training_strategy") or "endpoint_hard_negative_v1"),
+    })
+    section.setdefault("frontend", {
+        "name": "tflm_microfrontend", "sample_rate": 16000,
+        "feature_duration_ms": 30, "feature_step_ms": 10, "feature_size": 40,
+        "input_feature_frames": 2, "lower_band_limit": 125.0, "upper_band_limit": 7500.0,
+    })
+    bundle = _base_bundle(load_bundle(trained_dir, safe_word), safe_word, phrase)
+    bundle["wake_boundary"] = section
     path = _atomic_write(bundle_path(trained_dir, safe_word), bundle)
     prune_unreferenced_companion_artifacts(trained_dir, safe_word, bundle)
     return path
@@ -287,5 +338,12 @@ def bundle_catalog_fields(trained_dir: Path, safe_word: str, base_url: str = "")
             architecture: variants[architecture].get("quality_passed") is True
             for architecture in nano_urls
         }
+    boundary = bundle.get("wake_boundary")
+    if isinstance(boundary, dict) and str(boundary.get("model") or "").endswith(".tflite"):
+        fields["wake_boundary_available"] = True
+        fields["wake_boundary_model_url"] = url_for(boundary.get("model"))
+        fields["wake_boundary_threshold"] = boundary.get("threshold")
+    else:
+        fields["wake_boundary_available"] = False
     fields["dual_model"] = "micro_wake_word" in fields["available_engines"] and "open_wake_word" in fields["available_engines"]
     return fields

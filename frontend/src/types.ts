@@ -20,6 +20,21 @@ export interface TrainingState extends JsonRecord {
   exit_code: number | null;
   log_lines: string[];
   summary?: TrainingSummary | null;
+  progress?: TrainingProgress | null;
+}
+
+export interface TrainingProgress extends JsonRecord {
+  stage?: string;
+  label: string;
+  current?: number | null;
+  total?: number | null;
+  percent?: number | null;
+  elapsed?: string;
+  eta?: string;
+  rate?: number | null;
+  rate_text?: string;
+  unit?: string;
+  status?: string;
 }
 
 export interface TrainingSummaryMetric extends JsonRecord {
@@ -126,9 +141,37 @@ export interface WakeWordItem extends JsonRecord {
   dual_model?: boolean;
   bundle_url?: string;
   openwakeword_model_url?: string;
+  wake_boundary_available?: boolean;
+  wake_boundary_model_url?: string;
+  wake_boundary_threshold?: number;
   available_engines?: string[];
   nanowakeword_architectures?: string[];
   nanowakeword_models?: Record<string, string>;
+}
+
+export interface WakeWordLibraryItem extends JsonRecord {
+  safe_word: string;
+  phrase: string;
+  language?: string;
+  english_accent?: string;
+  tts_mode?: string;
+  active: boolean;
+  has_published_bundle: boolean;
+  boundary_only_ready?: boolean;
+  dataset_size_bytes: number;
+  dataset_file_count: number;
+  run_count: number;
+  latest_run?: TrainingRun | null;
+}
+
+export interface TrainingRun extends JsonRecord {
+  run_id: string;
+  run_kind: string;
+  safe_word: string;
+  wake_word: string;
+  completed_at: string;
+  selected_models: string[];
+  summary?: TrainingSummary;
 }
 
 export interface ManagedDataItem extends JsonRecord {

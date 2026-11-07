@@ -219,6 +219,20 @@ The default Tater URL, `http://127.0.0.1:8501`, assumes the documented host netw
 
 Personal samples are optional. Training can run with zero personal samples after confirmation, using generated TTS samples and the stock negative datasets.
 
+### Saved words, cached datasets, and model history
+
+Every phrase started in the Trainer is added to the **Saved wake words** library. Switching to another saved word moves that word's personal samples, reviewed negatives, generated TTS corpus, augmented features, boundary examples, and retained training workspace back into the active paths. The previous word is archived under `/data/wake_word_library/words/<safe_word>/assets/`, so selecting a different phrase no longer discards or overwrites its expensive data.
+
+Each completed run also creates an immutable snapshot under `/data/wake_word_library/words/<safe_word>/runs/`. The **Wake Words** tab shows the run history, selected engines, recall/false-trigger metrics, thresholds, and quality rating so multiple attempts can be compared while the stable published bundle URL continues to point at the newest model.
+
+After a word has at least one detector bundle, **Retrain boundary only** rebuilds and calibrates only the wake-end model. It preserves MWW, OWW, and NWW detector weights and reuses the saved word's cached corpus and features. From the CLI, use:
+
+```bash
+train_wake_word --data-dir /data --boundary-only "hey tater"
+```
+
+Boundary-only mode requires the retained detector training config from an earlier full MicroWakeWord run.
+
 Reviewed negative samples are converted into `/data/work/reviewed_negative_features/` and inserted into the training YAML as a hard-negative feature set when present.
 
 The first OWW or NWW run downloads its separate trainer stack and caches it for later runs. NanoWakeWord reuses the direct-generated positive TTS corpus under `/data/work/wake_word_samples`, then adds personal positives, reviewed negatives, and its own adversarial negatives and held-out validation clips. CNN is the lightweight default architecture; GRU can be selected alone or alongside CNN. The streaming gate automatically calibrates threshold and consecutive-hit patience, and the validated policy is stored with each model in the bundle. Each successful stage updates only its section of the canonical Tater bundle while removing obsolete NWW architectures.
@@ -299,7 +313,9 @@ The trainer also syncs Tater-ready wake-word artifacts into:
 /data/trained_wake_words/<wake_word>.esphome.json     # MWW-only ESPHome manifest
 ```
 
-Tater always receives `<wake_word>.wake-bundle.json`. Schema v3 embeds the complete metadata for every model that has been built, including hashes, thresholds, validation results, and available NWW architectures; it does not point at a second MWW metadata JSON. ESPHome remains deliberately separate and MWW-only through `<wake_word>.esphome.json`.
+Tater always receives `<wake_word>.wake-bundle.json`. Schema v4 embeds the complete metadata for every model that has been built, including hashes, thresholds, validation results, available NWW architectures, and one detector-independent `wake_boundary` TFLite artifact used to locate the acoustic end of the phrase. It does not point at a second MWW metadata JSON. ESPHome remains deliberately separate and MWW-only through `<wake_word>.esphome.json`.
+
+The boundary artifact is trained and threshold-calibrated separately for each wake word. Wake-only clips remain positive while deterministic wake-plus-immediate-speech clips are hard negatives, forcing a causal score peak at the phrase endpoint. Packaging fails if that dedicated model was not exported; the normal wake detector is never substituted as boundary weights.
 
 When MWW is selected, the bundle's `micro_wake_word` section keeps the standard microWakeWord fields:
 

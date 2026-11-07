@@ -14,11 +14,13 @@ import type {
   SessionPayload,
   ToastState,
   TrainingState,
+  TrainingRun,
   ViewName,
+  WakeWordLibraryItem,
   WakeWordItem,
 } from "./types";
 
-const emptyTraining = (): TrainingState => ({ running: false, exit_code: null, log_lines: [] });
+const emptyTraining = (): TrainingState => ({ running: false, exit_code: null, log_lines: [], progress: null });
 const emptySamples = (): SamplesPayload => ({ personal: [], negative: [], personal_count: 0, negative_count: 0 });
 const emptyCaptured = (): CapturedPayload => ({ items: [], captured_count: 0, personal_count: 0, negative_count: 0 });
 const emptyManagedData = (): ManagedDataPayload => ({ items: [], total_size_bytes: 0, total_file_count: 0 });
@@ -77,6 +79,8 @@ export const trainer = reactive({
   auto: {} as AutoTrainPayload,
   autoForm: defaultAutoForm(),
   wakeWords: [] as WakeWordItem[],
+  wakeWordLibrary: [] as WakeWordLibraryItem[],
+  modelHistory: [] as TrainingRun[],
   managedData: emptyManagedData(),
   selectedFiles: [] as File[],
   sampleBucket: "personal" as SampleBucket,
@@ -178,6 +182,7 @@ export async function startSession(): Promise<void> {
       tts_mode: trainer.ttsMode,
     });
     applySession(payload);
+    await refreshWakeWordLibrary(true);
     notify(`Session ${payload.safe_word || "started"} is ready.`);
   } catch (error) {
     reportError(error, "Session failed to start.");
@@ -463,6 +468,45 @@ export async function refreshWakeWords(quiet = false): Promise<void> {
   }
 }
 
+export async function refreshWakeWordLibrary(quiet = false): Promise<void> {
+  if (!quiet) setBusy("library", true);
+  try {
+    const payload = await getJson<JsonRecord>("/api/wake_word_library");
+    trainer.wakeWordLibrary = Array.isArray(payload.words) ? payload.words as WakeWordLibraryItem[] : [];
+    const histories = await Promise.all(trainer.wakeWordLibrary.map(async (word) => {
+      try {
+        const result = await getJson<JsonRecord>(`/api/wake_word_library/${encodeURIComponent(word.safe_word)}/history`);
+        return Array.isArray(result.runs) ? result.runs as TrainingRun[] : [];
+      } catch {
+        return [];
+      }
+    }));
+    trainer.modelHistory = histories.flat().sort((left, right) =>
+      String(right.completed_at || "").localeCompare(String(left.completed_at || "")),
+    );
+  } finally {
+    if (!quiet) setBusy("library", false);
+  }
+}
+
+export async function useSavedWord(word: WakeWordLibraryItem): Promise<void> {
+  if (trainer.session.safe_word && trainer.session.safe_word !== word.safe_word) {
+    notify("Stop the current session before switching saved wake words.", "warning");
+    return;
+  }
+  if (trainer.session.safe_word === word.safe_word) {
+    notify(`${word.phrase} is already active.`);
+    return;
+  }
+  trainer.phrase = word.phrase;
+  if (word.language) trainer.language = word.language;
+  if (word.english_accent) trainer.englishAccent = word.english_accent;
+  if (word.tts_mode) trainer.ttsMode = word.tts_mode;
+  ensureSupportedTtsMode();
+  await startSession();
+  await Promise.all([refreshSamples(true), refreshWakeWordLibrary(true)]);
+}
+
 export async function refreshManagedData(): Promise<ManagedDataPayload> {
   setBusy("data", true);
   try {
@@ -543,6 +587,38 @@ export async function startTraining(): Promise<void> {
   }
 }
 
+export async function startBoundaryTraining(): Promise<void> {
+  if (!trainer.session.safe_word) {
+    notify("Select or start a saved wake word first.", "warning");
+    return;
+  }
+  const saved = trainer.wakeWordLibrary.find((word) => word.safe_word === trainer.session.safe_word);
+  if (!saved?.boundary_only_ready) {
+    notify("Run one full MicroWakeWord training for this word before training its boundary only.", "warning");
+    return;
+  }
+  setBusy("boundary-start", true);
+  trainer.training = { running: true, exit_code: null, log_lines: ["Preparing cached data for boundary-only training…"] };
+  trainer.consoleOpen = true;
+  try {
+    await postJson("/api/train", {
+      allow_no_personal: true,
+      train_boundary_only: true,
+      train_microwakeword: false,
+      train_openwakeword: false,
+      train_nanowakeword_cnn: false,
+      train_nanowakeword_gru: false,
+      generated_negative_phrases: trainer.generatedNegativePhrases,
+    });
+    beginTrainingPoll();
+  } catch (error) {
+    trainer.training = { running: false, exit_code: 1, log_lines: [error instanceof Error ? error.message : String(error)] };
+    reportError(error, "Boundary training could not start.");
+  } finally {
+    setBusy("boundary-start", false);
+  }
+}
+
 export async function revalidateNanoWakeWord(architecture: string, safeWord = ""): Promise<void> {
   const normalized = architecture.toLowerCase();
   setBusy("nww-revalidate", true);
@@ -568,7 +644,7 @@ export function beginTrainingPoll(): void {
       if (!trainer.training.running) {
         window.clearInterval(trainingTimer);
         trainingTimer = 0;
-        await Promise.all([refreshSamples(true), refreshWakeWords(true)]);
+        await Promise.all([refreshSamples(true), refreshWakeWords(true), refreshWakeWordLibrary(true)]);
         notify(trainer.training.exit_code === 0 ? "Training finished successfully." : `Training ended with exit ${trainer.training.exit_code}.`, trainer.training.exit_code === 0 ? "success" : "error");
       }
     } catch {
@@ -588,6 +664,7 @@ export async function initializeTrainer(): Promise<void> {
       refreshCaptured(true),
       refreshAuto(true),
       refreshWakeWords(true),
+      refreshWakeWordLibrary(true),
     ]);
     ensureSupportedTtsMode();
     try {

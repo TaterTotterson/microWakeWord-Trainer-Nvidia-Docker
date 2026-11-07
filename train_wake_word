@@ -5,7 +5,7 @@ PROGPATH=$(realpath "$0")
 PROGDIR=$(dirname "${PROGPATH}")
 CLIDIR="${PROGDIR}/cli"
 
-KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir language english-accent tts-mode tts-voice-count artifact-slug generate-only )
+KNOWN_ARGS=( samples batch-size training-steps data-dir cleanup-work-dir language english-accent tts-mode tts-voice-count artifact-slug generate-only boundary-only )
 source "${CLIDIR}/shell.functions"
 WAKE_WORD=${POSITIONAL_ARGS[0]}
 
@@ -52,6 +52,10 @@ Options:
 
 --generate-only:      Prepare/reuse the shared positive TTS corpus, then stop.
 
+--boundary-only:      Retrain only the wake-end boundary model and preserve the
+                      existing MWW/OWW/NWW detector models. A completed detector
+                      bundle for this word must already exist.
+
 <wake_word>           The word to train spelled phonetically.
                       Required.
 
@@ -83,8 +87,29 @@ if [ -z "$WAKE_WORD_TITLE" ] ; then
     WAKE_WORD_TITLE="$WAKE_WORD"
 fi
 
+if [[ "${BOUNDARY_ONLY:-false}" == "true" ]]; then
+    boundary_artifact_source="${ARTIFACT_SLUG:-${WAKE_WORD}}"
+    boundary_safe_word="$(printf '%s' "${boundary_artifact_source}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/_/g; s/^_+//; s/_+$//')"
+    if [ -z "${boundary_safe_word}" ]; then
+        boundary_safe_word="wakeword_$(printf '%s' "${WAKE_WORD}" | sha256sum | cut -c1-8)"
+    fi
+    if [ ! -f "${TRAINED_WAKE_WORDS_DIR:-${DATA_DIR}/trained_wake_words}/${boundary_safe_word}.wake-bundle.json" ]; then
+        echo "❌ Boundary-only training needs an existing detector bundle for '${WAKE_WORD}'." >&2
+        echo "   Run one full detector training first." >&2
+        exit 1
+    fi
+    if [ ! -f "${DATA_DIR}/work/trained_models/wakeword/training_config.yaml" ]; then
+        echo "❌ Boundary-only training needs the retained detector training config for this word." >&2
+        echo "   Run one full MicroWakeWord training first." >&2
+        exit 1
+    fi
+fi
+
 printf "%-80s\n" "=" | tr ' ' "="
 echo "===== Running '${WAKE_WORD}(${WAKE_WORD_TITLE})' generation, augmentation and training ====="
+if [[ "${BOUNDARY_ONLY:-false}" == "true" ]]; then
+    echo "===== Boundary-only mode: detector models will be preserved ====="
+fi
 "${CLIDIR}/cudainfo"
 echo
 START_TS=$EPOCHSECONDS
@@ -168,8 +193,16 @@ AUGMENTED_DIR="${DATA_DIR}/work/wake_word_samples_augmented"
 GENERATED_NEGATIVE_DIR="${DATA_DIR}/work/generated_negative_samples/combined"
 GENERATED_NEGATIVE_MANIFEST="${DATA_DIR}/work/generated_negative_samples/.generation_manifest.json"
 GENERATED_NEGATIVE_FEATURES="${DATA_DIR}/work/generated_negative_features"
-AUGMENTATION_CACHE_VERSION="3"
+BOUNDARY_NEGATIVE_DIR="${DATA_DIR}/work/boundary_negative_samples"
+BOUNDARY_NEGATIVE_FEATURES="${DATA_DIR}/work/boundary_negative_features"
+AUGMENTATION_CACHE_VERSION="4"
 AUGMENTATION_CACHE_FILE="${AUGMENTED_DIR}/.augmentation_version"
+
+python -u "${CLIDIR}/prepare_wake_boundary_data.py" \
+    --positive-dir "${GENERATED_DIR}" \
+    --positive-dir "${DATA_DIR}/personal_samples" \
+    --output-dir "${BOUNDARY_NEGATIVE_DIR}" \
+    --variants 2
 
 [ -d "${AUGMENTED_DIR}" ] || AUGMENT=true
 [ -f "${AUGMENTATION_CACHE_FILE}" ] || AUGMENT=true
@@ -181,13 +214,16 @@ if find "${GENERATED_NEGATIVE_DIR}" -maxdepth 1 -type f -name '*.wav' -print -qu
 elif [ -d "${GENERATED_NEGATIVE_FEATURES}" ] ; then
     AUGMENT=true
 fi
+[ -d "${BOUNDARY_NEGATIVE_FEATURES}/training" ] || AUGMENT=true
+[ "${BOUNDARY_NEGATIVE_DIR}/.generation_manifest.json" -nt "${BOUNDARY_NEGATIVE_FEATURES}/training/wakeword_mmap/data.ninja" ] && AUGMENT=true || :
 
 if ${AUGMENT} ; then
     rm -rf \
       "${AUGMENTED_DIR}" \
       "${DATA_DIR}/work/personal_augmented_features" \
       "${DATA_DIR}/work/reviewed_negative_features" \
-      "${GENERATED_NEGATIVE_FEATURES}" || :
+      "${GENERATED_NEGATIVE_FEATURES}" \
+      "${BOUNDARY_NEGATIVE_FEATURES}" || :
     mkdir -p "${AUGMENTED_DIR}" || :
     python -u "${CLIDIR}/wake_word_sample_augmenter" --data-dir="${DATA_DIR}" || { rm -rf "${AUGMENTED_DIR}" ; exit 1 ; }
     printf '%s\n' "${AUGMENTATION_CACHE_VERSION}" > "${AUGMENTATION_CACHE_FILE}"
@@ -198,15 +234,21 @@ fi
 
 POST_AUGMENT_TS=$EPOCHSECONDS
 
+TRAINER_ARGS=(
+    --samples="${SAMPLES}"
+    --training-steps="${TRAINING_STEPS}"
+    --language="${LANGUAGE}"
+    --artifact-slug="${ARTIFACT_SLUG:-}"
+    --data-dir="${DATA_DIR}"
+)
+if [[ "${BOUNDARY_ONLY:-false}" == "true" ]]; then
+    TRAINER_ARGS+=(--boundary-only)
+fi
 "${CLIDIR}/wake_word_sample_trainer" \
-    --samples=${SAMPLES} \
-    --training-steps=${TRAINING_STEPS} \
-    --language="${LANGUAGE}" \
-    --artifact-slug="${ARTIFACT_SLUG:-}" \
-    --data-dir="${DATA_DIR}" \
+    "${TRAINER_ARGS[@]}" \
     "${WAKE_WORD}" "${WAKE_WORD_TITLE}"
 
-if ${CLEANUP_WORK_DIR} ; then
+if ${CLEANUP_WORK_DIR} && [[ "${BOUNDARY_ONLY:-false}" != "true" ]] ; then
     rm -rf \
       "${DATA_DIR}/work/trained_models" \
       "${DATA_DIR}/work/wake_word_samples" \
@@ -215,6 +257,8 @@ if ${CLEANUP_WORK_DIR} ; then
       "${DATA_DIR}/work/reviewed_negative_features" \
       "${DATA_DIR}/work/generated_negative_samples" \
       "${DATA_DIR}/work/generated_negative_features" \
+      "${DATA_DIR}/work/boundary_negative_samples" \
+      "${DATA_DIR}/work/boundary_negative_features" \
       "${DATA_DIR}/work/last_wake_word" || :
 fi
 
