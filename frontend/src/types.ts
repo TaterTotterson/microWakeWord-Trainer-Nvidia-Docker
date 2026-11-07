@@ -74,6 +74,11 @@ export interface SessionPayload extends JsonRecord {
 }
 
 export interface AudioItem extends JsonRecord {
+  capture_id?: string;
+  capture_scope?: string;
+  dataset_wake_word?: string;
+  review_wake_word?: string;
+  assignment_status?: "assigned" | "unassigned";
   saved_as: string;
   original_name?: string;
   audio_url?: string;

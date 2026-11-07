@@ -77,13 +77,19 @@ from wake_bundle import (
 )
 from training_summary import build_training_summary, training_summary_log_lines
 from training_progress import iter_progress_lines, parse_progress_line
-from wake_word_library import activate_word, list_words, record_run, word_history
+from wake_word_library import active_word, activate_word, list_words, record_run, word_history
 
 # In Docker, /data is the persistent workspace mounted by the user.
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/data")).resolve()
 STATIC_DIR = Path(os.environ.get("STATIC_DIR", str(ROOT_DIR / "static"))).resolve()
 PERSONAL_DIR = Path(os.environ.get("PERSONAL_DIR", str(DATA_DIR / "personal_samples"))).resolve()
 CAPTURED_DIR = Path(os.environ.get("CAPTURED_DIR", str(DATA_DIR / "captured_audio"))).resolve()
+UNASSIGNED_CAPTURED_DIR = Path(
+    os.environ.get(
+        "UNASSIGNED_CAPTURED_DIR",
+        str(DATA_DIR / "unassigned_captured_audio"),
+    )
+).resolve()
 NEGATIVE_DIR = Path(os.environ.get("NEGATIVE_DIR", str(DATA_DIR / "negative_samples"))).resolve()
 TRIM_HISTORY_DIR = Path(os.environ.get("TRIM_HISTORY_DIR", str(DATA_DIR / "trim_history"))).resolve()
 TRIM_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
@@ -331,7 +337,7 @@ def _managed_data_registry() -> List[Dict[str, Any]]:
     return [
         {"id": "personal_samples", "label": "Personal positive samples", "category": "Recordings", "description": "User recordings and imported positive wake-word clips.", "paths": [PERSONAL_DIR], "rebuild_note": irreplaceable},
         {"id": "negative_samples", "label": "Reviewed negative samples", "category": "Recordings", "description": "Reviewed false wakes and other hard-negative recordings.", "paths": [NEGATIVE_DIR], "rebuild_note": irreplaceable},
-        {"id": "captured_audio", "label": "Captured-audio inbox", "category": "Recordings", "description": "Unreviewed audio received from Tater satellites.", "paths": [CAPTURED_DIR], "rebuild_note": irreplaceable},
+        {"id": "captured_audio", "label": "Captured-audio inbox", "category": "Recordings", "description": "Unreviewed audio routed to saved wake words, plus clips waiting for a wake-word assignment.", "paths": [CAPTURED_DIR, UNASSIGNED_CAPTURED_DIR], "rebuild_note": irreplaceable},
         {"id": "trim_history", "label": "Audio trim history", "category": "Recordings", "description": "Original audio retained so sample trims can be reverted.", "paths": [TRIM_HISTORY_DIR], "rebuild_note": "Deleting this removes the ability to revert existing trims."},
 
         {"id": "generated_samples", "label": "Generated wake-word samples", "category": "Generated training data", "description": "The direct TTS corpus used for the current wake word.", "paths": [work_dir / "wake_word_samples"], "rebuild_note": rebuild},
@@ -489,6 +495,7 @@ def _delete_managed_data_item(item_id: str) -> Dict[str, Any]:
                 _save_auto_train_state_locked()
         elif item_id == "captured_audio":
             CAPTURED_DIR.mkdir(parents=True, exist_ok=True)
+            UNASSIGNED_CAPTURED_DIR.mkdir(parents=True, exist_ok=True)
             _clear_auto_review_queue()
         elif item_id == "trim_history":
             TRIM_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
@@ -575,6 +582,136 @@ def _list_negative_samples() -> List[str]:
 
 def _list_captured_sample_names() -> List[str]:
     return _list_audio_samples(CAPTURED_DIR)
+
+
+CAPTURE_UNASSIGNED_SCOPE = "_unassigned"
+CAPTURE_REFERENCE_SEPARATOR = "::"
+
+
+def _wake_word_key(value: Any) -> str:
+    raw = str(value or "").strip()
+    return safe_name(raw) if raw else ""
+
+
+def _known_wake_word_keys() -> set[str]:
+    keys: set[str] = set()
+    current = active_word(DATA_DIR)
+    if current:
+        keys.add(current)
+    words_dir = DATA_DIR / "wake_word_library" / "words"
+    if words_dir.is_dir():
+        keys.update(path.parent.name for path in words_dir.glob("*/profile.json"))
+    if TRAINED_WAKE_WORDS_DIR.is_dir():
+        keys.update(
+            path.name.removesuffix(".wake-bundle.json")
+            for path in TRAINED_WAKE_WORDS_DIR.glob("*.wake-bundle.json")
+        )
+    return {key for key in keys if key and safe_name(key) == key}
+
+
+def _word_asset_root(safe_word: str) -> Path:
+    normalized = _wake_word_key(safe_word)
+    if not normalized or normalized != safe_word or normalized not in _known_wake_word_keys():
+        raise ValueError(f"Unknown saved wake word: {safe_word or 'blank'}")
+    if normalized == active_word(DATA_DIR):
+        return DATA_DIR
+    return DATA_DIR / "wake_word_library" / "words" / normalized / "assets"
+
+
+def _capture_scope_for_upload(wake_word: Any) -> str:
+    key = _wake_word_key(wake_word)
+    return key if key in _known_wake_word_keys() else CAPTURE_UNASSIGNED_SCOPE
+
+
+def _capture_directory(scope: str | None) -> Path:
+    token = str(scope or "").strip()
+    if not token:
+        # Backward compatibility for pre-v47.5 callers and unit tests.
+        return CAPTURED_DIR
+    if token == CAPTURE_UNASSIGNED_SCOPE:
+        return UNASSIGNED_CAPTURED_DIR
+    return _word_asset_root(token) / "captured_audio"
+
+
+def _capture_locations() -> Dict[str, Path]:
+    locations: Dict[str, Path] = {}
+    for safe_word in sorted(_known_wake_word_keys()):
+        with contextlib.suppress(ValueError):
+            locations[safe_word] = _word_asset_root(safe_word) / "captured_audio"
+    current = active_word(DATA_DIR)
+    if not current:
+        locations[""] = CAPTURED_DIR
+    locations[CAPTURE_UNASSIGNED_SCOPE] = UNASSIGNED_CAPTURED_DIR
+    return locations
+
+
+def _capture_reference(scope: str, file_name: str) -> str:
+    return f"{scope}{CAPTURE_REFERENCE_SEPARATOR}{Path(file_name).name}"
+
+
+def _capture_reference_parts(reference: str) -> tuple[str, str]:
+    raw = str(reference or "")
+    if CAPTURE_REFERENCE_SEPARATOR not in raw:
+        return "", raw
+    scope, file_name = raw.split(CAPTURE_REFERENCE_SEPARATOR, 1)
+    return scope, file_name
+
+
+def _all_captured_sample_count() -> int:
+    directories = {path.resolve() for path in _capture_locations().values() if path.is_dir()}
+    return sum(len(list(path.glob("*.wav"))) for path in directories)
+
+
+def _all_saved_word_sample_count(relative_directory: str) -> int:
+    roots: set[Path] = set()
+    for safe_word in _known_wake_word_keys():
+        with contextlib.suppress(ValueError):
+            roots.add((_word_asset_root(safe_word) / relative_directory).resolve())
+    if not roots:
+        roots.add((DATA_DIR / relative_directory).resolve())
+    return sum(len(list(path.glob("*.wav"))) for path in roots if path.is_dir())
+
+
+def _route_legacy_captured_audio() -> int:
+    """Move pre-v47.5 captures out of the active inbox using their satellite metadata."""
+    current = active_word(DATA_DIR)
+    if not current or not CAPTURED_DIR.is_dir():
+        return 0
+    moved = 0
+    with SAMPLES_LOCK:
+        for source in list(CAPTURED_DIR.glob("*.wav")):
+            metadata = _load_sidecar_json(source)
+            reported = str(metadata.get("wake_word") or "").strip()
+            if not reported:
+                continue
+            desired_scope = _capture_scope_for_upload(reported)
+            if desired_scope == current:
+                if metadata.get("dataset_wake_word") != current or metadata.get("assignment_status") != "assigned":
+                    metadata["dataset_wake_word"] = current
+                    metadata["assignment_status"] = "assigned"
+                    _write_sidecar_json(source, metadata)
+                continue
+            destination_dir = _capture_directory(desired_scope)
+            destination_dir.mkdir(parents=True, exist_ok=True)
+            destination_name = source.name
+            if (destination_dir / destination_name).exists():
+                destination_name = _next_directory_sample_name(
+                    destination_dir,
+                    "captured",
+                    str(metadata.get("original_name") or source.name),
+                )
+            destination = destination_dir / destination_name
+            source.replace(destination)
+            source_sidecar = _audio_sidecar_path(source)
+            if source_sidecar.exists():
+                source_sidecar.replace(_audio_sidecar_path(destination))
+            metadata["saved_as"] = destination_name
+            metadata["dataset_wake_word"] = "" if desired_scope == CAPTURE_UNASSIGNED_SCOPE else desired_scope
+            metadata["assignment_status"] = "unassigned" if desired_scope == CAPTURE_UNASSIGNED_SCOPE else "assigned"
+            metadata["routed_at"] = datetime.now(timezone.utc).isoformat()
+            _write_sidecar_json(destination, metadata)
+            moved += 1
+    return moved
 
 
 def _sync_trained_wake_word_artifacts() -> None:
@@ -1522,30 +1659,33 @@ def _queue_pending_auto_reviews(*, force: bool = False) -> int:
         config = dict(AUTO_TRAIN_CONFIG)
     if not config.get("enabled"):
         return queued
-    CAPTURED_DIR.mkdir(parents=True, exist_ok=True)
-    for audio_path in sorted(CAPTURED_DIR.glob("*.wav")):
-        metadata = _load_sidecar_json(audio_path)
-        if not _captured_event_is_auto_reviewable(metadata, config):
+    _route_legacy_captured_audio()
+    for scope, directory in _capture_locations().items():
+        if not directory.is_dir():
             continue
-        status = str(metadata.get("auto_review_status") or "").strip()
-        if status == "transcribing":
-            metadata.pop("auto_review_status", None)
-            _write_sidecar_json(audio_path, metadata)
-            status = ""
-        if force and status in {"error", "no_speech", "wake_phrase_ambiguous"}:
-            metadata.pop("auto_review_status", None)
-            _write_sidecar_json(audio_path, metadata)
-            status = ""
-        if (
-            status == "wake_phrase_detected"
-            and config.get("delete_confirmed_wakes")
-            and not _captured_event_is_close_miss(metadata)
-        ):
-            status = ""
-        if status:
-            continue
-        if _queue_auto_review(audio_path.name):
-            queued += 1
+        for audio_path in sorted(directory.glob("*.wav")):
+            metadata = _load_sidecar_json(audio_path)
+            if not _captured_event_is_auto_reviewable(metadata, config):
+                continue
+            status = str(metadata.get("auto_review_status") or "").strip()
+            if status == "transcribing":
+                metadata.pop("auto_review_status", None)
+                _write_sidecar_json(audio_path, metadata)
+                status = ""
+            if force and status in {"error", "no_speech", "wake_phrase_ambiguous"}:
+                metadata.pop("auto_review_status", None)
+                _write_sidecar_json(audio_path, metadata)
+                status = ""
+            if (
+                status == "wake_phrase_detected"
+                and config.get("delete_confirmed_wakes")
+                and not _captured_event_is_close_miss(metadata)
+            ):
+                status = ""
+            if status:
+                continue
+            if _queue_auto_review(_capture_reference(scope, audio_path.name)):
+                queued += 1
     return queued
 
 
@@ -1560,6 +1700,7 @@ def _record_auto_review_result(*, file_name: str, transcript: str = "", result: 
 
 
 def _auto_review_capture(file_name: str) -> None:
+    capture_scope, capture_file_name = _capture_reference_parts(file_name)
     try:
         with AUTO_TRAIN_LOCK:
             config = dict(AUTO_TRAIN_CONFIG)
@@ -1573,7 +1714,7 @@ def _auto_review_capture(file_name: str) -> None:
             return
 
         try:
-            audio_path = _resolve_audio_path(CAPTURED_DIR, file_name)
+            audio_path = _resolve_audio_path(_capture_directory(capture_scope), capture_file_name)
         except FileNotFoundError:
             return
         metadata = _load_sidecar_json(audio_path)
@@ -1669,8 +1810,10 @@ def _auto_review_capture(file_name: str) -> None:
                 metadata["auto_positive"] = True
                 _write_sidecar_json(audio_path, metadata)
                 _move_captured_audio(
-                    file_name,
-                    PERSONAL_DIR,
+                    capture_file_name,
+                    capture_word=capture_scope,
+                    target_word=_wake_word_key(wake_phrase),
+                    target_bucket="personal_samples",
                     target_prefix="sample",
                     review_status="auto_approved_personal",
                 )
@@ -1730,8 +1873,10 @@ def _auto_review_capture(file_name: str) -> None:
         metadata["auto_negative"] = True
         _write_sidecar_json(audio_path, metadata)
         _move_captured_audio(
-            file_name,
-            NEGATIVE_DIR,
+            capture_file_name,
+            capture_word=capture_scope,
+            target_word=_wake_word_key(wake_phrase),
+            target_bucket="negative_samples",
             target_prefix="negative",
             review_status="auto_approved_negative",
         )
@@ -1742,7 +1887,7 @@ def _auto_review_capture(file_name: str) -> None:
     except Exception as exc:
         error = str(exc)
         with contextlib.suppress(Exception):
-            audio_path = _resolve_audio_path(CAPTURED_DIR, file_name)
+            audio_path = _resolve_audio_path(_capture_directory(capture_scope), capture_file_name)
             metadata = _load_sidecar_json(audio_path)
             metadata["auto_review_status"] = "error"
             metadata["auto_review_error"] = error
@@ -2420,8 +2565,8 @@ def _next_negative_sample_name(original_name: str) -> str:
     return _next_directory_sample_name(NEGATIVE_DIR, "negative", original_name)
 
 
-def _next_captured_sample_name(original_name: str) -> str:
-    return _next_directory_sample_name(CAPTURED_DIR, "captured", original_name)
+def _next_captured_sample_name(original_name: str, directory: Path | None = None) -> str:
+    return _next_directory_sample_name(directory or CAPTURED_DIR, "captured", original_name)
 
 
 def _next_directory_sample_name(directory: Path, prefix: str, original_name: str) -> str:
@@ -2733,12 +2878,19 @@ def _save_personal_sample(data: bytes, original_name: str, out_name: str | None 
     )
 
 
-def _save_captured_sample(data: bytes, original_name: str, out_name: str | None = None) -> Dict[str, Any]:
+def _save_captured_sample(
+    data: bytes,
+    original_name: str,
+    out_name: str | None = None,
+    *,
+    target_dir: Path | None = None,
+) -> Dict[str, Any]:
+    destination = target_dir or CAPTURED_DIR
     return _save_audio_sample(
         data,
         original_name,
-        target_dir=CAPTURED_DIR,
-        out_name=out_name or _next_captured_sample_name(original_name),
+        target_dir=destination,
+        out_name=out_name or _next_captured_sample_name(original_name, destination),
         postprocess_target_wav=lambda wav_data: _boost_target_wav_bytes(
             wav_data,
             target_peak_ratio=0.88,
@@ -2775,12 +2927,22 @@ def _pcm_s16le_to_wav_bytes(
     return buf.getvalue()
 
 
-def _captured_item_from_path(audio_path: Path) -> Dict[str, Any]:
+def _captured_item_from_path(audio_path: Path, capture_scope: str | None = None) -> Dict[str, Any]:
     meta = _ensure_captured_playback_ready(audio_path, _load_sidecar_json(audio_path))
     stat = audio_path.stat()
     event_type = str(meta.get("event_type") or "captured").strip() or "captured"
     final_format = meta.get("final_format") or _inspect_wav_bytes(audio_path.read_bytes()) or {}
+    scope = str(capture_scope or "").strip()
+    if not scope:
+        scope = active_word(DATA_DIR) or CAPTURE_UNASSIGNED_SCOPE
+    dataset_wake_word = "" if scope == CAPTURE_UNASSIGNED_SCOPE else scope
+    assignment_status = "assigned" if dataset_wake_word else "unassigned"
     return {
+        "capture_id": _capture_reference(scope, audio_path.name),
+        "capture_scope": scope,
+        "dataset_wake_word": dataset_wake_word,
+        "review_wake_word": dataset_wake_word,
+        "assignment_status": assignment_status,
         "saved_as": audio_path.name,
         "original_name": meta.get("original_name") or audio_path.name,
         "source_device": meta.get("source_device") or "",
@@ -2817,18 +2979,29 @@ def _captured_item_from_path(audio_path: Path) -> Dict[str, Any]:
         "auto_review_phrase_similarity": meta.get("auto_review_phrase_similarity"),
         "auto_review_match_method": meta.get("auto_review_match_method") or "",
         "size_bytes": stat.st_size,
-        "audio_url": f"/api/audio/captured/{audio_path.name}",
+        "audio_url": (
+            f"/api/audio/captured/{quote(audio_path.name)}"
+            f"?capture_word={quote(scope)}"
+        ),
     }
 
 
 def _list_captured_items() -> List[Dict[str, Any]]:
     items: List[Dict[str, Any]] = []
-    CAPTURED_DIR.mkdir(parents=True, exist_ok=True)
-    for audio_path in sorted(CAPTURED_DIR.glob("*.wav"), key=lambda p: p.stat().st_mtime, reverse=True):
-        try:
-            items.append(_captured_item_from_path(audio_path))
-        except Exception:
+    seen_directories: set[Path] = set()
+    for scope, directory in _capture_locations().items():
+        resolved = directory.resolve()
+        if resolved in seen_directories:
             continue
+        seen_directories.add(resolved)
+        if not directory.is_dir():
+            continue
+        for audio_path in directory.glob("*.wav"):
+            try:
+                items.append(_captured_item_from_path(audio_path, scope))
+            except Exception:
+                continue
+    items.sort(key=lambda item: str(item.get("received_at") or ""), reverse=True)
     return items
 
 
@@ -2890,20 +3063,42 @@ def _samples_payload() -> Dict[str, Any]:
     }
 
 
-def _move_captured_audio(file_name: str, target_dir: Path, *, target_prefix: str, review_status: str) -> Dict[str, Any]:
+def _move_captured_audio(
+    file_name: str,
+    *,
+    capture_word: str | None,
+    target_word: str,
+    target_bucket: str,
+    target_prefix: str,
+    review_status: str,
+) -> Dict[str, Any]:
+    if target_bucket not in {"personal_samples", "negative_samples"}:
+        raise ValueError("Unknown reviewed sample bucket.")
+    target_key = _wake_word_key(target_word)
+    source_scope = str(capture_word or "").strip()
+    if not source_scope and target_key not in _known_wake_word_keys():
+        # Preserve the legacy single-workspace contract used before saved words.
+        target_root = DATA_DIR
+        target_dir = PERSONAL_DIR if target_bucket == "personal_samples" else NEGATIVE_DIR
+    else:
+        target_root = _word_asset_root(target_key)
+        target_dir = target_root / target_bucket
+    source_dir = _capture_directory(source_scope)
     with SAMPLES_LOCK:
-        src_path = _resolve_audio_path(CAPTURED_DIR, file_name)
+        src_path = _resolve_audio_path(source_dir, file_name)
         metadata = _load_sidecar_json(src_path)
         original_name = str(metadata.get("original_name") or src_path.name)
-        if target_prefix == "sample":
-            target_name = _next_personal_sample_name(original_name)
-        else:
-            target_name = _next_negative_sample_name(original_name)
+        target_name = _next_directory_sample_name(target_dir, target_prefix, original_name)
 
         target_dir.mkdir(parents=True, exist_ok=True)
         dst_path = target_dir / target_name
         src_path.replace(dst_path)
 
+        previous_dataset = str(metadata.get("dataset_wake_word") or "").strip()
+        if previous_dataset and previous_dataset != target_key:
+            metadata["reassigned_from_wake_word"] = previous_dataset
+        metadata["dataset_wake_word"] = target_key
+        metadata["assignment_status"] = "assigned"
         metadata["review_status"] = review_status
         metadata["reviewed_at"] = datetime.now(timezone.utc).isoformat()
         metadata["saved_as"] = target_name
@@ -2916,8 +3111,9 @@ def _move_captured_audio(file_name: str, target_dir: Path, *, target_prefix: str
     takes = _sync_personal_samples_state()
     return {
         "saved_as": target_name,
-        "captured_remaining": len(_list_captured_sample_names()),
-        "negative_count": len(_list_negative_samples()),
+        "target_wake_word": target_key,
+        "captured_remaining": _all_captured_sample_count(),
+        "negative_count": len(_list_audio_samples(target_root / "negative_samples")),
         "takes_received": len(takes),
     }
 
@@ -4325,11 +4521,6 @@ async def upload_captured_audio(
     metadata_json: str | None = Form(None),
 ):
     data = await file.read()
-    try:
-        result = _save_captured_sample(data, file.filename or "captured")
-    except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
-
     extra_meta: Dict[str, Any] = {}
     if metadata_json:
         try:
@@ -4342,13 +4533,27 @@ async def upload_captured_audio(
     with STATE_LOCK:
         current_safe_word = STATE.get("safe_word")
 
-    audio_path = CAPTURED_DIR / result["saved_as"]
+    reported_wake_word = wake_word or extra_meta.get("wake_word") or current_safe_word or ""
+    capture_scope = _capture_scope_for_upload(reported_wake_word)
+    capture_dir = _capture_directory(capture_scope)
+    try:
+        result = _save_captured_sample(
+            data,
+            file.filename or "captured",
+            target_dir=capture_dir,
+        )
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+    audio_path = capture_dir / result["saved_as"]
     sidecar = {
         **extra_meta,
         "saved_as": result["saved_as"],
         "original_name": result["original_name"],
         "source_device": source_device or extra_meta.get("source_device") or "",
-        "wake_word": wake_word or extra_meta.get("wake_word") or current_safe_word or "",
+        "wake_word": reported_wake_word,
+        "dataset_wake_word": "" if capture_scope == CAPTURE_UNASSIGNED_SCOPE else capture_scope,
+        "assignment_status": "unassigned" if capture_scope == CAPTURE_UNASSIGNED_SCOPE else "assigned",
         "event_type": (event_type or extra_meta.get("event_type") or "captured").strip() or "captured",
         "capture_label": extra_meta.get("capture_label") or "",
         "captured_at": captured_at or extra_meta.get("captured_at") or "",
@@ -4379,12 +4584,12 @@ async def upload_captured_audio(
     with AUTO_TRAIN_LOCK:
         auto_review_config = dict(AUTO_TRAIN_CONFIG)
     if auto_review_config.get("enabled") and _captured_event_is_auto_reviewable(sidecar, auto_review_config):
-        _queue_auto_review(audio_path.name)
+        _queue_auto_review(_capture_reference(capture_scope, audio_path.name))
 
     return {
         "ok": True,
-        "item": _captured_item_from_path(audio_path),
-        "captured_count": len(_list_captured_sample_names()),
+        "item": _captured_item_from_path(audio_path, capture_scope),
+        "captured_count": _all_captured_sample_count(),
     }
 
 
@@ -4414,6 +4619,14 @@ async def upload_captured_audio_raw(
     raw_data = await request.body()
     audio_format = (x_audio_format or "wav").strip().lower()
 
+    with STATE_LOCK:
+        current_safe_word = STATE.get("safe_word")
+
+    reported_wake_word = x_wake_word or current_safe_word or ""
+    capture_scope = _capture_scope_for_upload(reported_wake_word)
+    capture_dir = _capture_directory(capture_scope)
+
+    # The raw upload is normalized only after its owning wake-word dataset is known.
     try:
         if audio_format == "pcm_s16le":
             data = _pcm_s16le_to_wav_bytes(raw_data)
@@ -4423,20 +4636,18 @@ async def upload_captured_audio_raw(
             original_name = x_original_name or "captured.wav"
         else:
             raise ValueError(f"Unsupported x-audio-format '{audio_format}'.")
-
-        result = _save_captured_sample(data, original_name)
+        result = _save_captured_sample(data, original_name, target_dir=capture_dir)
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
 
-    with STATE_LOCK:
-        current_safe_word = STATE.get("safe_word")
-
-    audio_path = CAPTURED_DIR / result["saved_as"]
+    audio_path = capture_dir / result["saved_as"]
     sidecar = {
         "saved_as": result["saved_as"],
         "original_name": result["original_name"],
         "source_device": x_source_device or "",
-        "wake_word": x_wake_word or current_safe_word or "",
+        "wake_word": reported_wake_word,
+        "dataset_wake_word": "" if capture_scope == CAPTURE_UNASSIGNED_SCOPE else capture_scope,
+        "assignment_status": "unassigned" if capture_scope == CAPTURE_UNASSIGNED_SCOPE else "assigned",
         "event_type": (x_event_type or "captured").strip() or "captured",
         "capture_label": "",
         "captured_at": x_captured_at or "",
@@ -4465,26 +4676,25 @@ async def upload_captured_audio_raw(
     with AUTO_TRAIN_LOCK:
         auto_review_config = dict(AUTO_TRAIN_CONFIG)
     if auto_review_config.get("enabled") and _captured_event_is_auto_reviewable(sidecar, auto_review_config):
-        _queue_auto_review(audio_path.name)
+        _queue_auto_review(_capture_reference(capture_scope, audio_path.name))
 
     return {
         "ok": True,
-        "item": _captured_item_from_path(audio_path),
-        "captured_count": len(_list_captured_sample_names()),
+        "item": _captured_item_from_path(audio_path, capture_scope),
+        "captured_count": _all_captured_sample_count(),
     }
 
 
 @app.get("/api/captured_audio")
 def captured_audio():
-    takes = _sync_personal_samples_state()
+    _route_legacy_captured_audio()
     items = _list_captured_items()
-    samples = _samples_payload()
     return {
         "ok": True,
         "items": items,
         "captured_count": len(items),
-        "negative_count": samples["negative_count"],
-        "personal_count": len(takes),
+        "negative_count": _all_saved_word_sample_count("negative_samples"),
+        "personal_count": _all_saved_word_sample_count("personal_samples"),
     }
 
 
@@ -4511,9 +4721,15 @@ def delete_managed_data(item_id: str):
 
 
 @app.get("/api/audio/{bucket}/{file_name}")
-def audio_file(bucket: str, file_name: str):
+def audio_file(bucket: str, file_name: str, capture_word: str | None = None):
+    if bucket == "captured":
+        try:
+            path = _resolve_audio_path(_capture_directory(capture_word), file_name)
+        except (FileNotFoundError, ValueError) as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=404)
+        _ensure_captured_playback_ready(path, _load_sidecar_json(path))
+        return FileResponse(path, media_type="audio/wav", filename=path.name)
     bucket_map = {
-        "captured": CAPTURED_DIR,
         "personal": PERSONAL_DIR,
         "negative": NEGATIVE_DIR,
     }
@@ -4524,8 +4740,6 @@ def audio_file(bucket: str, file_name: str):
         path = _resolve_audio_path(directory, file_name)
     except FileNotFoundError as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=404)
-    if bucket == "captured":
-        _ensure_captured_playback_ready(path, _load_sidecar_json(path))
     return FileResponse(path, media_type="audio/wav", filename=path.name)
 
 
@@ -4691,9 +4905,28 @@ def revert_trim(
 
 
 @app.post("/api/captured_audio/{file_name}/approve_personal")
-def approve_captured_audio_to_personal(file_name: str):
+def approve_captured_audio_to_personal(
+    file_name: str,
+    capture_word: str | None = None,
+    target_word: str | None = None,
+):
+    destination = str(target_word or "").strip()
+    if not destination:
+        destination = str(capture_word or active_word(DATA_DIR) or "").strip()
+    if not destination or destination == CAPTURE_UNASSIGNED_SCOPE:
+        return JSONResponse(
+            {"ok": False, "error": "Choose the saved wake word this clip should train before approving it."},
+            status_code=400,
+        )
     try:
-        result = _move_captured_audio(file_name, PERSONAL_DIR, target_prefix="sample", review_status="approved_personal")
+        result = _move_captured_audio(
+            file_name,
+            capture_word=capture_word,
+            target_word=destination,
+            target_bucket="personal_samples",
+            target_prefix="sample",
+            review_status="approved_personal",
+        )
     except FileNotFoundError as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=404)
     except Exception as e:
@@ -4702,9 +4935,28 @@ def approve_captured_audio_to_personal(file_name: str):
 
 
 @app.post("/api/captured_audio/{file_name}/mark_negative")
-def mark_captured_audio_negative(file_name: str):
+def mark_captured_audio_negative(
+    file_name: str,
+    capture_word: str | None = None,
+    target_word: str | None = None,
+):
+    destination = str(target_word or "").strip()
+    if not destination:
+        destination = str(capture_word or active_word(DATA_DIR) or "").strip()
+    if not destination or destination == CAPTURE_UNASSIGNED_SCOPE:
+        return JSONResponse(
+            {"ok": False, "error": "Choose the saved wake word this clip should train before marking it negative."},
+            status_code=400,
+        )
     try:
-        result = _move_captured_audio(file_name, NEGATIVE_DIR, target_prefix="negative", review_status="approved_negative")
+        result = _move_captured_audio(
+            file_name,
+            capture_word=capture_word,
+            target_word=destination,
+            target_bucket="negative_samples",
+            target_prefix="negative",
+            review_status="approved_negative",
+        )
     except FileNotFoundError as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=404)
     except Exception as e:
@@ -4713,13 +4965,13 @@ def mark_captured_audio_negative(file_name: str):
 
 
 @app.post("/api/captured_audio/{file_name}/discard")
-def discard_captured_audio(file_name: str):
+def discard_captured_audio(file_name: str, capture_word: str | None = None):
     try:
-        path = _resolve_audio_path(CAPTURED_DIR, file_name)
+        path = _resolve_audio_path(_capture_directory(capture_word), file_name)
         _remove_audio_with_sidecar(path)
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=404)
-    return {"ok": True, "captured_count": len(_list_captured_sample_names())}
+    return {"ok": True, "captured_count": _all_captured_sample_count()}
 
 
 @app.get("/api/trained_wake_words/catalog")

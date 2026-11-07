@@ -312,11 +312,20 @@ export async function uploadSelectedFiles(input?: HTMLInputElement | null): Prom
 
 export async function reviewCaptured(item: AudioItem, action: "approve_personal" | "mark_negative" | "discard"): Promise<void> {
   if (action === "discard" && !window.confirm(`Discard ${item.saved_as} from the captured-audio inbox?`)) return;
+  const captureWord = String(item.capture_scope || "").trim();
+  const targetWord = String(item.review_wake_word || item.dataset_wake_word || "").trim();
+  if (action !== "discard" && !targetWord) {
+    notify("Choose the saved wake word this clip should train first.", "warning");
+    return;
+  }
+  const query = new URLSearchParams();
+  if (captureWord) query.set("capture_word", captureWord);
+  if (action !== "discard") query.set("target_word", targetWord);
   setBusy("review", true);
   try {
-    await postJson(`/api/captured_audio/${encodeURIComponent(item.saved_as)}/${action}`);
+    await postJson(`/api/captured_audio/${encodeURIComponent(item.saved_as)}/${action}?${query.toString()}`);
     await Promise.all([refreshSession(), refreshCaptured(true), refreshSamples(true)]);
-    notify(action === "approve_personal" ? "Clip added to personal samples." : action === "mark_negative" ? "Clip marked negative." : "Clip discarded.");
+    notify(action === "approve_personal" ? `Clip added to ${targetWord} positives.` : action === "mark_negative" ? `Clip added to ${targetWord} negatives.` : "Clip discarded.");
   } catch (error) {
     reportError(error, "Review action failed.");
   } finally {

@@ -218,6 +218,10 @@ button:disabled { opacity: .43; cursor: not-allowed; }
 .audio-card footer button { min-height: 36px; padding: 6px 11px; font-size: 11px; }
 .meta-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .meta-row span { padding: 4px 8px; border: 1px solid var(--line); border-radius: 99px; color: #bdb8b2; background: rgba(50,49,49,.68); font-size: 10px; }
+.capture-assignment { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; padding: 11px 12px; border: 1px solid rgba(68, 221, 165, .22); border-radius: 13px; background: rgba(68, 221, 165, .055); }
+.capture-assignment.unassigned { border-color: rgba(255, 145, 52, .34); background: rgba(255, 145, 52, .07); }
+.capture-assignment label { display: grid; gap: 6px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.capture-assignment select { min-width: 0; width: 100%; }
 .empty-state { display: grid; place-items: center; min-height: 130px; padding: 24px; border: 1px dashed var(--line-strong); border-radius: 15px; color: var(--muted); text-align: center; }
 .toolbar { flex-wrap: wrap; margin-bottom: 14px; }
 .segment-control { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: rgba(16,16,17,.68); }
@@ -345,6 +349,7 @@ button:disabled { opacity: .43; cursor: not-allowed; }
   .hard-negative-head { grid-template-columns: 42px minmax(0, 1fr); }.hard-negative-head > b { grid-column: 1 / -1; }.hard-negative-card footer { flex-direction: column; }.hard-negative-card footer strong { text-align: left; }
   .training-summary-card > header { grid-template-columns: 44px minmax(0, 1fr); }.training-summary-card > header > .pill { grid-column: 1 / -1; }.training-summary-grid { grid-template-columns: 1fr; }
   .audio-card footer > div { justify-content: flex-start; }.word-list article > button { width: 100%; }
+  .capture-assignment { grid-template-columns: 1fr; align-items: stretch; }
   .sample-head .segment-control { grid-column: 1 / -1; }.segment-control button { flex: 1; }
   .data-row { grid-template-columns: 1fr auto; }.data-copy { grid-column: 1 / -1; }.data-usage { text-align: left; }.data-row > button { min-width: 96px; }
   .modal-backdrop { padding: 8px; }.modal { max-height: calc(100vh - 16px); padding: 17px; }.modal-head { flex-direction: column; }.console-actions { justify-content: flex-start; }.console-log { min-height: 55vh; }

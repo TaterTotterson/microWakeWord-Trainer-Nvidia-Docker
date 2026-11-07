@@ -1,10 +1,7 @@
-- Added a dedicated per-word wake-boundary model that learns the acoustic end of the wake phrase, calibrates its threshold, and publishes it in the new schema-v4 Tater wake bundle.
-- Added **Retrain boundary only** so the boundary model can be regenerated from cached data without retraining or replacing the existing MWW, OWW, or NWW detector models.
-- Added a saved wake-word library. Each phrase now keeps its personal samples, reviewed negatives, generated speech, feature caches, boundary data, and retained training workspace when switching words.
-- Added immutable model-run history with engine selections, quality ratings, recall, false-trigger measurements, thresholds, and direct links to every published model, including the boundary artifact.
-- Replaced raw counter redraws with a themed live progress card showing the current stage, completed work, speed, elapsed time, and ETA across speech generation, feature building, detector training, boundary training, and packaging.
-- Added adaptive MicroWakeWord early stopping based on the configured training length, while preserving the best checkpoint, VRAM-safe batch behavior, and guarded corrective fine-tuning for low-recall candidates.
-- Boundary-only runs are now accepted without selecting another detector, preserve the existing bundle contents, and produce their own quality summary instead of appearing as a full MicroWakeWord run.
-- Added deterministic wake-plus-immediate-speech hard negatives and separate endpoint features so the boundary model learns where the wake phrase ends rather than duplicating the wake detector.
-- Updated both standard CUDA and Blackwell images to include the saved-word library and structured progress runtime used by the new trainer UI.
-- The current container trainer version is now shown directly under **Local trainer** in the header.
+- Satellite captures are now routed by the wake-word key reported by the satellite, including when that saved word is not the one currently open in the trainer.
+- Captured Audio now presents one combined review queue across every saved wake word and clearly shows the dataset each clip will train.
+- Positive and negative review actions carry the clip's source inbox and chosen target word, so samples cannot silently fall into whichever word happens to be active.
+- Clips with an unknown or missing wake-word identity now wait in an **Unassigned** inbox until the user explicitly chooses a saved word.
+- Reviewers can deliberately reassign any clip with a themed **Train this clip for** selector before marking it positive or negative.
+- Existing pending captures from older releases are migrated using their stored satellite metadata; unknown identities are quarantined instead of guessed.
+- Auto Review now scans the routed per-word inboxes and preserves the owning wake-word dataset when promoting positives or saving negatives.
