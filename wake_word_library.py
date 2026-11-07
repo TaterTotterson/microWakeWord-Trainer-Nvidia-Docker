@@ -89,13 +89,112 @@ def save_profile(data_dir: Path, *, safe_word: str, phrase: str, language: str, 
     return profile
 
 
-def _move_asset(source: Path, destination: Path) -> None:
-    if not source.exists() and not source.is_symlink():
-        return
-    if destination.exists() or destination.is_symlink():
-        raise RuntimeError(f"Cannot switch wake words because both working and saved copies exist: {source} and {destination}")
+def _path_exists(path: Path) -> bool:
+    return os.path.lexists(path)
+
+
+def _files_equal(left: Path, right: Path) -> bool:
+    try:
+        if not left.is_file() or not right.is_file() or left.stat().st_size != right.stat().st_size:
+            return False
+        with left.open("rb") as left_file, right.open("rb") as right_file:
+            while True:
+                left_chunk = left_file.read(1024 * 1024)
+                right_chunk = right_file.read(1024 * 1024)
+                if left_chunk != right_chunk:
+                    return False
+                if not left_chunk:
+                    return True
+    except OSError:
+        return False
+
+
+def _recovered_path(destination: Path, *, paired_suffixes: Sequence[str] = ()) -> Path:
+    for index in range(1, 10000):
+        candidate = destination.with_name(
+            f"{destination.stem}.recovered-{index}{destination.suffix}"
+        )
+        paired = [candidate.with_suffix(suffix) for suffix in paired_suffixes]
+        if not _path_exists(candidate) and not any(_path_exists(path) for path in paired):
+            return candidate
+    raise RuntimeError(f"Could not allocate a recovery name for {destination}")
+
+
+def _merge_audio_pair(source: Path, destination: Path) -> None:
+    source_sidecar = source.with_suffix(".json")
+    destination_sidecar = destination.with_suffix(".json")
     destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(os.fspath(source), os.fspath(destination))
+
+    if not _path_exists(destination) and not _path_exists(destination_sidecar):
+        shutil.move(os.fspath(source), os.fspath(destination))
+        if _path_exists(source_sidecar):
+            shutil.move(os.fspath(source_sidecar), os.fspath(destination_sidecar))
+        return
+
+    if _path_exists(destination) and _files_equal(source, destination):
+        if not _path_exists(source_sidecar):
+            source.unlink()
+            return
+        if not _path_exists(destination_sidecar):
+            source.unlink()
+            shutil.move(os.fspath(source_sidecar), os.fspath(destination_sidecar))
+            return
+        if _files_equal(source_sidecar, destination_sidecar):
+            source.unlink()
+            source_sidecar.unlink()
+            return
+
+    recovered = _recovered_path(destination, paired_suffixes=(".json",))
+    shutil.move(os.fspath(source), os.fspath(recovered))
+    if _path_exists(source_sidecar):
+        shutil.move(os.fspath(source_sidecar), os.fspath(recovered.with_suffix(".json")))
+
+
+def _merge_asset_path(source: Path, destination: Path) -> None:
+    if not _path_exists(source):
+        return
+    if not _path_exists(destination):
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(os.fspath(source), os.fspath(destination))
+        return
+
+    if source.is_dir() and not source.is_symlink() and destination.is_dir() and not destination.is_symlink():
+        if not any(destination.iterdir()):
+            destination.rmdir()
+            shutil.move(os.fspath(source), os.fspath(destination))
+            return
+        if not any(source.iterdir()):
+            source.rmdir()
+            return
+
+        paired_sidecars = {
+            child.with_suffix(".json")
+            for child in source.iterdir()
+            if child.is_file() and child.suffix.lower() == ".wav"
+        }
+        for child in sorted(source.iterdir(), key=lambda path: path.name):
+            if child in paired_sidecars:
+                continue
+            target = destination / child.name
+            if child.is_file() and child.suffix.lower() == ".wav":
+                _merge_audio_pair(child, target)
+            else:
+                _merge_asset_path(child, target)
+        if source.exists() and not any(source.iterdir()):
+            source.rmdir()
+        return
+
+    if source.is_file() and destination.is_file() and _files_equal(source, destination):
+        source.unlink()
+        return
+
+    recovered = _recovered_path(destination)
+    recovered.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(os.fspath(source), os.fspath(recovered))
+
+
+def _move_asset(source: Path, destination: Path) -> None:
+    _merge_asset_path(source, destination)
 
 
 def activate_word(data_dir: Path, *, safe_word: str, phrase: str, language: str, english_accent: str, tts_mode: str, workspace_paths: Sequence[str]) -> dict[str, Any]:

@@ -1,5 +1,5 @@
-- Legacy captured audio now migrates correctly even when no saved wake word is currently active in the trainer.
-- Clips with recognized wake-word metadata are routed to that saved word; missing or unknown identities move safely into **Unassigned** for manual review.
-- The migration is idempotent and only processes files left in the legacy inbox, so already-routed clips are never moved again.
-- Playback, review, and discard actions now resolve the migrated file from the same inbox shown by the UI instead of returning **Audio file not found**.
-- Auto Review now preserves the complete wake-word capture scope while queuing clips, including unassigned and inactive-word inboxes.
+- Saved wake words now activate successfully when their samples are split between the working trainer folders and the saved-word library.
+- Empty working folders created while no word is active no longer trigger a false **both working and saved copies exist** conflict.
+- Positive, negative, captured, trim-history, and training workspace data are reconciled without overwriting either copy.
+- Identical files are safely deduplicated; true filename conflicts keep both recordings under deterministic recovery names with their JSON sidecars.
+- The reconciliation is idempotent, so a repaired word can be activated and retrained normally on every later use.

@@ -7,6 +7,91 @@ from wake_word_library import activate_word, list_words, record_run, word_histor
 
 
 class WakeWordLibraryTests(unittest.TestCase):
+    def test_saved_word_activation_replaces_empty_working_scaffolding(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            data = Path(temporary)
+            (data / "personal_samples").mkdir()
+            saved = data / "wake_word_library" / "words" / "jarvis" / "assets"
+            (saved / "personal_samples").mkdir(parents=True)
+            (saved / "personal_samples" / "sample_0001.wav").write_bytes(b"saved-positive")
+            (saved / "negative_samples").mkdir()
+            (saved / "negative_samples" / "negative_0001.wav").write_bytes(b"saved-negative")
+
+            result = activate_word(
+                data,
+                safe_word="jarvis",
+                phrase="jarvis",
+                language="en",
+                english_accent="mixed",
+                tts_mode="hybrid",
+                workspace_paths=("personal_samples", "negative_samples"),
+            )
+
+            self.assertFalse(result["reused"])
+            self.assertEqual((data / "personal_samples" / "sample_0001.wav").read_bytes(), b"saved-positive")
+            self.assertEqual((data / "negative_samples" / "negative_0001.wav").read_bytes(), b"saved-negative")
+            self.assertFalse((saved / "personal_samples").exists())
+            self.assertFalse((saved / "negative_samples").exists())
+            self.assertEqual(
+                json.loads((data / "wake_word_library" / "active_word.json").read_text(encoding="utf-8"))["safe_word"],
+                "jarvis",
+            )
+
+    def test_split_saved_word_data_merges_without_overwriting(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            data = Path(temporary)
+            working = data / "personal_samples"
+            working.mkdir()
+            (working / "sample_0001.wav").write_bytes(b"working-positive")
+            (working / "sample_0001.json").write_text('{"source":"working"}', encoding="utf-8")
+            (working / "sample_0002.wav").write_bytes(b"same-positive")
+            (working / "sample_0002.json").write_text('{"source":"same"}', encoding="utf-8")
+
+            saved = data / "wake_word_library" / "words" / "jarvis" / "assets" / "personal_samples"
+            saved.mkdir(parents=True)
+            (saved / "sample_0001.wav").write_bytes(b"saved-positive")
+            (saved / "sample_0001.json").write_text('{"source":"saved"}', encoding="utf-8")
+            (saved / "sample_0002.wav").write_bytes(b"same-positive")
+            (saved / "sample_0002.json").write_text('{"source":"same"}', encoding="utf-8")
+
+            activate_word(
+                data,
+                safe_word="jarvis",
+                phrase="jarvis",
+                language="en",
+                english_accent="mixed",
+                tts_mode="hybrid",
+                workspace_paths=("personal_samples",),
+            )
+
+            audio_paths = sorted(working.glob("*.wav"))
+            self.assertEqual(len(audio_paths), 3)
+            self.assertEqual(
+                {path.read_bytes() for path in audio_paths},
+                {b"working-positive", b"saved-positive", b"same-positive"},
+            )
+            recovered = working / "sample_0001.recovered-1.wav"
+            self.assertEqual(recovered.read_bytes(), b"saved-positive")
+            self.assertEqual(
+                json.loads(recovered.with_suffix(".json").read_text(encoding="utf-8"))["source"],
+                "saved",
+            )
+            self.assertFalse(saved.exists())
+
+            before = {path.name: path.read_bytes() for path in working.iterdir() if path.is_file()}
+            repeated = activate_word(
+                data,
+                safe_word="jarvis",
+                phrase="jarvis",
+                language="en",
+                english_accent="mixed",
+                tts_mode="hybrid",
+                workspace_paths=("personal_samples",),
+            )
+            after = {path.name: path.read_bytes() for path in working.iterdir() if path.is_file()}
+            self.assertTrue(repeated["reused"])
+            self.assertEqual(after, before)
+
     def test_three_words_keep_independent_workspaces(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             data = Path(temporary)
