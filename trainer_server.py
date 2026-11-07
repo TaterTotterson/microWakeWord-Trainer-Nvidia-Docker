@@ -673,19 +673,21 @@ def _all_saved_word_sample_count(relative_directory: str) -> int:
 
 
 def _route_legacy_captured_audio() -> int:
-    """Move pre-v47.5 captures out of the active inbox using their satellite metadata."""
+    """Move pre-v47.5 captures into their routed inbox exactly once."""
     current = active_word(DATA_DIR)
-    if not current or not CAPTURED_DIR.is_dir():
+    if not CAPTURED_DIR.is_dir():
         return 0
     moved = 0
     with SAMPLES_LOCK:
         for source in list(CAPTURED_DIR.glob("*.wav")):
             metadata = _load_sidecar_json(source)
             reported = str(metadata.get("wake_word") or "").strip()
-            if not reported:
-                continue
-            desired_scope = _capture_scope_for_upload(reported)
-            if desired_scope == current:
+            desired_scope = (
+                _capture_scope_for_upload(reported)
+                if reported
+                else CAPTURE_UNASSIGNED_SCOPE
+            )
+            if current and desired_scope == current:
                 if metadata.get("dataset_wake_word") != current or metadata.get("assignment_status") != "assigned":
                     metadata["dataset_wake_word"] = current
                     metadata["assignment_status"] = "assigned"
@@ -1641,14 +1643,21 @@ def _clear_stt_model_caches(*, keep_engine: str) -> None:
 
 
 def _queue_auto_review(file_name: str) -> bool:
-    safe_file_name = Path(str(file_name or "")).name
+    raw_reference = str(file_name or "").strip()
+    capture_scope, candidate_name = _capture_reference_parts(raw_reference)
+    safe_file_name = Path(candidate_name).name
     if not safe_file_name:
         return False
+    queued_reference = (
+        _capture_reference(capture_scope, safe_file_name)
+        if CAPTURE_REFERENCE_SEPARATOR in raw_reference
+        else safe_file_name
+    )
     with AUTO_TRAIN_LOCK:
-        if safe_file_name in AUTO_TRAIN_QUEUED_FILES:
+        if queued_reference in AUTO_TRAIN_QUEUED_FILES:
             return False
-        AUTO_TRAIN_QUEUED_FILES.add(safe_file_name)
-    AUTO_TRAIN_REVIEW_QUEUE.put(safe_file_name)
+        AUTO_TRAIN_QUEUED_FILES.add(queued_reference)
+    AUTO_TRAIN_REVIEW_QUEUE.put(queued_reference)
     AUTO_TRAIN_WAKE_EVENT.set()
     return True
 

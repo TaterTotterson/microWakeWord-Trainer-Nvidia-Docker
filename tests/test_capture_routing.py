@@ -156,6 +156,45 @@ class CaptureRoutingTests(unittest.TestCase):
         self.assertEqual(trainer._load_sidecar_json(routed_known)["dataset_wake_word"], "hey_tater")
         self.assertEqual(trainer._load_sidecar_json(routed_unknown)["assignment_status"], "unassigned")
 
+    def test_legacy_inbox_migrates_without_an_active_word(self) -> None:
+        active_path = self.data / "wake_word_library" / "active_word.json"
+        active_path.unlink()
+        trainer.CAPTURED_DIR.mkdir(parents=True, exist_ok=True)
+
+        known = trainer.CAPTURED_DIR / "captured_0032.wav"
+        known.write_bytes(silent_wav_bytes())
+        trainer._write_sidecar_json(known, {"wake_word": "hey tater", "original_name": "known.wav"})
+        missing_identity = trainer.CAPTURED_DIR / "captured_0033.wav"
+        missing_identity.write_bytes(silent_wav_bytes())
+        trainer._write_sidecar_json(missing_identity, {"original_name": "legacy.wav"})
+
+        self.assertEqual(trainer._route_legacy_captured_audio(), 2)
+        self.assertEqual(trainer._route_legacy_captured_audio(), 0)
+        self.assertFalse(any(trainer.CAPTURED_DIR.glob("*.wav")))
+
+        routed_known = self.data / "wake_word_library" / "words" / "hey_tater" / "assets" / "captured_audio" / known.name
+        routed_unassigned = trainer.UNASSIGNED_CAPTURED_DIR / missing_identity.name
+        self.assertTrue(routed_known.is_file())
+        self.assertTrue(routed_unassigned.is_file())
+
+        items = trainer._list_captured_items()
+        unassigned = next(item for item in items if item["saved_as"] == missing_identity.name)
+        self.assertEqual(unassigned["capture_scope"], trainer.CAPTURE_UNASSIGNED_SCOPE)
+        self.assertEqual(
+            trainer._resolve_audio_path(
+                trainer._capture_directory(unassigned["capture_scope"]),
+                unassigned["saved_as"],
+            ),
+            routed_unassigned.resolve(),
+        )
+        self.assertTrue(
+            trainer.discard_captured_audio(
+                unassigned["saved_as"],
+                capture_word=unassigned["capture_scope"],
+            )["ok"]
+        )
+        self.assertFalse(routed_unassigned.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

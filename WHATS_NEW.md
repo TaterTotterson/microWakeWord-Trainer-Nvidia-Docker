@@ -1,7 +1,5 @@
-- Satellite captures are now routed by the wake-word key reported by the satellite, including when that saved word is not the one currently open in the trainer.
-- Captured Audio now presents one combined review queue across every saved wake word and clearly shows the dataset each clip will train.
-- Positive and negative review actions carry the clip's source inbox and chosen target word, so samples cannot silently fall into whichever word happens to be active.
-- Clips with an unknown or missing wake-word identity now wait in an **Unassigned** inbox until the user explicitly chooses a saved word.
-- Reviewers can deliberately reassign any clip with a themed **Train this clip for** selector before marking it positive or negative.
-- Existing pending captures from older releases are migrated using their stored satellite metadata; unknown identities are quarantined instead of guessed.
-- Auto Review now scans the routed per-word inboxes and preserves the owning wake-word dataset when promoting positives or saving negatives.
+- Legacy captured audio now migrates correctly even when no saved wake word is currently active in the trainer.
+- Clips with recognized wake-word metadata are routed to that saved word; missing or unknown identities move safely into **Unassigned** for manual review.
+- The migration is idempotent and only processes files left in the legacy inbox, so already-routed clips are never moved again.
+- Playback, review, and discard actions now resolve the migrated file from the same inbox shown by the UI instead of returning **Audio file not found**.
+- Auto Review now preserves the complete wake-word capture scope while queuing clips, including unassigned and inactive-word inboxes.

@@ -38,21 +38,45 @@ class AutoTrainTests(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         root = Path(self.tempdir.name)
         self.original_paths = (
+            trainer.DATA_DIR,
             trainer.CAPTURED_DIR,
+            trainer.UNASSIGNED_CAPTURED_DIR,
             trainer.NEGATIVE_DIR,
             trainer.PERSONAL_DIR,
+            trainer.TRIM_HISTORY_DIR,
+            trainer.TRAINED_WAKE_WORDS_DIR,
             trainer.AUTO_TRAIN_CONFIG_FILE,
             trainer.AUTO_TRAIN_STATE_FILE,
             trainer.AUTO_TRAIN_MODEL_DIR,
         )
+        trainer.DATA_DIR = root
         trainer.CAPTURED_DIR = root / "captured_audio"
+        trainer.UNASSIGNED_CAPTURED_DIR = root / "unassigned_captured_audio"
         trainer.NEGATIVE_DIR = root / "negative_samples"
         trainer.PERSONAL_DIR = root / "personal_samples"
+        trainer.TRIM_HISTORY_DIR = root / "trim_history"
+        trainer.TRAINED_WAKE_WORDS_DIR = root / "trained_wake_words"
         trainer.AUTO_TRAIN_CONFIG_FILE = root / "auto_train_config.json"
         trainer.AUTO_TRAIN_STATE_FILE = root / "auto_train_state.json"
         trainer.AUTO_TRAIN_MODEL_DIR = root / "auto_train_models"
-        for directory in (trainer.CAPTURED_DIR, trainer.NEGATIVE_DIR, trainer.PERSONAL_DIR):
+        for directory in (
+            trainer.CAPTURED_DIR,
+            trainer.UNASSIGNED_CAPTURED_DIR,
+            trainer.NEGATIVE_DIR,
+            trainer.PERSONAL_DIR,
+            trainer.TRIM_HISTORY_DIR,
+            trainer.TRAINED_WAKE_WORDS_DIR,
+        ):
             directory.mkdir(parents=True)
+        trainer.activate_word(
+            root,
+            safe_word="hey_tater",
+            phrase="hey tater",
+            language="en",
+            english_accent="mixed",
+            tts_mode="hybrid",
+            workspace_paths=(),
+        )
 
         self.original_config = dict(trainer.AUTO_TRAIN_CONFIG)
         self.original_state = dict(trainer.AUTO_TRAIN_STATE)
@@ -72,9 +96,13 @@ class AutoTrainTests(unittest.TestCase):
 
     def tearDown(self):
         (
+            trainer.DATA_DIR,
             trainer.CAPTURED_DIR,
+            trainer.UNASSIGNED_CAPTURED_DIR,
             trainer.NEGATIVE_DIR,
             trainer.PERSONAL_DIR,
+            trainer.TRIM_HISTORY_DIR,
+            trainer.TRAINED_WAKE_WORDS_DIR,
             trainer.AUTO_TRAIN_CONFIG_FILE,
             trainer.AUTO_TRAIN_STATE_FILE,
             trainer.AUTO_TRAIN_MODEL_DIR,
@@ -124,6 +152,13 @@ class AutoTrainTests(unittest.TestCase):
     def test_phrase_matching_normalizes_case_punctuation_and_underscores(self):
         self.assertTrue(trainer._transcript_contains_wake_phrase("Okay, HEY TATER!", "hey_tater"))
         self.assertFalse(trainer._transcript_contains_wake_phrase("Turn on the television", "hey tater"))
+
+    def test_auto_review_queue_preserves_capture_scope(self):
+        reference = trainer._capture_reference(trainer.CAPTURE_UNASSIGNED_SCOPE, "wake.wav")
+
+        self.assertTrue(trainer._queue_auto_review(reference))
+        self.assertEqual(trainer.AUTO_TRAIN_REVIEW_QUEUE.get_nowait(), reference)
+        trainer.AUTO_TRAIN_REVIEW_QUEUE.task_done()
 
     def test_phrase_similarity_recognizes_real_short_clip_mishearings(self):
         for transcript in ("Hey, haters.", "Hate hater.", "Hey Ganger.", "Hey, gator."):
