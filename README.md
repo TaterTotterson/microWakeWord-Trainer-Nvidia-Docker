@@ -13,6 +13,12 @@ Train any mix of microWakeWord, openWakeWord, NanoWakeWord CNN, and NanoWakeWord
 
 Real samples come from device-captured wake audio, close misses, or manual uploads. Every saved sample is normalized to `16 kHz / mono / 16-bit PCM WAV` before training.
 
+## Feature Highlight: Wake-Boundary Model
+
+Fast speakers often begin their request immediately after the wake phrase. A fixed audio cutoff can either leave part of the wake phrase in the clip sent to speech-to-text or remove the first word of the request. When a full training run includes MicroWakeWord, the trainer also builds a small, separately trained `wake_boundary` TFLite model for that saved wake word. It is calibrated to locate the acoustic end of the phrase so Echo firmware can keep the wake phrase out of speech-to-text while preserving speech that starts immediately after it.
+
+The boundary model is detector-independent. Once it is included in the schema-v4 `.wake-bundle.json`, the same artifact works with MWW, OWW, NWW, MWW + OWW, and MWW + NWW detector modes. After one full MicroWakeWord run, **Retrain boundary only** can rebuild and recalibrate the boundary model from the saved word's cached dataset and features without retraining the wake-word detector models.
+
 ---
 
 ## Docker Image
