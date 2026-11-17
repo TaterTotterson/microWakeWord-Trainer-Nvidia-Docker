@@ -13,6 +13,9 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
+from wake_word_versions import mark_published, published_run_id
+
+
 LIBRARY_SCHEMA_VERSION = 1
 
 
@@ -252,7 +255,7 @@ def _history(data_dir: Path, safe_word: str) -> list[dict[str, Any]]:
     return rows
 
 
-def list_words(data_dir: Path, *, trained_dir: Path, workspace_paths: Sequence[str]) -> list[dict[str, Any]]:
+def list_words(data_dir: Path, *, trained_dir: Path, workspace_paths: Sequence[str], prefer_committed: bool = False) -> list[dict[str, Any]]:
     root = Path(data_dir).resolve()
     library = _library_root(root)
     current = active_word(root)
@@ -280,6 +283,9 @@ def list_words(data_dir: Path, *, trained_dir: Path, workspace_paths: Sequence[s
             "tts_mode": profile.get("tts_mode") or "",
             "active": safe_word == current,
             "has_published_bundle": bool(bundle),
+                "published_run_id": published_run_id(root, Path(trained_dir), safe_word, prefer_committed=prefer_committed),
+                "personal_count": sum(path.is_file() for path in (assets_root / "personal_samples").glob("*.wav")),
+                "negative_count": sum(path.is_file() for path in (assets_root / "negative_samples").glob("*.wav")),
             "boundary_only_ready": bool(bundle) and boundary_only_ready,
             "dataset_size_bytes": size_bytes,
             "dataset_file_count": file_count,
@@ -327,4 +333,6 @@ def record_run(data_dir: Path, *, trained_dir: Path, summary: Mapping[str, Any],
         "artifacts": artifact_names,
     }
     _atomic_json(run_dir / "run.json", payload)
+    if f"{safe_word}.wake-bundle.json" in artifact_names and any(code == 0 for code in outcomes.values()):
+        mark_published(data_dir, Path(trained_dir), safe_word, run_dir.name)
     return payload

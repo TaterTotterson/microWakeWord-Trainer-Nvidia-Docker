@@ -8,10 +8,10 @@ function e(e) {
 var t = {}, n = [], r = () => {}, i = () => !1, a = (e) => e.charCodeAt(0) === 111 && e.charCodeAt(1) === 110 && (e.charCodeAt(2) > 122 || e.charCodeAt(2) < 97), o = (e) => e.startsWith("onUpdate:"), s = Object.assign, c = (e, t) => {
 	let n = e.indexOf(t);
 	n > -1 && e.splice(n, 1);
-}, l = Object.prototype.hasOwnProperty, u = (e, t) => l.call(e, t), d = Array.isArray, f = (e) => x(e) === "[object Map]", p = (e) => x(e) === "[object Set]", m = (e) => x(e) === "[object Date]", h = (e) => typeof e == "function", g = (e) => typeof e == "string", _ = (e) => typeof e == "symbol", v = (e) => typeof e == "object" && !!e, y = (e) => (v(e) || h(e)) && h(e.then) && h(e.catch), b = Object.prototype.toString, x = (e) => b.call(e), S = (e) => x(e).slice(8, -1), C = (e) => x(e) === "[object Object]", w = (e) => g(e) && e !== "NaN" && e[0] !== "-" && "" + parseInt(e, 10) === e, T = /* @__PURE__ */ e(",key,ref,ref_for,ref_key,onVnodeBeforeMount,onVnodeMounted,onVnodeBeforeUpdate,onVnodeUpdated,onVnodeBeforeUnmount,onVnodeUnmounted"), ee = (e) => {
+}, l = Object.prototype.hasOwnProperty, u = (e, t) => l.call(e, t), d = Array.isArray, f = (e) => x(e) === "[object Map]", p = (e) => x(e) === "[object Set]", m = (e) => x(e) === "[object Date]", h = (e) => typeof e == "function", g = (e) => typeof e == "string", _ = (e) => typeof e == "symbol", v = (e) => typeof e == "object" && !!e, y = (e) => (v(e) || h(e)) && h(e.then) && h(e.catch), b = Object.prototype.toString, x = (e) => b.call(e), S = (e) => x(e).slice(8, -1), C = (e) => x(e) === "[object Object]", w = (e) => g(e) && e !== "NaN" && e[0] !== "-" && "" + parseInt(e, 10) === e, ee = /* @__PURE__ */ e(",key,ref,ref_for,ref_key,onVnodeBeforeMount,onVnodeMounted,onVnodeBeforeUpdate,onVnodeUpdated,onVnodeBeforeUnmount,onVnodeUnmounted"), te = (e) => {
 	let t = /* @__PURE__ */ Object.create(null);
 	return ((n) => t[n] || (t[n] = e(n)));
-}, te = /-\w/g, E = ee((e) => e.replace(te, (e) => e.slice(1).toUpperCase())), ne = /\B([A-Z])/g, D = ee((e) => e.replace(ne, "-$1").toLowerCase()), re = ee((e) => e.charAt(0).toUpperCase() + e.slice(1)), ie = ee((e) => e ? `on${re(e)}` : ""), ae = (e, t) => !Object.is(e, t), oe = (e, ...t) => {
+}, ne = /-\w/g, T = te((e) => e.replace(ne, (e) => e.slice(1).toUpperCase())), re = /\B([A-Z])/g, E = te((e) => e.replace(re, "-$1").toLowerCase()), ie = te((e) => e.charAt(0).toUpperCase() + e.slice(1)), ae = te((e) => e ? `on${ie(e)}` : ""), D = (e, t) => !Object.is(e, t), oe = (e, ...t) => {
 	for (let n = 0; n < e.length; n++) e[n](...t);
 }, O = (e, t, n, r = !1) => {
 	Object.defineProperty(e, t, {
@@ -265,7 +265,7 @@ function Re(e) {
 	try {
 		Fe(e);
 		let n = e.fn(e._value);
-		(t.version === 0 || ae(n, e._value)) && (e.flags |= 128, e._value = n, t.version++);
+		(t.version === 0 || D(n, e._value)) && (e.flags |= 128, e._value = n, t.version++);
 	} catch (e) {
 		throw t.version++, e;
 	} finally {
@@ -563,7 +563,7 @@ var mt = class {
 			if (!/* @__PURE__ */ Bt(n) && !/* @__PURE__ */ zt(n) && (i = /* @__PURE__ */ P(i), n = /* @__PURE__ */ P(n)), !a && /* @__PURE__ */ F(i) && !/* @__PURE__ */ F(n)) return e || (i.value = n), !0;
 		}
 		let o = a ? Number(t) < e.length : u(e, t), s = Reflect.set(e, t, n, /* @__PURE__ */ F(e) ? e : r);
-		return e === /* @__PURE__ */ P(r) && s && (o ? ae(n, i) && et(e, "set", t, n, i) : et(e, "add", t, n)), s;
+		return e === /* @__PURE__ */ P(r) && s && (o ? D(n, i) && et(e, "set", t, n, i) : et(e, "add", t, n)), s;
 	}
 	deleteProperty(e, t) {
 		let n = u(e, t), r = e[t], i = Reflect.deleteProperty(e, t);
@@ -611,7 +611,7 @@ function wt(e, t) {
 	let n = {
 		get(n) {
 			let r = this.__v_raw, i = /* @__PURE__ */ P(r), a = /* @__PURE__ */ P(n);
-			e || (ae(n, a) && N(i, "get", n), N(i, "get", a));
+			e || (D(n, a) && N(i, "get", n), N(i, "get", a));
 			let { has: o } = xt(i), s = t ? bt : e ? Wt : Ut;
 			if (o.call(i, n)) return s(r.get(n));
 			if (o.call(i, a)) return s(r.get(a));
@@ -623,7 +623,7 @@ function wt(e, t) {
 		},
 		has(t) {
 			let n = this.__v_raw, r = /* @__PURE__ */ P(n), i = /* @__PURE__ */ P(t);
-			return e || (ae(t, i) && N(r, "has", t), N(r, "has", i)), t === i ? n.has(t) : n.has(t) || n.has(i);
+			return e || (D(t, i) && N(r, "has", t), N(r, "has", i)), t === i ? n.has(t) : n.has(t) || n.has(i);
 		},
 		forEach(n, r) {
 			let i = this, a = i.__v_raw, o = /* @__PURE__ */ P(a), s = t ? bt : e ? Wt : Ut;
@@ -638,14 +638,14 @@ function wt(e, t) {
 	} : {
 		add(e) {
 			let n = /* @__PURE__ */ P(this), r = xt(n), i = /* @__PURE__ */ P(e), a = !t && !/* @__PURE__ */ Bt(e) && !/* @__PURE__ */ zt(e) ? i : e;
-			return r.has.call(n, a) || ae(e, a) && r.has.call(n, e) || ae(i, a) && r.has.call(n, i) || (n.add(a), et(n, "add", a, a)), this;
+			return r.has.call(n, a) || D(e, a) && r.has.call(n, e) || D(i, a) && r.has.call(n, i) || (n.add(a), et(n, "add", a, a)), this;
 		},
 		set(e, n) {
 			!t && !/* @__PURE__ */ Bt(n) && !/* @__PURE__ */ zt(n) && (n = /* @__PURE__ */ P(n));
 			let r = /* @__PURE__ */ P(this), { has: i, get: a } = xt(r), o = i.call(r, e);
 			o ||= (e = /* @__PURE__ */ P(e), i.call(r, e));
 			let s = a.call(r, e);
-			return r.set(e, n), o ? ae(n, s) && et(r, "set", e, n, s) : et(r, "add", e, n), this;
+			return r.set(e, n), o ? D(n, s) && et(r, "set", e, n, s) : et(r, "add", e, n), this;
 		},
 		delete(e) {
 			let t = /* @__PURE__ */ P(this), { has: n, get: r } = xt(t), i = n.call(t, e);
@@ -733,13 +733,13 @@ function F(e) {
 	return e ? e.__v_isRef === !0 : !1;
 }
 // @__NO_SIDE_EFFECTS__
-function Gt(e) {
-	return Kt(e, !1);
+function I(e) {
+	return Gt(e, !1);
 }
-function Kt(e, t) {
-	return /* @__PURE__ */ F(e) ? e : new qt(e, t);
+function Gt(e, t) {
+	return /* @__PURE__ */ F(e) ? e : new Kt(e, t);
 }
-var qt = class {
+var Kt = class {
 	constructor(e, t) {
 		this.dep = new Je(), this.__v_isRef = !0, this.__v_isShallow = !1, this._rawValue = t ? e : /* @__PURE__ */ P(e), this._value = t ? e : Ut(e), this.__v_isShallow = t;
 	}
@@ -748,23 +748,23 @@ var qt = class {
 	}
 	set value(e) {
 		let t = this._rawValue, n = this.__v_isShallow || /* @__PURE__ */ Bt(e) || /* @__PURE__ */ zt(e);
-		e = n ? e : /* @__PURE__ */ P(e), ae(e, t) && (this._rawValue = e, this._value = n ? e : Ut(e), this.dep.trigger());
+		e = n ? e : /* @__PURE__ */ P(e), D(e, t) && (this._rawValue = e, this._value = n ? e : Ut(e), this.dep.trigger());
 	}
 };
-function I(e) {
+function L(e) {
 	return /* @__PURE__ */ F(e) ? e.value : e;
 }
-var Jt = {
-	get: (e, t, n) => t === "__v_raw" ? e : I(Reflect.get(e, t, n)),
+var qt = {
+	get: (e, t, n) => t === "__v_raw" ? e : L(Reflect.get(e, t, n)),
 	set: (e, t, n, r) => {
 		let i = e[t];
 		return /* @__PURE__ */ F(i) && !/* @__PURE__ */ F(n) ? (i.value = n, !0) : Reflect.set(e, t, n, r);
 	}
 };
-function Yt(e) {
-	return /* @__PURE__ */ Rt(e) ? e : new Proxy(e, Jt);
+function Jt(e) {
+	return /* @__PURE__ */ Rt(e) ? e : new Proxy(e, qt);
 }
-var Xt = class {
+var Yt = class {
 	constructor(e, t, n) {
 		this.fn = e, this.setter = t, this._value = void 0, this.dep = new Je(this), this.__v_isRef = !0, this.deps = void 0, this.depsTail = void 0, this.flags = 16, this.globalVersion = Ke - 1, this.next = void 0, this.effect = this, this.__v_isReadonly = !t, this.isSSR = n;
 	}
@@ -780,19 +780,19 @@ var Xt = class {
 	}
 };
 // @__NO_SIDE_EFFECTS__
-function Zt(e, t, n = !1) {
+function Xt(e, t, n = !1) {
 	let r, i;
-	return h(e) ? r = e : (r = e.get, i = e.set), new Xt(r, i, n);
+	return h(e) ? r = e : (r = e.get, i = e.set), new Yt(r, i, n);
 }
-var Qt = {}, $t = /* @__PURE__ */ new WeakMap(), en = void 0;
-function tn(e, t = !1, n = en) {
+var Zt = {}, Qt = /* @__PURE__ */ new WeakMap(), $t = void 0;
+function en(e, t = !1, n = $t) {
 	if (n) {
-		let t = $t.get(n);
-		t || $t.set(n, t = []), t.push(e);
+		let t = Qt.get(n);
+		t || Qt.set(n, t = []), t.push(e);
 	}
 }
-function nn(e, n, i = t) {
-	let { immediate: a, deep: o, once: s, scheduler: l, augmentJob: u, call: f } = i, p = (e) => o ? e : /* @__PURE__ */ Bt(e) || o === !1 || o === 0 ? rn(e, 1) : rn(e), m, g, _, v, y = !1, b = !1;
+function tn(e, n, i = t) {
+	let { immediate: a, deep: o, once: s, scheduler: l, augmentJob: u, call: f } = i, p = (e) => o ? e : /* @__PURE__ */ Bt(e) || o === !1 || o === 0 ? nn(e, 1) : nn(e), m, g, _, v, y = !1, b = !1;
 	if (/* @__PURE__ */ F(e) ? (g = () => e.value, y = /* @__PURE__ */ Bt(e)) : /* @__PURE__ */ Rt(e) ? (g = () => p(e), y = !0) : d(e) ? (b = !0, y = e.some((e) => /* @__PURE__ */ Rt(e) || /* @__PURE__ */ Bt(e)), g = () => e.map((e) => {
 		if (/* @__PURE__ */ F(e)) return e.value;
 		if (/* @__PURE__ */ Rt(e)) return p(e);
@@ -806,16 +806,16 @@ function nn(e, n, i = t) {
 				We();
 			}
 		}
-		let t = en;
-		en = m;
+		let t = $t;
+		$t = m;
 		try {
 			return f ? f(e, 3, [v]) : e(v);
 		} finally {
-			en = t;
+			$t = t;
 		}
 	} : r, n && o) {
 		let e = g, t = o === !0 ? Infinity : o;
-		g = () => rn(e(), t);
+		g = () => nn(e(), t);
 	}
 	let x = Ee(), S = () => {
 		m.stop(), x && x.active && c(x.effects, m);
@@ -827,71 +827,71 @@ function nn(e, n, i = t) {
 			return S(), n;
 		};
 	}
-	let C = b ? Array(e.length).fill(Qt) : Qt, w = (e) => {
+	let C = b ? Array(e.length).fill(Zt) : Zt, w = (e) => {
 		if (!(!(m.flags & 1) || !m.dirty && !e)) if (n) {
 			let t = m.run();
-			if (e || o || y || (b ? t.some((e, t) => ae(e, C[t])) : ae(t, C))) {
+			if (e || o || y || (b ? t.some((e, t) => D(e, C[t])) : D(t, C))) {
 				_ && _();
-				let e = en;
-				en = m;
+				let e = $t;
+				$t = m;
 				try {
 					let e = [
 						t,
-						C === Qt ? void 0 : b && C[0] === Qt ? [] : C,
+						C === Zt ? void 0 : b && C[0] === Zt ? [] : C,
 						v
 					];
 					C = t, f ? f(n, 3, e) : n(...e);
 				} finally {
-					en = e;
+					$t = e;
 				}
 			}
 		} else m.run();
 	};
-	return u && u(w), m = new Oe(g), m.scheduler = l ? () => l(w, !1) : w, v = (e) => tn(e, !1, m), _ = m.onStop = () => {
-		let e = $t.get(m);
+	return u && u(w), m = new Oe(g), m.scheduler = l ? () => l(w, !1) : w, v = (e) => en(e, !1, m), _ = m.onStop = () => {
+		let e = Qt.get(m);
 		if (e) {
 			if (f) f(e, 4);
 			else for (let t of e) t();
-			$t.delete(m);
+			Qt.delete(m);
 		}
 	}, n ? a ? w(!0) : C = m.run() : l ? l(w.bind(null, !0), !0) : m.run(), S.pause = m.pause.bind(m), S.resume = m.resume.bind(m), S.stop = S, S;
 }
-function rn(e, t = Infinity, n) {
+function nn(e, t = Infinity, n) {
 	if (t <= 0 || !v(e) || e.__v_skip || (n ||= /* @__PURE__ */ new Map(), (n.get(e) || 0) >= t)) return e;
-	if (n.set(e, t), t--, /* @__PURE__ */ F(e)) rn(e.value, t, n);
-	else if (d(e)) for (let r = 0; r < e.length; r++) rn(e[r], t, n);
+	if (n.set(e, t), t--, /* @__PURE__ */ F(e)) nn(e.value, t, n);
+	else if (d(e)) for (let r = 0; r < e.length; r++) nn(e[r], t, n);
 	else if (p(e) || f(e)) e.forEach((e) => {
-		rn(e, t, n);
+		nn(e, t, n);
 	});
 	else if (C(e)) {
-		for (let r in e) rn(e[r], t, n);
-		for (let r of Object.getOwnPropertySymbols(e)) Object.prototype.propertyIsEnumerable.call(e, r) && rn(e[r], t, n);
+		for (let r in e) nn(e[r], t, n);
+		for (let r of Object.getOwnPropertySymbols(e)) Object.prototype.propertyIsEnumerable.call(e, r) && nn(e[r], t, n);
 	}
 	return e;
 }
 //#endregion
 //#region node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js
-function an(e, t, n, r) {
+function rn(e, t, n, r) {
 	try {
 		return r ? e(...r) : e();
 	} catch (e) {
-		sn(e, t, n);
+		on(e, t, n);
 	}
 }
-function on(e, t, n, r) {
+function an(e, t, n, r) {
 	if (h(e)) {
-		let i = an(e, t, n, r);
+		let i = rn(e, t, n, r);
 		return i && y(i) && i.catch((e) => {
-			sn(e, t, n);
+			on(e, t, n);
 		}), i;
 	}
 	if (d(e)) {
 		let i = [];
-		for (let a = 0; a < e.length; a++) i.push(on(e[a], t, n, r));
+		for (let a = 0; a < e.length; a++) i.push(an(e[a], t, n, r));
 		return i;
 	}
 }
-function sn(e, n, r, i = !0) {
+function on(e, n, r, i = !0) {
 	let a = n ? n.vnode : null, { errorHandler: o, throwUnhandledErrorInProduction: s } = n && n.appContext.config || t;
 	if (n) {
 		let t = n.parent, i = n.proxy, a = `https://vuejs.org/error-reference/#runtime-${r}`;
@@ -903,7 +903,7 @@ function sn(e, n, r, i = !0) {
 			t = t.parent;
 		}
 		if (o) {
-			Ue(), an(o, null, 10, [
+			Ue(), rn(o, null, 10, [
 				e,
 				i,
 				a
@@ -911,104 +911,104 @@ function sn(e, n, r, i = !0) {
 			return;
 		}
 	}
-	cn(e, r, a, i, s);
+	sn(e, r, a, i, s);
 }
-function cn(e, t, n, r = !0, i = !1) {
+function sn(e, t, n, r = !0, i = !1) {
 	if (i) throw e;
 	console.error(e);
 }
-var ln = [], un = -1, dn = [], fn = null, pn = 0, mn = /* @__PURE__ */ Promise.resolve(), hn = null;
-function gn(e) {
-	let t = hn || mn;
+var cn = [], ln = -1, un = [], dn = null, fn = 0, pn = /* @__PURE__ */ Promise.resolve(), mn = null;
+function hn(e) {
+	let t = mn || pn;
 	return e ? t.then(this ? e.bind(this) : e) : t;
 }
-function _n(e) {
-	let t = un + 1, n = ln.length;
+function gn(e) {
+	let t = ln + 1, n = cn.length;
 	for (; t < n;) {
-		let r = t + n >>> 1, i = ln[r], a = Cn(i);
+		let r = t + n >>> 1, i = cn[r], a = Sn(i);
 		a < e || a === e && i.flags & 2 ? t = r + 1 : n = r;
 	}
 	return t;
 }
-function vn(e) {
+function _n(e) {
 	if (!(e.flags & 1)) {
-		let t = Cn(e), n = ln[ln.length - 1];
-		!n || !(e.flags & 2) && t >= Cn(n) ? ln.push(e) : ln.splice(_n(t), 0, e), e.flags |= 1, yn();
+		let t = Sn(e), n = cn[cn.length - 1];
+		!n || !(e.flags & 2) && t >= Sn(n) ? cn.push(e) : cn.splice(gn(t), 0, e), e.flags |= 1, vn();
 	}
 }
-function yn() {
-	hn ||= mn.then(wn);
+function vn() {
+	mn ||= pn.then(Cn);
 }
-function bn(e) {
-	d(e) ? dn.push(...e) : fn && e.id === -1 ? fn.splice(pn + 1, 0, e) : e.flags & 1 || (dn.push(e), e.flags |= 1), yn();
+function yn(e) {
+	d(e) ? un.push(...e) : dn && e.id === -1 ? dn.splice(fn + 1, 0, e) : e.flags & 1 || (un.push(e), e.flags |= 1), vn();
 }
-function xn(e, t, n = un + 1) {
-	for (; n < ln.length; n++) {
-		let t = ln[n];
+function bn(e, t, n = ln + 1) {
+	for (; n < cn.length; n++) {
+		let t = cn[n];
 		if (t && t.flags & 2) {
 			if (e && t.id !== e.uid) continue;
-			ln.splice(n, 1), n--, t.flags & 4 && (t.flags &= -2), t(), t.flags & 4 || (t.flags &= -2);
+			cn.splice(n, 1), n--, t.flags & 4 && (t.flags &= -2), t(), t.flags & 4 || (t.flags &= -2);
 		}
 	}
 }
-function Sn(e) {
-	if (dn.length) {
-		let e = [...new Set(dn)].sort((e, t) => Cn(e) - Cn(t));
-		if (dn.length = 0, fn) {
-			fn.push(...e);
+function xn(e) {
+	if (un.length) {
+		let e = [...new Set(un)].sort((e, t) => Sn(e) - Sn(t));
+		if (un.length = 0, dn) {
+			dn.push(...e);
 			return;
 		}
-		for (fn = e, pn = 0; pn < fn.length; pn++) {
-			let e = fn[pn];
+		for (dn = e, fn = 0; fn < dn.length; fn++) {
+			let e = dn[fn];
 			e.flags & 4 && (e.flags &= -2), e.flags & 8 || e(), e.flags &= -2;
 		}
-		fn = null, pn = 0;
+		dn = null, fn = 0;
 	}
 }
-var Cn = (e) => e.id == null ? e.flags & 2 ? -1 : Infinity : e.id;
-function wn(e) {
+var Sn = (e) => e.id == null ? e.flags & 2 ? -1 : Infinity : e.id;
+function Cn(e) {
 	try {
-		for (un = 0; un < ln.length; un++) {
-			let e = ln[un];
-			e && !(e.flags & 8) && (e.flags & 4 && (e.flags &= -2), an(e, e.i, e.i ? 15 : 14), e.flags & 4 || (e.flags &= -2));
+		for (ln = 0; ln < cn.length; ln++) {
+			let e = cn[ln];
+			e && !(e.flags & 8) && (e.flags & 4 && (e.flags &= -2), rn(e, e.i, e.i ? 15 : 14), e.flags & 4 || (e.flags &= -2));
 		}
 	} finally {
-		for (; un < ln.length; un++) {
-			let e = ln[un];
+		for (; ln < cn.length; ln++) {
+			let e = cn[ln];
 			e && (e.flags &= -2);
 		}
-		un = -1, ln.length = 0, Sn(e), hn = null, (ln.length || dn.length) && wn(e);
+		ln = -1, cn.length = 0, xn(e), mn = null, (cn.length || un.length) && Cn(e);
 	}
 }
-var Tn = null, En = null;
-function Dn(e) {
-	let t = Tn;
-	return Tn = e, En = e && e.type.__scopeId || null, t;
+var wn = null, Tn = null;
+function En(e) {
+	let t = wn;
+	return wn = e, Tn = e && e.type.__scopeId || null, t;
 }
-function On(e, t = Tn, n) {
+function Dn(e, t = wn, n) {
 	if (!t || e._n) return e;
 	let r = (...n) => {
-		r._d && na(-1);
-		let i = Dn(t), a = Qi.length, o;
+		r._d && ra(-1);
+		let i = En(t), a = $i.length, o;
 		try {
 			o = e(...n);
 		} finally {
-			for (let e = Qi.length; e > a; e--) ea();
-			Dn(i), r._d && na(1);
+			for (let e = $i.length; e > a; e--) ta();
+			En(i), r._d && ra(1);
 		}
 		return o;
 	};
 	return r._n = !0, r._c = !0, r._d = !0, r;
 }
-function L(e, n) {
-	if (Tn === null) return e;
-	let r = La(Tn), i = e.dirs ||= [];
+function R(e, n) {
+	if (wn === null) return e;
+	let r = Ra(wn), i = e.dirs ||= [];
 	for (let e = 0; e < n.length; e++) {
 		let [a, o, s, c = t] = n[e];
 		a && (h(a) && (a = {
 			mounted: a,
 			updated: a
-		}), a.deep && rn(o), i.push({
+		}), a.deep && nn(o), i.push({
 			dir: a,
 			instance: r,
 			value: o,
@@ -1019,13 +1019,13 @@ function L(e, n) {
 	}
 	return e;
 }
-function kn(e, t, n, r) {
+function On(e, t, n, r) {
 	let i = e.dirs, a = t && t.dirs;
 	for (let o = 0; o < i.length; o++) {
 		let s = i[o];
 		a && (s.oldValue = a[o].value);
 		let c = s.dir[r];
-		c && (Ue(), on(c, n, 8, [
+		c && (Ue(), an(c, n, 8, [
 			e.el,
 			s,
 			e,
@@ -1033,55 +1033,55 @@ function kn(e, t, n, r) {
 		]), We());
 	}
 }
-function An(e, t) {
-	if (xa) {
-		let n = xa.provides, r = xa.parent && xa.parent.provides;
-		r === n && (n = xa.provides = Object.create(r)), n[e] = t;
+function kn(e, t) {
+	if (Sa) {
+		let n = Sa.provides, r = Sa.parent && Sa.parent.provides;
+		r === n && (n = Sa.provides = Object.create(r)), n[e] = t;
 	}
 }
-function jn(e, t, n = !1) {
-	let r = Sa();
+function An(e, t, n = !1) {
+	let r = Ca();
 	if (r || oi) {
 		let i = oi ? oi._context.provides : r ? r.parent == null || r.ce ? r.vnode.appContext && r.vnode.appContext.provides : r.parent.provides : void 0;
 		if (i && e in i) return i[e];
 		if (arguments.length > 1) return n && h(t) ? t.call(r && r.proxy) : t;
 	}
 }
-var Mn = /* @__PURE__ */ Symbol.for("v-scx"), Nn = () => jn(Mn);
-function Pn(e, t, n) {
-	return Fn(e, t, n);
+var jn = /* @__PURE__ */ Symbol.for("v-scx"), Mn = () => An(jn);
+function Nn(e, t, n) {
+	return Pn(e, t, n);
 }
-function Fn(e, n, i = t) {
+function Pn(e, n, i = t) {
 	let { immediate: a, deep: o, flush: c, once: l } = i, u = s({}, i), d = n && a || !n && c !== "post", f;
-	if (Oa) {
+	if (ka) {
 		if (c === "sync") {
-			let e = Nn();
+			let e = Mn();
 			f = e.__watcherHandles ||= [];
 		} else if (!d) {
 			let e = () => {};
 			return e.stop = r, e.resume = r, e.pause = r, e;
 		}
 	}
-	let p = xa;
-	u.call = (e, t, n) => on(e, p, t, n);
+	let p = Sa;
+	u.call = (e, t, n) => an(e, p, t, n);
 	let m = !1;
 	c === "post" ? u.scheduler = (e) => {
-		B(e, p && p.suspense);
+		Li(e, p && p.suspense);
 	} : c !== "sync" && (m = !0, u.scheduler = (e, t) => {
-		t ? e() : vn(e);
+		t ? e() : _n(e);
 	}), u.augmentJob = (e) => {
 		n && (e.flags |= 4), m && (e.flags |= 2, p && (e.id = p.uid, e.i = p));
 	};
-	let h = nn(e, n, u);
-	return Oa && (f ? f.push(h) : d && h()), h;
+	let h = tn(e, n, u);
+	return ka && (f ? f.push(h) : d && h()), h;
 }
-function In(e, t, n) {
-	let r = this.proxy, i = g(e) ? e.includes(".") ? Ln(r, e) : () => r[e] : e.bind(r, r), a;
+function Fn(e, t, n) {
+	let r = this.proxy, i = g(e) ? e.includes(".") ? In(r, e) : () => r[e] : e.bind(r, r), a;
 	h(t) ? a = t : (a = t.handler, n = t);
-	let o = Ta(this), s = Fn(i, a.bind(r), n);
+	let o = Ea(this), s = Pn(i, a.bind(r), n);
 	return o(), s;
 }
-function Ln(e, t) {
+function In(e, t) {
 	let n = t.split(".");
 	return () => {
 		let t = e;
@@ -1089,71 +1089,71 @@ function Ln(e, t) {
 		return t;
 	};
 }
-var Rn = /* @__PURE__ */ new WeakMap(), zn = /* @__PURE__ */ Symbol("_vte"), Bn = (e) => e.__isTeleport, Vn = (e) => e && (e.disabled || e.disabled === ""), Hn = (e) => e && (e.defer || e.defer === ""), Un = (e) => typeof SVGElement < "u" && e instanceof SVGElement, Wn = (e) => typeof MathMLElement == "function" && e instanceof MathMLElement, Gn = (e, t) => {
+var Ln = /* @__PURE__ */ new WeakMap(), Rn = /* @__PURE__ */ Symbol("_vte"), zn = (e) => e.__isTeleport, Bn = (e) => e && (e.disabled || e.disabled === ""), Vn = (e) => e && (e.defer || e.defer === ""), Hn = (e) => typeof SVGElement < "u" && e instanceof SVGElement, Un = (e) => typeof MathMLElement == "function" && e instanceof MathMLElement, Wn = (e, t) => {
 	let n = e && e.to;
 	return g(n) ? t ? t(n) : null : n;
-}, Kn = {
+}, Gn = {
 	name: "Teleport",
 	__isTeleport: !0,
 	process(e, t, n, r, i, a, o, s, c, l) {
-		let { mc: u, pc: d, pbc: f, o: { insert: p, querySelector: m, createText: h, createComment: g, parentNode: _ } } = l, v = Vn(t.props), { dynamicChildren: y } = t, b = (e, t, n) => {
+		let { mc: u, pc: d, pbc: f, o: { insert: p, querySelector: m, createText: h, createComment: g, parentNode: _ } } = l, v = Bn(t.props), { dynamicChildren: y } = t, b = (e, t, n) => {
 			e.shapeFlag & 16 && u(e.children, t, n, i, a, o, s, c);
 		}, x = (e = t) => {
-			let n = Vn(e.props), r = e.target = Gn(e.props, m), a = Zn(r, e, h, p);
-			r && (o !== "svg" && Un(r) ? o = "svg" : o !== "mathml" && Wn(r) && (o = "mathml"), i && i.isCE && (i.ce._teleportTargets || (i.ce._teleportTargets = /* @__PURE__ */ new Set())).add(r), n || (b(e, r, a), Xn(e, !1)));
+			let n = Bn(e.props), r = e.target = Wn(e.props, m), a = Xn(r, e, h, p);
+			r && (o !== "svg" && Hn(r) ? o = "svg" : o !== "mathml" && Un(r) && (o = "mathml"), i && i.isCE && (i.ce._teleportTargets || (i.ce._teleportTargets = /* @__PURE__ */ new Set())).add(r), n || (b(e, r, a), Yn(e, !1)));
 		}, S = (e) => {
 			let t = () => {
-				if (Rn.get(e) === t) {
-					if (Rn.delete(e), Vn(e.props)) {
+				if (Ln.get(e) === t) {
+					if (Ln.delete(e), Bn(e.props)) {
 						let t = _(e.el) || n;
-						b(e, t, e.anchor), Xn(e, !0);
+						b(e, t, e.anchor), Yn(e, !0);
 					}
 					x(e);
 				}
 			};
-			Rn.set(e, t), B(t, a);
+			Ln.set(e, t), Li(t, a);
 		};
 		if (e == null) {
 			let e = t.el = h(""), i = t.anchor = h("");
-			if (p(e, n, r), p(i, n, r), Hn(t.props) || a && a.pendingBranch) {
+			if (p(e, n, r), p(i, n, r), Vn(t.props) || a && a.pendingBranch) {
 				S(t);
 				return;
 			}
-			v && (b(t, n, i), Xn(t, !0)), x();
+			v && (b(t, n, i), Yn(t, !0)), x();
 		} else {
 			t.el = e.el;
-			let r = t.anchor = e.anchor, u = Rn.get(e);
+			let r = t.anchor = e.anchor, u = Ln.get(e);
 			if (u) {
-				u.flags |= 8, Rn.delete(e), S(t);
+				u.flags |= 8, Ln.delete(e), S(t);
 				return;
 			}
 			t.targetStart = e.targetStart;
-			let p = t.target = e.target, h = t.targetAnchor = e.targetAnchor, g = Vn(e.props), _ = g ? n : p, b = g ? r : h;
-			if (o === "svg" || Un(p) ? o = "svg" : (o === "mathml" || Wn(p)) && (o = "mathml"), y ? (f(e.dynamicChildren, y, _, i, a, o, s), Hi(e, t, !0)) : c || d(e, t, _, b, i, a, o, s, !1), v) g ? t.props && e.props && t.props.to !== e.props.to && (t.props.to = e.props.to) : qn(t, n, r, l, 1);
+			let p = t.target = e.target, h = t.targetAnchor = e.targetAnchor, g = Bn(e.props), _ = g ? n : p, b = g ? r : h;
+			if (o === "svg" || Hn(p) ? o = "svg" : (o === "mathml" || Un(p)) && (o = "mathml"), y ? (f(e.dynamicChildren, y, _, i, a, o, s), Ui(e, t, !0)) : c || d(e, t, _, b, i, a, o, s, !1), v) g ? t.props && e.props && t.props.to !== e.props.to && (t.props.to = e.props.to) : Kn(t, n, r, l, 1);
 			else if ((t.props && t.props.to) !== (e.props && e.props.to)) {
-				let e = Gn(t.props, m);
-				e && (t.target = e, qn(t, e, null, l, 0));
-			} else g && qn(t, p, h, l, 1);
-			Xn(t, v);
+				let e = Wn(t.props, m);
+				e && (t.target = e, Kn(t, e, null, l, 0));
+			} else g && Kn(t, p, h, l, 1);
+			Yn(t, v);
 		}
 	},
 	remove(e, t, n, { um: r, o: { remove: i } }, a) {
-		let { shapeFlag: o, children: s, anchor: c, targetStart: l, targetAnchor: u, target: d, props: f } = e, p = Vn(f), m = a || !p, h = Rn.get(e);
-		if (h && (h.flags |= 8, Rn.delete(e)), d && (i(l), i(u)), a && i(c), !h && (p || d) && o & 16) for (let e = 0; e < s.length; e++) {
+		let { shapeFlag: o, children: s, anchor: c, targetStart: l, targetAnchor: u, target: d, props: f } = e, p = Bn(f), m = a || !p, h = Ln.get(e);
+		if (h && (h.flags |= 8, Ln.delete(e)), d && (i(l), i(u)), a && i(c), !h && (p || d) && o & 16) for (let e = 0; e < s.length; e++) {
 			let i = s[e];
 			r(i, t, n, m, !!i.dynamicChildren);
 		}
 	},
-	move: qn,
-	hydrate: Jn
+	move: Kn,
+	hydrate: qn
 };
-function qn(e, t, n, { o: { insert: r }, m: i }, a = 2) {
+function Kn(e, t, n, { o: { insert: r }, m: i }, a = 2) {
 	a === 0 && r(e.targetAnchor, t, n);
 	let { el: o, anchor: s, shapeFlag: c, children: l, props: u } = e, d = a === 2;
-	if (d && r(o, t, n), !Rn.has(e) && (!d || Vn(u)) && c & 16) for (let e = 0; e < l.length; e++) i(l[e], t, n, 2);
+	if (d && r(o, t, n), !Ln.has(e) && (!d || Bn(u)) && c & 16) for (let e = 0; e < l.length; e++) i(l[e], t, n, 2);
 	d && r(s, t, n);
 }
-function Jn(e, t, n, r, i, a, { o: { nextSibling: o, parentNode: s, querySelector: c, insert: l, createText: u } }, d) {
+function qn(e, t, n, r, i, a, { o: { nextSibling: o, parentNode: s, querySelector: c, insert: l, createText: u } }, d) {
 	function f(e, n) {
 		let r = n;
 		for (; r;) {
@@ -1170,15 +1170,15 @@ function Jn(e, t, n, r, i, a, { o: { nextSibling: o, parentNode: s, querySelecto
 	function p(e, t) {
 		t.anchor = d(o(e), t, s(e), n, r, i, a);
 	}
-	let m = t.target = Gn(t.props, c), h = Vn(t.props);
+	let m = t.target = Wn(t.props, c), h = Bn(t.props);
 	if (m) {
 		let c = m._lpa || m.firstChild;
-		t.shapeFlag & 16 && (h ? (p(e, t), f(m, c), t.targetAnchor || Zn(m, t, u, l, s(e) === m ? e : null)) : (t.anchor = o(e), f(m, c), t.targetAnchor || Zn(m, t, u, l), d(c && o(c), t, m, n, r, i, a))), Xn(t, h);
+		t.shapeFlag & 16 && (h ? (p(e, t), f(m, c), t.targetAnchor || Xn(m, t, u, l, s(e) === m ? e : null)) : (t.anchor = o(e), f(m, c), t.targetAnchor || Xn(m, t, u, l), d(c && o(c), t, m, n, r, i, a))), Yn(t, h);
 	} else h && t.shapeFlag & 16 && (p(e, t), t.targetStart = e, t.targetAnchor = o(e));
 	return t.anchor && o(t.anchor);
 }
-var Yn = Kn;
-function Xn(e, t) {
+var Jn = Gn;
+function Yn(e, t) {
 	let n = e.ctx;
 	if (n && n.ut) {
 		let r, i;
@@ -1186,67 +1186,67 @@ function Xn(e, t) {
 		n.ut();
 	}
 }
-function Zn(e, t, n, r, i = null) {
+function Xn(e, t, n, r, i = null) {
 	let a = t.targetStart = n(""), o = t.targetAnchor = n("");
-	return a[zn] = o, e && (r(a, e, i), r(o, e, i)), o;
+	return a[Rn] = o, e && (r(a, e, i), r(o, e, i)), o;
 }
-var Qn = /* @__PURE__ */ Symbol("_leaveCb"), $n = /* @__PURE__ */ Symbol("_enterCb");
-function er() {
+var Zn = /* @__PURE__ */ Symbol("_leaveCb"), Qn = /* @__PURE__ */ Symbol("_enterCb");
+function $n() {
 	let e = {
 		isMounted: !1,
 		isLeaving: !1,
 		isUnmounting: !1,
 		leavingVNodes: /* @__PURE__ */ new Map()
 	};
-	return Or(() => {
+	return Dr(() => {
 		e.isMounted = !0;
-	}), jr(() => {
+	}), Ar(() => {
 		e.isUnmounting = !0;
 	}), e;
 }
-var tr = [Function, Array], nr = {
+var er = [Function, Array], tr = {
 	mode: String,
 	appear: Boolean,
 	persisted: Boolean,
-	onBeforeEnter: tr,
-	onEnter: tr,
-	onAfterEnter: tr,
-	onEnterCancelled: tr,
-	onBeforeLeave: tr,
-	onLeave: tr,
-	onAfterLeave: tr,
-	onLeaveCancelled: tr,
-	onBeforeAppear: tr,
-	onAppear: tr,
-	onAfterAppear: tr,
-	onAppearCancelled: tr
-}, rr = (e) => {
+	onBeforeEnter: er,
+	onEnter: er,
+	onAfterEnter: er,
+	onEnterCancelled: er,
+	onBeforeLeave: er,
+	onLeave: er,
+	onAfterLeave: er,
+	onLeaveCancelled: er,
+	onBeforeAppear: er,
+	onAppear: er,
+	onAfterAppear: er,
+	onAppearCancelled: er
+}, nr = (e) => {
 	let t = e.subTree;
-	return t.component ? rr(t.component) : t;
-}, ir = {
+	return t.component ? nr(t.component) : t;
+}, rr = {
 	name: "BaseTransition",
-	props: nr,
+	props: tr,
 	setup(e, { slots: t }) {
-		let n = Sa(), r = er();
+		let n = Ca(), r = $n();
 		return () => {
-			let i = t.default && fr(t.default(), !0), a = i && i.length ? ar(i) : n.subTree ? q() : void 0;
+			let i = t.default && dr(t.default(), !0), a = i && i.length ? ir(i) : n.subTree ? K() : void 0;
 			if (!a) return;
 			let o = /* @__PURE__ */ P(e), { mode: s } = o;
-			if (r.isLeaving) return lr(a);
-			let c = ur(a);
-			if (!c) return lr(a);
-			let l = cr(c, o, r, n, (e) => l = e);
-			c.type !== Xi && dr(c, l);
-			let u = n.subTree && ur(n.subTree);
-			if (u && u.type !== Xi && !oa(u, c) && rr(n).type !== Xi) {
-				let e = cr(u, o, r, n);
-				if (dr(u, e), s === "out-in" && c.type !== Xi) return r.isLeaving = !0, e.afterLeave = () => {
+			if (r.isLeaving) return cr(a);
+			let c = lr(a);
+			if (!c) return cr(a);
+			let l = sr(c, o, r, n, (e) => l = e);
+			c.type !== Zi && ur(c, l);
+			let u = n.subTree && lr(n.subTree);
+			if (u && u.type !== Zi && !sa(u, c) && nr(n).type !== Zi) {
+				let e = sr(u, o, r, n);
+				if (ur(u, e), s === "out-in" && c.type !== Zi) return r.isLeaving = !0, e.afterLeave = () => {
 					r.isLeaving = !1, n.job.flags & 8 || n.update(), delete e.afterLeave, u = void 0;
-				}, lr(a);
-				s === "in-out" && c.type !== Xi ? e.delayLeave = (e, t, n) => {
-					let i = sr(r, u);
-					i[String(u.key)] = u, e[Qn] = () => {
-						t(), e[Qn] = void 0, delete l.delayedLeave, u = void 0;
+				}, cr(a);
+				s === "in-out" && c.type !== Zi ? e.delayLeave = (e, t, n) => {
+					let i = or(r, u);
+					i[String(u.key)] = u, e[Zn] = () => {
+						t(), e[Zn] = void 0, delete l.delayedLeave, u = void 0;
 					}, l.delayedLeave = () => {
 						n(), delete l.delayedLeave, u = void 0;
 					};
@@ -1256,37 +1256,37 @@ var tr = [Function, Array], nr = {
 		};
 	}
 };
-function ar(e) {
+function ir(e) {
 	let t = e[0];
 	if (e.length > 1) {
-		for (let n of e) if (n.type !== Xi) {
+		for (let n of e) if (n.type !== Zi) {
 			t = n;
 			break;
 		}
 	}
 	return t;
 }
-var or = ir;
-function sr(e, t) {
+var ar = rr;
+function or(e, t) {
 	let { leavingVNodes: n } = e, r = n.get(t.type);
 	return r || (r = /* @__PURE__ */ Object.create(null), n.set(t.type, r)), r;
 }
-function cr(e, t, n, r, i) {
-	let { appear: a, mode: o, persisted: s = !1, onBeforeEnter: c, onEnter: l, onAfterEnter: u, onEnterCancelled: f, onBeforeLeave: p, onLeave: m, onAfterLeave: h, onLeaveCancelled: g, onBeforeAppear: _, onAppear: v, onAfterAppear: y, onAppearCancelled: b } = t, x = String(e.key), S = sr(n, e), C = (e, t) => {
-		e && on(e, r, 9, t);
+function sr(e, t, n, r, i) {
+	let { appear: a, mode: o, persisted: s = !1, onBeforeEnter: c, onEnter: l, onAfterEnter: u, onEnterCancelled: f, onBeforeLeave: p, onLeave: m, onAfterLeave: h, onLeaveCancelled: g, onBeforeAppear: _, onAppear: v, onAfterAppear: y, onAppearCancelled: b } = t, x = String(e.key), S = or(n, e), C = (e, t) => {
+		e && an(e, r, 9, t);
 	}, w = (e, t) => {
 		let n = t[1];
 		C(e, t), d(e) ? e.every((e) => e.length <= 1) && n() : e.length <= 1 && n();
-	}, T = {
+	}, ee = {
 		mode: o,
 		persisted: s,
 		beforeEnter(t) {
 			let r = c;
 			if (!n.isMounted) if (a) r = _ || c;
 			else return;
-			t[Qn] && t[Qn](!0);
+			t[Zn] && t[Zn](!0);
 			let i = S[x];
-			i && oa(e, i) && i.el[Qn] && i.el[Qn](), C(r, [t]);
+			i && sa(e, i) && i.el[Zn] && i.el[Zn](), C(r, [t]);
 		},
 		enter(t) {
 			if (S[x] === e) return;
@@ -1294,35 +1294,35 @@ function cr(e, t, n, r, i) {
 			if (!n.isMounted) if (a) r = v || l, i = y || u, o = b || f;
 			else return;
 			let s = !1;
-			t[$n] = (e) => {
-				s || (s = !0, C(e ? o : i, [t]), T.delayedLeave && T.delayedLeave(), t[$n] = void 0);
+			t[Qn] = (e) => {
+				s || (s = !0, C(e ? o : i, [t]), ee.delayedLeave && ee.delayedLeave(), t[Qn] = void 0);
 			};
-			let c = t[$n].bind(null, !1);
+			let c = t[Qn].bind(null, !1);
 			r ? w(r, [t, c]) : c();
 		},
 		leave(t, r) {
 			let i = String(e.key);
-			if (t[$n] && t[$n](!0), n.isUnmounting) return r();
+			if (t[Qn] && t[Qn](!0), n.isUnmounting) return r();
 			C(p, [t]);
 			let a = !1;
-			t[Qn] = (n) => {
-				a || (a = !0, r(), C(n ? g : h, [t]), t[Qn] = void 0, S[i] === e && delete S[i]);
+			t[Zn] = (n) => {
+				a || (a = !0, r(), C(n ? g : h, [t]), t[Zn] = void 0, S[i] === e && delete S[i]);
 			};
-			let o = t[Qn].bind(null, !1);
+			let o = t[Zn].bind(null, !1);
 			S[i] = e, m ? w(m, [t, o]) : o();
 		},
 		clone(e) {
-			let a = cr(e, t, n, r, i);
+			let a = sr(e, t, n, r, i);
 			return i && i(a), a;
 		}
 	};
-	return T;
+	return ee;
+}
+function cr(e) {
+	if (yr(e)) return e = fa(e), e.children = null, e;
 }
 function lr(e) {
-	if (br(e)) return e = da(e), e.children = null, e;
-}
-function ur(e) {
-	if (!br(e)) return Bn(e.type) && e.children ? ar(e.children) : e;
+	if (!yr(e)) return zn(e.type) && e.children ? ir(e.children) : e;
 	if (e.component) return e.component.subTree;
 	let { shapeFlag: t, children: n } = e;
 	if (n) {
@@ -1330,52 +1330,52 @@ function ur(e) {
 		if (t & 32 && h(n.default)) return n.default();
 	}
 }
-function dr(e, t) {
-	e.shapeFlag & 6 && e.component ? (e.transition = t, dr(e.component.subTree, t)) : e.shapeFlag & 128 ? (e.ssContent.transition = t.clone(e.ssContent), e.ssFallback.transition = t.clone(e.ssFallback)) : e.transition = t;
+function ur(e, t) {
+	e.shapeFlag & 6 && e.component ? (e.transition = t, ur(e.component.subTree, t)) : e.shapeFlag & 128 ? (e.ssContent.transition = t.clone(e.ssContent), e.ssFallback.transition = t.clone(e.ssFallback)) : e.transition = t;
 }
-function fr(e, t = !1, n) {
+function dr(e, t = !1, n) {
 	let r = [], i = 0;
 	for (let a = 0; a < e.length; a++) {
 		let o = e[a], s = n == null ? o.key : String(n) + String(o.key == null ? a : o.key);
-		o.type === V ? (o.patchFlag & 128 && i++, r = r.concat(fr(o.children, t, s))) : (t || o.type !== Xi) && r.push(s == null ? o : da(o, { key: s }));
+		o.type === B ? (o.patchFlag & 128 && i++, r = r.concat(dr(o.children, t, s))) : (t || o.type !== Zi) && r.push(s == null ? o : fa(o, { key: s }));
 	}
 	if (i > 1) for (let e = 0; e < r.length; e++) r[e].patchFlag = -2;
 	return r;
 }
 // @__NO_SIDE_EFFECTS__
-function pr(e, t) {
+function fr(e, t) {
 	return h(e) ? /* @__PURE__ */ s({ name: e.name }, t, { setup: e }) : e;
 }
-function mr(e) {
+function pr(e) {
 	e.ids = [
 		e.ids[0] + e.ids[2]++ + "-",
 		0,
 		0
 	];
 }
-function hr(e, t) {
+function mr(e, t) {
 	let n;
 	return !!((n = Object.getOwnPropertyDescriptor(e, t)) && !n.configurable);
 }
-var gr = /* @__PURE__ */ new WeakMap();
-function _r(e, n, r, a, o = !1) {
+var hr = /* @__PURE__ */ new WeakMap();
+function gr(e, n, r, a, o = !1) {
 	if (d(e)) {
-		e.forEach((e, t) => _r(e, n && (d(n) ? n[t] : n), r, a, o));
+		e.forEach((e, t) => gr(e, n && (d(n) ? n[t] : n), r, a, o));
 		return;
 	}
-	if (yr(a) && !o) {
-		a.shapeFlag & 512 && a.type.__asyncResolved && a.component.subTree.component && _r(e, n, r, a.component.subTree);
+	if (vr(a) && !o) {
+		a.shapeFlag & 512 && a.type.__asyncResolved && a.component.subTree.component && gr(e, n, r, a.component.subTree);
 		return;
 	}
-	let s = a.shapeFlag & 4 ? La(a.component) : a.el, l = o ? null : s, { i: f, r: p } = e, m = n && n.r, _ = f.refs === t ? f.refs = {} : f.refs, v = f.setupState, y = /* @__PURE__ */ P(v), b = v === t ? i : (e) => !hr(_, e) && u(y, e), x = (e, t) => !(t && hr(_, t));
+	let s = a.shapeFlag & 4 ? Ra(a.component) : a.el, l = o ? null : s, { i: f, r: p } = e, m = n && n.r, _ = f.refs === t ? f.refs = {} : f.refs, v = f.setupState, y = /* @__PURE__ */ P(v), b = v === t ? i : (e) => !mr(_, e) && u(y, e), x = (e, t) => !(t && mr(_, t));
 	if (m != null && m !== p) {
-		if (vr(n), g(m)) _[m] = null, b(m) && (v[m] = null);
+		if (_r(n), g(m)) _[m] = null, b(m) && (v[m] = null);
 		else if (/* @__PURE__ */ F(m)) {
 			let e = n;
 			x(m, e.k) && (m.value = null), e.k && (_[e.k] = null);
 		}
 	}
-	if (h(p)) an(p, f, 12, [l, _]);
+	if (h(p)) rn(p, f, 12, [l, _]);
 	else {
 		let t = g(p), n = /* @__PURE__ */ F(p);
 		if (t || n) {
@@ -1393,26 +1393,26 @@ function _r(e, n, r, a, o = !1) {
 			};
 			if (l) {
 				let t = () => {
-					i(), gr.delete(e);
+					i(), hr.delete(e);
 				};
-				t.id = -1, gr.set(e, t), B(t, r);
-			} else vr(e), i();
+				t.id = -1, hr.set(e, t), Li(t, r);
+			} else _r(e), i();
 		}
 	}
 }
-function vr(e) {
-	let t = gr.get(e);
-	t && (t.flags |= 8, gr.delete(e));
+function _r(e) {
+	let t = hr.get(e);
+	t && (t.flags |= 8, hr.delete(e));
 }
 ue().requestIdleCallback, ue().cancelIdleCallback;
-var yr = (e) => !!e.type.__asyncLoader, br = (e) => e.type.__isKeepAlive;
+var vr = (e) => !!e.type.__asyncLoader, yr = (e) => e.type.__isKeepAlive;
+function br(e, t) {
+	Sr(e, "a", t);
+}
 function xr(e, t) {
-	Cr(e, "a", t);
+	Sr(e, "da", t);
 }
-function Sr(e, t) {
-	Cr(e, "da", t);
-}
-function Cr(e, t, n = xa) {
+function Sr(e, t, n = Sa) {
 	let r = e.__wdc ||= () => {
 		let t = n;
 		for (; t;) {
@@ -1421,35 +1421,35 @@ function Cr(e, t, n = xa) {
 		}
 		return e();
 	};
-	if (Tr(t, r, n), n) {
+	if (wr(t, r, n), n) {
 		let e = n.parent;
-		for (; e && e.parent;) br(e.parent.vnode) && wr(r, t, n, e), e = e.parent;
+		for (; e && e.parent;) yr(e.parent.vnode) && Cr(r, t, n, e), e = e.parent;
 	}
 }
-function wr(e, t, n, r) {
-	let i = Tr(t, e, r, !0);
-	Mr(() => {
+function Cr(e, t, n, r) {
+	let i = wr(t, e, r, !0);
+	jr(() => {
 		c(r[t], i);
 	}, n);
 }
-function Tr(e, t, n = xa, r = !1) {
+function wr(e, t, n = Sa, r = !1) {
 	if (n) {
 		let i = n[e] || (n[e] = []), a = t.__weh ||= (...r) => {
 			Ue();
-			let i = Ta(n), a = on(t, n, e, r);
+			let i = Ea(n), a = an(t, n, e, r);
 			return i(), We(), a;
 		};
 		return r ? i.unshift(a) : i.push(a), a;
 	}
 }
-var Er = (e) => (t, n = xa) => {
-	(!Oa || e === "sp") && Tr(e, (...e) => t(...e), n);
-}, Dr = Er("bm"), Or = Er("m"), kr = Er("bu"), Ar = Er("u"), jr = Er("bum"), Mr = Er("um"), Nr = Er("sp"), Pr = Er("rtg"), Fr = Er("rtc");
-function Ir(e, t = xa) {
-	Tr("ec", e, t);
+var Tr = (e) => (t, n = Sa) => {
+	(!ka || e === "sp") && wr(e, (...e) => t(...e), n);
+}, Er = Tr("bm"), Dr = Tr("m"), Or = Tr("bu"), kr = Tr("u"), Ar = Tr("bum"), jr = Tr("um"), Mr = Tr("sp"), Nr = Tr("rtg"), Pr = Tr("rtc");
+function Fr(e, t = Sa) {
+	wr("ec", e, t);
 }
-var Lr = /* @__PURE__ */ Symbol.for("v-ndc");
-function R(e, t, n, r) {
+var Ir = /* @__PURE__ */ Symbol.for("v-ndc");
+function z(e, t, n, r) {
 	let i, a = n && n[r], o = d(e);
 	if (o || g(e)) {
 		let n = o && /* @__PURE__ */ Rt(e), r = !1, s = !1;
@@ -1470,7 +1470,7 @@ function R(e, t, n, r) {
 	else i = [];
 	return n && (n[r] = i), i;
 }
-var Rr = (e) => e ? Da(e) ? La(e) : Rr(e.parent) : null, zr = /* @__PURE__ */ s(/* @__PURE__ */ Object.create(null), {
+var Lr = (e) => e ? Oa(e) ? Ra(e) : Lr(e.parent) : null, Rr = /* @__PURE__ */ s(/* @__PURE__ */ Object.create(null), {
 	$: (e) => e,
 	$el: (e) => e.vnode.el,
 	$data: (e) => e.data,
@@ -1478,17 +1478,17 @@ var Rr = (e) => e ? Da(e) ? La(e) : Rr(e.parent) : null, zr = /* @__PURE__ */ s(
 	$attrs: (e) => e.attrs,
 	$slots: (e) => e.slots,
 	$refs: (e) => e.refs,
-	$parent: (e) => Rr(e.parent),
-	$root: (e) => Rr(e.root),
+	$parent: (e) => Lr(e.parent),
+	$root: (e) => Lr(e.root),
 	$host: (e) => e.ce,
 	$emit: (e) => e.emit,
-	$options: (e) => Jr(e),
+	$options: (e) => qr(e),
 	$forceUpdate: (e) => e.f ||= () => {
-		vn(e.update);
+		_n(e.update);
 	},
-	$nextTick: (e) => e.n ||= gn.bind(e.proxy),
-	$watch: (e) => In.bind(e)
-}), Br = (e, n) => e !== t && !e.__isScriptSetup && u(e, n), Vr = {
+	$nextTick: (e) => e.n ||= hn.bind(e.proxy),
+	$watch: (e) => Fn.bind(e)
+}), zr = (e, n) => e !== t && !e.__isScriptSetup && u(e, n), Br = {
 	get({ _: e }, n) {
 		if (n === "__v_skip") return !0;
 		let { ctx: r, setupState: i, data: a, props: o, accessCache: s, type: c, appContext: l } = e;
@@ -1500,13 +1500,13 @@ var Rr = (e) => e ? Da(e) ? La(e) : Rr(e.parent) : null, zr = /* @__PURE__ */ s(
 				case 4: return r[n];
 				case 3: return o[n];
 			}
-			else if (Br(i, n)) return s[n] = 1, i[n];
+			else if (zr(i, n)) return s[n] = 1, i[n];
 			else if (a !== t && u(a, n)) return s[n] = 2, a[n];
 			else if (u(o, n)) return s[n] = 3, o[n];
 			else if (r !== t && u(r, n)) return s[n] = 4, r[n];
-			else Ur && (s[n] = 0);
+			else Hr && (s[n] = 0);
 		}
-		let d = zr[n], f, p;
+		let d = Rr[n], f, p;
 		if (d) return n === "$attrs" && N(e.attrs, "get", ""), d(e);
 		if ((f = c.__cssModules) && (f = f[n])) return f;
 		if (r !== t && u(r, n)) return s[n] = 4, r[n];
@@ -1514,25 +1514,25 @@ var Rr = (e) => e ? Da(e) ? La(e) : Rr(e.parent) : null, zr = /* @__PURE__ */ s(
 	},
 	set({ _: e }, n, r) {
 		let { data: i, setupState: a, ctx: o } = e;
-		return Br(a, n) ? (a[n] = r, !0) : i !== t && u(i, n) ? (i[n] = r, !0) : u(e.props, n) || n[0] === "$" && n.slice(1) in e ? !1 : (o[n] = r, !0);
+		return zr(a, n) ? (a[n] = r, !0) : i !== t && u(i, n) ? (i[n] = r, !0) : u(e.props, n) || n[0] === "$" && n.slice(1) in e ? !1 : (o[n] = r, !0);
 	},
 	has({ _: { data: e, setupState: n, accessCache: r, ctx: i, appContext: a, props: o, type: s } }, c) {
 		let l;
-		return !!(r[c] || e !== t && c[0] !== "$" && u(e, c) || Br(n, c) || u(o, c) || u(i, c) || u(zr, c) || u(a.config.globalProperties, c) || (l = s.__cssModules) && l[c]);
+		return !!(r[c] || e !== t && c[0] !== "$" && u(e, c) || zr(n, c) || u(o, c) || u(i, c) || u(Rr, c) || u(a.config.globalProperties, c) || (l = s.__cssModules) && l[c]);
 	},
 	defineProperty(e, t, n) {
 		return n.get == null ? u(n, "value") && this.set(e, t, n.value, null) : e._.accessCache[t] = 0, Reflect.defineProperty(e, t, n);
 	}
 };
-function Hr(e) {
+function Vr(e) {
 	return d(e) ? e.reduce((e, t) => (e[t] = null, e), {}) : e;
 }
-var Ur = !0;
-function Wr(e) {
-	let t = Jr(e), n = e.proxy, i = e.ctx;
-	Ur = !1, t.beforeCreate && Kr(t.beforeCreate, e, "bc");
-	let { data: a, computed: o, methods: s, watch: c, provide: l, inject: u, created: f, beforeMount: p, mounted: m, beforeUpdate: g, updated: _, activated: y, deactivated: b, beforeDestroy: x, beforeUnmount: S, destroyed: C, unmounted: w, render: T, renderTracked: ee, renderTriggered: te, errorCaptured: E, serverPrefetch: ne, expose: D, inheritAttrs: re, components: ie, directives: ae, filters: oe } = t;
-	if (u && Gr(u, i, null), s) for (let e in s) {
+var Hr = !0;
+function Ur(e) {
+	let t = qr(e), n = e.proxy, i = e.ctx;
+	Hr = !1, t.beforeCreate && Gr(t.beforeCreate, e, "bc");
+	let { data: a, computed: o, methods: s, watch: c, provide: l, inject: u, created: f, beforeMount: p, mounted: m, beforeUpdate: g, updated: _, activated: y, deactivated: b, beforeDestroy: x, beforeUnmount: S, destroyed: C, unmounted: w, render: ee, renderTracked: te, renderTriggered: ne, errorCaptured: T, serverPrefetch: re, expose: E, inheritAttrs: ie, components: ae, directives: D, filters: oe } = t;
+	if (u && Wr(u, i, null), s) for (let e in s) {
 		let t = s[e];
 		h(t) && (i[e] = t.bind(n));
 	}
@@ -1540,8 +1540,8 @@ function Wr(e) {
 		let t = a.call(n, n);
 		v(t) && (e.data = /* @__PURE__ */ Pt(t));
 	}
-	if (Ur = !0, o) for (let e in o) {
-		let t = o[e], a = J({
+	if (Hr = !0, o) for (let e in o) {
+		let t = o[e], a = q({
 			get: h(t) ? t.bind(n, n) : h(t.get) ? t.get.bind(n, n) : r,
 			set: !h(t) && h(t.set) ? t.set.bind(n) : r
 		});
@@ -1552,20 +1552,20 @@ function Wr(e) {
 			set: (e) => a.value = e
 		});
 	}
-	if (c) for (let e in c) qr(c[e], i, n, e);
+	if (c) for (let e in c) Kr(c[e], i, n, e);
 	if (l) {
 		let e = h(l) ? l.call(n) : l;
 		Reflect.ownKeys(e).forEach((t) => {
-			An(t, e[t]);
+			kn(t, e[t]);
 		});
 	}
-	f && Kr(f, e, "c");
+	f && Gr(f, e, "c");
 	function O(e, t) {
 		d(t) ? t.forEach((t) => e(t.bind(n))) : t && e(t.bind(n));
 	}
-	if (O(Dr, p), O(Or, m), O(kr, g), O(Ar, _), O(xr, y), O(Sr, b), O(Ir, E), O(Fr, ee), O(Pr, te), O(jr, S), O(Mr, w), O(Nr, ne), d(D)) if (D.length) {
+	if (O(Er, p), O(Dr, m), O(Or, g), O(kr, _), O(br, y), O(xr, b), O(Fr, T), O(Pr, te), O(Nr, ne), O(Ar, S), O(jr, w), O(Mr, re), d(E)) if (E.length) {
 		let t = e.exposed ||= {};
-		D.forEach((e) => {
+		E.forEach((e) => {
 			Object.defineProperty(t, e, {
 				get: () => n[e],
 				set: (t) => n[e] = t,
@@ -1573,13 +1573,13 @@ function Wr(e) {
 			});
 		});
 	} else e.exposed ||= {};
-	T && e.render === r && (e.render = T), re != null && (e.inheritAttrs = re), ie && (e.components = ie), ae && (e.directives = ae), ne && mr(e);
+	ee && e.render === r && (e.render = ee), ie != null && (e.inheritAttrs = ie), ae && (e.components = ae), D && (e.directives = D), re && pr(e);
 }
-function Gr(e, t, n = r) {
-	d(e) && (e = $r(e));
+function Wr(e, t, n = r) {
+	d(e) && (e = Qr(e));
 	for (let n in e) {
 		let r = e[n], i;
-		i = v(r) ? "default" in r ? jn(r.from || n, r.default, !0) : jn(r.from || n) : jn(r), /* @__PURE__ */ F(i) ? Object.defineProperty(t, n, {
+		i = v(r) ? "default" in r ? An(r.from || n, r.default, !0) : An(r.from || n) : An(r), /* @__PURE__ */ F(i) ? Object.defineProperty(t, n, {
 			enumerable: !0,
 			configurable: !0,
 			get: () => i.value,
@@ -1587,69 +1587,69 @@ function Gr(e, t, n = r) {
 		}) : t[n] = i;
 	}
 }
-function Kr(e, t, n) {
-	on(d(e) ? e.map((e) => e.bind(t.proxy)) : e.bind(t.proxy), t, n);
+function Gr(e, t, n) {
+	an(d(e) ? e.map((e) => e.bind(t.proxy)) : e.bind(t.proxy), t, n);
 }
-function qr(e, t, n, r) {
-	let i = r.includes(".") ? Ln(n, r) : () => n[r];
+function Kr(e, t, n, r) {
+	let i = r.includes(".") ? In(n, r) : () => n[r];
 	if (g(e)) {
 		let n = t[e];
-		h(n) && Pn(i, n);
-	} else if (h(e)) Pn(i, e.bind(n));
-	else if (v(e)) if (d(e)) e.forEach((e) => qr(e, t, n, r));
+		h(n) && Nn(i, n);
+	} else if (h(e)) Nn(i, e.bind(n));
+	else if (v(e)) if (d(e)) e.forEach((e) => Kr(e, t, n, r));
 	else {
 		let r = h(e.handler) ? e.handler.bind(n) : t[e.handler];
-		h(r) && Pn(i, r, e);
+		h(r) && Nn(i, r, e);
 	}
 }
-function Jr(e) {
+function qr(e) {
 	let t = e.type, { mixins: n, extends: r } = t, { mixins: i, optionsCache: a, config: { optionMergeStrategies: o } } = e.appContext, s = a.get(t), c;
-	return s ? c = s : !i.length && !n && !r ? c = t : (c = {}, i.length && i.forEach((e) => Yr(c, e, o, !0)), Yr(c, t, o)), v(t) && a.set(t, c), c;
+	return s ? c = s : !i.length && !n && !r ? c = t : (c = {}, i.length && i.forEach((e) => Jr(c, e, o, !0)), Jr(c, t, o)), v(t) && a.set(t, c), c;
 }
-function Yr(e, t, n, r = !1) {
+function Jr(e, t, n, r = !1) {
 	let { mixins: i, extends: a } = t;
-	a && Yr(e, a, n, !0), i && i.forEach((t) => Yr(e, t, n, !0));
+	a && Jr(e, a, n, !0), i && i.forEach((t) => Jr(e, t, n, !0));
 	for (let i in t) if (!(r && i === "expose")) {
-		let r = Xr[i] || n && n[i];
+		let r = Yr[i] || n && n[i];
 		e[i] = r ? r(e[i], t[i]) : t[i];
 	}
 	return e;
 }
-var Xr = {
-	data: Zr,
+var Yr = {
+	data: Xr,
 	props: ti,
 	emits: ti,
 	methods: ei,
 	computed: ei,
-	beforeCreate: z,
-	created: z,
-	beforeMount: z,
-	mounted: z,
-	beforeUpdate: z,
-	updated: z,
-	beforeDestroy: z,
-	beforeUnmount: z,
-	destroyed: z,
-	unmounted: z,
-	activated: z,
-	deactivated: z,
-	errorCaptured: z,
-	serverPrefetch: z,
+	beforeCreate: $r,
+	created: $r,
+	beforeMount: $r,
+	mounted: $r,
+	beforeUpdate: $r,
+	updated: $r,
+	beforeDestroy: $r,
+	beforeUnmount: $r,
+	destroyed: $r,
+	unmounted: $r,
+	activated: $r,
+	deactivated: $r,
+	errorCaptured: $r,
+	serverPrefetch: $r,
 	components: ei,
 	directives: ei,
 	watch: ni,
-	provide: Zr,
-	inject: Qr
+	provide: Xr,
+	inject: Zr
 };
-function Zr(e, t) {
+function Xr(e, t) {
 	return t ? e ? function() {
 		return s(h(e) ? e.call(this, this) : e, h(t) ? t.call(this, this) : t);
 	} : t : e;
 }
-function Qr(e, t) {
-	return ei($r(e), $r(t));
+function Zr(e, t) {
+	return ei(Qr(e), Qr(t));
 }
-function $r(e) {
+function Qr(e) {
 	if (d(e)) {
 		let t = {};
 		for (let n = 0; n < e.length; n++) t[e[n]] = e[n];
@@ -1657,20 +1657,20 @@ function $r(e) {
 	}
 	return e;
 }
-function z(e, t) {
+function $r(e, t) {
 	return e ? [...new Set([].concat(e, t))] : t;
 }
 function ei(e, t) {
 	return e ? s(/* @__PURE__ */ Object.create(null), e, t) : t;
 }
 function ti(e, t) {
-	return e ? d(e) && d(t) ? [.../* @__PURE__ */ new Set([...e, ...t])] : s(/* @__PURE__ */ Object.create(null), Hr(e), Hr(t ?? {})) : t;
+	return e ? d(e) && d(t) ? [.../* @__PURE__ */ new Set([...e, ...t])] : s(/* @__PURE__ */ Object.create(null), Vr(e), Vr(t ?? {})) : t;
 }
 function ni(e, t) {
 	if (!e) return t;
 	if (!t) return e;
 	let n = s(/* @__PURE__ */ Object.create(null), e);
-	for (let r in t) n[r] = z(e[r], t[r]);
+	for (let r in t) n[r] = $r(e[r], t[r]);
 	return n;
 }
 function ri() {
@@ -1705,7 +1705,7 @@ function ai(e, t) {
 			_container: null,
 			_context: i,
 			_instance: null,
-			version: Ba,
+			version: Va,
 			get config() {
 				return i.config;
 			},
@@ -1724,15 +1724,15 @@ function ai(e, t) {
 			},
 			mount(a, o, s) {
 				if (!c) {
-					let u = l._ceVNode || G(n, r);
-					return u.appContext = i, s === !0 ? s = "svg" : s === !1 && (s = void 0), o && t ? t(u, a) : e(u, a, s), c = !0, l._container = a, a.__vue_app__ = l, La(u.component);
+					let u = l._ceVNode || W(n, r);
+					return u.appContext = i, s === !0 ? s = "svg" : s === !1 && (s = void 0), o && t ? t(u, a) : e(u, a, s), c = !0, l._container = a, a.__vue_app__ = l, Ra(u.component);
 				}
 			},
 			onUnmount(e) {
 				o.push(e);
 			},
 			unmount() {
-				c && (on(o, l._instance, 16), e(null, l._container), delete l._container.__vue_app__);
+				c && (an(o, l._instance, 16), e(null, l._container), delete l._container.__vue_app__);
 			},
 			provide(e, t) {
 				return i.provides[e] = t, l;
@@ -1750,18 +1750,18 @@ function ai(e, t) {
 		return l;
 	};
 }
-var oi = null, si = (e, t) => t === "modelValue" || t === "model-value" ? e.modelModifiers : e[`${t}Modifiers`] || e[`${E(t)}Modifiers`] || e[`${D(t)}Modifiers`];
+var oi = null, si = (e, t) => t === "modelValue" || t === "model-value" ? e.modelModifiers : e[`${t}Modifiers`] || e[`${T(t)}Modifiers`] || e[`${E(t)}Modifiers`];
 function ci(e, n, ...r) {
 	if (e.isUnmounted) return;
 	let i = e.vnode.props || t, a = r, o = n.startsWith("update:"), s = o && si(i, n.slice(7));
 	s && (s.trim && (a = r.map((e) => g(e) ? e.trim() : e)), s.number && (a = r.map(se)));
-	let c, l = i[c = ie(n)] || i[c = ie(E(n))];
-	!l && o && (l = i[c = ie(D(n))]), l && on(l, e, 6, a);
+	let c, l = i[c = ae(n)] || i[c = ae(T(n))];
+	!l && o && (l = i[c = ae(E(n))]), l && an(l, e, 6, a);
 	let u = i[c + "Once"];
 	if (u) {
 		if (!e.emitted) e.emitted = {};
 		else if (e.emitted[c]) return;
-		e.emitted[c] = !0, on(u, e, 6, a);
+		e.emitted[c] = !0, an(u, e, 6, a);
 	}
 }
 var li = /* @__PURE__ */ new WeakMap();
@@ -1779,31 +1779,31 @@ function ui(e, t, n = !1) {
 	return !a && !c ? (v(e) && r.set(e, null), null) : (d(a) ? a.forEach((e) => o[e] = null) : s(o, a), v(e) && r.set(e, o), o);
 }
 function di(e, t) {
-	return !e || !a(t) ? !1 : (t = t.slice(2), t = t === "Once" ? t : t.replace(/Once$/, ""), u(e, t[0].toLowerCase() + t.slice(1)) || u(e, D(t)) || u(e, t));
+	return !e || !a(t) ? !1 : (t = t.slice(2), t = t === "Once" ? t : t.replace(/Once$/, ""), u(e, t[0].toLowerCase() + t.slice(1)) || u(e, E(t)) || u(e, t));
 }
 function fi(e) {
-	let { type: t, vnode: n, proxy: r, withProxy: i, propsOptions: [a], slots: s, attrs: c, emit: l, render: u, renderCache: d, props: f, data: p, setupState: m, ctx: h, inheritAttrs: g } = e, _ = Dn(e), v, y;
+	let { type: t, vnode: n, proxy: r, withProxy: i, propsOptions: [a], slots: s, attrs: c, emit: l, render: u, renderCache: d, props: f, data: p, setupState: m, ctx: h, inheritAttrs: g } = e, _ = En(e), v, y;
 	try {
 		if (n.shapeFlag & 4) {
 			let e = i || r, t = e;
-			v = pa(u.call(t, e, d, f, m, p, h)), y = c;
+			v = ma(u.call(t, e, d, f, m, p, h)), y = c;
 		} else {
 			let e = t;
-			v = pa(e.length > 1 ? e(f, {
+			v = ma(e.length > 1 ? e(f, {
 				attrs: c,
 				slots: s,
 				emit: l
 			}) : e(f, null)), y = t.props ? c : pi(c);
 		}
 	} catch (t) {
-		Qi.length = 0, sn(t, e, 1), v = G(Xi);
+		$i.length = 0, on(t, e, 1), v = W(Zi);
 	}
 	let b = v;
 	if (y && g !== !1) {
 		let e = Object.keys(y), { shapeFlag: t } = b;
-		e.length && t & 7 && (a && e.some(o) && (y = mi(y, a)), b = da(b, y, !1, !0));
+		e.length && t & 7 && (a && e.some(o) && (y = mi(y, a)), b = fa(b, y, !1, !0));
 	}
-	return n.dirs && (b = da(b, null, !1, !0), b.dirs = b.dirs ? b.dirs.concat(n.dirs) : n.dirs), n.transition && dr(b, n.transition), v = b, Dn(_), v;
+	return n.dirs && (b = fa(b, null, !1, !0), b.dirs = b.dirs ? b.dirs.concat(n.dirs) : n.dirs), n.transition && ur(b, n.transition), v = b, En(_), v;
 }
 var pi = (e) => {
 	let t;
@@ -1869,7 +1869,7 @@ function Ci(e, t, n, r) {
 				let d = t[o];
 				if (c) if (u(a, o)) d !== a[o] && (a[o] = d, l = !0);
 				else {
-					let t = E(o);
+					let t = T(o);
 					i[t] = Ti(c, s, t, d, e, !1);
 				}
 				else d !== a[o] && (a[o] = d, l = !0);
@@ -1878,7 +1878,7 @@ function Ci(e, t, n, r) {
 	} else {
 		wi(e, t, i, a) && (l = !0);
 		let r;
-		for (let a in s) (!t || !u(t, a) && ((r = D(a)) === a || !u(t, r))) && (c ? n && (n[a] !== void 0 || n[r] !== void 0) && (i[a] = Ti(c, s, a, void 0, e, !0)) : delete i[a]);
+		for (let a in s) (!t || !u(t, a) && ((r = E(a)) === a || !u(t, r))) && (c ? n && (n[a] !== void 0 || n[r] !== void 0) && (i[a] = Ti(c, s, a, void 0, e, !0)) : delete i[a]);
 		if (a !== s) for (let e in a) (!t || !u(t, e)) && (delete a[e], l = !0);
 	}
 	l && et(e.attrs, "set", "");
@@ -1886,9 +1886,9 @@ function Ci(e, t, n, r) {
 function wi(e, n, r, i) {
 	let [a, o] = e.propsOptions, s = !1, c;
 	if (n) for (let t in n) {
-		if (T(t)) continue;
+		if (ee(t)) continue;
 		let l = n[t], d;
-		a && u(a, d = E(t)) ? !o || !o.includes(d) ? r[d] = l : (c ||= {})[d] = l : di(e.emitsOptions, t) || (!(t in i) || l !== i[t]) && (i[t] = l, s = !0);
+		a && u(a, d = T(t)) ? !o || !o.includes(d) ? r[d] = l : (c ||= {})[d] = l : di(e.emitsOptions, t) || (!(t in i) || l !== i[t]) && (i[t] = l, s = !0);
 	}
 	if (o) {
 		let n = /* @__PURE__ */ P(r), i = c || t;
@@ -1909,13 +1909,13 @@ function Ti(e, t, n, r, i, a) {
 				let { propsDefaults: a } = i;
 				if (n in a) r = a[n];
 				else {
-					let o = Ta(i);
+					let o = Ea(i);
 					r = a[n] = e.call(null, t), o();
 				}
 			} else r = e;
 			i.ce && i.ce._setProp(n, r);
 		}
-		o[0] && (a && !e ? r = !1 : o[1] && (r === "" || r === D(n)) && (r = !0));
+		o[0] && (a && !e ? r = !1 : o[1] && (r === "" || r === E(n)) && (r = !0));
 	}
 	return r;
 }
@@ -1934,11 +1934,11 @@ function Di(e, r, i = !1) {
 	}
 	if (!c && !p) return v(e) && a.set(e, n), n;
 	if (d(c)) for (let e = 0; e < c.length; e++) {
-		let n = E(c[e]);
+		let n = T(c[e]);
 		Oi(n) && (l[n] = t);
 	}
 	else if (c) for (let e in c) {
-		let t = E(e);
+		let t = T(e);
 		if (Oi(t)) {
 			let n = c[e], r = l[t] = d(n) || h(n) ? { type: n } : s({}, n), i = r.type, a = !1, o = !0;
 			if (d(i)) for (let e = 0; e < i.length; ++e) {
@@ -1957,11 +1957,11 @@ function Di(e, r, i = !1) {
 	return v(e) && a.set(e, m), m;
 }
 function Oi(e) {
-	return e[0] !== "$" && !T(e);
+	return e[0] !== "$" && !ee(e);
 }
-var ki = (e) => e === "_" || e === "_ctx" || e === "$stable", Ai = (e) => d(e) ? e.map(pa) : [pa(e)], ji = (e, t, n) => {
+var ki = (e) => e === "_" || e === "_ctx" || e === "$stable", Ai = (e) => d(e) ? e.map(ma) : [ma(e)], ji = (e, t, n) => {
 	if (t._n) return t;
-	let r = On((...e) => Ai(t(...e)), n);
+	let r = Dn((...e) => Ai(t(...e)), n);
 	return r._c = !1, r;
 }, Mi = (e, t, n) => {
 	let r = e._ctx;
@@ -1992,33 +1992,33 @@ var ki = (e) => e === "_" || e === "_ctx" || e === "$stable", Ai = (e) => d(e) ?
 		e ? r && e === 1 ? o = !1 : Pi(a, n, r) : (o = !n.$stable, Mi(n, a)), s = n;
 	} else n && (Ni(e, n), s = { default: 1 });
 	if (o) for (let e in a) !ki(e) && s[e] == null && delete a[e];
-}, B = Ji;
-function Li(e) {
-	return Ri(e);
+}, Li = Yi;
+function Ri(e) {
+	return zi(e);
 }
-function Ri(e, i) {
+function zi(e, i) {
 	let a = ue();
 	a.__VUE__ = !0;
 	let { insert: o, remove: s, patchProp: c, createElement: l, createText: u, createComment: d, setText: f, setElementText: p, parentNode: m, nextSibling: h, setScopeId: g = r, insertStaticContent: _ } = e, v = (e, t, n, r = null, i = null, a = null, o = void 0, s = null, c = !!t.dynamicChildren) => {
 		if (e === t) return;
-		e && !oa(e, t) && (r = ye(e), he(e, i, a, !0), e = null), t.patchFlag === -2 && (c = !1, t.dynamicChildren = null);
+		e && !sa(e, t) && (r = ye(e), he(e, i, a, !0), e = null), t.patchFlag === -2 && (c = !1, t.dynamicChildren = null);
 		let { type: l, ref: u, shapeFlag: d } = t;
 		switch (l) {
-			case Yi:
+			case Xi:
 				y(e, t, n, r);
 				break;
-			case Xi:
+			case Zi:
 				b(e, t, n, r);
 				break;
-			case Zi:
+			case Qi:
 				e ?? x(t, n, r, o);
 				break;
-			case V:
-				ie(e, t, n, r, i, a, o, s, c);
+			case B:
+				ae(e, t, n, r, i, a, o, s, c);
 				break;
-			default: d & 1 ? w(e, t, n, r, i, a, o, s, c) : d & 6 ? ae(e, t, n, r, i, a, o, s, c) : (d & 64 || d & 128) && l.process(e, t, n, r, i, a, o, s, c, Se);
+			default: d & 1 ? w(e, t, n, r, i, a, o, s, c) : d & 6 ? D(e, t, n, r, i, a, o, s, c) : (d & 64 || d & 128) && l.process(e, t, n, r, i, a, o, s, c, Se);
 		}
-		u != null && i ? _r(u, e && e.ref, a, t || e, !t) : u == null && e && e.ref != null && _r(e.ref, null, a, e, !0);
+		u != null && i ? gr(u, e && e.ref, a, t || e, !t) : u == null && e && e.ref != null && gr(e.ref, null, a, e, !0);
 	}, y = (e, t, n, r) => {
 		if (e == null) o(t.el = u(t.children), n, r);
 		else {
@@ -2038,48 +2038,48 @@ function Ri(e, i) {
 		for (; e && e !== t;) n = h(e), s(e), e = n;
 		s(t);
 	}, w = (e, t, n, r, i, a, o, s, c) => {
-		if (t.type === "svg" ? o = "svg" : t.type === "math" && (o = "mathml"), e == null) ee(t, n, r, i, a, o, s, c);
+		if (t.type === "svg" ? o = "svg" : t.type === "math" && (o = "mathml"), e == null) te(t, n, r, i, a, o, s, c);
 		else {
 			let n = e.el && e.el._isVueCE ? e.el : null;
 			try {
-				n && n._beginPatch(), ne(e, t, i, a, o, s, c);
+				n && n._beginPatch(), re(e, t, i, a, o, s, c);
 			} finally {
 				n && n._endPatch();
 			}
 		}
-	}, ee = (e, t, n, r, i, a, s, u) => {
+	}, te = (e, t, n, r, i, a, s, u) => {
 		let d, f, { props: m, shapeFlag: h, transition: g, dirs: _ } = e;
-		if (d = e.el = l(e.type, a, m && m.is, m), h & 8 ? p(d, e.children) : h & 16 && E(e.children, d, null, r, i, zi(e, a), s, u), _ && kn(e, null, r, "created"), te(d, e, e.scopeId, s, r), m) {
-			for (let e in m) e !== "value" && !T(e) && c(d, e, null, m[e], a, r);
-			"value" in m && c(d, "value", null, m.value, a), (f = m.onVnodeBeforeMount) && _a(f, r, e);
+		if (d = e.el = l(e.type, a, m && m.is, m), h & 8 ? p(d, e.children) : h & 16 && T(e.children, d, null, r, i, Bi(e, a), s, u), _ && On(e, null, r, "created"), ne(d, e, e.scopeId, s, r), m) {
+			for (let e in m) e !== "value" && !ee(e) && c(d, e, null, m[e], a, r);
+			"value" in m && c(d, "value", null, m.value, a), (f = m.onVnodeBeforeMount) && va(f, r, e);
 		}
-		_ && kn(e, null, r, "beforeMount");
-		let v = Vi(i, g);
-		v && g.beforeEnter(d), o(d, t, n), ((f = m && m.onVnodeMounted) || v || _) && B(() => {
+		_ && On(e, null, r, "beforeMount");
+		let v = Hi(i, g);
+		v && g.beforeEnter(d), o(d, t, n), ((f = m && m.onVnodeMounted) || v || _) && Li(() => {
 			try {
-				f && _a(f, r, e), v && g.enter(d), _ && kn(e, null, r, "mounted");
+				f && va(f, r, e), v && g.enter(d), _ && On(e, null, r, "mounted");
 			} finally {}
 		}, i);
-	}, te = (e, t, n, r, i) => {
+	}, ne = (e, t, n, r, i) => {
 		if (n && g(e, n), r) for (let t = 0; t < r.length; t++) g(e, r[t]);
 		if (i) {
 			let n = i.subTree;
-			if (t === n || qi(n.type) && (n.ssContent === t || n.ssFallback === t)) {
+			if (t === n || Ji(n.type) && (n.ssContent === t || n.ssFallback === t)) {
 				let t = i.vnode;
-				te(e, t, t.scopeId, t.slotScopeIds, i.parent);
+				ne(e, t, t.scopeId, t.slotScopeIds, i.parent);
 			}
 		}
-	}, E = (e, t, n, r, i, a, o, s, c = 0) => {
+	}, T = (e, t, n, r, i, a, o, s, c = 0) => {
 		for (let l = c; l < e.length; l++) {
-			let c = e[l] = s ? ma(e[l]) : pa(e[l]);
+			let c = e[l] = s ? ha(e[l]) : ma(e[l]);
 			v(null, c, t, n, r, i, a, o, s);
 		}
-	}, ne = (e, n, r, i, a, o, s) => {
+	}, re = (e, n, r, i, a, o, s) => {
 		let l = n.el = e.el, { patchFlag: u, dynamicChildren: d, dirs: f } = n;
 		u |= e.patchFlag & 16;
 		let m = e.props || t, h = n.props || t, g;
-		if (r && Bi(r, !1), (g = h.onVnodeBeforeUpdate) && _a(g, r, n, e), f && kn(n, e, r, "beforeUpdate"), r && Bi(r, !0), d && (!e.dynamicChildren || e.dynamicChildren.length !== d.length) && (u = 0, s = !1, d = null), (m.innerHTML && h.innerHTML == null || m.textContent && h.textContent == null) && p(l, ""), d ? D(e.dynamicChildren, d, l, r, i, zi(n, a), o) : s || de(e, n, l, null, r, i, zi(n, a), o, !1), u > 0) {
-			if (u & 16) re(l, m, h, r, a);
+		if (r && Vi(r, !1), (g = h.onVnodeBeforeUpdate) && va(g, r, n, e), f && On(n, e, r, "beforeUpdate"), r && Vi(r, !0), d && (!e.dynamicChildren || e.dynamicChildren.length !== d.length) && (u = 0, s = !1, d = null), (m.innerHTML && h.innerHTML == null || m.textContent && h.textContent == null) && p(l, ""), d ? E(e.dynamicChildren, d, l, r, i, Bi(n, a), o) : s || de(e, n, l, null, r, i, Bi(n, a), o, !1), u > 0) {
+			if (u & 16) ie(l, m, h, r, a);
 			else if (u & 2 && m.class !== h.class && c(l, "class", null, h.class, a), u & 4 && c(l, "style", m.style, h.style, a), u & 8) {
 				let e = n.dynamicProps;
 				for (let t = 0; t < e.length; t++) {
@@ -2088,35 +2088,35 @@ function Ri(e, i) {
 				}
 			}
 			u & 1 && e.children !== n.children && p(l, n.children);
-		} else !s && d == null && re(l, m, h, r, a);
-		((g = h.onVnodeUpdated) || f) && B(() => {
-			g && _a(g, r, n, e), f && kn(n, e, r, "updated");
+		} else !s && d == null && ie(l, m, h, r, a);
+		((g = h.onVnodeUpdated) || f) && Li(() => {
+			g && va(g, r, n, e), f && On(n, e, r, "updated");
 		}, i);
-	}, D = (e, t, n, r, i, a, o) => {
+	}, E = (e, t, n, r, i, a, o) => {
 		for (let s = 0; s < t.length; s++) {
-			let c = e[s], l = t[s], u = c.el && (c.type === V || !oa(c, l) || c.shapeFlag & 198) ? m(c.el) : n;
+			let c = e[s], l = t[s], u = c.el && (c.type === B || !sa(c, l) || c.shapeFlag & 198) ? m(c.el) : n;
 			v(c, l, u, null, r, i, a, o, !0);
 		}
-	}, re = (e, n, r, i, a) => {
+	}, ie = (e, n, r, i, a) => {
 		if (n !== r) {
-			if (n !== t) for (let t in n) !T(t) && !(t in r) && c(e, t, n[t], null, a, i);
+			if (n !== t) for (let t in n) !ee(t) && !(t in r) && c(e, t, n[t], null, a, i);
 			for (let t in r) {
-				if (T(t)) continue;
+				if (ee(t)) continue;
 				let o = r[t], s = n[t];
 				o !== s && t !== "value" && c(e, t, s, o, a, i);
 			}
 			"value" in r && c(e, "value", n.value, r.value, a);
 		}
-	}, ie = (e, t, n, r, i, a, s, c, l) => {
+	}, ae = (e, t, n, r, i, a, s, c, l) => {
 		let d = t.el = e ? e.el : u(""), f = t.anchor = e ? e.anchor : u(""), { patchFlag: p, dynamicChildren: m, slotScopeIds: h } = t;
-		h && (c = c ? c.concat(h) : h), e == null ? (o(d, n, r), o(f, n, r), E(t.children || [], n, f, i, a, s, c, l)) : p > 0 && p & 64 && m && e.dynamicChildren && e.dynamicChildren.length === m.length ? (D(e.dynamicChildren, m, n, i, a, s, c), (t.key != null || i && t === i.subTree) && Hi(e, t, !0)) : de(e, t, n, f, i, a, s, c, l);
-	}, ae = (e, t, n, r, i, a, o, s, c) => {
+		h && (c = c ? c.concat(h) : h), e == null ? (o(d, n, r), o(f, n, r), T(t.children || [], n, f, i, a, s, c, l)) : p > 0 && p & 64 && m && e.dynamicChildren && e.dynamicChildren.length === m.length ? (E(e.dynamicChildren, m, n, i, a, s, c), (t.key != null || i && t === i.subTree) && Ui(e, t, !0)) : de(e, t, n, f, i, a, s, c, l);
+	}, D = (e, t, n, r, i, a, o, s, c) => {
 		t.slotScopeIds = s, e == null ? t.shapeFlag & 512 ? i.ctx.activate(t, n, r, o, c) : O(t, n, r, i, a, o, c) : se(e, t, c);
 	}, O = (e, t, n, r, i, a, o) => {
-		let s = e.component = ba(e, r, i);
-		if (br(e) && (s.ctx.renderer = Se), ka(s, !1, o), s.asyncDep) {
+		let s = e.component = xa(e, r, i);
+		if (yr(e) && (s.ctx.renderer = Se), Aa(s, !1, o), s.asyncDep) {
 			if (i && i.registerDep(s, ce, o), !e.el) {
-				let r = s.subTree = G(Xi);
+				let r = s.subTree = W(Zi);
 				b(null, r, t, n), e.placeholder = r.el;
 			}
 		} else ce(s, e, t, n, i, a, o);
@@ -2132,10 +2132,10 @@ function Ri(e, i) {
 			if (e.isMounted) {
 				let { next: t, bu: n, u: r, parent: s, vnode: c } = e;
 				{
-					let n = Wi(e);
+					let n = Gi(e);
 					if (n) {
 						t && (t.el = c.el, le(e, t, o)), n.asyncDep.then(() => {
-							B(() => {
+							Li(() => {
 								e.isUnmounted || l();
 							}, i);
 						});
@@ -2143,12 +2143,12 @@ function Ri(e, i) {
 					}
 				}
 				let u = t, d;
-				Bi(e, !1), t ? (t.el = c.el, le(e, t, o)) : t = c, n && oe(n), (d = t.props && t.props.onVnodeBeforeUpdate) && _a(d, s, t, c), Bi(e, !0);
+				Vi(e, !1), t ? (t.el = c.el, le(e, t, o)) : t = c, n && oe(n), (d = t.props && t.props.onVnodeBeforeUpdate) && va(d, s, t, c), Vi(e, !0);
 				let f = fi(e), p = e.subTree;
-				e.subTree = f, v(p, f, m(p.el), ye(p), e, i, a), t.el = f.el, u === null && vi(e, f.el), r && B(r, i), (d = t.props && t.props.onVnodeUpdated) && B(() => _a(d, s, t, c), i);
+				e.subTree = f, v(p, f, m(p.el), ye(p), e, i, a), t.el = f.el, u === null && vi(e, f.el), r && Li(r, i), (d = t.props && t.props.onVnodeUpdated) && Li(() => va(d, s, t, c), i);
 			} else {
-				let o, { el: s, props: c } = t, { bm: l, m: u, parent: d, root: f, type: p } = e, m = yr(t);
-				if (Bi(e, !1), l && oe(l), !m && (o = c && c.onVnodeBeforeMount) && _a(o, d, t), Bi(e, !0), s && Ce) {
+				let o, { el: s, props: c } = t, { bm: l, m: u, parent: d, root: f, type: p } = e, m = vr(t);
+				if (Vi(e, !1), l && oe(l), !m && (o = c && c.onVnodeBeforeMount) && va(o, d, t), Vi(e, !0), s && Ce) {
 					let t = () => {
 						e.subTree = fi(e), Ce(s, e.subTree, e, i, null);
 					};
@@ -2158,22 +2158,22 @@ function Ri(e, i) {
 					let o = e.subTree = fi(e);
 					v(null, o, n, r, e, i, a), t.el = o.el;
 				}
-				if (u && B(u, i), !m && (o = c && c.onVnodeMounted)) {
+				if (u && Li(u, i), !m && (o = c && c.onVnodeMounted)) {
 					let e = t;
-					B(() => _a(o, d, e), i);
+					Li(() => va(o, d, e), i);
 				}
-				(t.shapeFlag & 256 || d && yr(d.vnode) && d.vnode.shapeFlag & 256) && e.a && B(e.a, i), e.isMounted = !0, t = n = r = null;
+				(t.shapeFlag & 256 || d && vr(d.vnode) && d.vnode.shapeFlag & 256) && e.a && Li(e.a, i), e.isMounted = !0, t = n = r = null;
 			}
 		};
 		e.scope.on();
 		let c = e.effect = new Oe(s);
 		e.scope.off();
 		let l = e.update = c.run.bind(c), u = e.job = c.runIfDirty.bind(c);
-		u.i = e, u.id = e.uid, c.scheduler = () => vn(u), Bi(e, !0), l();
+		u.i = e, u.id = e.uid, c.scheduler = () => _n(u), Vi(e, !0), l();
 	}, le = (e, t, n) => {
 		t.component = e;
 		let r = e.vnode.props;
-		e.vnode = t, e.next = null, Ci(e, t.props, r, n), Ii(e, t.children, n), Ue(), xn(e), We();
+		e.vnode = t, e.next = null, Ci(e, t.props, r, n), Ii(e, t.children, n), Ue(), bn(e), We();
 	}, de = (e, t, n, r, i, a, o, s, c = !1) => {
 		let l = e && e.children, u = e ? e.shapeFlag : 0, d = t.children, { patchFlag: f, shapeFlag: m } = t;
 		if (f > 0) {
@@ -2186,39 +2186,39 @@ function Ri(e, i) {
 				return;
 			}
 		}
-		m & 8 ? (u & 16 && ve(l, i, a), d !== l && p(n, d)) : u & 16 ? m & 16 ? pe(l, d, n, r, i, a, o, s, c) : ve(l, i, a, !0) : (u & 8 && p(n, ""), m & 16 && E(d, n, r, i, a, o, s, c));
+		m & 8 ? (u & 16 && ve(l, i, a), d !== l && p(n, d)) : u & 16 ? m & 16 ? pe(l, d, n, r, i, a, o, s, c) : ve(l, i, a, !0) : (u & 8 && p(n, ""), m & 16 && T(d, n, r, i, a, o, s, c));
 	}, fe = (e, t, r, i, a, o, s, c, l) => {
 		e ||= n, t ||= n;
 		let u = e.length, d = t.length, f = Math.min(u, d), p;
 		for (p = 0; p < f; p++) {
-			let n = t[p] = l ? ma(t[p]) : pa(t[p]);
+			let n = t[p] = l ? ha(t[p]) : ma(t[p]);
 			v(e[p], n, r, null, a, o, s, c, l);
 		}
-		u > d ? ve(e, a, o, !0, !1, f) : E(t, r, i, a, o, s, c, l, f);
+		u > d ? ve(e, a, o, !0, !1, f) : T(t, r, i, a, o, s, c, l, f);
 	}, pe = (e, t, r, i, a, o, s, c, l) => {
 		let u = 0, d = t.length, f = e.length - 1, p = d - 1;
 		for (; u <= f && u <= p;) {
-			let n = e[u], i = t[u] = l ? ma(t[u]) : pa(t[u]);
-			if (oa(n, i)) v(n, i, r, null, a, o, s, c, l);
+			let n = e[u], i = t[u] = l ? ha(t[u]) : ma(t[u]);
+			if (sa(n, i)) v(n, i, r, null, a, o, s, c, l);
 			else break;
 			u++;
 		}
 		for (; u <= f && u <= p;) {
-			let n = e[f], i = t[p] = l ? ma(t[p]) : pa(t[p]);
-			if (oa(n, i)) v(n, i, r, null, a, o, s, c, l);
+			let n = e[f], i = t[p] = l ? ha(t[p]) : ma(t[p]);
+			if (sa(n, i)) v(n, i, r, null, a, o, s, c, l);
 			else break;
 			f--, p--;
 		}
 		if (u > f) {
 			if (u <= p) {
 				let e = p + 1, n = e < d ? t[e].el : i;
-				for (; u <= p;) v(null, t[u] = l ? ma(t[u]) : pa(t[u]), r, n, a, o, s, c, l), u++;
+				for (; u <= p;) v(null, t[u] = l ? ha(t[u]) : ma(t[u]), r, n, a, o, s, c, l), u++;
 			}
 		} else if (u > p) for (; u <= f;) he(e[u], a, o, !0), u++;
 		else {
 			let m = u, h = u, g = /* @__PURE__ */ new Map();
 			for (u = h; u <= p; u++) {
-				let e = t[u] = l ? ma(t[u]) : pa(t[u]);
+				let e = t[u] = l ? ha(t[u]) : ma(t[u]);
 				e.key != null && g.set(e.key, u);
 			}
 			let _, y = 0, b = p - h + 1, x = !1, S = 0, C = Array(b);
@@ -2231,15 +2231,15 @@ function Ri(e, i) {
 				}
 				let i;
 				if (n.key != null) i = g.get(n.key);
-				else for (_ = h; _ <= p; _++) if (C[_ - h] === 0 && oa(n, t[_])) {
+				else for (_ = h; _ <= p; _++) if (C[_ - h] === 0 && sa(n, t[_])) {
 					i = _;
 					break;
 				}
 				i === void 0 ? he(n, a, o, !0) : (C[i - h] = u + 1, i >= S ? S = i : x = !0, v(n, t[i], r, null, a, o, s, c, l), y++);
 			}
-			let w = x ? Ui(C) : n;
+			let w = x ? Wi(C) : n;
 			for (_ = w.length - 1, u = b - 1; u >= 0; u--) {
-				let e = h + u, n = t[e], f = t[e + 1], p = e + 1 < d ? f.el || Ki(f) : i;
+				let e = h + u, n = t[e], f = t[e + 1], p = e + 1 < d ? f.el || qi(f) : i;
 				C[u] === 0 ? v(null, n, r, p, a, o, s, c, l) : x && (_ < 0 || u !== w[_] ? me(n, r, p, 2) : _--);
 			}
 		}
@@ -2257,23 +2257,23 @@ function Ri(e, i) {
 			c.move(e, t, n, Se);
 			return;
 		}
-		if (c === V) {
+		if (c === B) {
 			o(a, t, n);
 			for (let e = 0; e < u.length; e++) me(u[e], t, n, r);
 			o(e.anchor, t, n);
 			return;
 		}
-		if (c === Zi) {
+		if (c === Qi) {
 			S(e, t, n);
 			return;
 		}
-		if (r !== 2 && d & 1 && l) if (r === 0) l.persisted && !a[Qn] ? o(a, t, n) : (l.beforeEnter(a), o(a, t, n), B(() => l.enter(a), i));
+		if (r !== 2 && d & 1 && l) if (r === 0) l.persisted && !a[Zn] ? o(a, t, n) : (l.beforeEnter(a), o(a, t, n), Li(() => l.enter(a), i));
 		else {
 			let { leave: r, delayLeave: i, afterLeave: c } = l, u = () => {
 				e.ctx.isUnmounted ? s(a) : o(a, t, n);
 			}, d = () => {
-				let e = a._isLeaving || !!a[Qn];
-				a._isLeaving && a[Qn](!0), l.persisted && !e ? u() : r(a, () => {
+				let e = a._isLeaving || !!a[Zn];
+				a._isLeaving && a[Zn](!0), l.persisted && !e ? u() : r(a, () => {
 					u(), c && c();
 				});
 			};
@@ -2282,30 +2282,30 @@ function Ri(e, i) {
 		else o(a, t, n);
 	}, he = (e, t, n, r = !1, i = !1) => {
 		let { type: a, props: o, ref: s, children: c, dynamicChildren: l, shapeFlag: u, patchFlag: d, dirs: f, cacheIndex: p, memo: m } = e;
-		if (d === -2 && (i = !1), s != null && (Ue(), _r(s, null, n, e, !0), We()), p != null && (t.renderCache[p] = void 0), u & 256) {
+		if (d === -2 && (i = !1), s != null && (Ue(), gr(s, null, n, e, !0), We()), p != null && (t.renderCache[p] = void 0), u & 256) {
 			t.ctx.deactivate(e);
 			return;
 		}
-		let h = u & 1 && f, g = !yr(e), _;
-		if (g && (_ = o && o.onVnodeBeforeUnmount) && _a(_, t, e), u & 6) _e(e.component, n, r);
+		let h = u & 1 && f, g = !vr(e), _;
+		if (g && (_ = o && o.onVnodeBeforeUnmount) && va(_, t, e), u & 6) _e(e.component, n, r);
 		else {
 			if (u & 128) {
 				e.suspense.unmount(n, r);
 				return;
 			}
-			h && kn(e, null, t, "beforeUnmount"), u & 64 ? e.type.remove(e, t, n, Se, r) : l && !l.hasOnce && (a !== V || d > 0 && d & 64) ? ve(l, t, n, !1, !0) : (a === V && d & 384 || !i && u & 16) && ve(c, t, n), r && k(e);
+			h && On(e, null, t, "beforeUnmount"), u & 64 ? e.type.remove(e, t, n, Se, r) : l && !l.hasOnce && (a !== B || d > 0 && d & 64) ? ve(l, t, n, !1, !0) : (a === B && d & 384 || !i && u & 16) && ve(c, t, n), r && k(e);
 		}
 		let v = m != null && p == null;
-		(g && (_ = o && o.onVnodeUnmounted) || h || v) && B(() => {
-			_ && _a(_, t, e), h && kn(e, null, t, "unmounted"), v && (e.el = null);
+		(g && (_ = o && o.onVnodeUnmounted) || h || v) && Li(() => {
+			_ && va(_, t, e), h && On(e, null, t, "unmounted"), v && (e.el = null);
 		}, n);
 	}, k = (e) => {
 		let { type: t, el: n, anchor: r, transition: i } = e;
-		if (t === V) {
+		if (t === B) {
 			ge(n, r);
 			return;
 		}
-		if (t === Zi) {
+		if (t === Qi) {
 			C(e);
 			return;
 		}
@@ -2322,7 +2322,7 @@ function Ri(e, i) {
 		s(t);
 	}, _e = (e, t, n) => {
 		let { bum: r, scope: i, job: a, subTree: o, um: s, m: c, a: l } = e;
-		Gi(c), Gi(l), r && oe(r), i.stop(), a && (a.flags |= 8, he(o, e, t, n)), s && B(s, t), B(() => {
+		Ki(c), Ki(l), r && oe(r), i.stop(), a && (a.flags |= 8, he(o, e, t, n)), s && Li(s, t), Li(() => {
 			e.isUnmounted = !0;
 		}, t);
 	}, ve = (e, t, n, r = !1, i = !1, a = 0) => {
@@ -2330,20 +2330,20 @@ function Ri(e, i) {
 	}, ye = (e) => {
 		if (e.shapeFlag & 6) return ye(e.component.subTree);
 		if (e.shapeFlag & 128) return e.suspense.next();
-		let t = h(e.anchor || e.el), n = t && t[zn];
+		let t = h(e.anchor || e.el), n = t && t[Rn];
 		return n ? h(n) : t;
 	}, be = !1, xe = (e, t, n) => {
 		let r;
-		e == null ? t._vnode && (he(t._vnode, null, null, !0), r = t._vnode.component) : v(t._vnode || null, e, t, null, null, null, n), t._vnode = e, be ||= (be = !0, xn(r), Sn(), !1);
+		e == null ? t._vnode && (he(t._vnode, null, null, !0), r = t._vnode.component) : v(t._vnode || null, e, t, null, null, null, n), t._vnode = e, be ||= (be = !0, bn(r), xn(), !1);
 	}, Se = {
 		p: v,
 		um: he,
 		m: me,
 		r: k,
 		mt: O,
-		mc: E,
+		mc: T,
 		pc: de,
-		pbc: D,
+		pbc: E,
 		n: ye,
 		o: e
 	}, A, Ce;
@@ -2353,23 +2353,23 @@ function Ri(e, i) {
 		createApp: ai(xe, A)
 	};
 }
-function zi({ type: e, props: t }, n) {
+function Bi({ type: e, props: t }, n) {
 	return n === "svg" && e === "foreignObject" || n === "mathml" && e === "annotation-xml" && t && t.encoding && t.encoding.includes("html") ? void 0 : n;
 }
-function Bi({ effect: e, job: t }, n) {
+function Vi({ effect: e, job: t }, n) {
 	n ? (e.flags |= 32, t.flags |= 4) : (e.flags &= -33, t.flags &= -5);
 }
-function Vi(e, t) {
+function Hi(e, t) {
 	return (!e || e && !e.pendingBranch) && t && !t.persisted;
 }
-function Hi(e, t, n = !1) {
+function Ui(e, t, n = !1) {
 	let r = e.children, i = t.children;
 	if (d(r) && d(i)) for (let e = 0; e < r.length; e++) {
 		let t = r[e], a = i[e];
-		a.shapeFlag & 1 && !a.dynamicChildren && ((a.patchFlag <= 0 || a.patchFlag === 32) && (a = i[e] = ma(i[e]), a.el = t.el), !n && a.patchFlag !== -2 && Hi(t, a)), a.type === Yi && (a.patchFlag === -1 && (a = i[e] = ma(a)), a.el = t.el), a.type === Xi && !a.el && (a.el = t.el);
+		a.shapeFlag & 1 && !a.dynamicChildren && ((a.patchFlag <= 0 || a.patchFlag === 32) && (a = i[e] = ha(i[e]), a.el = t.el), !n && a.patchFlag !== -2 && Ui(t, a)), a.type === Xi && (a.patchFlag === -1 && (a = i[e] = ha(a)), a.el = t.el), a.type === Zi && !a.el && (a.el = t.el);
 	}
 }
-function Ui(e) {
+function Wi(e) {
 	let t = e.slice(), n = [0], r, i, a, o, s, c = e.length;
 	for (r = 0; r < c; r++) {
 		let c = e[r];
@@ -2385,63 +2385,63 @@ function Ui(e) {
 	for (a = n.length, o = n[a - 1]; a-- > 0;) n[a] = o, o = t[o];
 	return n;
 }
-function Wi(e) {
-	let t = e.subTree.component;
-	if (t) return t.asyncDep && !t.asyncResolved ? t : Wi(t);
-}
 function Gi(e) {
-	if (e) for (let t = 0; t < e.length; t++) e[t].flags |= 8;
+	let t = e.subTree.component;
+	if (t) return t.asyncDep && !t.asyncResolved ? t : Gi(t);
 }
 function Ki(e) {
+	if (e) for (let t = 0; t < e.length; t++) e[t].flags |= 8;
+}
+function qi(e) {
 	if (e.placeholder) return e.placeholder;
 	let t = e.component;
-	return t ? Ki(t.subTree) : null;
+	return t ? qi(t.subTree) : null;
 }
-var qi = (e) => e.__isSuspense;
-function Ji(e, t) {
-	t && t.pendingBranch ? d(e) ? t.effects.push(...e) : t.effects.push(e) : bn(e);
+var Ji = (e) => e.__isSuspense;
+function Yi(e, t) {
+	t && t.pendingBranch ? d(e) ? t.effects.push(...e) : t.effects.push(e) : yn(e);
 }
-var V = /* @__PURE__ */ Symbol.for("v-fgt"), Yi = /* @__PURE__ */ Symbol.for("v-txt"), Xi = /* @__PURE__ */ Symbol.for("v-cmt"), Zi = /* @__PURE__ */ Symbol.for("v-stc"), Qi = [], $i = null;
-function H(e = !1) {
-	Qi.push($i = e ? null : []);
+var B = /* @__PURE__ */ Symbol.for("v-fgt"), Xi = /* @__PURE__ */ Symbol.for("v-txt"), Zi = /* @__PURE__ */ Symbol.for("v-cmt"), Qi = /* @__PURE__ */ Symbol.for("v-stc"), $i = [], ea = null;
+function V(e = !1) {
+	$i.push(ea = e ? null : []);
 }
-function ea() {
-	Qi.pop(), $i = Qi[Qi.length - 1] || null;
+function ta() {
+	$i.pop(), ea = $i[$i.length - 1] || null;
 }
-var ta = 1;
-function na(e, t = !1) {
-	ta += e, e < 0 && $i && t && ($i.hasOnce = !0);
+var na = 1;
+function ra(e, t = !1) {
+	na += e, e < 0 && ea && t && (ea.hasOnce = !0);
 }
-function ra(e) {
-	return e.dynamicChildren = ta > 0 ? $i || n : null, ea(), ta > 0 && $i && $i.push(e), e;
+function ia(e) {
+	return e.dynamicChildren = na > 0 ? ea || n : null, ta(), na > 0 && ea && ea.push(e), e;
 }
-function U(e, t, n, r, i, a) {
-	return ra(W(e, t, n, r, i, a, !0));
+function H(e, t, n, r, i, a) {
+	return ia(U(e, t, n, r, i, a, !0));
 }
-function ia(e, t, n, r, i) {
-	return ra(G(e, t, n, r, i, !0));
+function aa(e, t, n, r, i) {
+	return ia(W(e, t, n, r, i, !0));
 }
-function aa(e) {
+function oa(e) {
 	return e ? e.__v_isVNode === !0 : !1;
 }
-function oa(e, t) {
+function sa(e, t) {
 	return e.type === t.type && e.key === t.key;
 }
-var sa = ({ key: e }) => e ?? null, ca = ({ ref: e, ref_key: t, ref_for: n }) => (typeof e == "number" && (e = "" + e), e == null ? null : g(e) || /* @__PURE__ */ F(e) || h(e) ? {
-	i: Tn,
+var ca = ({ key: e }) => e ?? null, la = ({ ref: e, ref_key: t, ref_for: n }) => (typeof e == "number" && (e = "" + e), e == null ? null : g(e) || /* @__PURE__ */ F(e) || h(e) ? {
+	i: wn,
 	r: e,
 	k: t,
 	f: !!n
 } : e);
-function W(e, t = null, n = null, r = 0, i = null, a = e === V ? 0 : 1, o = !1, s = !1) {
+function U(e, t = null, n = null, r = 0, i = null, a = e === B ? 0 : 1, o = !1, s = !1) {
 	let c = {
 		__v_isVNode: !0,
 		__v_skip: !0,
 		type: e,
 		props: t,
-		key: t && sa(t),
-		ref: t && ca(t),
-		scopeId: En,
+		key: t && ca(t),
+		ref: t && la(t),
+		scopeId: Tn,
 		slotScopeIds: null,
 		children: n,
 		component: null,
@@ -2461,35 +2461,35 @@ function W(e, t = null, n = null, r = 0, i = null, a = e === V ? 0 : 1, o = !1, 
 		dynamicProps: i,
 		dynamicChildren: null,
 		appContext: null,
-		ctx: Tn
+		ctx: wn
 	};
-	return s ? (ha(c, n), a & 128 && e.normalize(c)) : n && (c.shapeFlag |= g(n) ? 8 : 16), ta > 0 && !o && $i && (c.patchFlag > 0 || a & 6) && c.patchFlag !== 32 && $i.push(c), c;
+	return s ? (ga(c, n), a & 128 && e.normalize(c)) : n && (c.shapeFlag |= g(n) ? 8 : 16), na > 0 && !o && ea && (c.patchFlag > 0 || a & 6) && c.patchFlag !== 32 && ea.push(c), c;
 }
-var G = la;
-function la(e, t = null, n = null, r = 0, i = null, a = !1) {
-	if ((!e || e === Lr) && (e = Xi), aa(e)) {
-		let r = da(e, t, !0);
-		return n && ha(r, n), ta > 0 && !a && $i && (r.shapeFlag & 6 ? $i[$i.indexOf(e)] = r : $i.push(r)), r.patchFlag = -2, r;
+var W = ua;
+function ua(e, t = null, n = null, r = 0, i = null, a = !1) {
+	if ((!e || e === Ir) && (e = Zi), oa(e)) {
+		let r = fa(e, t, !0);
+		return n && ga(r, n), na > 0 && !a && ea && (r.shapeFlag & 6 ? ea[ea.indexOf(e)] = r : ea.push(r)), r.patchFlag = -2, r;
 	}
-	if (Ra(e) && (e = e.__vccOpts), t) {
-		t = ua(t);
+	if (za(e) && (e = e.__vccOpts), t) {
+		t = da(t);
 		let { class: e, style: n } = t;
 		e && !g(e) && (t.class = k(e)), v(n) && (/* @__PURE__ */ Vt(n) && !d(n) && (n = s({}, n)), t.style = de(n));
 	}
-	let o = g(e) ? 1 : qi(e) ? 128 : Bn(e) ? 64 : v(e) ? 4 : h(e) ? 2 : 0;
-	return W(e, t, n, r, i, o, a, !0);
+	let o = g(e) ? 1 : Ji(e) ? 128 : zn(e) ? 64 : v(e) ? 4 : h(e) ? 2 : 0;
+	return U(e, t, n, r, i, o, a, !0);
 }
-function ua(e) {
+function da(e) {
 	return e ? /* @__PURE__ */ Vt(e) || xi(e) ? s({}, e) : e : null;
 }
-function da(e, t, n = !1, r = !1) {
-	let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e, l = t ? ga(i || {}, t) : i, u = {
+function fa(e, t, n = !1, r = !1) {
+	let { props: i, ref: a, patchFlag: o, children: s, transition: c } = e, l = t ? _a(i || {}, t) : i, u = {
 		__v_isVNode: !0,
 		__v_skip: !0,
 		type: e.type,
 		props: l,
-		key: l && sa(l),
-		ref: t && t.ref ? n && a ? d(a) ? a.concat(ca(t)) : [a, ca(t)] : ca(t) : a,
+		key: l && ca(l),
+		ref: t && t.ref ? n && a ? d(a) ? a.concat(la(t)) : [a, la(t)] : la(t) : a,
 		scopeId: e.scopeId,
 		slotScopeIds: e.slotScopeIds,
 		children: s,
@@ -2498,7 +2498,7 @@ function da(e, t, n = !1, r = !1) {
 		targetAnchor: e.targetAnchor,
 		staticCount: e.staticCount,
 		shapeFlag: e.shapeFlag,
-		patchFlag: t && e.type !== V ? o === -1 ? 16 : o | 16 : o,
+		patchFlag: t && e.type !== B ? o === -1 ? 16 : o | 16 : o,
 		dynamicProps: e.dynamicProps,
 		dynamicChildren: e.dynamicChildren,
 		appContext: e.appContext,
@@ -2506,58 +2506,58 @@ function da(e, t, n = !1, r = !1) {
 		transition: c,
 		component: e.component,
 		suspense: e.suspense,
-		ssContent: e.ssContent && da(e.ssContent),
-		ssFallback: e.ssFallback && da(e.ssFallback),
+		ssContent: e.ssContent && fa(e.ssContent),
+		ssFallback: e.ssFallback && fa(e.ssFallback),
 		placeholder: e.placeholder,
 		el: e.el,
 		anchor: e.anchor,
 		ctx: e.ctx,
 		ce: e.ce
 	};
-	return c && r && dr(u, c.clone(u)), u;
+	return c && r && ur(u, c.clone(u)), u;
 }
-function K(e = " ", t = 0) {
-	return G(Yi, null, e, t);
+function G(e = " ", t = 0) {
+	return W(Xi, null, e, t);
 }
-function fa(e, t) {
-	let n = G(Zi, null, e);
+function pa(e, t) {
+	let n = W(Qi, null, e);
 	return n.staticCount = t, n;
 }
-function q(e = "", t = !1) {
-	return t ? (H(), ia(Xi, null, e)) : G(Xi, null, e);
-}
-function pa(e) {
-	return e == null || typeof e == "boolean" ? G(Xi) : d(e) ? G(V, null, e.slice()) : aa(e) ? ma(e) : G(Yi, null, String(e));
+function K(e = "", t = !1) {
+	return t ? (V(), aa(Zi, null, e)) : W(Zi, null, e);
 }
 function ma(e) {
-	return e.el === null && e.patchFlag !== -1 || e.memo ? e : da(e);
+	return e == null || typeof e == "boolean" ? W(Zi) : d(e) ? W(B, null, e.slice()) : oa(e) ? ha(e) : W(Xi, null, String(e));
 }
-function ha(e, t) {
+function ha(e) {
+	return e.el === null && e.patchFlag !== -1 || e.memo ? e : fa(e);
+}
+function ga(e, t) {
 	let n = 0, { shapeFlag: r } = e;
 	if (t == null) t = null;
 	else if (d(t)) n = 16;
 	else if (typeof t == "object") if (r & 65) {
 		let n = t.default;
-		n && (n._c && (n._d = !1), ha(e, n()), n._c && (n._d = !0));
+		n && (n._c && (n._d = !1), ga(e, n()), n._c && (n._d = !0));
 		return;
 	} else {
 		n = 32;
 		let r = t._;
-		!r && !xi(t) ? t._ctx = Tn : r === 3 && Tn && (Tn.slots._ === 1 ? t._ = 1 : (t._ = 2, e.patchFlag |= 1024));
+		!r && !xi(t) ? t._ctx = wn : r === 3 && wn && (wn.slots._ === 1 ? t._ = 1 : (t._ = 2, e.patchFlag |= 1024));
 	}
 	else if (h(t)) {
 		if (r & 65) {
-			ha(e, { default: t });
+			ga(e, { default: t });
 			return;
 		}
 		t = {
 			default: t,
-			_ctx: Tn
+			_ctx: wn
 		}, n = 32;
-	} else t = String(t), r & 64 ? (n = 16, t = [K(t)]) : n = 8;
+	} else t = String(t), r & 64 ? (n = 16, t = [G(t)]) : n = 8;
 	e.children = t, e.shapeFlag |= n;
 }
-function ga(...e) {
+function _a(...e) {
 	let t = {};
 	for (let n = 0; n < e.length; n++) {
 		let r = e[n];
@@ -2570,13 +2570,13 @@ function ga(...e) {
 	}
 	return t;
 }
-function _a(e, t, n, r = null) {
-	on(e, t, 7, [n, r]);
+function va(e, t, n, r = null) {
+	an(e, t, 7, [n, r]);
 }
-var va = ri(), ya = 0;
-function ba(e, n, r) {
-	let i = e.type, a = (n ? n.appContext : e.appContext) || va, o = {
-		uid: ya++,
+var ya = ri(), ba = 0;
+function xa(e, n, r) {
+	let i = e.type, a = (n ? n.appContext : e.appContext) || ya, o = {
+		uid: ba++,
 		vnode: e,
 		type: i,
 		parent: n,
@@ -2641,7 +2641,7 @@ function ba(e, n, r) {
 	};
 	return o.ctx = { _: o }, o.root = n ? n.root : o, o.emit = ci.bind(null, o), e.ce && e.ce(o), o;
 }
-var xa = null, Sa = () => xa || Tn, Ca, wa;
+var Sa = null, Ca = () => Sa || wn, wa, Ta;
 {
 	let e = ue(), t = (t, n) => {
 		let r;
@@ -2649,79 +2649,79 @@ var xa = null, Sa = () => xa || Tn, Ca, wa;
 			r.length > 1 ? r.forEach((t) => t(e)) : r[0](e);
 		};
 	};
-	Ca = t("__VUE_INSTANCE_SETTERS__", (e) => xa = e), wa = t("__VUE_SSR_SETTERS__", (e) => Oa = e);
+	wa = t("__VUE_INSTANCE_SETTERS__", (e) => Sa = e), Ta = t("__VUE_SSR_SETTERS__", (e) => ka = e);
 }
-var Ta = (e) => {
-	let t = xa;
-	return Ca(e), e.scope.on(), () => {
-		e.scope.off(), Ca(t);
+var Ea = (e) => {
+	let t = Sa;
+	return wa(e), e.scope.on(), () => {
+		e.scope.off(), wa(t);
 	};
-}, Ea = () => {
-	xa && xa.scope.off(), Ca(null);
+}, Da = () => {
+	Sa && Sa.scope.off(), wa(null);
 };
-function Da(e) {
+function Oa(e) {
 	return e.vnode.shapeFlag & 4;
 }
-var Oa = !1;
-function ka(e, t = !1, n = !1) {
-	t && wa(t);
-	let { props: r, children: i } = e.vnode, a = Da(e);
+var ka = !1;
+function Aa(e, t = !1, n = !1) {
+	t && Ta(t);
+	let { props: r, children: i } = e.vnode, a = Oa(e);
 	Si(e, r, a, t), Fi(e, i, n || t);
-	let o = a ? Aa(e, t) : void 0;
-	return t && wa(!1), o;
+	let o = a ? ja(e, t) : void 0;
+	return t && Ta(!1), o;
 }
-function Aa(e, t) {
+function ja(e, t) {
 	let n = e.type;
-	e.accessCache = /* @__PURE__ */ Object.create(null), e.proxy = new Proxy(e.ctx, Vr);
+	e.accessCache = /* @__PURE__ */ Object.create(null), e.proxy = new Proxy(e.ctx, Br);
 	let { setup: r } = n;
 	if (r) {
 		Ue();
-		let n = e.setupContext = r.length > 1 ? Ia(e) : null, i = Ta(e), a = an(r, e, 0, [e.props, n]), o = y(a);
-		if (We(), i(), (o || e.sp) && !yr(e) && mr(e), o) {
-			if (a.then(Ea, Ea), t) return a.then((n) => {
-				ja(e, n, t);
+		let n = e.setupContext = r.length > 1 ? La(e) : null, i = Ea(e), a = rn(r, e, 0, [e.props, n]), o = y(a);
+		if (We(), i(), (o || e.sp) && !vr(e) && pr(e), o) {
+			if (a.then(Da, Da), t) return a.then((n) => {
+				Ma(e, n, t);
 			}).catch((t) => {
-				sn(t, e, 0);
+				on(t, e, 0);
 			});
 			e.asyncDep = a;
-		} else ja(e, a, t);
-	} else Pa(e, t);
+		} else Ma(e, a, t);
+	} else Fa(e, t);
 }
-function ja(e, t, n) {
-	h(t) ? e.type.__ssrInlineRender ? e.ssrRender = t : e.render = t : v(t) && (e.setupState = Yt(t)), Pa(e, n);
+function Ma(e, t, n) {
+	h(t) ? e.type.__ssrInlineRender ? e.ssrRender = t : e.render = t : v(t) && (e.setupState = Jt(t)), Fa(e, n);
 }
-var Ma, Na;
-function Pa(e, t, n) {
+var Na, Pa;
+function Fa(e, t, n) {
 	let i = e.type;
 	if (!e.render) {
-		if (!t && Ma && !i.render) {
-			let t = i.template || Jr(e).template;
+		if (!t && Na && !i.render) {
+			let t = i.template || qr(e).template;
 			if (t) {
 				let { isCustomElement: n, compilerOptions: r } = e.appContext.config, { delimiters: a, compilerOptions: o } = i;
-				i.render = Ma(t, s(s({
+				i.render = Na(t, s(s({
 					isCustomElement: n,
 					delimiters: a
 				}, r), o));
 			}
 		}
-		e.render = i.render || r, Na && Na(e);
+		e.render = i.render || r, Pa && Pa(e);
 	}
 	{
-		let t = Ta(e);
+		let t = Ea(e);
 		Ue();
 		try {
-			Wr(e);
+			Ur(e);
 		} finally {
 			We(), t();
 		}
 	}
 }
-var Fa = { get(e, t) {
+var Ia = { get(e, t) {
 	return N(e, "get", ""), e[t];
 } };
-function Ia(e) {
+function La(e) {
 	return {
-		attrs: new Proxy(e.attrs, Fa),
+		attrs: new Proxy(e.attrs, Ia),
 		slots: e.slots,
 		emit: e.emit,
 		expose: (t) => {
@@ -2729,35 +2729,35 @@ function Ia(e) {
 		}
 	};
 }
-function La(e) {
-	return e.exposed ? e.exposeProxy ||= new Proxy(Yt(Ht(e.exposed)), {
+function Ra(e) {
+	return e.exposed ? e.exposeProxy ||= new Proxy(Jt(Ht(e.exposed)), {
 		get(t, n) {
 			if (n in t) return t[n];
-			if (n in zr) return zr[n](e);
+			if (n in Rr) return Rr[n](e);
 		},
 		has(e, t) {
-			return t in e || t in zr;
+			return t in e || t in Rr;
 		}
 	}) : e.proxy;
 }
-function Ra(e) {
+function za(e) {
 	return h(e) && "__vccOpts" in e;
 }
-var J = (e, t) => /* @__PURE__ */ Zt(e, t, Oa);
-function za(e, t, n) {
+var q = (e, t) => /* @__PURE__ */ Xt(e, t, ka);
+function Ba(e, t, n) {
 	try {
-		na(-1);
+		ra(-1);
 		let r = arguments.length;
-		return r === 2 ? v(t) && !d(t) ? aa(t) ? G(e, null, [t]) : G(e, t) : G(e, null, t) : (r > 3 ? n = Array.prototype.slice.call(arguments, 2) : r === 3 && aa(n) && (n = [n]), G(e, t, n));
+		return r === 2 ? v(t) && !d(t) ? oa(t) ? W(e, null, [t]) : W(e, t) : W(e, null, t) : (r > 3 ? n = Array.prototype.slice.call(arguments, 2) : r === 3 && oa(n) && (n = [n]), W(e, t, n));
 	} finally {
-		na(1);
+		ra(1);
 	}
 }
-var Ba = "3.5.40", Va = void 0, Ha = typeof window < "u" && window.trustedTypes;
-if (Ha) try {
-	Va = /* @__PURE__ */ Ha.createPolicy("vue", { createHTML: (e) => e });
+var Va = "3.5.40", Ha = void 0, Ua = typeof window < "u" && window.trustedTypes;
+if (Ua) try {
+	Ha = /* @__PURE__ */ Ua.createPolicy("vue", { createHTML: (e) => e });
 } catch {}
-var Ua = Va ? (e) => Va.createHTML(e) : (e) => e, Wa = "http://www.w3.org/2000/svg", Ga = "http://www.w3.org/1998/Math/MathML", Ka = typeof document < "u" ? document : null, qa = Ka && /* @__PURE__ */ Ka.createElement("template"), Ja = {
+var Wa = Ha ? (e) => Ha.createHTML(e) : (e) => e, Ga = "http://www.w3.org/2000/svg", Ka = "http://www.w3.org/1998/Math/MathML", qa = typeof document < "u" ? document : null, Ja = qa && /* @__PURE__ */ qa.createElement("template"), Ya = {
 	insert: (e, t, n) => {
 		t.insertBefore(e, n || null);
 	},
@@ -2766,11 +2766,11 @@ var Ua = Va ? (e) => Va.createHTML(e) : (e) => e, Wa = "http://www.w3.org/2000/s
 		t && t.removeChild(e);
 	},
 	createElement: (e, t, n, r) => {
-		let i = t === "svg" ? Ka.createElementNS(Wa, e) : t === "mathml" ? Ka.createElementNS(Ga, e) : n ? Ka.createElement(e, { is: n }) : Ka.createElement(e);
+		let i = t === "svg" ? qa.createElementNS(Ga, e) : t === "mathml" ? qa.createElementNS(Ka, e) : n ? qa.createElement(e, { is: n }) : qa.createElement(e);
 		return e === "select" && r && r.multiple != null && i.setAttribute("multiple", r.multiple), i;
 	},
-	createText: (e) => Ka.createTextNode(e),
-	createComment: (e) => Ka.createComment(e),
+	createText: (e) => qa.createTextNode(e),
+	createComment: (e) => qa.createComment(e),
 	setText: (e, t) => {
 		e.nodeValue = t;
 	},
@@ -2779,7 +2779,7 @@ var Ua = Va ? (e) => Va.createHTML(e) : (e) => e, Wa = "http://www.w3.org/2000/s
 	},
 	parentNode: (e) => e.parentNode,
 	nextSibling: (e) => e.nextSibling,
-	querySelector: (e) => Ka.querySelector(e),
+	querySelector: (e) => qa.querySelector(e),
 	setScopeId(e, t) {
 		e.setAttribute(t, "");
 	},
@@ -2787,8 +2787,8 @@ var Ua = Va ? (e) => Va.createHTML(e) : (e) => e, Wa = "http://www.w3.org/2000/s
 		let o = n ? n.previousSibling : t.lastChild;
 		if (i && (i === a || i.nextSibling)) for (; t.insertBefore(i.cloneNode(!0), n), !(i === a || !(i = i.nextSibling)););
 		else {
-			qa.innerHTML = Ua(r === "svg" ? `<svg>${e}</svg>` : r === "mathml" ? `<math>${e}</math>` : e);
-			let i = qa.content;
+			Ja.innerHTML = Wa(r === "svg" ? `<svg>${e}</svg>` : r === "mathml" ? `<math>${e}</math>` : e);
+			let i = Ja.content;
 			if (r === "svg" || r === "mathml") {
 				let e = i.firstChild;
 				for (; e.firstChild;) i.appendChild(e.firstChild);
@@ -2798,7 +2798,7 @@ var Ua = Va ? (e) => Va.createHTML(e) : (e) => e, Wa = "http://www.w3.org/2000/s
 		}
 		return [o ? o.nextSibling : t.firstChild, n ? n.previousSibling : t.lastChild];
 	}
-}, Ya = "transition", Xa = "animation", Za = /* @__PURE__ */ Symbol("_vtc"), Qa = {
+}, Xa = "transition", Za = "animation", Qa = /* @__PURE__ */ Symbol("_vtc"), $a = {
 	name: String,
 	type: String,
 	css: {
@@ -2819,81 +2819,81 @@ var Ua = Va ? (e) => Va.createHTML(e) : (e) => e, Wa = "http://www.w3.org/2000/s
 	leaveFromClass: String,
 	leaveActiveClass: String,
 	leaveToClass: String
-}, $a = /* @__PURE__ */ s({}, nr, Qa), eo = /* @__PURE__ */ ((e) => (e.displayName = "Transition", e.props = $a, e))((e, { slots: t }) => za(or, ro(e), t)), to = (e, t = []) => {
+}, eo = /* @__PURE__ */ s({}, tr, $a), to = /* @__PURE__ */ ((e) => (e.displayName = "Transition", e.props = eo, e))((e, { slots: t }) => Ba(ar, io(e), t)), no = (e, t = []) => {
 	d(e) ? e.forEach((e) => e(...t)) : e && e(...t);
-}, no = (e) => e ? d(e) ? e.some((e) => e.length > 1) : e.length > 1 : !1;
-function ro(e) {
+}, ro = (e) => e ? d(e) ? e.some((e) => e.length > 1) : e.length > 1 : !1;
+function io(e) {
 	let t = {};
-	for (let n in e) n in Qa || (t[n] = e[n]);
+	for (let n in e) n in $a || (t[n] = e[n]);
 	if (e.css === !1) return t;
-	let { name: n = "v", type: r, duration: i, enterFromClass: a = `${n}-enter-from`, enterActiveClass: o = `${n}-enter-active`, enterToClass: c = `${n}-enter-to`, appearFromClass: l = a, appearActiveClass: u = o, appearToClass: d = c, leaveFromClass: f = `${n}-leave-from`, leaveActiveClass: p = `${n}-leave-active`, leaveToClass: m = `${n}-leave-to` } = e, h = io(i), g = h && h[0], _ = h && h[1], { onBeforeEnter: v, onEnter: y, onEnterCancelled: b, onLeave: x, onLeaveCancelled: S, onBeforeAppear: C = v, onAppear: w = y, onAppearCancelled: T = b } = t, ee = (e, t, n, r) => {
-		e._enterCancelled = r, so(e, t ? d : c), so(e, t ? u : o), n && n();
-	}, te = (e, t) => {
-		e._isLeaving = !1, so(e, f), so(e, m), so(e, p), t && t();
-	}, E = (e) => (t, n) => {
-		let i = e ? w : y, o = () => ee(t, e, n);
-		to(i, [t, o]), co(() => {
-			so(t, e ? l : a), oo(t, e ? d : c), no(i) || uo(t, r, g, o);
+	let { name: n = "v", type: r, duration: i, enterFromClass: a = `${n}-enter-from`, enterActiveClass: o = `${n}-enter-active`, enterToClass: c = `${n}-enter-to`, appearFromClass: l = a, appearActiveClass: u = o, appearToClass: d = c, leaveFromClass: f = `${n}-leave-from`, leaveActiveClass: p = `${n}-leave-active`, leaveToClass: m = `${n}-leave-to` } = e, h = ao(i), g = h && h[0], _ = h && h[1], { onBeforeEnter: v, onEnter: y, onEnterCancelled: b, onLeave: x, onLeaveCancelled: S, onBeforeAppear: C = v, onAppear: w = y, onAppearCancelled: ee = b } = t, te = (e, t, n, r) => {
+		e._enterCancelled = r, co(e, t ? d : c), co(e, t ? u : o), n && n();
+	}, ne = (e, t) => {
+		e._isLeaving = !1, co(e, f), co(e, m), co(e, p), t && t();
+	}, T = (e) => (t, n) => {
+		let i = e ? w : y, o = () => te(t, e, n);
+		no(i, [t, o]), lo(() => {
+			co(t, e ? l : a), so(t, e ? d : c), ro(i) || fo(t, r, g, o);
 		});
 	};
 	return s(t, {
 		onBeforeEnter(e) {
-			to(v, [e]), oo(e, a), oo(e, o);
+			no(v, [e]), so(e, a), so(e, o);
 		},
 		onBeforeAppear(e) {
-			to(C, [e]), oo(e, l), oo(e, u);
+			no(C, [e]), so(e, l), so(e, u);
 		},
-		onEnter: E(!1),
-		onAppear: E(!0),
+		onEnter: T(!1),
+		onAppear: T(!0),
 		onLeave(e, t) {
 			e._isLeaving = !0;
-			let n = () => te(e, t);
-			oo(e, f), e._enterCancelled ? (oo(e, p), ho(e)) : (ho(e), oo(e, p)), co(() => {
-				e._isLeaving && (so(e, f), oo(e, m), no(x) || uo(e, r, _, n));
-			}), to(x, [e, n]);
+			let n = () => ne(e, t);
+			so(e, f), e._enterCancelled ? (so(e, p), go(e)) : (go(e), so(e, p)), lo(() => {
+				e._isLeaving && (co(e, f), so(e, m), ro(x) || fo(e, r, _, n));
+			}), no(x, [e, n]);
 		},
 		onEnterCancelled(e) {
-			ee(e, !1, void 0, !0), to(b, [e]);
+			te(e, !1, void 0, !0), no(b, [e]);
 		},
 		onAppearCancelled(e) {
-			ee(e, !0, void 0, !0), to(T, [e]);
+			te(e, !0, void 0, !0), no(ee, [e]);
 		},
 		onLeaveCancelled(e) {
-			te(e), to(S, [e]);
+			ne(e), no(S, [e]);
 		}
 	});
 }
-function io(e) {
+function ao(e) {
 	if (e == null) return null;
-	if (v(e)) return [ao(e.enter), ao(e.leave)];
+	if (v(e)) return [oo(e.enter), oo(e.leave)];
 	{
-		let t = ao(e);
+		let t = oo(e);
 		return [t, t];
 	}
 }
-function ao(e) {
+function oo(e) {
 	return ce(e);
 }
-function oo(e, t) {
-	t.split(/\s+/).forEach((t) => t && e.classList.add(t)), (e[Za] || (e[Za] = /* @__PURE__ */ new Set())).add(t);
-}
 function so(e, t) {
-	t.split(/\s+/).forEach((t) => t && e.classList.remove(t));
-	let n = e[Za];
-	n && (n.delete(t), n.size || (e[Za] = void 0));
+	t.split(/\s+/).forEach((t) => t && e.classList.add(t)), (e[Qa] || (e[Qa] = /* @__PURE__ */ new Set())).add(t);
 }
-function co(e) {
+function co(e, t) {
+	t.split(/\s+/).forEach((t) => t && e.classList.remove(t));
+	let n = e[Qa];
+	n && (n.delete(t), n.size || (e[Qa] = void 0));
+}
+function lo(e) {
 	requestAnimationFrame(() => {
 		requestAnimationFrame(e);
 	});
 }
-var lo = 0;
-function uo(e, t, n, r) {
-	let i = e._endId = ++lo, a = () => {
+var uo = 0;
+function fo(e, t, n, r) {
+	let i = e._endId = ++uo, a = () => {
 		i === e._endId && r();
 	};
 	if (n != null) return setTimeout(a, n);
-	let { type: o, timeout: s, propCount: c } = fo(e, t);
+	let { type: o, timeout: s, propCount: c } = po(e, t);
 	if (!o) return r();
 	let l = o + "end", u = 0, d = () => {
 		e.removeEventListener(l, f), a();
@@ -2904,10 +2904,10 @@ function uo(e, t, n, r) {
 		u < c && d();
 	}, s + 1), e.addEventListener(l, f);
 }
-function fo(e, t) {
-	let n = window.getComputedStyle(e), r = (e) => (n[e] || "").split(", "), i = r(`${Ya}Delay`), a = r(`${Ya}Duration`), o = po(i, a), s = r(`${Xa}Delay`), c = r(`${Xa}Duration`), l = po(s, c), u = null, d = 0, f = 0;
-	t === Ya ? o > 0 && (u = Ya, d = o, f = a.length) : t === Xa ? l > 0 && (u = Xa, d = l, f = c.length) : (d = Math.max(o, l), u = d > 0 ? o > l ? Ya : Xa : null, f = u ? u === Ya ? a.length : c.length : 0);
-	let p = u === Ya && /\b(?:transform|all)(?:,|$)/.test(r(`${Ya}Property`).toString());
+function po(e, t) {
+	let n = window.getComputedStyle(e), r = (e) => (n[e] || "").split(", "), i = r(`${Xa}Delay`), a = r(`${Xa}Duration`), o = mo(i, a), s = r(`${Za}Delay`), c = r(`${Za}Duration`), l = mo(s, c), u = null, d = 0, f = 0;
+	t === Xa ? o > 0 && (u = Xa, d = o, f = a.length) : t === Za ? l > 0 && (u = Za, d = l, f = c.length) : (d = Math.max(o, l), u = d > 0 ? o > l ? Xa : Za : null, f = u ? u === Xa ? a.length : c.length : 0);
+	let p = u === Xa && /\b(?:transform|all)(?:,|$)/.test(r(`${Xa}Property`).toString());
 	return {
 		type: u,
 		timeout: d,
@@ -2915,78 +2915,78 @@ function fo(e, t) {
 		hasTransform: p
 	};
 }
-function po(e, t) {
+function mo(e, t) {
 	for (; e.length < t.length;) e = e.concat(e);
-	return Math.max(...t.map((t, n) => mo(t) + mo(e[n])));
-}
-function mo(e) {
-	return e === "auto" ? 0 : Number(e.slice(0, -1).replace(",", ".")) * 1e3;
+	return Math.max(...t.map((t, n) => ho(t) + ho(e[n])));
 }
 function ho(e) {
+	return e === "auto" ? 0 : Number(e.slice(0, -1).replace(",", ".")) * 1e3;
+}
+function go(e) {
 	return (e ? e.ownerDocument : document).body.offsetHeight;
 }
-function go(e, t, n) {
-	let r = e[Za];
+function _o(e, t, n) {
+	let r = e[Qa];
 	r && (t = (t ? [t, ...r] : [...r]).join(" ")), t == null ? e.removeAttribute("class") : n ? e.setAttribute("class", t) : e.className = t;
 }
-var _o = /* @__PURE__ */ Symbol("_vod"), vo = /* @__PURE__ */ Symbol("_vsh"), yo = /* @__PURE__ */ Symbol(""), bo = /(?:^|;)\s*display\s*:/;
-function xo(e, t, n) {
+var vo = /* @__PURE__ */ Symbol("_vod"), yo = /* @__PURE__ */ Symbol("_vsh"), bo = /* @__PURE__ */ Symbol(""), xo = /(?:^|;)\s*display\s*:/;
+function So(e, t, n) {
 	let r = e.style, i = g(n), a = !1;
 	if (n && !i) {
 		if (t) if (g(t)) for (let e of t.split(";")) {
 			let t = e.slice(0, e.indexOf(":")).trim();
-			n[t] ?? Co(r, t, "");
+			n[t] ?? wo(r, t, "");
 		}
-		else for (let e in t) n[e] ?? Co(r, e, "");
+		else for (let e in t) n[e] ?? wo(r, e, "");
 		for (let i in n) {
 			i === "display" && (a = !0);
 			let o = n[i];
-			o == null ? Co(r, i, "") : Do(e, i, !g(t) && t ? t[i] : void 0, o) || Co(r, i, o);
+			o == null ? wo(r, i, "") : Oo(e, i, !g(t) && t ? t[i] : void 0, o) || wo(r, i, o);
 		}
 	} else if (i) {
 		if (t !== n) {
-			let e = r[yo];
-			e && (n += ";" + e), r.cssText = n, a = bo.test(n);
+			let e = r[bo];
+			e && (n += ";" + e), r.cssText = n, a = xo.test(n);
 		}
 	} else t && e.removeAttribute("style");
-	_o in e && (e[_o] = a ? r.display : "", e[vo] && (r.display = "none"));
+	vo in e && (e[vo] = a ? r.display : "", e[yo] && (r.display = "none"));
 }
-var So = /\s*!important$/;
-function Co(e, t, n) {
-	if (d(n)) n.forEach((n) => Co(e, t, n));
+var Co = /\s*!important$/;
+function wo(e, t, n) {
+	if (d(n)) n.forEach((n) => wo(e, t, n));
 	else if (n ??= "", t.startsWith("--")) e.setProperty(t, n);
 	else {
-		let r = Eo(e, t);
-		So.test(n) ? e.setProperty(D(r), n.replace(So, ""), "important") : e[r] = n;
+		let r = Do(e, t);
+		Co.test(n) ? e.setProperty(E(r), n.replace(Co, ""), "important") : e[r] = n;
 	}
 }
-var wo = [
+var To = [
 	"Webkit",
 	"Moz",
 	"ms"
-], To = {};
-function Eo(e, t) {
-	let n = To[t];
+], Eo = {};
+function Do(e, t) {
+	let n = Eo[t];
 	if (n) return n;
-	let r = E(t);
-	if (r !== "filter" && r in e) return To[t] = r;
-	r = re(r);
-	for (let n = 0; n < wo.length; n++) {
-		let i = wo[n] + r;
-		if (i in e) return To[t] = i;
+	let r = T(t);
+	if (r !== "filter" && r in e) return Eo[t] = r;
+	r = ie(r);
+	for (let n = 0; n < To.length; n++) {
+		let i = To[n] + r;
+		if (i in e) return Eo[t] = i;
 	}
 	return t;
 }
-function Do(e, t, n, r) {
+function Oo(e, t, n, r) {
 	return e.tagName === "TEXTAREA" && (t === "width" || t === "height") && g(r) && n === r;
 }
-var Oo = "http://www.w3.org/1999/xlink";
-function ko(e, t, n, r, i, a = _e(t)) {
-	r && t.startsWith("xlink:") ? n == null ? e.removeAttributeNS(Oo, t.slice(6, t.length)) : e.setAttributeNS(Oo, t, n) : n == null || a && !ve(n) ? e.removeAttribute(t) : e.setAttribute(t, a ? "" : _(n) ? String(n) : n);
+var ko = "http://www.w3.org/1999/xlink";
+function Ao(e, t, n, r, i, a = _e(t)) {
+	r && t.startsWith("xlink:") ? n == null ? e.removeAttributeNS(ko, t.slice(6, t.length)) : e.setAttributeNS(ko, t, n) : n == null || a && !ve(n) ? e.removeAttribute(t) : e.setAttribute(t, a ? "" : _(n) ? String(n) : n);
 }
-function Ao(e, t, n, r, i) {
+function jo(e, t, n, r, i) {
 	if (t === "innerHTML" || t === "textContent") {
-		n != null && (e[t] = t === "innerHTML" ? Ua(n) : n);
+		n != null && (e[t] = t === "innerHTML" ? Wa(n) : n);
 		return;
 	}
 	let a = e.tagName;
@@ -3005,29 +3005,29 @@ function Ao(e, t, n, r, i) {
 	} catch {}
 	o && e.removeAttribute(i || t);
 }
-function jo(e, t, n, r) {
+function Mo(e, t, n, r) {
 	e.addEventListener(t, n, r);
 }
-function Mo(e, t, n, r) {
+function No(e, t, n, r) {
 	e.removeEventListener(t, n, r);
 }
-var No = /* @__PURE__ */ Symbol("_vei");
-function Po(e, t, n, r, i = null) {
-	let a = e[No] || (e[No] = {}), o = a[t];
+var Po = /* @__PURE__ */ Symbol("_vei");
+function Fo(e, t, n, r, i = null) {
+	let a = e[Po] || (e[Po] = {}), o = a[t];
 	if (r && o) o.value = r;
 	else {
-		let [n, s] = Lo(t);
-		r ? jo(e, n, a[t] = Vo(r, i), s) : o && (Mo(e, n, o, s), a[t] = void 0);
+		let [n, s] = Ro(t);
+		r ? Mo(e, n, a[t] = Ho(r, i), s) : o && (No(e, n, o, s), a[t] = void 0);
 	}
 }
-var Fo = /(Once|Passive|Capture)$/, Io = /^on:?(?:Once|Passive|Capture)$/;
-function Lo(e) {
+var Io = /(Once|Passive|Capture)$/, Lo = /^on:?(?:Once|Passive|Capture)$/;
+function Ro(e) {
 	let t, n;
-	for (; (n = e.match(Fo)) && !Io.test(e);) t ||= {}, e = e.slice(0, e.length - n[1].length), t[n[1].toLowerCase()] = !0;
-	return [e[2] === ":" ? e.slice(3) : D(e.slice(2)), t];
+	for (; (n = e.match(Io)) && !Lo.test(e);) t ||= {}, e = e.slice(0, e.length - n[1].length), t[n[1].toLowerCase()] = !0;
+	return [e[2] === ":" ? e.slice(3) : E(e.slice(2)), t];
 }
-var Ro = 0, zo = /* @__PURE__ */ Promise.resolve(), Bo = () => Ro ||= (zo.then(() => Ro = 0), Date.now());
-function Vo(e, t) {
+var zo = 0, Bo = /* @__PURE__ */ Promise.resolve(), Vo = () => zo ||= (Bo.then(() => zo = 0), Date.now());
+function Ho(e, t) {
 	let n = (e) => {
 		if (!e._vts) e._vts = Date.now();
 		else if (e._vts <= n.attached) return;
@@ -3040,71 +3040,71 @@ function Vo(e, t) {
 			let i = r.slice(), a = [e];
 			for (let n = 0; n < i.length && !e._stopped; n++) {
 				let e = i[n];
-				e && on(e, t, 5, a);
+				e && an(e, t, 5, a);
 			}
-		} else on(r, t, 5, [e]);
+		} else an(r, t, 5, [e]);
 	};
-	return n.value = e, n.attached = Bo(), n;
+	return n.value = e, n.attached = Vo(), n;
 }
-var Ho = (e) => e.charCodeAt(0) === 111 && e.charCodeAt(1) === 110 && e.charCodeAt(2) > 96 && e.charCodeAt(2) < 123, Uo = (e, t, n, r, i, s) => {
+var Uo = (e) => e.charCodeAt(0) === 111 && e.charCodeAt(1) === 110 && e.charCodeAt(2) > 96 && e.charCodeAt(2) < 123, Wo = (e, t, n, r, i, s) => {
 	let c = i === "svg";
-	t === "class" ? go(e, r, c) : t === "style" ? xo(e, n, r) : a(t) ? o(t) || Po(e, t, n, r, s) : (t[0] === "." ? (t = t.slice(1), !0) : t[0] === "^" ? (t = t.slice(1), !1) : Wo(e, t, r, c)) ? (Ao(e, t, r), !e.tagName.includes("-") && (t === "value" || t === "checked" || t === "selected") && ko(e, t, r, c, s, t !== "value")) : e._isVueCE && (Go(e, t) || e._def.__asyncLoader && (/[A-Z]/.test(t) || !g(r))) ? Ao(e, E(t), r, s, t) : (t === "true-value" ? e._trueValue = r : t === "false-value" && (e._falseValue = r), ko(e, t, r, c));
+	t === "class" ? _o(e, r, c) : t === "style" ? So(e, n, r) : a(t) ? o(t) || Fo(e, t, n, r, s) : (t[0] === "." ? (t = t.slice(1), !0) : t[0] === "^" ? (t = t.slice(1), !1) : Go(e, t, r, c)) ? (jo(e, t, r), !e.tagName.includes("-") && (t === "value" || t === "checked" || t === "selected") && Ao(e, t, r, c, s, t !== "value")) : e._isVueCE && (Ko(e, t) || e._def.__asyncLoader && (/[A-Z]/.test(t) || !g(r))) ? jo(e, T(t), r, s, t) : (t === "true-value" ? e._trueValue = r : t === "false-value" && (e._falseValue = r), Ao(e, t, r, c));
 };
-function Wo(e, t, n, r) {
-	if (r) return !!(t === "innerHTML" || t === "textContent" || t in e && Ho(t) && h(n));
+function Go(e, t, n, r) {
+	if (r) return !!(t === "innerHTML" || t === "textContent" || t in e && Uo(t) && h(n));
 	if (t === "spellcheck" || t === "draggable" || t === "translate" || t === "autocorrect" || t === "sandbox" && e.tagName === "IFRAME" || t === "form" || t === "list" && e.tagName === "INPUT" || t === "type" && e.tagName === "TEXTAREA") return !1;
 	if (t === "width" || t === "height") {
 		let t = e.tagName;
 		if (t === "IMG" || t === "VIDEO" || t === "CANVAS" || t === "SOURCE") return !1;
 	}
-	return Ho(t) && g(n) ? !1 : t in e;
+	return Uo(t) && g(n) ? !1 : t in e;
 }
-function Go(e, t) {
+function Ko(e, t) {
 	let n = e._def.props;
 	if (!n) return !1;
-	let r = E(t);
-	return Array.isArray(n) ? n.some((e) => E(e) === r) : Object.keys(n).some((e) => E(e) === r);
+	let r = T(t);
+	return Array.isArray(n) ? n.some((e) => T(e) === r) : Object.keys(n).some((e) => T(e) === r);
 }
-var Ko = (e) => {
+var qo = (e) => {
 	let t = e.props["onUpdate:modelValue"] || !1;
 	return d(t) ? (e) => oe(t, e) : t;
 };
-function qo(e) {
+function Jo(e) {
 	e.target.composing = !0;
 }
-function Jo(e) {
+function Yo(e) {
 	let t = e.target;
 	t.composing && (t.composing = !1, t.dispatchEvent(new Event("input")));
 }
-var Yo = /* @__PURE__ */ Symbol("_assign");
-function Xo(e, t, n) {
+var Xo = /* @__PURE__ */ Symbol("_assign");
+function Zo(e, t, n) {
 	return t && (e = e.trim()), n && (e = se(e)), e;
 }
-var Zo = {
+var Qo = {
 	created(e, { modifiers: { lazy: t, trim: n, number: r } }, i) {
-		e[Yo] = Ko(i);
+		e[Xo] = qo(i);
 		let a = r || i.props && i.props.type === "number";
-		jo(e, t ? "change" : "input", (t) => {
-			t.target.composing || e[Yo](Xo(e.value, n, a));
-		}), (n || a) && jo(e, "change", () => {
-			e.value = Xo(e.value, n, a);
-		}), t || (jo(e, "compositionstart", qo), jo(e, "compositionend", Jo), jo(e, "change", Jo));
+		Mo(e, t ? "change" : "input", (t) => {
+			t.target.composing || e[Xo](Zo(e.value, n, a));
+		}), (n || a) && Mo(e, "change", () => {
+			e.value = Zo(e.value, n, a);
+		}), t || (Mo(e, "compositionstart", Jo), Mo(e, "compositionend", Yo), Mo(e, "change", Yo));
 	},
 	mounted(e, { value: t }) {
 		e.value = t ?? "";
 	},
 	beforeUpdate(e, { value: t, oldValue: n, modifiers: { lazy: r, trim: i, number: a } }, o) {
-		if (e[Yo] = Ko(o), e.composing) return;
+		if (e[Xo] = qo(o), e.composing) return;
 		let s = (a || e.type === "number") && !/^0\d/.test(e.value) ? se(e.value) : e.value, c = t ?? "";
 		if (s === c) return;
 		let l = e.getRootNode();
 		(l instanceof Document || l instanceof ShadowRoot) && l.activeElement === e && e.type !== "range" && (r && t === n || i && e.value.trim() === c) || (e.value = c);
 	}
-}, Qo = {
+}, $o = {
 	deep: !0,
 	created(e, t, n) {
-		e[Yo] = Ko(n), jo(e, "change", () => {
-			let t = e._modelValue, n = ns(e), r = e.checked, i = e[Yo];
+		e[Xo] = qo(n), Mo(e, "change", () => {
+			let t = e._modelValue, n = rs(e), r = e.checked, i = e[Xo];
 			if (d(t)) {
 				let e = xe(t, n), a = e !== -1;
 				if (r && !a) i(t.concat(n));
@@ -3115,55 +3115,55 @@ var Zo = {
 			} else if (p(t)) {
 				let e = new Set(t);
 				r ? e.add(n) : e.delete(n), i(e);
-			} else i(rs(e, r));
+			} else i(is(e, r));
 		});
 	},
-	mounted: $o,
+	mounted: es,
 	beforeUpdate(e, t, n) {
-		e[Yo] = Ko(n), $o(e, t, n);
+		e[Xo] = qo(n), es(e, t, n);
 	}
 };
-function $o(e, { value: t, oldValue: n }, r) {
+function es(e, { value: t, oldValue: n }, r) {
 	e._modelValue = t;
 	let i;
 	if (d(t)) i = xe(t, r.props.value) > -1;
 	else if (p(t)) i = t.has(r.props.value);
 	else {
 		if (t === n) return;
-		i = be(t, rs(e, !0));
+		i = be(t, is(e, !0));
 	}
 	e.checked !== i && (e.checked = i);
 }
-var es = {
+var ts = {
 	deep: !0,
 	created(e, { value: t, modifiers: { number: n } }, r) {
-		e._modelValue = t, jo(e, "change", () => {
-			let t = Array.prototype.filter.call(e.options, (e) => e.selected).map((e) => n ? se(ns(e)) : ns(e));
-			e[Yo](e.multiple ? p(e._modelValue) ? new Set(t) : t : t[0]), e._assigning = !0, gn(() => {
+		e._modelValue = t, Mo(e, "change", () => {
+			let t = Array.prototype.filter.call(e.options, (e) => e.selected).map((e) => n ? se(rs(e)) : rs(e));
+			e[Xo](e.multiple ? p(e._modelValue) ? new Set(t) : t : t[0]), e._assigning = !0, hn(() => {
 				e._assigning = !1;
 			});
-		}), e[Yo] = Ko(r);
+		}), e[Xo] = qo(r);
 	},
 	mounted(e, { value: t }) {
-		ts(e, t);
+		ns(e, t);
 	},
 	beforeUpdate(e, { value: t }, n) {
-		e._modelValue = t, e[Yo] = Ko(n);
+		e._modelValue = t, e[Xo] = qo(n);
 	},
 	updated(e, { value: t }) {
-		e._assigning || ts(e, t);
+		e._assigning || ns(e, t);
 	}
 };
-function ts(e, t) {
+function ns(e, t) {
 	let n = e.multiple, r = d(t);
 	if (!(n && !r && !p(t))) {
 		for (let i = 0, a = e.options.length; i < a; i++) {
-			let a = e.options[i], o = ns(a);
+			let a = e.options[i], o = rs(a);
 			if (n) if (r) {
 				let e = typeof o;
 				a.selected = e === "string" || e === "number" ? t.some((e) => String(e) === String(o)) : xe(t, o) > -1;
 			} else a.selected = t.has(o);
-			else if (be(ns(a), t)) {
+			else if (be(rs(a), t)) {
 				e.selectedIndex !== i && (e.selectedIndex = i);
 				return;
 			}
@@ -3171,19 +3171,19 @@ function ts(e, t) {
 		!n && e.selectedIndex !== -1 && (e.selectedIndex = -1);
 	}
 }
-function ns(e) {
+function rs(e) {
 	return "_value" in e ? e._value : e.value;
 }
-function rs(e, t) {
+function is(e, t) {
 	let n = t ? "_trueValue" : "_falseValue";
 	return n in e ? e[n] : t;
 }
-var is = [
+var as = [
 	"ctrl",
 	"shift",
 	"alt",
 	"meta"
-], as = {
+], os = {
 	stop: (e) => e.stopPropagation(),
 	prevent: (e) => e.preventDefault(),
 	self: (e) => e.target !== e.currentTarget,
@@ -3194,18 +3194,18 @@ var is = [
 	left: (e) => "button" in e && e.button !== 0,
 	middle: (e) => "button" in e && e.button !== 1,
 	right: (e) => "button" in e && e.button !== 2,
-	exact: (e, t) => is.some((n) => e[`${n}Key`] && !t.includes(n))
-}, os = (e, t) => {
+	exact: (e, t) => as.some((n) => e[`${n}Key`] && !t.includes(n))
+}, ss = (e, t) => {
 	if (!e) return e;
 	let n = e._withMods ||= {}, r = t.join(".");
 	return n[r] || (n[r] = ((n, ...r) => {
 		for (let e = 0; e < t.length; e++) {
-			let r = as[t[e]];
+			let r = os[t[e]];
 			if (r && r(n, t)) return;
 		}
 		return e(n, ...r);
 	}));
-}, ss = {
+}, cs = {
 	esc: "escape",
 	space: " ",
 	up: "arrow-up",
@@ -3213,38 +3213,38 @@ var is = [
 	right: "arrow-right",
 	down: "arrow-down",
 	delete: "backspace"
-}, cs = (e, t) => {
+}, ls = (e, t) => {
 	let n = e._withKeys ||= {}, r = t.join(".");
 	return n[r] || (n[r] = ((n) => {
 		if (!("key" in n)) return;
-		let r = D(n.key);
-		if (t.some((e) => e === r || ss[e] === r)) return e(n);
+		let r = E(n.key);
+		if (t.some((e) => e === r || cs[e] === r)) return e(n);
 	}));
-}, ls = /* @__PURE__ */ s({ patchProp: Uo }, Ja), us;
-function ds() {
-	return us ||= Li(ls);
+}, us = /* @__PURE__ */ s({ patchProp: Wo }, Ya), ds;
+function fs() {
+	return ds ||= Ri(us);
 }
-var fs = ((...e) => {
-	let t = ds().createApp(...e), { mount: n } = t;
+var ps = ((...e) => {
+	let t = fs().createApp(...e), { mount: n } = t;
 	return t.mount = (e) => {
-		let r = ms(e);
+		let r = hs(e);
 		if (!r) return;
 		let i = t._component;
 		!h(i) && !i.render && !i.template && (i.template = r.innerHTML), r.nodeType === 1 && (r.textContent = "");
-		let a = n(r, !1, ps(r));
+		let a = n(r, !1, ms(r));
 		return r instanceof Element && (r.removeAttribute("v-cloak"), r.setAttribute("data-v-app", "")), a;
 	}, t;
 });
-function ps(e) {
+function ms(e) {
 	if (e instanceof SVGElement) return "svg";
 	if (typeof MathMLElement == "function" && e instanceof MathMLElement) return "mathml";
 }
-function ms(e) {
+function hs(e) {
 	return g(e) ? document.querySelector(e) : e;
 }
 //#endregion
 //#region src/api.ts
-async function hs(e, t = {}) {
+async function gs(e, t = {}) {
 	let n = await fetch(e, {
 		credentials: "same-origin",
 		...t,
@@ -3259,18 +3259,18 @@ async function hs(e, t = {}) {
 	}
 	return r;
 }
-function gs(e) {
-	return hs(e);
+function _s(e) {
+	return gs(e);
 }
-function _s(e, t = {}) {
-	return hs(e, {
+function vs(e, t = {}) {
+	return gs(e, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(t)
 	});
 }
-function vs(e, t) {
-	return hs(e, {
+function ys(e, t) {
+	return gs(e, {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(t)
@@ -3278,26 +3278,26 @@ function vs(e, t) {
 }
 //#endregion
 //#region src/trainerStore.ts
-var ys = () => ({
+var bs = () => ({
 	running: !1,
 	exit_code: null,
 	log_lines: [],
 	progress: null
-}), bs = () => ({
+}), xs = () => ({
 	personal: [],
 	negative: [],
 	personal_count: 0,
 	negative_count: 0
-}), xs = () => ({
+}), Ss = () => ({
 	items: [],
 	captured_count: 0,
 	personal_count: 0,
 	negative_count: 0
-}), Ss = () => ({
+}), Cs = () => ({
 	items: [],
 	total_size_bytes: 0,
 	total_file_count: 0
-}), Cs = () => ({
+}), ws = () => ({
 	enabled: !1,
 	wake_phrase: "",
 	language: "en",
@@ -3316,8 +3316,13 @@ var ys = () => ({
 	train_nanowakeword_cnn: !1,
 	train_nanowakeword_gru: !1,
 	generated_negative_phrases: ""
-}), Y = /* @__PURE__ */ Pt({
-	activeView: "trainer",
+}), J = /* @__PURE__ */ Pt({
+	activeView: "home",
+	selectedWord: "",
+	wizardStep: 0,
+	wizardRetrain: !1,
+	trainingStages: [],
+	trainingTargets: [],
 	initialized: !1,
 	busy: /* @__PURE__ */ new Set(),
 	phrase: "",
@@ -3377,15 +3382,15 @@ var ys = () => ({
 		}
 	],
 	session: {},
-	samples: bs(),
-	captured: xs(),
-	training: ys(),
+	samples: xs(),
+	captured: Ss(),
+	training: bs(),
 	auto: {},
-	autoForm: Cs(),
+	autoForm: ws(),
 	wakeWords: [],
 	wakeWordLibrary: [],
 	modelHistory: [],
-	managedData: Ss(),
+	managedData: Cs(),
 	selectedFiles: [],
 	sampleBucket: "personal",
 	samplePage: {
@@ -3404,16 +3409,18 @@ var ys = () => ({
 		tone: "success",
 		serial: 0
 	}
-}), ws = 0, Ts = 0, Es = J(() => Number(Y.samples.personal_count ?? Y.session.takes_received ?? 0)), Ds = J(() => Number(Y.samples.negative_count ?? Y.captured.negative_count ?? 0)), Os = J(() => Y.languages.find((e) => e.code === Y.language) || Y.languages[0]), ks = J(() => {
-	let e = Os.value?.engines?.length ? Os.value.engines : ["omnivoice"], t = Y.ttsMode === "piper" ? e.filter((e) => e === "piper") : Y.ttsMode === "hybrid" ? e : e.filter((e) => e !== "piper"), n = {
+});
+window.__wakeWordTrainerMac?.dataFolderPicker && window.webkit?.messageHandlers?.wakeWordTrainerStorage;
+var Ts = 0, Es = 0, Ds = q(() => Number(J.samples.personal_count ?? J.session.takes_received ?? 0)), Os = q(() => Number(J.samples.negative_count ?? J.captured.negative_count ?? 0)), ks = q(() => J.languages.find((e) => e.code === J.language) || J.languages[0]), As = q(() => {
+	let e = ks.value?.engines?.length ? ks.value.engines : ["omnivoice"], t = J.ttsMode === "piper" ? e.filter((e) => e === "piper") : J.ttsMode === "hybrid" ? e : e.filter((e) => e !== "piper"), n = {
 		omnivoice: "OmniVoice",
 		qwen3: "Qwen3",
 		moss: "MOSS",
 		piper: "Piper"
-	}, r = Y.ttsMode === "piper" ? "Legacy" : Ps(Os.value?.quality || "experimental");
+	}, r = J.ttsMode === "piper" ? "Legacy" : Fs(ks.value?.quality || "experimental");
 	return `${t.map((e) => n[e] || e).join(" + ") || "Unavailable"} · ${r}`;
-}), As = J(() => !!(Y.training.running || Y.training.exit_code !== null || Y.training.log_lines?.length)), js = J(() => Y.samples[Y.sampleBucket] || []), Ms = J(() => !!Y.auto.trainer_link?.linked), Ns = J(() => {
-	let e = Y.auto.stt_engines;
+}), js = q(() => !!(J.training.running || J.training.exit_code !== null || J.training.log_lines?.length)), Ms = q(() => J.samples[J.sampleBucket] || []), Ns = q(() => !!J.auto.trainer_link?.linked), Ps = q(() => {
+	let e = J.auto.stt_engines;
 	return Array.isArray(e) && e.length ? e : [{
 		id: "faster_whisper",
 		label: "Faster Whisper"
@@ -3422,490 +3429,531 @@ var ys = () => ({
 		label: "Parakeet ONNX"
 	}];
 });
-function Ps(e) {
+function Fs(e) {
 	return String(e || "").replaceAll("_", " ").replace(/\b\w/g, (e) => e.toUpperCase());
 }
-function X(e) {
-	return e ? Y.busy.has(e) : Y.busy.size > 0;
+function Y(e) {
+	return e ? J.busy.has(e) : J.busy.size > 0;
 }
-function Z(e, t) {
-	t ? Y.busy.add(e) : Y.busy.delete(e);
+function X(e, t) {
+	t ? J.busy.add(e) : J.busy.delete(e);
 }
-function Q(e, t = "success") {
-	Y.toast = {
+function Z(e, t = "success") {
+	J.toast = {
 		message: String(e || ""),
 		tone: t,
-		serial: Y.toast.serial + 1
+		serial: J.toast.serial + 1
 	};
 }
-function $(e, t) {
-	Q(e instanceof Error ? e.message : t, "error");
+function Q(e, t) {
+	Z(e instanceof Error ? e.message : t, "error");
 }
-function Fs(e) {
-	Y.session = e || {}, Array.isArray(e.available_languages) && e.available_languages.length && (Y.languages = e.available_languages), Array.isArray(e.available_english_accents) && e.available_english_accents.length && (Y.englishAccents = e.available_english_accents), e.raw_phrase && (Y.phrase = e.raw_phrase), e.language && (Y.language = e.language), e.english_accent && (Y.englishAccent = e.english_accent), e.tts_mode && (Y.ttsMode = e.tts_mode), e.training && (Y.training = e.training);
-}
-async function Is() {
-	let e = await gs("/api/session");
-	return Fs(e), e;
-}
-async function Ls() {
-	if (!Y.phrase.trim()) {
-		Q("Enter a wake phrase first.", "warning");
-		return;
+function Is(e) {
+	J.training = e;
+	let t = e.progress;
+	if (t?.stage) {
+		let n = J.trainingStages.at(-1);
+		!n || n.stage !== t.stage ? (n && n.status === "running" && (n.status = t.status === "failed" ? "failed" : "complete"), J.trainingStages.push({
+			stage: t.stage,
+			label: t.label,
+			status: t.status || (e.running ? "running" : e.exit_code === 0 ? "complete" : "failed")
+		}), J.trainingStages.length > 40 && J.trainingStages.shift()) : (n.label = t.label, n.status = t.status || (e.running ? "running" : e.exit_code === 0 ? "complete" : "failed"));
 	}
-	Z("session", !0);
-	try {
-		let e = await _s("/api/start_session", {
-			phrase: Y.phrase.trim(),
-			language: Y.language,
-			english_accent: Y.englishAccent,
-			tts_mode: Y.ttsMode
-		});
-		Fs(e), await rc(!0), Q(`Session ${e.safe_word || "started"} is ready.`);
-	} catch (e) {
-		$(e, "Session failed to start.");
-	} finally {
-		Z("session", !1);
-	}
+}
+function Ls(e) {
+	J.session = e || {}, Array.isArray(e.available_languages) && e.available_languages.length && (J.languages = e.available_languages), Array.isArray(e.available_english_accents) && e.available_english_accents.length && (J.englishAccents = e.available_english_accents), e.raw_phrase && (J.phrase = e.raw_phrase), e.language && (J.language = e.language), e.english_accent && (J.englishAccent = e.english_accent), e.tts_mode && (J.ttsMode = e.tts_mode), e.training && Is(e.training);
 }
 async function Rs() {
-	let e = !!Y.training.running;
+	let e = await _s("/api/session");
+	return Ls(e), e;
+}
+async function zs() {
+	if (!J.phrase.trim()) {
+		Z("Enter a wake phrase first.", "warning");
+		return;
+	}
+	X("session", !0);
+	try {
+		let e = await vs("/api/start_session", {
+			phrase: J.phrase.trim(),
+			language: J.language,
+			english_accent: J.englishAccent,
+			tts_mode: J.ttsMode
+		});
+		Ls(e), await ac(!0), Z(`Session ${e.safe_word || "started"} is ready.`);
+	} catch (e) {
+		Q(e, "Session failed to start.");
+	} finally {
+		X("session", !1);
+	}
+}
+async function Bs() {
+	let e = !!J.training.running;
 	if (!(e && !window.confirm("Training is running. Stop training cleanly and end this session?"))) {
-		Z("session", !0), Ts &&= (window.clearInterval(Ts), 0);
+		X("session", !0), Es &&= (window.clearInterval(Es), 0);
 		try {
-			Fs(await _s("/api/stop_session")), Q(e ? "Training stopped cleanly and the session ended." : "Session ended. You can edit the wake phrase now.");
+			Ls(await vs("/api/stop_session")), Z(e ? "Training stopped cleanly and the session ended." : "Session ended. You can edit the wake phrase now.");
 		} catch (t) {
-			e && dc(), $(t, "Session could not be stopped.");
+			e && mc(), Q(t, "Session could not be stopped.");
 		} finally {
-			Z("session", !1);
+			X("session", !1);
 		}
 	}
 }
-function zs() {
-	if (!Y.phrase.trim() || !("speechSynthesis" in window)) return;
-	let e = new SpeechSynthesisUtterance(Y.phrase.trim());
-	e.lang = Y.language, window.speechSynthesis.cancel(), window.speechSynthesis.speak(e);
+function Vs() {
+	if (!J.phrase.trim() || !("speechSynthesis" in window)) return;
+	let e = new SpeechSynthesisUtterance(J.phrase.trim());
+	e.lang = J.language, window.speechSynthesis.cancel(), window.speechSynthesis.speak(e);
 }
-function Bs() {
-	let e = Os.value?.engines || [], t = e.some((e) => e !== "piper"), n = e.includes("piper");
-	Y.ttsMode === "modern" && !t && (Y.ttsMode = "piper"), Y.ttsMode === "hybrid" && !(t && n) && (Y.ttsMode = t ? "modern" : "piper"), Y.ttsMode === "piper" && !n && (Y.ttsMode = "modern"), (Y.language !== "en" || Y.ttsMode === "piper") && (Y.englishAccent = "mixed");
+function Hs() {
+	let e = ks.value?.engines || [], t = e.some((e) => e !== "piper"), n = e.includes("piper");
+	J.ttsMode === "modern" && !t && (J.ttsMode = "piper"), J.ttsMode === "hybrid" && !(t && n) && (J.ttsMode = t ? "modern" : "piper"), J.ttsMode === "piper" && !n && (J.ttsMode = "modern"), (J.language !== "en" || J.ttsMode === "piper") && (J.englishAccent = "mixed");
 }
-async function Vs(e = !1) {
-	e || Z("samples", !0);
+async function Us(e = !1) {
+	e || X("samples", !0);
 	try {
-		let e = await gs("/api/samples");
-		Y.samples = {
-			...bs(),
+		let e = await _s("/api/samples");
+		J.samples = {
+			...xs(),
 			...e
 		};
 		for (let e of ["personal", "negative"]) {
-			let t = Math.max(0, Math.ceil((Y.samples[e]?.length || 0) / 50) - 1);
-			Y.samplePage[e] = Math.min(Y.samplePage[e], t);
+			let t = Math.max(0, Math.ceil((J.samples[e]?.length || 0) / 50) - 1);
+			J.samplePage[e] = Math.min(J.samplePage[e], t);
 		}
 		return e;
 	} finally {
-		e || Z("samples", !1);
+		e || X("samples", !1);
 	}
 }
-async function Hs(e = !1) {
-	e || Z("captured", !0);
+async function Ws(e = !1) {
+	e || X("captured", !0);
 	try {
-		let e = await gs("/api/captured_audio");
-		return Y.captured = {
-			...xs(),
+		let e = await _s("/api/captured_audio");
+		return J.captured = {
+			...Ss(),
 			...e
 		}, e;
 	} finally {
-		e || Z("captured", !1);
+		e || X("captured", !1);
 	}
 }
-function Us(e) {
+function Gs(e) {
 	let t = e.target;
-	Y.selectedFiles = Array.from(t.files || []);
+	J.selectedFiles = Array.from(t.files || []);
 }
-function Ws(e, t, n) {
+function Ks(e, t, n) {
 	return new Promise((r, i) => {
 		let a = new XMLHttpRequest(), o = new FormData();
 		o.append("file", e, e.name), a.open("POST", "/api/upload_personal_sample"), a.responseType = "json", a.upload.onprogress = (r) => {
-			r.lengthComputable && (Y.uploadProgress = Math.round((t + r.loaded / r.total) / n * 100), Y.uploadLabel = `Uploading ${e.name} (${t + 1}/${n})`, Y.uploadDetail = "Sending and normalizing the recording.");
+			r.lengthComputable && (J.uploadProgress = Math.round((t + r.loaded / r.total) / n * 100), J.uploadLabel = `Uploading ${e.name} (${t + 1}/${n})`, J.uploadDetail = "Sending and normalizing the recording.");
 		}, a.onload = () => {
 			let t = a.response || {};
 			a.status >= 200 && a.status < 300 ? r(t) : i(Error(t.error || `Upload failed for ${e.name}`));
 		}, a.onerror = () => i(/* @__PURE__ */ Error(`Upload failed for ${e.name}`)), a.send(o);
 	});
 }
-async function Gs(e) {
-	if (!Y.session.safe_word) {
-		Q("Start a trainer session before uploading samples.", "warning");
+async function qs(e) {
+	if (!J.session.safe_word) {
+		Z("Start a trainer session before uploading samples.", "warning");
 		return;
 	}
-	if (Y.selectedFiles.length) {
-		Z("upload", !0);
+	if (J.selectedFiles.length) {
+		X("upload", !0);
 		try {
-			let t = [...Y.selectedFiles];
-			for (let e = 0; e < t.length; e += 1) await Ws(t[e], e, t.length);
-			Y.uploadProgress = 100, Y.uploadLabel = "Upload complete", Y.uploadDetail = `${t.length} sample${t.length === 1 ? "" : "s"} saved in the required training format.`, Y.selectedFiles = [], e && (e.value = ""), await Promise.all([Is(), Vs(!0)]), Q("Personal samples uploaded.");
+			let t = [...J.selectedFiles];
+			for (let e = 0; e < t.length; e += 1) await Ks(t[e], e, t.length);
+			J.uploadProgress = 100, J.uploadLabel = "Upload complete", J.uploadDetail = `${t.length} sample${t.length === 1 ? "" : "s"} saved in the required training format.`, J.selectedFiles = [], e && (e.value = ""), await Promise.all([Rs(), Us(!0)]), Z("Personal samples uploaded.");
 		} catch (e) {
-			Y.uploadProgress = 0, $(e, "Sample upload failed.");
+			J.uploadProgress = 0, Q(e, "Sample upload failed.");
 		} finally {
-			Z("upload", !1);
-		}
-	}
-}
-async function Ks(e, t) {
-	if (t === "discard" && !window.confirm(`Discard ${e.saved_as} from the captured-audio inbox?`)) return;
-	let n = String(e.capture_scope || "").trim(), r = String(e.review_wake_word || e.dataset_wake_word || "").trim();
-	if (t !== "discard" && !r) {
-		Q("Choose the saved wake word this clip should train first.", "warning");
-		return;
-	}
-	let i = new URLSearchParams();
-	n && i.set("capture_word", n), t !== "discard" && i.set("target_word", r), Z("review", !0);
-	try {
-		await _s(`/api/captured_audio/${encodeURIComponent(e.saved_as)}/${t}?${i.toString()}`), await Promise.all([
-			Is(),
-			Hs(!0),
-			Vs(!0)
-		]), Q(t === "approve_personal" ? `Clip added to ${r} positives.` : t === "mark_negative" ? `Clip added to ${r} negatives.` : "Clip discarded.");
-	} catch (e) {
-		$(e, "Review action failed.");
-	} finally {
-		Z("review", !1);
-	}
-}
-async function qs(e, t) {
-	if (window.confirm(`Remove ${e.saved_as} from ${t} samples?`)) {
-		Z("review", !0);
-		try {
-			await hs(`/api/samples/${t}/${encodeURIComponent(e.saved_as)}`, { method: "DELETE" }), await Vs(!0), Q("Sample removed.");
-		} catch (e) {
-			$(e, "Sample removal failed.");
-		} finally {
-			Z("review", !1);
+			X("upload", !1);
 		}
 	}
 }
 async function Js(e, t) {
-	if (!window.confirm(`Revert ${e.saved_as} to its pre-trim version?`)) return;
-	let n = new FormData();
-	n.append("bucket", t), n.append("file_name", e.saved_as), Z("review", !0);
-	try {
-		await hs("/api/samples/revert", {
-			method: "POST",
-			body: n
-		}), await Vs(!0), Q("Original sample restored.");
-	} catch (e) {
-		$(e, "Sample revert failed.");
-	} finally {
-		Z("review", !1);
-	}
-}
-async function Ys(e) {
-	let t = e === "personal" ? Es.value : Ds.value;
-	if (!(!t || !window.confirm(`Clear ${t} ${e} sample${t === 1 ? "" : "s"}?`))) {
-		Z("review", !0);
-		try {
-			await _s(e === "personal" ? "/api/reset_recordings" : "/api/reset_negative_samples"), await Promise.all([
-				Is(),
-				Vs(!0),
-				Hs(!0)
-			]), Q(`${Ps(e)} samples cleared.`);
-		} catch (e) {
-			$(e, "Samples could not be cleared.");
-		} finally {
-			Z("review", !1);
-		}
-	}
-}
-function Xs(e, t) {
-	Y.auto = e || {}, t && (Y.autoForm = {
-		...Cs(),
-		...e.config || {}
-	}, Array.isArray(e.config?.generated_negative_phrases) && (Y.autoForm.generated_negative_phrases = e.config.generated_negative_phrases.join("\n")), Y.autoForm.wake_phrase || (Y.autoForm.wake_phrase = Y.session.raw_phrase || ""), Y.autoForm.language || (Y.autoForm.language = Y.session.language || "en"), Y.autoForm.english_accent || (Y.autoForm.english_accent = Y.session.english_accent || "mixed"), String(Y.autoForm.language).toLowerCase().startsWith("en") || (Y.autoForm.english_accent = "mixed"));
-}
-async function Zs(e = !1) {
-	let t = await gs("/api/auto_train");
-	return Xs(t, e), t;
-}
-async function Qs() {
-	if (![
-		Y.autoForm.train_microwakeword,
-		Y.autoForm.train_openwakeword,
-		Y.autoForm.train_nanowakeword_cnn,
-		Y.autoForm.train_nanowakeword_gru
-	].some(Boolean)) {
-		Q("Select at least one model for Auto Training.", "warning");
+	if (t === "discard" && !window.confirm(`Discard ${e.saved_as} from the captured-audio inbox?`)) return;
+	let n = String(e.capture_scope || "").trim(), r = String(e.review_wake_word || e.dataset_wake_word || "").trim();
+	if (t !== "discard" && !r) {
+		Z("Choose the saved wake word this clip should train first.", "warning");
 		return;
 	}
-	Z("auto", !0);
+	let i = new URLSearchParams();
+	n && i.set("capture_word", n), t !== "discard" && i.set("target_word", r), X("review", !0);
 	try {
-		let e = await vs("/api/auto_train", Y.autoForm);
-		Xs(e, !0), Q(e.config?.enabled ? "Auto Training saved and enabled." : "Auto Training saved.");
+		await vs(`/api/captured_audio/${encodeURIComponent(e.saved_as)}/${t}?${i.toString()}`), await Promise.all([
+			Rs(),
+			Ws(!0),
+			Us(!0)
+		]), Z(t === "approve_personal" ? `Clip added to ${r} positives.` : t === "mark_negative" ? `Clip added to ${r} negatives.` : "Clip discarded.");
 	} catch (e) {
-		$(e, "Auto Training settings failed to save.");
+		Q(e, "Review action failed.");
 	} finally {
-		Z("auto", !1);
+		X("review", !1);
 	}
 }
-async function $s(e) {
-	Z("auto", !0);
-	try {
-		let t = await _s("/api/auto_train/action", { action: e });
-		Xs(t, !1), e === "train_now" && (Y.consoleOpen = !0, dc()), Q(e === "review_now" ? `${Number(t.queued || 0)} clips queued for review.` : e === "train_now" ? "Training started." : "Wake word published.");
-	} catch (e) {
-		$(e, "Auto Training action failed.");
-	} finally {
-		Z("auto", !1);
-	}
-}
-async function ec(e, t) {
-	Z("link", !0);
-	try {
-		return await _s("/api/tater_link/claim", {
-			tater_url: e.trim(),
-			pairing_code: t.trim()
-		}), Y.autoForm.tater_url = e.trim(), await Zs(!1), Q("Trainer linked securely to Tater."), !0;
-	} catch (e) {
-		return $(e, "Tater link failed."), !1;
-	} finally {
-		Z("link", !1);
-	}
-}
-async function tc() {
-	if (window.confirm("Unlink this trainer from Tater?")) {
-		Z("auto", !0);
+async function Ys(e, t) {
+	if (window.confirm(`Remove ${e.saved_as} from ${t} samples?`)) {
+		X("review", !0);
 		try {
-			await _s("/api/tater_link/unlink"), await Zs(!1), Q("Trainer unlinked from Tater.", "warning");
+			await gs(`/api/samples/${t}/${encodeURIComponent(e.saved_as)}`, { method: "DELETE" }), await Us(!0), Z("Sample removed.");
 		} catch (e) {
-			$(e, "Tater unlink failed.");
+			Q(e, "Sample removal failed.");
 		} finally {
-			Z("auto", !1);
+			X("review", !1);
 		}
 	}
 }
-async function nc(e = !1) {
-	e || Z("firmware", !0);
+async function Xs(e, t) {
+	if (!window.confirm(`Revert ${e.saved_as} to its pre-trim version?`)) return;
+	let n = new FormData();
+	n.append("bucket", t), n.append("file_name", e.saved_as), X("review", !0);
 	try {
-		let e = await gs("/api/trained_wake_words/catalog");
-		Y.wakeWords = Array.isArray(e.wake_words) ? e.wake_words : [];
+		await gs("/api/samples/revert", {
+			method: "POST",
+			body: n
+		}), await Us(!0), Z("Original sample restored.");
+	} catch (e) {
+		Q(e, "Sample revert failed.");
 	} finally {
-		e || Z("firmware", !1);
+		X("review", !1);
 	}
 }
-async function rc(e = !1) {
-	e || Z("library", !0);
+async function Zs(e) {
+	let t = e === "personal" ? Ds.value : Os.value;
+	if (!(!t || !window.confirm(`Clear ${t} ${e} sample${t === 1 ? "" : "s"}?`))) {
+		X("review", !0);
+		try {
+			await vs(e === "personal" ? "/api/reset_recordings" : "/api/reset_negative_samples"), await Promise.all([
+				Rs(),
+				Us(!0),
+				Ws(!0)
+			]), Z(`${Fs(e)} samples cleared.`);
+		} catch (e) {
+			Q(e, "Samples could not be cleared.");
+		} finally {
+			X("review", !1);
+		}
+	}
+}
+function Qs(e, t) {
+	J.auto = e || {}, t && (J.autoForm = {
+		...ws(),
+		...e.config || {}
+	}, Array.isArray(e.config?.generated_negative_phrases) && (J.autoForm.generated_negative_phrases = e.config.generated_negative_phrases.join("\n")), J.autoForm.wake_phrase || (J.autoForm.wake_phrase = J.session.raw_phrase || ""), J.autoForm.language || (J.autoForm.language = J.session.language || "en"), J.autoForm.english_accent || (J.autoForm.english_accent = J.session.english_accent || "mixed"), String(J.autoForm.language).toLowerCase().startsWith("en") || (J.autoForm.english_accent = "mixed"));
+}
+async function $s(e = !1) {
+	let t = await _s("/api/auto_train");
+	return Qs(t, e), t;
+}
+async function ec() {
+	if (![
+		J.autoForm.train_microwakeword,
+		J.autoForm.train_openwakeword,
+		J.autoForm.train_nanowakeword_cnn,
+		J.autoForm.train_nanowakeword_gru
+	].some(Boolean)) {
+		Z("Select at least one model for Auto Training.", "warning");
+		return;
+	}
+	X("auto", !0);
 	try {
-		let e = await gs("/api/wake_word_library");
-		Y.wakeWordLibrary = Array.isArray(e.words) ? e.words : [], Y.modelHistory = (await Promise.all(Y.wakeWordLibrary.map(async (e) => {
+		let e = await ys("/api/auto_train", J.autoForm);
+		Qs(e, !0), Z(e.config?.enabled ? "Auto Training saved and enabled." : "Auto Training saved.");
+	} catch (e) {
+		Q(e, "Auto Training settings failed to save.");
+	} finally {
+		X("auto", !1);
+	}
+}
+async function tc(e) {
+	X("auto", !0);
+	try {
+		let t = await vs("/api/auto_train/action", { action: e });
+		if (Qs(t, !1), e === "train_now") {
+			J.trainingStages = [];
+			let e = J.auto.config || J.autoForm;
+			J.trainingTargets = [
+				...e.train_microwakeword ? ["MicroWakeWord"] : [],
+				...e.train_openwakeword ? ["openWakeWord"] : [],
+				...e.train_nanowakeword_cnn ? ["NanoWakeWord CNN"] : [],
+				...e.train_nanowakeword_gru ? ["NanoWakeWord GRU"] : []
+			], J.activeView = "training", mc();
+		}
+		Z(e === "review_now" ? `${Number(t.queued || 0)} clips queued for review.` : e === "train_now" ? "Training started." : "Wake word published.");
+	} catch (e) {
+		Q(e, "Auto Training action failed.");
+	} finally {
+		X("auto", !1);
+	}
+}
+async function nc(e, t) {
+	X("link", !0);
+	try {
+		return await vs("/api/tater_link/claim", {
+			tater_url: e.trim(),
+			pairing_code: t.trim()
+		}), J.autoForm.tater_url = e.trim(), await $s(!1), Z("Trainer linked securely to Tater."), !0;
+	} catch (e) {
+		return Q(e, "Tater link failed."), !1;
+	} finally {
+		X("link", !1);
+	}
+}
+async function rc() {
+	if (window.confirm("Unlink this trainer from Tater?")) {
+		X("auto", !0);
+		try {
+			await vs("/api/tater_link/unlink"), await $s(!1), Z("Trainer unlinked from Tater.", "warning");
+		} catch (e) {
+			Q(e, "Tater unlink failed.");
+		} finally {
+			X("auto", !1);
+		}
+	}
+}
+async function ic(e = !1) {
+	e || X("firmware", !0);
+	try {
+		let e = await _s("/api/trained_wake_words/catalog");
+		J.wakeWords = Array.isArray(e.wake_words) ? e.wake_words : [];
+	} finally {
+		e || X("firmware", !1);
+	}
+}
+async function ac(e = !1) {
+	e || X("library", !0);
+	try {
+		let e = await _s("/api/wake_word_library");
+		J.wakeWordLibrary = Array.isArray(e.words) ? e.words : [], J.modelHistory = (await Promise.all(J.wakeWordLibrary.map(async (e) => {
 			try {
-				let t = await gs(`/api/wake_word_library/${encodeURIComponent(e.safe_word)}/history`);
+				let t = await _s(`/api/wake_word_library/${encodeURIComponent(e.safe_word)}/history`);
 				return Array.isArray(t.runs) ? t.runs : [];
 			} catch {
 				return [];
 			}
 		}))).flat().sort((e, t) => String(t.completed_at || "").localeCompare(String(e.completed_at || "")));
 	} finally {
-		e || Z("library", !1);
-	}
-}
-async function ic(e) {
-	if (Y.session.safe_word && Y.session.safe_word !== e.safe_word) {
-		Q("Stop the current session before switching saved wake words.", "warning");
-		return;
-	}
-	if (Y.session.safe_word === e.safe_word) {
-		Q(`${e.phrase} is already active.`);
-		return;
-	}
-	Y.phrase = e.phrase, e.language && (Y.language = e.language), e.english_accent && (Y.englishAccent = e.english_accent), e.tts_mode && (Y.ttsMode = e.tts_mode), Bs(), await Ls(), await Promise.all([Vs(!0), rc(!0)]);
-}
-async function ac() {
-	Z("data", !0);
-	try {
-		let e = await gs("/api/data");
-		return Y.managedData = {
-			...Ss(),
-			...e
-		}, e;
-	} finally {
-		Z("data", !1);
+		e || X("library", !1);
 	}
 }
 async function oc(e) {
-	if (!e.file_count) return;
-	let t = `${hc(e.size_bytes)} · ${Number(e.file_count).toLocaleString()} file${e.file_count === 1 ? "" : "s"}`, n = e.rebuild_note ? `\n\n${e.rebuild_note}` : "";
-	if (window.confirm(`Permanently delete ${e.label} (${t})?${n}\n\nThis cannot be undone.`)) {
-		Z("data-delete", !0);
-		try {
-			let t = await hs(`/api/data/${encodeURIComponent(e.id)}`, { method: "DELETE" });
-			Y.managedData = {
-				...Ss(),
-				...t
-			}, await Promise.allSettled([
-				Is(),
-				Vs(!0),
-				Hs(!0),
-				nc(!0)
-			]), Q(`${e.label} deleted. ${hc(e.size_bytes)} released.`);
-		} catch (t) {
-			$(t, `${e.label} could not be deleted.`);
-		} finally {
-			Z("data-delete", !1);
-		}
+	if (J.session.safe_word && J.session.safe_word !== e.safe_word) {
+		Z("Stop the current session before switching saved wake words.", "warning");
+		return;
 	}
+	if (J.session.safe_word === e.safe_word) {
+		Z(`${e.phrase} is already active.`);
+		return;
+	}
+	J.phrase = e.phrase, e.language && (J.language = e.language), e.english_accent && (J.englishAccent = e.english_accent), e.tts_mode && (J.ttsMode = e.tts_mode), Hs(), await zs(), await Promise.all([Us(!0), ac(!0)]);
 }
-async function sc(e) {
+async function sc(e, t) {
+	if (J.training.running) {
+		Z("Wait for training to finish before changing the published version.", "warning");
+		return;
+	}
+	X("version-publish", !0);
 	try {
-		await navigator.clipboard.writeText(e), Q("Wake-word JSON URL copied.");
+		await vs(`/api/wake_word_library/${encodeURIComponent(e.safe_word)}/runs/${encodeURIComponent(t.run_id)}/publish`), await Promise.all([ic(!0), ac(!0)]), Z(`Version ${t.version || t.run_id} is now current for ${e.phrase}. Publish through Tater when you want satellites to use it.`);
 	} catch (e) {
-		$(e, "Clipboard unavailable.");
+		Q(e, "The published version could not be changed.");
+	} finally {
+		X("version-publish", !1);
 	}
 }
 async function cc() {
-	if (![
-		Y.trainMicroWakeWord,
-		Y.trainOpenWakeWord,
-		Y.trainNanoWakeWordCnn,
-		Y.trainNanoWakeWordGru
-	].some(Boolean)) {
-		Q("Select at least one wake-word model to train.", "warning");
-		return;
+	X("data", !0);
+	try {
+		let e = await _s("/api/data");
+		return J.managedData = {
+			...Cs(),
+			...e
+		}, e;
+	} finally {
+		X("data", !1);
 	}
-	await Promise.all([Is(), Vs(!0)]);
-	let e = !1;
-	if (!(!Es.value && (e = window.confirm("No positive samples are saved. Train anyway without personal voices?"), !e))) {
-		Z("training-start", !0), Y.training = {
-			running: !0,
-			exit_code: null,
-			log_lines: ["Waiting for training output…"]
-		}, Y.consoleOpen = !0;
+}
+async function lc(e) {
+	if (!e.file_count) return;
+	let t = `${vc(e.size_bytes)} · ${Number(e.file_count).toLocaleString()} file${e.file_count === 1 ? "" : "s"}`, n = e.rebuild_note ? `\n\n${e.rebuild_note}` : "";
+	if (window.confirm(`Permanently delete ${e.label} (${t})?${n}\n\nThis cannot be undone.`)) {
+		X("data-delete", !0);
 		try {
-			await _s("/api/train", {
-				allow_no_personal: e,
-				train_microwakeword: Y.trainMicroWakeWord,
-				train_openwakeword: Y.trainOpenWakeWord,
-				train_nanowakeword_cnn: Y.trainNanoWakeWordCnn,
-				train_nanowakeword_gru: Y.trainNanoWakeWordGru,
-				generated_negative_phrases: Y.generatedNegativePhrases
-			}), dc();
-		} catch (e) {
-			Y.training = {
-				running: !1,
-				exit_code: 1,
-				log_lines: [e instanceof Error ? e.message : String(e)]
-			}, $(e, "Training could not start.");
+			let t = await gs(`/api/data/${encodeURIComponent(e.id)}`, { method: "DELETE" });
+			J.managedData = {
+				...Cs(),
+				...t
+			}, await Promise.allSettled([
+				Rs(),
+				Us(!0),
+				Ws(!0),
+				ic(!0)
+			]), Z(`${e.label} deleted. ${vc(e.size_bytes)} released.`);
+		} catch (t) {
+			Q(t, `${e.label} could not be deleted.`);
 		} finally {
-			Z("training-start", !1);
+			X("data-delete", !1);
 		}
 	}
 }
-async function lc() {
-	if (!Y.session.safe_word) {
-		Q("Select or start a saved wake word first.", "warning");
+async function uc(e) {
+	try {
+		await navigator.clipboard.writeText(e), Z("Wake-word JSON URL copied.");
+	} catch (e) {
+		Q(e, "Clipboard unavailable.");
+	}
+}
+async function dc() {
+	if (![
+		J.trainMicroWakeWord,
+		J.trainOpenWakeWord,
+		J.trainNanoWakeWordCnn,
+		J.trainNanoWakeWordGru
+	].some(Boolean)) {
+		Z("Select at least one wake-word model to train.", "warning");
 		return;
 	}
-	if (!Y.wakeWordLibrary.find((e) => e.safe_word === Y.session.safe_word)?.boundary_only_ready) {
-		Q("Run one full MicroWakeWord training for this word before training its boundary only.", "warning");
+	await Promise.all([Rs(), Us(!0)]);
+	let e = !1;
+	if (!(!Ds.value && (e = window.confirm("No positive samples are saved. Train anyway without personal voices?"), !e))) {
+		J.trainingTargets = [
+			...J.trainMicroWakeWord ? ["MicroWakeWord", "Wake boundary"] : [],
+			...J.trainOpenWakeWord ? ["openWakeWord"] : [],
+			...J.trainNanoWakeWordCnn ? ["NanoWakeWord CNN"] : [],
+			...J.trainNanoWakeWordGru ? ["NanoWakeWord GRU"] : []
+		], X("training-start", !0), J.trainingStages = [], J.training = {
+			running: !0,
+			exit_code: null,
+			log_lines: ["Waiting for training output…"]
+		}, J.activeView = "training";
+		try {
+			await vs("/api/train", {
+				allow_no_personal: e,
+				train_microwakeword: J.trainMicroWakeWord,
+				train_openwakeword: J.trainOpenWakeWord,
+				train_nanowakeword_cnn: J.trainNanoWakeWordCnn,
+				train_nanowakeword_gru: J.trainNanoWakeWordGru,
+				generated_negative_phrases: J.generatedNegativePhrases
+			}), mc();
+		} catch (e) {
+			J.training = {
+				running: !1,
+				exit_code: 1,
+				log_lines: [e instanceof Error ? e.message : String(e)]
+			}, Q(e, "Training could not start.");
+		} finally {
+			X("training-start", !1);
+		}
+	}
+}
+async function fc() {
+	if (!J.session.safe_word) {
+		Z("Select or start a saved wake word first.", "warning");
 		return;
 	}
-	Z("boundary-start", !0), Y.training = {
+	if (!J.wakeWordLibrary.find((e) => e.safe_word === J.session.safe_word)?.boundary_only_ready) {
+		Z("Run one full MicroWakeWord training for this word before training its boundary only.", "warning");
+		return;
+	}
+	J.trainingTargets = ["Wake boundary"], X("boundary-start", !0), J.trainingStages = [], J.training = {
 		running: !0,
 		exit_code: null,
 		log_lines: ["Preparing cached data for boundary-only training…"]
-	}, Y.consoleOpen = !0;
+	}, J.activeView = "training";
 	try {
-		await _s("/api/train", {
+		await vs("/api/train", {
 			allow_no_personal: !0,
 			train_boundary_only: !0,
 			train_microwakeword: !1,
 			train_openwakeword: !1,
 			train_nanowakeword_cnn: !1,
 			train_nanowakeword_gru: !1,
-			generated_negative_phrases: Y.generatedNegativePhrases
-		}), dc();
+			generated_negative_phrases: J.generatedNegativePhrases
+		}), mc();
 	} catch (e) {
-		Y.training = {
+		J.training = {
 			running: !1,
 			exit_code: 1,
 			log_lines: [e instanceof Error ? e.message : String(e)]
-		}, $(e, "Boundary training could not start.");
+		}, Q(e, "Boundary training could not start.");
 	} finally {
-		Z("boundary-start", !1);
+		X("boundary-start", !1);
 	}
 }
-async function uc(e, t = "") {
+async function pc(e, t = "") {
 	let n = e.toLowerCase();
-	Z("nww-revalidate", !0), Y.training = {
+	J.trainingTargets = [`NanoWakeWord ${n.toUpperCase()}`], X("nww-revalidate", !0), J.trainingStages = [], J.training = {
 		running: !0,
 		exit_code: null,
 		log_lines: [`Revalidating existing NanoWakeWord ${n.toUpperCase()} candidate…`]
-	}, Y.consoleOpen = !0;
+	}, J.activeView = "training";
 	try {
-		await _s("/api/revalidate_nanowakeword", {
+		await vs("/api/revalidate_nanowakeword", {
 			architecture: n,
 			safe_word: t
-		}), dc();
+		}), mc();
 	} catch (e) {
-		Y.training = {
+		J.training = {
 			running: !1,
 			exit_code: 1,
 			log_lines: [e instanceof Error ? e.message : String(e)]
-		}, $(e, "NanoWakeWord candidate revalidation could not start.");
+		}, Q(e, "NanoWakeWord candidate revalidation could not start.");
 	} finally {
-		Z("nww-revalidate", !1);
+		X("nww-revalidate", !1);
 	}
 }
-function dc() {
-	if (Ts) return;
+function mc() {
+	if (Es) return;
 	let e = async () => {
 		try {
-			let e = await gs("/api/train_status");
-			Y.training = {
-				...ys(),
+			let e = await _s("/api/train_status");
+			Is({
+				...bs(),
 				...e.training || {}
-			}, Y.training.running || (window.clearInterval(Ts), Ts = 0, await Promise.all([
-				Vs(!0),
-				nc(!0),
-				rc(!0)
-			]), Q(Y.training.exit_code === 0 ? "Training finished successfully." : `Training ended with exit ${Y.training.exit_code}.`, Y.training.exit_code === 0 ? "success" : "error"));
+			}), J.training.running || (window.clearInterval(Es), Es = 0, await Promise.all([
+				Us(!0),
+				ic(!0),
+				ac(!0)
+			]), Z(J.training.exit_code === 0 ? "Training finished successfully." : `Training ended with exit ${J.training.exit_code}.`, J.training.exit_code === 0 ? "success" : "error"));
 		} catch {}
 	};
-	e(), Ts = window.setInterval(() => void e(), 1500);
+	e(), Es = window.setInterval(() => void e(), 1500);
 }
-async function fc() {
-	Z("bootstrap", !0);
+async function hc() {
+	X("bootstrap", !0);
 	try {
 		await Promise.allSettled([
-			Is(),
-			Vs(!0),
-			Hs(!0),
-			Zs(!0),
-			nc(!0),
-			rc(!0)
-		]), Bs();
+			Rs(),
+			Us(!0),
+			Ws(!0),
+			$s(!0),
+			ic(!0),
+			ac(!0)
+		]), Hs();
 		try {
-			let e = await gs("/api/train_status");
-			Y.training = {
-				...ys(),
+			let e = await _s("/api/train_status");
+			Is({
+				...bs(),
 				...e.training || {}
-			}, Y.training.running && (Y.consoleOpen = !0, dc());
+			}), J.training.running && (J.activeView = "training", mc());
 		} catch {}
-		ws = window.setInterval(() => {
-			Y.activeView === "auto" && !X("auto") && Zs(!1).catch(() => void 0);
-		}, 2500), Y.initialized = !0;
+		Ts = window.setInterval(() => {
+			J.activeView === "auto" && !Y("auto") && $s(!1).catch(() => void 0);
+		}, 2500), J.initialized = !0;
 	} finally {
-		Z("bootstrap", !1);
+		X("bootstrap", !1);
 	}
 }
-function pc() {
-	window.clearInterval(ws), window.clearInterval(Ts), ws = 0, Ts = 0;
+function gc() {
+	window.clearInterval(Ts), window.clearInterval(Es), Ts = 0, Es = 0;
 }
-function mc(e) {
+function _c(e) {
 	if (!e) return "";
 	let t = new Date(String(e));
 	return Number.isNaN(t.getTime()) ? String(e) : t.toLocaleString();
 }
-function hc(e) {
+function vc(e) {
 	let t = Math.max(0, Number(e) || 0);
 	if (t < 1024) return `${Math.round(t)} B`;
 	let n = [
@@ -3917,12 +3965,12 @@ function hc(e) {
 	for (let e = 1; e < n.length && r >= 1024; e += 1) r /= 1024, i = n[e];
 	return `${r >= 10 ? r.toFixed(1) : r.toFixed(2)} ${i}`;
 }
-function gc(e) {
+function yc(e) {
 	if (!e) return "16 kHz · mono · 16-bit WAV";
 	let t = Number(e.sample_rate || e.sample_rate_hz || 16e3), n = Number(e.channels || 1) === 1 ? "mono" : `${e.channels} channels`, r = Number(e.bits_per_sample || e.sample_width_bits || 16);
 	return `${Math.round(t / 1e3)} kHz · ${n} · ${r}-bit`;
 }
-function _c(e) {
+function bc(e) {
 	if (e.blocked_by_vad) return {
 		label: "Blocked by VAD",
 		tone: "warning"
@@ -3942,52 +3990,52 @@ function _c(e) {
 		tone: "neutral"
 	};
 }
-function vc(e, t) {
+function xc(e, t) {
 	return e.audio_url || `/api/audio/${t}/${encodeURIComponent(e.saved_as)}`;
 }
 //#endregion
 //#region src/components/AudioTrimModal.vue?vue&type=script&setup=true&lang.ts
-var yc = {
+var Sc = {
 	class: "modal trim-modal",
 	role: "dialog",
 	"aria-modal": "true",
 	"aria-label": "Trim audio"
-}, bc = { class: "modal-head" }, xc = {
+}, Cc = { class: "modal-head" }, wc = {
 	key: 0,
 	class: "empty-state"
-}, Sc = { class: "range-grid" }, Cc = ["max"], wc = ["min", "max"], Tc = { class: "row space" }, Ec = { class: "pill" }, Dc = {
+}, Tc = { class: "range-grid" }, Ec = ["max"], Dc = ["min", "max"], Oc = { class: "row space" }, kc = { class: "pill" }, Ac = {
 	key: 0,
 	class: "pill success"
-}, Oc = { class: "row modal-actions" }, kc = ["disabled"], Ac = /* @__PURE__ */ pr({
+}, jc = { class: "row modal-actions" }, Mc = ["disabled"], Nc = /* @__PURE__ */ fr({
 	__name: "AudioTrimModal",
 	setup(e) {
-		let t = /* @__PURE__ */ Gt(null), n = /* @__PURE__ */ Gt(null), r = /* @__PURE__ */ Gt(0), i = /* @__PURE__ */ Gt(0), a = /* @__PURE__ */ Gt(0), o = /* @__PURE__ */ Gt([]), s = /* @__PURE__ */ Gt(!1), c = /* @__PURE__ */ Gt(!1);
-		Pn(() => Y.trimItem, async (e) => {
+		let t = /* @__PURE__ */ I(null), n = /* @__PURE__ */ I(null), r = /* @__PURE__ */ I(0), i = /* @__PURE__ */ I(0), a = /* @__PURE__ */ I(0), o = /* @__PURE__ */ I([]), s = /* @__PURE__ */ I(!1), c = /* @__PURE__ */ I(!1);
+		Nn(() => J.trimItem, async (e) => {
 			if (!e) {
 				n.value = null;
 				return;
 			}
 			s.value = !0;
 			try {
-				let t = `/api/audio/${encodeURIComponent(Y.trimBucket)}/${encodeURIComponent(e.saved_as)}`, s = await fetch(t);
+				let t = `/api/audio/${encodeURIComponent(J.trimBucket)}/${encodeURIComponent(e.saved_as)}`, s = await fetch(t);
 				if (!s.ok) throw Error("Audio could not be loaded.");
 				let c = new (window.AudioContext || window.webkitAudioContext)();
 				n.value = await c.decodeAudioData(await s.arrayBuffer()), r.value = n.value.duration, i.value = 0, a.value = r.value, await c.close();
 				try {
-					let t = await hs(`/api/samples/${encodeURIComponent(Y.trimBucket)}/${encodeURIComponent(e.saved_as)}/vad`, { method: "POST" });
+					let t = await gs(`/api/samples/${encodeURIComponent(J.trimBucket)}/${encodeURIComponent(e.saved_as)}/vad`, { method: "POST" });
 					o.value = Array.isArray(t.segments) ? t.segments : [], o.value.length && (i.value = Math.max(0, Number(o.value[0].start || 0)), a.value = Math.min(r.value, Number(o.value[0].end || r.value)));
 				} catch {
 					o.value = [];
 				}
-				await gn(), d();
+				await hn(), d();
 			} catch (e) {
-				Q(e instanceof Error ? e.message : "Audio could not be loaded.", "error"), l();
+				Z(e instanceof Error ? e.message : "Audio could not be loaded.", "error"), l();
 			} finally {
 				s.value = !1;
 			}
-		}, { immediate: !0 }), Pn([i, a], () => d());
+		}, { immediate: !0 }), Nn([i, a], () => d());
 		function l() {
-			Y.trimItem = null, n.value = null, o.value = [];
+			J.trimItem = null, n.value = null, o.value = [];
 		}
 		function u() {
 			let e = o.value[0];
@@ -4044,303 +4092,691 @@ var yc = {
 			return new Blob([c], { type: "audio/wav" });
 		}
 		async function m() {
-			let e = Y.trimItem;
+			let e = J.trimItem;
 			if (e) {
 				c.value = !0;
 				try {
 					let t = new FormData();
-					t.append("file", await p(), "trimmed.wav"), t.append("bucket", Y.trimBucket), t.append("source_file", e.saved_as), t.append("start_time", i.value.toFixed(3)), t.append("end_time", a.value.toFixed(3));
-					let n = await hs("/api/samples/trim", {
+					t.append("file", await p(), "trimmed.wav"), t.append("bucket", J.trimBucket), t.append("source_file", e.saved_as), t.append("start_time", i.value.toFixed(3)), t.append("end_time", a.value.toFixed(3));
+					let n = await gs("/api/samples/trim", {
 						method: "POST",
 						body: t
 					});
-					l(), await Vs(!0), Q(n.message || "Trimmed sample saved.");
+					l(), await Us(!0), Z(n.message || "Trimmed sample saved.");
 				} catch (e) {
-					Q(e instanceof Error ? e.message : "Trim failed.", "error");
+					Z(e instanceof Error ? e.message : "Trim failed.", "error");
 				} finally {
 					c.value = !1;
 				}
 			}
 		}
 		function h() {
-			Y.trimItem && d();
+			J.trimItem && d();
 		}
-		return window.addEventListener("resize", h), jr(() => window.removeEventListener("resize", h)), (e, n) => (H(), ia(Yn, { to: "body" }, [I(Y).trimItem ? (H(), U("div", {
+		return window.addEventListener("resize", h), Ar(() => window.removeEventListener("resize", h)), (e, n) => (V(), aa(Jn, { to: "body" }, [L(J).trimItem ? (V(), H("div", {
 			key: 0,
 			class: "modal-backdrop",
-			onClick: os(l, ["self"])
-		}, [W("section", yc, [
-			W("header", bc, [W("div", null, [n[2] ||= W("span", { class: "eyebrow" }, "Audio editor", -1), W("h2", null, "Trim " + A(I(Y).trimItem.saved_as), 1)]), W("button", {
+			onClick: ss(l, ["self"])
+		}, [U("section", Sc, [
+			U("header", Cc, [U("div", null, [n[2] ||= U("span", { class: "eyebrow" }, "Audio editor", -1), U("h2", null, "Trim " + A(L(J).trimItem.saved_as), 1)]), U("button", {
 				type: "button",
 				class: "button ghost",
 				onClick: l
 			}, "Close")]),
-			n[3] ||= W("p", { class: "muted" }, "Keep the spoken wake phrase and remove excess silence or noise. VAD markers appear in green.", -1),
-			s.value ? (H(), U("div", xc, "Loading waveform…")) : (H(), U(V, { key: 1 }, [
-				W("canvas", {
+			n[3] ||= U("p", { class: "muted" }, "Keep the spoken wake phrase and remove excess silence or noise. VAD markers appear in green.", -1),
+			s.value ? (V(), H("div", wc, "Loading waveform…")) : (V(), H(B, { key: 1 }, [
+				U("canvas", {
 					ref_key: "canvas",
 					ref: t,
 					class: "waveform"
 				}, null, 512),
-				W("div", Sc, [W("label", null, [W("span", null, "Start · " + A(i.value.toFixed(2)) + "s", 1), L(W("input", {
+				U("div", Tc, [U("label", null, [U("span", null, "Start · " + A(i.value.toFixed(2)) + "s", 1), R(U("input", {
 					"onUpdate:modelValue": n[0] ||= (e) => i.value = e,
 					type: "range",
 					min: "0",
 					max: Math.max(0, a.value - .01),
 					step: ".01"
-				}, null, 8, Cc), [[
-					Zo,
+				}, null, 8, Ec), [[
+					Qo,
 					i.value,
 					void 0,
 					{ number: !0 }
-				]])]), W("label", null, [W("span", null, "End · " + A(a.value.toFixed(2)) + "s", 1), L(W("input", {
+				]])]), U("label", null, [U("span", null, "End · " + A(a.value.toFixed(2)) + "s", 1), R(U("input", {
 					"onUpdate:modelValue": n[1] ||= (e) => a.value = e,
 					type: "range",
 					min: Math.min(r.value, i.value + .01),
 					max: r.value,
 					step: ".01"
-				}, null, 8, wc), [[
-					Zo,
+				}, null, 8, Dc), [[
+					Qo,
 					a.value,
 					void 0,
 					{ number: !0 }
 				]])])]),
-				W("div", Tc, [W("span", Ec, "Selection " + A(Math.max(0, a.value - i.value).toFixed(2)) + "s", 1), o.value.length ? (H(), U("span", Dc, A(o.value.length) + " speech segment" + A(o.value.length === 1 ? "" : "s"), 1)) : q("", !0)]),
-				W("div", Oc, [
-					W("button", {
+				U("div", Oc, [U("span", kc, "Selection " + A(Math.max(0, a.value - i.value).toFixed(2)) + "s", 1), o.value.length ? (V(), H("span", Ac, A(o.value.length) + " speech segment" + A(o.value.length === 1 ? "" : "s"), 1)) : K("", !0)]),
+				U("div", jc, [
+					U("button", {
 						type: "button",
 						onClick: f
 					}, "Play selection"),
-					o.value.length ? (H(), U("button", {
+					o.value.length ? (V(), H("button", {
 						key: 0,
 						type: "button",
 						onClick: u
-					}, "Select first VAD")) : q("", !0),
-					W("button", {
+					}, "Select first VAD")) : K("", !0),
+					U("button", {
 						type: "button",
 						class: "button primary",
 						disabled: c.value,
 						onClick: m
-					}, A(c.value ? "Saving…" : "Save trim"), 9, kc)
+					}, A(c.value ? "Saving…" : "Save trim"), 9, Mc)
 				])
 			], 64))
-		])])) : q("", !0)]));
+		])])) : K("", !0)]));
 	}
-}), jc = { class: "app-shell" }, Mc = { class: "app-header" }, Nc = { class: "header-status" }, Pc = {
-	key: 0,
-	class: "session-chip"
+}), Pc = {
+	class: "ui-icon",
+	viewBox: "0 0 24 24",
+	width: "17",
+	height: "17",
+	fill: "none",
+	stroke: "currentColor",
+	"stroke-width": "1.6",
+	"stroke-linecap": "round",
+	"stroke-linejoin": "round",
+	"aria-hidden": "true"
 }, Fc = {
-	class: "tabs",
-	"aria-label": "Trainer areas"
-}, Ic = ["onClick"], Lc = { class: "tab-full" }, Rc = { class: "tab-short" }, zc = { key: 0 }, Bc = { class: "main-content" }, Vc = {
 	key: 0,
-	class: "loading-panel"
-}, Hc = { class: "panel word-library-panel" }, Uc = { class: "panel-head" }, Wc = {
-	key: 0,
-	class: "word-library-grid"
-}, Gc = { class: "library-monogram" }, Kc = { key: 0 }, qc = { class: "library-stats" }, Jc = ["disabled", "onClick"], Yc = {
+	d: "m3 10 9-7 9 7v10H3V10Zm6 10v-7h6v7"
+}, Ic = {
 	key: 1,
-	class: "library-empty"
-}, Xc = {
+	d: "M4 9v6m4-10v14m4-17v20m4-17v14m4-10v6"
+}, Lc = {
 	key: 2,
-	class: "library-hint"
-}, Zc = { class: "panel" }, Qc = { class: "panel-head" }, $c = { class: "form-grid phrase-form" }, el = { class: "field wide" }, tl = ["disabled"], nl = { class: "field" }, rl = ["disabled"], il = ["value"], al = {
+	d: "M12 5v14M5 12h14"
+}, Rc = {
+	key: 3,
+	d: "M20 12H4m7-7-7 7 7 7"
+}, zc = {
+	key: 4,
+	d: "M4 12h16m-7-7 7 7-7 7"
+}, Bc = {
+	key: 5,
+	d: "M20 7v5h-5M4 17v-5h5m-4-5a8 8 0 0 1 13-3l2 3M4 17l2 3a8 8 0 0 0 13-3"
+}, Vc = {
+	key: 6,
+	d: "M2 12h4l3-9 6 18 3-9h4"
+}, Hc = {
+	key: 7,
+	d: "M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"
+}, Uc = {
+	key: 8,
+	d: "M14 3h7v7m0-7-11 11M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"
+}, Wc = {
+	key: 9,
+	d: "M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"
+}, Gc = {
+	key: 12,
+	d: "m3 4-2 12v5h22v-5L21 4H3Zm-2 12h7l2 3h4l2-3h7"
+}, Kc = {
+	key: 13,
+	d: "M3 3v6h6M3 9a9 9 0 1 1-1 7M12 7v5l4 2"
+}, qc = {
+	key: 15,
+	d: "m10 13 4-4m-6 6-2 2a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0m2 2 2-2a4 4 0 0 1 6 6l-5 5a4 4 0 0 1-6 0"
+}, Jc = {
+	key: 16,
+	x: "4",
+	y: "4",
+	width: "16",
+	height: "16",
+	rx: "2"
+}, Yc = {
+	key: 17,
+	cx: "12",
+	cy: "12",
+	r: "8"
+}, $ = /* @__PURE__ */ fr({
+	__name: "UiIcon",
+	props: { name: {} },
+	setup(e) {
+		return (t, n) => (V(), H("svg", Pc, [e.name === "home" ? (V(), H("path", Fc)) : e.name === "wave" ? (V(), H("path", Ic)) : e.name === "plus" ? (V(), H("path", Lc)) : e.name === "back" ? (V(), H("path", Rc)) : e.name === "next" ? (V(), H("path", zc)) : e.name === "refresh" ? (V(), H("path", Bc)) : e.name === "activity" ? (V(), H("path", Vc)) : e.name === "download" ? (V(), H("path", Hc)) : e.name === "external" ? (V(), H("path", Uc)) : e.name === "folder" ? (V(), H("path", Wc)) : e.name === "file" ? (V(), H(B, { key: 10 }, [n[0] ||= U("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" }, null, -1), n[1] ||= U("path", { d: "M14 2v6h6M8 13h8M8 17h5" }, null, -1)], 64)) : e.name === "copy" ? (V(), H(B, { key: 11 }, [n[2] ||= U("rect", {
+			x: "8",
+			y: "8",
+			width: "13",
+			height: "13",
+			rx: "2"
+		}, null, -1), n[3] ||= U("path", { d: "M16 8V3H3v13h5" }, null, -1)], 64)) : e.name === "inbox" ? (V(), H("path", Gc)) : e.name === "history" ? (V(), H("path", Kc)) : e.name === "check" ? (V(), H(B, { key: 14 }, [n[4] ||= U("circle", {
+			cx: "12",
+			cy: "12",
+			r: "9"
+		}, null, -1), n[5] ||= U("path", { d: "m8 12 3 3 5-6" }, null, -1)], 64)) : e.name === "link" ? (V(), H("path", qc)) : e.name === "stop" ? (V(), H("rect", Jc)) : (V(), H("circle", Yc))]));
+	}
+}), Xc = { class: "welcome-workspace" }, Zc = {
+	key: 0,
+	class: "welcome-intro"
+}, Qc = {
+	key: 1,
+	class: "workspace-heading"
+}, $c = ["disabled"], el = {
+	key: 2,
+	class: "welcome-tasks"
+}, tl = { class: "welcome-task" }, nl = ["disabled"], rl = { class: "welcome-task" }, il = { class: "workspace-section-title" }, al = {
+	key: 3,
+	class: "panel empty-state"
+}, ol = { class: "workspace-word-icon" }, sl = { class: "row" }, cl = { class: "workspace-word-actions" }, ll = ["onClick"], ul = { key: 0 }, dl = {
+	key: 4,
+	class: "workspace-note"
+}, fl = /* @__PURE__ */ fr({
+	__name: "TrainerWelcome",
+	props: { library: { type: Boolean } },
+	emits: ["create", "open"],
+	setup(e) {
+		let t = q(() => J.wakeWordLibrary);
+		function n(e) {
+			return J.modelHistory.find((t) => t.safe_word === e.safe_word && t.is_current)?.summary || (e.published_run_id ? void 0 : e.latest_run?.summary);
+		}
+		function r(e) {
+			return (n(e)?.models.find((e) => e.id === "micro"))?.metrics.filter((e) => ["Recall", "False accepts"].includes(e.label)).map((e) => `${e.label} ${e.value}`).join(" · ") || "";
+		}
+		return (i, a) => (V(), H("div", Xc, [
+			e.library ? (V(), H("header", Qc, [a[5] ||= U("div", null, [
+				U("span", { class: "eyebrow" }, "Your library"),
+				U("h2", null, "Wake words"),
+				U("p", null, "Each phrase keeps its results, JSON links, recordings, and saved versions.")
+			], -1), U("button", {
+				type: "button",
+				class: "primary",
+				disabled: L(J).training.running,
+				onClick: a[0] ||= (e) => i.$emit("create")
+			}, [W($, { name: "plus" }), a[4] ||= G("New wake word", -1)], 8, $c)])) : (V(), H("header", Zc, [...a[3] ||= [
+				U("span", { class: "eyebrow" }, "Wake Word Trainer", -1),
+				U("h2", null, "What would you like to do?", -1),
+				U("p", null, "Train a new phrase, or find the right version of one you already use.", -1)
+			]])),
+			e.library ? K("", !0) : (V(), H("div", el, [U("section", tl, [
+				W($, { name: "plus" }),
+				a[7] ||= U("h3", null, "Train a new word", -1),
+				a[8] ||= U("p", null, "Choose a phrase, add recordings, and create your first trained version.", -1),
+				U("button", {
+					type: "button",
+					class: "primary",
+					disabled: L(J).training.running,
+					onClick: a[1] ||= (e) => i.$emit("create")
+				}, [W($, { name: "next" }), a[6] ||= G("Create a wake word", -1)], 8, nl)
+			]), U("section", rl, [
+				W($, { name: "folder" }),
+				a[10] ||= U("h3", null, "Use an existing word", -1),
+				a[11] ||= U("p", null, "Review its results, choose a version, and get its bundle or ESPHome JSON.", -1),
+				U("button", {
+					type: "button",
+					onClick: a[2] ||= (e) => L(J).activeView = "firmware"
+				}, [W($, { name: "next" }), a[9] ||= G("Browse wake words", -1)])
+			])])),
+			U("div", il, [a[12] ||= U("h3", null, "Your wake words", -1), U("small", null, A(t.value.length) + " saved " + A(t.value.length === 1 ? "word" : "words"), 1)]),
+			t.value.length ? K("", !0) : (V(), H("div", al, "Your first wake word will appear here with its recordings, models, and training history.")),
+			(V(!0), H(B, null, z(t.value, (e) => (V(), H("article", {
+				key: e.safe_word,
+				class: "workspace-word-row"
+			}, [
+				U("div", ol, [W($, { name: e.has_published_bundle ? "wave" : "file" }, null, 8, ["name"])]),
+				U("div", null, [U("div", sl, [U("h3", null, A(e.phrase), 1), U("span", { class: k(["pill", n(e)?.tone || ""]) }, A(n(e)?.overall || (e.has_published_bundle ? "Published · results unavailable" : "Draft")), 3)]), U("p", null, A(e.run_count) + " saved " + A(e.run_count === 1 ? "run" : "runs") + " · " + A(e.personal_count || 0) + " recordings · " + A(L(vc)(e.dataset_size_bytes)) + " retained", 1)]),
+				U("div", cl, [U("button", {
+					type: "button",
+					onClick: (t) => i.$emit("open", e)
+				}, [W($, { name: "external" }), a[13] ||= G("Open word", -1)], 8, ll), r(e) ? (V(), H("small", ul, "MicroWakeWord · " + A(r(e)), 1)) : K("", !0)])
+			]))), 128)),
+			L(J).training.running ? (V(), H("p", dl, "A training run is in progress. You can open words and use their existing JSON links.")) : K("", !0)
+		]));
+	}
+}), pl = { class: "workspace-heading" }, ml = { class: "row" }, hl = {
+	key: 0,
+	class: "pill"
+}, gl = ["disabled"], _l = { class: "version-toolbar" }, vl = { class: "row" }, yl = {
+	key: 0,
+	class: "row"
+}, bl = {
+	key: 0,
+	value: ""
+}, xl = ["value"], Sl = { key: 1 }, Cl = { key: 0 }, wl = { key: 1 }, Tl = { class: "row" }, El = {
+	key: 0,
+	class: "pill success"
+}, Dl = ["disabled"], Ol = {
+	class: "workspace-subnav",
+	role: "tablist",
+	"aria-label": "Wake word workspace"
+}, kl = [
+	"id",
+	"aria-selected",
+	"onClick"
+], Al = ["aria-labelledby"], jl = { class: "json-link-grid" }, Ml = { class: "row" }, Nl = ["onClick"], Pl = ["href"], Fl = {
+	key: 1,
+	class: "workspace-note"
+}, Il = { class: "panel results-panel" }, Ll = { class: "workspace-section-title" }, Rl = { class: "result-metrics" }, zl = { class: "row space" }, Bl = { class: "workspace-advanced" }, Vl = { class: "stack" }, Hl = ["href"], Ul = {
+	key: 0,
+	class: "workspace-note"
+}, Wl = {
+	key: 1,
+	class: "workspace-note"
+}, Gl = { class: "panel" }, Kl = { class: "workspace-section-title" }, ql = { class: "pill" }, Jl = {
+	key: 0,
+	class: "empty-state"
+}, Yl = {
+	key: 0,
+	class: "pill success"
+}, Xl = {
+	key: 1,
+	class: "pill"
+}, Zl = { key: 0 }, Ql = { class: "row" }, $l = ["onClick"], eu = ["disabled", "onClick"], tu = {
+	key: 0,
+	class: "panel"
+}, nu = { class: "workspace-section-title" }, ru = { class: "comparison-grid" }, iu = { class: "row" }, au = { class: "pill" }, ou = ["onClick"], su = {
+	key: 2,
+	class: "panel"
+}, cu = { class: "workspace-section-title" }, lu = ["disabled"], uu = /* @__PURE__ */ fr({
+	__name: "WordWorkspace",
+	props: { word: {} },
+	emits: ["retrain", "recordings"],
+	setup(e) {
+		let t = e, n = /* @__PURE__ */ I("results"), r = /* @__PURE__ */ I(""), i = /* @__PURE__ */ I(""), a = q(() => J.modelHistory.filter((e) => e.safe_word === t.word.safe_word)), o = q(() => a.value.find((e) => e.is_current)), s = q(() => a.value.find((e) => e.run_id === r.value)), c = q(() => J.wakeWords.find((e) => e.key === t.word.safe_word)), l = q(() => !s.value || s.value.is_current), u = q(() => s.value?.summary), d = q(() => s.value ? {
+			bundle: s.value.json_url || "",
+			esphome: s.value.esphome_json_url || ""
+		} : {
+			bundle: String(c.value?.json_url || c.value?.url || c.value?.jsonUrl || ""),
+			esphome: String(c.value?.esphome_json_url || c.value?.esphomeJsonUrl || "")
+		}), f = q(() => a.value.find((e) => e.run_id === i.value)), p = q(() => Array.from(new Set([...o.value?.summary?.models || [], ...f.value?.summary?.models || []].map((e) => e.id))));
+		Nn(() => t.word.safe_word, () => {
+			r.value = "", n.value = "results", i.value = "";
+		}, { immediate: !0 }), Nn(a, () => {
+			(!r.value || !a.value.some((e) => e.run_id === r.value)) && (r.value = o.value?.run_id || (t.word.has_published_bundle ? "" : a.value[0]?.run_id || ""));
+		}, { immediate: !0 });
+		function m(e) {
+			return e ? `v${e.version || a.value.length - a.value.indexOf(e)}` : "Current publication";
+		}
+		function h(e) {
+			r.value = e.run_id, n.value = "results", i.value = "";
+		}
+		function g() {
+			if (s.value) return s.value.artifact_urls || {};
+			let e = c.value;
+			if (!e) return {};
+			let t = [
+				["MicroWakeWord", String(e.model_url || "")],
+				["openWakeWord", String(e.openwakeword_model_url || "")],
+				["Wake boundary", String(e.wake_boundary_model_url || "")]
+			];
+			for (let [n, r] of Object.entries(e.nanowakeword_models || {})) t.push([`NanoWakeWord ${n.toUpperCase()}`, r]);
+			return Object.fromEntries(t.filter(([, e]) => e));
+		}
+		return (t, _) => (V(), H(B, null, [
+			U("button", {
+				type: "button",
+				class: "workspace-back",
+				onClick: _[0] ||= (e) => L(J).activeView = "home"
+			}, [W($, { name: "back" }), _[7] ||= G("Back to start", -1)]),
+			U("header", pl, [U("div", null, [_[8] ||= U("span", { class: "eyebrow" }, "Saved wake word", -1), U("div", ml, [U("h2", null, A(e.word.phrase), 1), e.word.language ? (V(), H("span", hl, A(e.word.language), 1)) : K("", !0)])]), U("button", {
+				type: "button",
+				disabled: L(J).training.running || L(Y)("session"),
+				onClick: _[1] ||= (n) => t.$emit("retrain", e.word)
+			}, [W($, { name: "refresh" }), _[9] ||= G("Train a new version", -1)], 8, gl)]),
+			U("div", _l, [U("div", null, [U("div", vl, [a.value.length > 1 ? (V(), H("label", yl, [_[10] ||= G("Viewing version", -1), R(U("select", {
+				"onUpdate:modelValue": _[2] ||= (e) => r.value = e,
+				"aria-label": "Viewing version"
+			}, [!o.value && !r.value ? (V(), H("option", bl, "Current publication")) : K("", !0), (V(!0), H(B, null, z(a.value, (e) => (V(), H("option", {
+				key: e.run_id,
+				value: e.run_id
+			}, A(m(e)) + A(e.is_current ? " · Current" : "") + A(e === a.value[0] ? " · Latest run" : ""), 9, xl))), 128))], 512), [[ts, r.value]])])) : (V(), H("strong", Sl, A(m(s.value)), 1)), u.value ? (V(), H("span", {
+				key: 2,
+				class: k(["pill", u.value.tone])
+			}, A(u.value.overall), 3)) : K("", !0)]), s.value ? (V(), H("small", Cl, "Trained " + A(L(_c)(s.value.completed_at)) + " · " + A(s.value.run_kind === "boundary" ? "Boundary only" : "Model training"), 1)) : (V(), H("small", wl, "Published JSON links · no matching saved quality report"))]), U("div", Tl, [l.value ? (V(), H("span", El, "Current publication")) : (V(), H(B, { key: 1 }, [U("button", {
+				type: "button",
+				class: "primary",
+				disabled: !s.value?.restorable || L(J).training.running || L(Y)("version-publish"),
+				onClick: _[3] ||= (t) => s.value && L(sc)(e.word, s.value)
+			}, [W($, { name: "check" }), G(A(L(Y)("version-publish") ? "Publishing…" : `Use ${m(s.value)} as current`), 1)], 8, Dl), U("small", null, A(m(o.value)) + " is current", 1)], 64))])]),
+			U("div", Ol, [(V(!0), H(B, null, z([
+				{
+					id: "results",
+					label: "Results & JSON"
+				},
+				{
+					id: "versions",
+					label: `Versions · ${a.value.length}`
+				},
+				{
+					id: "recordings",
+					label: "Recordings"
+				}
+			], (e) => (V(), H("button", {
+				id: `word-tab-${e.id}`,
+				key: e.id,
+				type: "button",
+				role: "tab",
+				"aria-controls": "word-panel",
+				"aria-selected": n.value === e.id,
+				onClick: (t) => n.value = e.id
+			}, A(e.label), 9, kl))), 128))]),
+			U("section", {
+				id: "word-panel",
+				role: "tabpanel",
+				"aria-labelledby": `word-tab-${n.value}`,
+				class: "stack"
+			}, [n.value === "results" ? (V(), H(B, { key: 0 }, [
+				U("div", jl, [(V(!0), H(B, null, z([{
+					key: "bundle",
+					label: "Tater bundle JSON",
+					description: "Use in Tater or the Home Assistant bridge.",
+					url: d.value.bundle
+				}, {
+					key: "esphome",
+					label: "ESPHome JSON",
+					description: "Use in your ESPHome micro_wake_word setup.",
+					url: d.value.esphome
+				}], (e) => (V(), H("section", {
+					key: e.key,
+					class: "panel json-link-card"
+				}, [
+					U("h3", null, [W($, { name: "file" }), G(A(e.label), 1)]),
+					U("p", null, A(e.description), 1),
+					e.url ? (V(), H(B, { key: 0 }, [
+						U("code", null, A(e.url), 1),
+						U("div", Ml, [U("button", {
+							type: "button",
+							class: "primary",
+							onClick: (t) => L(uc)(e.url)
+						}, [W($, { name: "copy" }), G("Copy " + A(e.key === "bundle" ? "bundle JSON URL" : "ESPHome URL"), 1)], 8, Nl), U("a", {
+							class: "button",
+							href: e.url,
+							target: "_blank",
+							rel: "noreferrer"
+						}, [W($, { name: "external" }), _[11] ||= G("View JSON", -1)], 8, Pl)]),
+						U("small", null, A(s.value ? `${m(s.value)} · version-specific link` : "Current published link"), 1)
+					], 64)) : (V(), H("p", Fl, A(e.key === "esphome" ? "No MicroWakeWord model was published in this version." : "No model was published by this run yet."), 1))
+				]))), 128))]),
+				U("section", Il, [
+					U("header", Ll, [U("div", null, [U("h3", null, "Training results" + A(s.value ? ` · ${m(s.value)}` : ""), 1), U("p", null, A(u.value?.message || "Quality results are unavailable for this publication. No quality rating has been inferred."), 1)]), u.value ? (V(), H("span", {
+						key: 0,
+						class: k(["pill", u.value.tone])
+					}, A(u.value.overall), 3)) : K("", !0)]),
+					(V(!0), H(B, null, z(u.value?.models || [], (e) => (V(), H("article", {
+						key: e.id,
+						class: "result-model"
+					}, [U("header", null, [U("div", null, [U("h3", null, A(e.label), 1), U("p", null, A(e.message), 1)]), U("span", { class: k(["pill", e.tone]) }, A(e.rating), 3)]), U("dl", Rl, [(V(!0), H(B, null, z(e.metrics, (e) => (V(), H("div", { key: e.label }, [U("dt", null, A(e.label), 1), U("dd", null, A(e.value), 1)]))), 128))])]))), 128)),
+					_[12] ||= U("p", { class: "workspace-note" }, "Each detector reports its own validation metrics. Missing measurements stay unavailable.", -1)
+				]),
+				U("div", zl, [U("small", null, A(a.value.length) + " saved runs · earlier results and JSON links are retained", 1), U("button", {
+					type: "button",
+					onClick: _[4] ||= (e) => n.value = "versions"
+				}, [W($, { name: "history" }), _[13] ||= G("View version history", -1)])]),
+				U("details", Bl, [_[14] ||= U("summary", null, "Raw model files & technical details", -1), U("div", Vl, [
+					(V(!0), H(B, null, z(g(), (e, t) => (V(), H("div", {
+						key: t,
+						class: "row space"
+					}, [U("span", null, A(t), 1), U("a", {
+						href: e,
+						target: "_blank",
+						rel: "noreferrer"
+					}, A(String(t).endsWith(".json") ? "View artifact" : "Download model"), 9, Hl)]))), 128)),
+					!s.value && c.value?.wake_boundary_available ? (V(), H("p", Ul, "Wake boundary model · wake boundary · threshold " + A(c.value.wake_boundary_threshold), 1)) : K("", !0),
+					s.value && !s.value.restorable ? (V(), H("p", Wl, "This run did not publish a usable model. Its recorded results remain in history.")) : K("", !0)
+				])])
+			], 64)) : n.value === "versions" ? (V(), H(B, { key: 1 }, [U("section", Gl, [
+				U("header", Kl, [_[15] ||= U("div", null, [U("h3", null, "Saved versions"), U("p", null, "Open any run for its exact results and immutable JSON links.")], -1), U("span", ql, A(a.value.length) + " retained", 1)]),
+				a.value.length ? K("", !0) : (V(), H("div", Jl, "Completed training attempts will appear here. Your current JSON links are still available under Results & JSON.")),
+				(V(!0), H(B, null, z(a.value, (e) => (V(), H("article", {
+					key: e.run_id,
+					class: "workspace-version-row"
+				}, [
+					U("div", null, [U("strong", null, A(m(e)), 1), e.is_current ? (V(), H("span", Yl, "Current")) : e === a.value[0] ? (V(), H("span", Xl, "Latest run")) : K("", !0)]),
+					U("div", null, [U("strong", null, A(L(_c)(e.completed_at)), 1), U("small", null, A(e.run_kind === "boundary" ? "Boundary only" : e.selected_models?.join(" + ")), 1)]),
+					U("div", null, [U("span", { class: k(["pill", e.summary?.tone || ""]) }, A(e.summary?.overall || "Results unavailable"), 3), e.restorable ? K("", !0) : (V(), H("small", Zl, "No usable published model"))]),
+					U("div", Ql, [U("button", {
+						type: "button",
+						onClick: (t) => h(e)
+					}, "View results", 8, $l), U("button", {
+						type: "button",
+						disabled: !o.value || o.value.run_id === e.run_id,
+						onClick: (t) => i.value = e.run_id
+					}, "Compare", 8, eu)])
+				]))), 128))
+			]), f.value ? (V(), H("section", tu, [U("header", nu, [_[16] ||= U("div", null, [U("h3", null, "Compare with current"), U("p", null, "Training datasets can change between runs. Compare matching metrics with that context.")], -1), U("button", {
+				type: "button",
+				onClick: _[5] ||= (e) => i.value = ""
+			}, "Close comparison")]), U("div", ru, [(V(!0), H(B, null, z([o.value, f.value].filter(Boolean), (e) => (V(), H("article", { key: e.run_id }, [
+				U("header", iu, [U("h3", null, A(m(e)), 1), U("span", au, A(e?.is_current ? "Current" : "Comparing"), 1)]),
+				(V(!0), H(B, null, z(p.value, (t) => (V(), H("div", {
+					key: t,
+					class: "comparison-model"
+				}, [
+					U("h3", null, A(e?.summary?.models.find((e) => e.id === t)?.label || t), 1),
+					U("p", null, A(e?.summary?.models.find((e) => e.id === t)?.rating || "Not evaluated"), 1),
+					U("dl", null, [(V(!0), H(B, null, z(e?.summary?.models.find((e) => e.id === t)?.metrics || [], (e) => (V(), H("div", { key: e.label }, [U("dt", null, A(e.label), 1), U("dd", null, A(e.value), 1)]))), 128))])
+				]))), 128)),
+				e && !e.is_current ? (V(), H("button", {
+					key: 0,
+					type: "button",
+					onClick: (t) => h(e)
+				}, "View " + A(m(e)), 9, ou)) : K("", !0)
+			]))), 128))])])) : K("", !0)], 64)) : (V(), H("section", su, [U("header", cu, [U("div", null, [U("h3", null, "Recordings for “" + A(e.word.phrase) + "”", 1), U("p", null, A(e.word.personal_count || 0) + " personal recordings · " + A(e.word.negative_count || 0) + " reviewed negatives", 1)]), U("button", {
+				type: "button",
+				disabled: L(J).training.running && L(J).session.safe_word !== e.word.safe_word,
+				onClick: _[6] ||= (n) => t.$emit("recordings", e.word)
+			}, [W($, { name: "plus" }), _[17] ||= G("Manage recordings", -1)], 8, lu)]), _[18] ||= U("p", { class: "workspace-note" }, "Review, upload, trim, or restore recordings in the sample manager. Existing versions keep their original models and results.", -1)]))], 8, Al)
+		], 64));
+	}
+}), du = { class: "app-shell trainer-shell" }, fu = { class: "workspace-topbar" }, pu = { class: "workspace-brand" }, mu = { class: "local-trainer-status" }, hu = {
+	class: "workspace-nav",
+	"aria-label": "Trainer areas"
+}, gu = ["aria-current", "onClick"], _u = {
+	key: 0,
+	class: "nav-count"
+}, vu = ["aria-current"], yu = { class: "workspace-more" }, bu = {
+	key: 0,
+	class: "training-status-strip"
+}, xu = { class: "row" }, Su = { class: "main-content workspace-main" }, Cu = {
+	key: 0,
+	class: "loading-panel",
+	role: "status"
+}, wu = { class: "workspace-heading" }, Tu = { class: "eyebrow" }, Eu = {
+	key: 0,
+	class: "pill"
+}, Du = {
+	class: "wizard-steps",
+	"aria-label": "Setup progress"
+}, Ou = [
+	"aria-current",
+	"disabled",
+	"onClick"
+], ku = { class: "workspace-heading" }, Au = { class: "training-workspace-grid" }, ju = { class: "panel training-stages-panel" }, Mu = { class: "workspace-section-title" }, Nu = { class: "console-progress-head" }, Pu = ["aria-valuenow"], Fu = {
+	key: 0,
+	class: "console-progress-facts"
+}, Iu = { class: "training-stage-list" }, Lu = {
+	key: 0,
+	class: "workspace-note"
+}, Ru = { class: "stack" }, zu = { class: "panel" }, Bu = { class: "training-run-summary" }, Vu = { key: 0 }, Hu = { class: "panel inline-training-log" }, Uu = { class: "workspace-section-title" }, Wu = {
+	key: 0,
+	class: "training-summary-card"
+}, Gu = { class: "training-summary-grid" }, Ku = {
+	key: 0,
+	class: "summary-metrics"
+}, qu = { class: "wizard-actions" }, Ju = ["disabled"], Yu = ["disabled"], Xu = {
+	key: 2,
+	class: "workspace-note"
+}, Zu = {
+	key: 0,
+	class: "panel"
+}, Qu = { class: "panel-head" }, $u = { class: "form-grid phrase-form" }, ed = { class: "field wide" }, td = ["disabled"], nd = { class: "field" }, rd = ["disabled"], id = ["value"], ad = {
 	key: 0,
 	class: "field"
-}, ol = ["disabled"], sl = ["value"], cl = { class: "field" }, ll = ["disabled"], ul = ["disabled"], dl = ["disabled"], fl = ["disabled"], pl = { class: "row form-actions" }, ml = ["disabled"], hl = ["disabled"], gl = ["disabled"], _l = { class: "panel" }, vl = { class: "panel-head" }, yl = { class: "stats" }, bl = { class: "model-picker" }, xl = {
+}, od = ["disabled"], sd = ["value"], cd = { class: "field" }, ld = ["disabled"], ud = ["disabled"], dd = ["disabled"], fd = ["disabled"], pd = { class: "row form-actions" }, md = ["disabled"], hd = ["disabled"], gd = ["disabled"], _d = {
+	key: 1,
+	class: "panel"
+}, vd = { class: "panel-head" }, yd = { class: "stats" }, bd = { class: "model-picker" }, xd = {
 	class: "model-choice-grid",
 	role: "group",
 	"aria-label": "Wake-word models to train"
-}, Sl = ["aria-pressed"], Cl = ["aria-pressed"], wl = ["aria-pressed"], Tl = {
+}, Sd = ["aria-pressed"], Cd = ["aria-pressed"], wd = ["aria-pressed"], Td = {
 	key: 0,
 	class: "nano-architecture-panel"
-}, El = { class: "nano-architecture-heading" }, Dl = {
+}, Ed = { class: "nano-architecture-heading" }, Dd = {
 	class: "nano-architecture-grid",
 	role: "group",
 	"aria-label": "NanoWakeWord architectures"
-}, Ol = ["aria-pressed"], kl = ["aria-pressed"], Al = {
+}, Od = ["aria-pressed"], kd = ["aria-pressed"], Ad = {
 	key: 1,
 	class: "hard-negative-card"
-}, jl = { class: "hard-negative-head" }, Ml = { class: "hard-negative-engines" }, Nl = { class: "field" }, Pl = {
-	key: 0,
-	class: "training-summary-card"
-}, Fl = { class: "training-summary-grid" }, Il = {
-	key: 0,
-	class: "summary-metrics"
-}, Ll = { class: "train-action" }, Rl = ["disabled"], zl = ["disabled"], Bl = ["disabled"], Vl = { class: "panel-footer" }, Hl = ["disabled"], Ul = { class: "hero auto-hero" }, Wl = { class: "panel" }, Gl = { class: "toggle-list" }, Kl = { class: "form-grid" }, ql = { class: "field" }, Jl = { class: "field" }, Yl = {
+}, jd = { class: "hard-negative-head" }, Md = { class: "hard-negative-engines" }, Nd = { class: "field" }, Pd = { class: "wizard-actions" }, Fd = ["disabled"], Id = { class: "workspace-advanced" }, Ld = { class: "row" }, Rd = ["disabled"], zd = ["disabled"], Bd = {
+	key: 2,
+	class: "panel"
+}, Vd = { class: "workspace-summary" }, Hd = { class: "wizard-actions" }, Ud = ["disabled"], Wd = { class: "hero auto-hero" }, Gd = { class: "panel" }, Kd = { class: "toggle-list" }, qd = { class: "form-grid" }, Jd = { class: "field" }, Yd = { class: "field" }, Xd = {
 	key: 0,
 	class: "field"
-}, Xl = ["value"], Zl = { class: "field wide" }, Ql = ["value"], $l = { class: "field" }, eu = { class: "panel" }, tu = { class: "form-grid" }, nu = { class: "field" }, ru = { class: "field" }, iu = { class: "model-picker" }, au = {
+}, Zd = ["value"], Qd = { class: "field wide" }, $d = ["value"], ef = { class: "field" }, tf = { class: "panel" }, nf = { class: "form-grid" }, rf = { class: "field" }, af = { class: "field" }, of = { class: "model-picker" }, sf = {
 	class: "model-choice-grid",
 	role: "group",
 	"aria-label": "Auto Training wake-word models"
-}, ou = ["aria-pressed"], su = ["aria-pressed"], cu = ["aria-pressed"], lu = {
+}, cf = ["aria-pressed"], lf = ["aria-pressed"], uf = ["aria-pressed"], df = {
 	key: 0,
 	class: "nano-architecture-panel"
-}, uu = { class: "nano-architecture-heading" }, du = {
+}, ff = { class: "nano-architecture-heading" }, pf = {
 	class: "nano-architecture-grid",
 	role: "group",
 	"aria-label": "Auto Training NanoWakeWord architectures"
-}, fu = ["aria-pressed"], pu = ["aria-pressed"], mu = {
+}, mf = ["aria-pressed"], hf = ["aria-pressed"], gf = {
 	key: 1,
 	class: "hard-negative-card"
-}, hu = { class: "hard-negative-head" }, gu = { class: "hard-negative-engines" }, _u = { class: "field" }, vu = {
+}, _f = { class: "hard-negative-head" }, vf = { class: "hard-negative-engines" }, yf = { class: "field" }, bf = {
 	key: 0,
 	class: "training-summary-card"
-}, yu = { class: "training-summary-grid" }, bu = {
+}, xf = { class: "training-summary-grid" }, Sf = {
 	key: 0,
 	class: "summary-metrics"
-}, xu = { class: "stats" }, Su = { class: "format-value" }, Cu = { class: "format-value" }, wu = { class: "panel" }, Tu = { class: "form-grid" }, Eu = { class: "field wide" }, Du = { class: "field wide" }, Ou = { class: "link-row" }, ku = ["disabled"], Au = ["disabled"], ju = { class: "toggle-list compact" }, Mu = { class: "panel action-panel" }, Nu = { class: "action-grid" }, Pu = ["disabled"], Fu = ["disabled"], Iu = ["disabled"], Lu = ["disabled"], Ru = { class: "audit" }, zu = { class: "hero capture-hero" }, Bu = { class: "panel" }, Vu = { class: "panel-head" }, Hu = ["disabled"], Uu = { class: "stats" }, Wu = { class: "panel" }, Gu = {
+}, Cf = { class: "stats" }, wf = { class: "format-value" }, Tf = { class: "format-value" }, Ef = { class: "panel" }, Df = { class: "form-grid" }, Of = { class: "field wide" }, kf = { class: "field wide" }, Af = { class: "link-row" }, jf = ["disabled"], Mf = ["disabled"], Nf = { class: "toggle-list compact" }, Pf = { class: "panel action-panel" }, Ff = { class: "action-grid" }, If = ["disabled"], Lf = ["disabled"], Rf = ["disabled"], zf = ["disabled"], Bf = { class: "audit" }, Vf = { class: "hero capture-hero" }, Hf = { class: "panel" }, Uf = { class: "panel-head" }, Wf = ["disabled"], Gf = { class: "stats" }, Kf = { class: "panel" }, qf = {
 	key: 0,
 	class: "empty-state"
-}, Ku = {
+}, Jf = {
 	key: 1,
 	class: "audio-list"
-}, qu = {
+}, Yf = {
 	key: 0,
 	class: "meta-row"
-}, Ju = ["onUpdate:modelValue"], Yu = ["value"], Xu = {
+}, Xf = ["onUpdate:modelValue"], Zf = ["value"], Qf = {
 	key: 1,
 	class: "transcript"
-}, Zu = {
+}, $f = {
 	key: 2,
 	class: "transcript"
-}, Qu = ["src"], $u = ["disabled", "onClick"], ed = ["disabled", "onClick"], td = ["disabled", "onClick"], nd = { class: "hero samples-hero" }, rd = { class: "pill hero-pill" }, id = { class: "panel" }, ad = { class: "panel-head sample-head" }, od = { class: "segment-control" }, sd = { class: "row toolbar" }, cd = ["disabled"], ld = ["disabled"], ud = ["disabled"], dd = {
+}, ep = ["src"], tp = ["disabled", "onClick"], np = ["disabled", "onClick"], rp = ["disabled", "onClick"], ip = {
+	key: 0,
+	class: "hero samples-hero"
+}, ap = { class: "pill hero-pill" }, op = { class: "panel" }, sp = { class: "panel-head sample-head" }, cp = { class: "segment-control" }, lp = { class: "row toolbar" }, up = ["disabled"], dp = ["disabled"], fp = ["disabled"], pp = {
 	key: 0,
 	class: "empty-state"
-}, fd = {
+}, mp = {
 	key: 1,
 	class: "audio-list compact-list"
-}, pd = { class: "row" }, md = {
+}, hp = { class: "row" }, gp = {
 	key: 0,
 	class: "pill warning"
-}, hd = {
+}, _p = {
 	key: 0,
 	class: "transcript"
-}, gd = {
+}, vp = {
 	key: 1,
 	class: "transcript"
-}, _d = ["src"], vd = ["onClick"], yd = ["onClick"], bd = ["disabled", "onClick"], xd = {
+}, yp = ["src"], bp = ["onClick"], xp = ["onClick"], Sp = ["disabled", "onClick"], Cp = {
 	key: 2,
 	class: "pagination"
-}, Sd = ["disabled"], Cd = ["disabled"], wd = { class: "panel" }, Td = { class: "dropzone" }, Ed = ["disabled"], Dd = { class: "progress-card" }, Od = { class: "progress-track" }, kd = { class: "hero data-hero" }, Ad = { class: "pill hero-pill" }, jd = { class: "panel" }, Md = { class: "panel-head" }, Nd = ["disabled"], Pd = { class: "stats" }, Fd = { class: "format-value" }, Id = {
+}, wp = ["disabled"], Tp = ["disabled"], Ep = { class: "panel" }, Dp = { class: "dropzone" }, Op = ["disabled"], kp = { class: "progress-card" }, Ap = { class: "progress-track" }, jp = {
+	key: 1,
+	class: "wizard-actions"
+}, Mp = { class: "hero data-hero" }, Np = { class: "pill hero-pill" }, Pp = { class: "panel" }, Fp = { class: "panel-head" }, Ip = ["disabled"], Lp = { class: "stats" }, Rp = { class: "format-value" }, zp = {
 	key: 0,
 	class: "data-warning"
-}, Ld = { class: "panel-head" }, Rd = { class: "number" }, zd = { class: "data-list" }, Bd = { class: "data-copy" }, Vd = { class: "data-title" }, Hd = {
+}, Bp = { class: "panel-head" }, Vp = { class: "number" }, Hp = { class: "data-list" }, Up = { class: "data-copy" }, Wp = { class: "data-title" }, Gp = {
 	key: 0,
 	class: "data-note"
-}, Ud = { class: "data-usage" }, Wd = ["disabled", "onClick"], Gd = {
-	key: 0,
+}, Kp = { class: "data-usage" }, qp = ["disabled", "onClick"], Jp = {
+	key: 1,
 	class: "panel empty-state"
-}, Kd = { class: "hero firmware-hero" }, qd = { class: "panel" }, Jd = { class: "panel-head" }, Yd = ["disabled"], Xd = {
-	key: 0,
-	class: "empty-state"
-}, Zd = {
+}, Yp = {
 	key: 1,
-	class: "word-list"
-}, Qd = ["href"], $d = {
-	key: 1,
-	class: "muted"
-}, ef = ["href"], tf = ["href"], nf = ["href"], rf = ["href"], af = { class: "meta-row" }, of = { key: 0 }, sf = { key: 1 }, cf = { key: 2 }, lf = { key: 3 }, uf = ["disabled", "onClick"], df = { class: "panel history-panel" }, ff = { class: "panel-head" }, pf = {
-	key: 0,
-	class: "history-list"
-}, mf = { class: "history-rail" }, hf = { class: "history-body" }, gf = { class: "history-models" }, _f = {
-	key: 1,
-	class: "empty-state"
-}, vf = { class: "panel compatibility-panel" }, yf = {
-	key: 0,
-	class: "empty-state"
-}, bf = {
-	key: 1,
-	class: "word-list"
-}, xf = ["href"], Sf = {
-	key: 1,
-	class: "muted"
-}, Cf = ["disabled", "onClick"], wf = {
-	class: "modal console-modal",
-	role: "dialog",
-	"aria-modal": "true",
-	"aria-label": "Training console"
-}, Tf = { class: "modal-head" }, Ef = { class: "row console-actions" }, Df = { class: "console-progress-head" }, Of = { class: "console-progress-track" }, kf = {
-	key: 0,
-	class: "console-progress-facts"
-}, Af = {
+	class: "workspace-footer"
+}, Xp = { class: "row" }, Zp = {
 	class: "modal link-modal",
 	role: "dialog",
 	"aria-modal": "true",
 	"aria-label": "Link Tater"
-}, jf = { class: "modal-head" }, Mf = {
+}, Qp = { class: "modal-head" }, $p = {
 	key: 0,
 	class: "link-success"
-}, Nf = {
+}, em = {
 	key: 1,
 	class: "stack"
-}, Pf = { class: "field" }, Ff = { class: "field" }, If = ["disabled"], Lf = "/static/images/tater-wake-word-trainer.png", Rf = 50, zf = /* @__PURE__ */ pr({
+}, tm = { class: "field" }, nm = { class: "field" }, rm = ["disabled"], im = 50, am = /* @__PURE__ */ fr({
 	__name: "TrainerApp",
 	setup(e) {
-		let t = /* @__PURE__ */ Gt(null), n = /* @__PURE__ */ Gt(null), r = /* @__PURE__ */ Gt(!0), i = /* @__PURE__ */ Gt(""), a = /* @__PURE__ */ Gt(""), o = /* @__PURE__ */ Gt(!1), s = [
+		let t = /* @__PURE__ */ I(null), n = /* @__PURE__ */ I(null), r = /* @__PURE__ */ I(!0), i = /* @__PURE__ */ I(""), a = /* @__PURE__ */ I(""), o = /* @__PURE__ */ I(!1), s = [
 			{
-				id: "trainer",
-				label: "Trainer",
-				short: "Train"
-			},
-			{
-				id: "auto",
-				label: "Auto Training",
-				short: "Auto"
+				id: "home",
+				label: "Start",
+				icon: "home"
 			},
 			{
 				id: "firmware",
-				label: "Wake Words",
-				short: "Words"
+				label: "Wake words",
+				icon: "wave"
 			},
 			{
 				id: "captured",
-				label: "Captured Audio",
-				short: "Inbox"
+				label: "Captures",
+				icon: "inbox"
 			},
 			{
-				id: "samples",
-				label: "Samples",
-				short: "Samples"
-			},
-			{
-				id: "data",
-				label: "Data",
-				short: "Data"
+				id: "auto",
+				label: "Auto training",
+				icon: "refresh"
 			}
-		], c = J(() => {
-			let e = Y.samplePage[Y.sampleBucket];
-			return js.value.slice(e * Rf, (e + 1) * Rf);
-		}), l = J(() => Math.max(1, Math.ceil(js.value.length / Rf))), u = J(() => Y.auto.state || {}), d = J(() => Y.auto.runtime || {}), f = J(() => {
-			let e = u.value, t = [];
-			return e.last_review_result && t.push(`Last review: ${String(e.last_review_result).replaceAll("_", " ")}`), e.last_review_file && t.push(String(e.last_review_file)), e.last_review_transcript && t.push(`STT: “${e.last_review_transcript}”`), e.last_review_error && t.push(`Error: ${e.last_review_error}`), e.last_stt_engine && t.push(`STT engine: ${String(e.last_stt_engine).replaceAll("_", " ")}`), e.last_notify_at && t.push(e.last_notify_error ? `Publish failed: ${e.last_notify_error}` : `Wake word published ${mc(e.last_notify_at)}`), t.join(" · ") || "No automatic review has run yet.";
-		}), p = J(() => Y.training.running ? {
+		], c = q(() => J.wakeWordLibrary.find((e) => e.safe_word === J.selectedWord)), l = q(() => [
+			...J.trainMicroWakeWord ? ["MicroWakeWord"] : [],
+			...J.trainOpenWakeWord ? ["openWakeWord"] : [],
+			...J.trainNanoWakeWordCnn ? ["NanoWakeWord CNN"] : [],
+			...J.trainNanoWakeWordGru ? ["NanoWakeWord GRU"] : []
+		]), u = q(() => {
+			let e = String(J.training.safe_word || J.training.summary?.safe_word || ""), t = J.wakeWordLibrary.find((t) => t.safe_word === e)?.phrase;
+			return (J.training.running ? t || J.session.raw_phrase : J.training.summary?.wake_word || t) || e || J.session.raw_phrase || "Wake word";
+		}), d = q(() => {
+			let e = J.samplePage[J.sampleBucket];
+			return Ms.value.slice(e * im, (e + 1) * im);
+		}), f = q(() => Math.max(1, Math.ceil(Ms.value.length / im))), p = q(() => J.auto.state || {}), m = q(() => J.auto.runtime || {}), h = q(() => {
+			let e = p.value, t = [];
+			return e.last_review_result && t.push(`Last review: ${String(e.last_review_result).replaceAll("_", " ")}`), e.last_review_file && t.push(String(e.last_review_file)), e.last_review_transcript && t.push(`STT: “${e.last_review_transcript}”`), e.last_review_error && t.push(`Error: ${e.last_review_error}`), e.last_stt_engine && t.push(`STT engine: ${String(e.last_stt_engine).replaceAll("_", " ")}`), e.last_notify_at && t.push(e.last_notify_error ? `Publish failed: ${e.last_notify_error}` : `Wake word published ${_c(e.last_notify_at)}`), t.join(" · ") || "No automatic review has run yet.";
+		}), g = q(() => J.training.running ? {
 			text: "Training running",
 			tone: "warning"
-		} : Y.training.exit_code === 0 ? {
+		} : J.training.exit_code === 0 ? {
 			text: "Training finished",
 			tone: "success"
-		} : Y.training.exit_code === null ? {
+		} : J.training.exit_code === null ? {
 			text: "Not started",
 			tone: "neutral"
 		} : {
-			text: `Exit ${Y.training.exit_code}`,
+			text: `Exit ${J.training.exit_code}`,
 			tone: "error"
-		}), m = J(() => d.value.review_running ? {
-			text: `Transcribing ${d.value.review_file || "wake"}`,
+		}), _ = q(() => m.value.review_running ? {
+			text: `Transcribing ${m.value.review_file || "wake"}`,
 			tone: "warning"
-		} : Y.training.running && Y.auto.config?.enabled ? {
+		} : J.training.running && J.auto.config?.enabled ? {
 			text: "Training running",
 			tone: "warning"
-		} : Y.auto.config?.enabled ? {
+		} : J.auto.config?.enabled ? {
 			text: "Enabled",
 			tone: "success"
 		} : {
 			text: "Disabled",
 			tone: "neutral"
-		}), h = J(() => Y.training.log_lines?.length ? Y.training.log_lines : ["No training output yet."]), g = J(() => Y.training.progress || null), _ = J(() => {
-			let e = String(g.value?.stage || "pipeline").split(":", 1)[0];
+		}), v = q(() => J.training.log_lines?.length ? J.training.log_lines : ["No training output yet."]), y = q(() => J.training.progress || null), b = q(() => {
+			let e = String(y.value?.stage || "pipeline").split(":", 1)[0];
 			return {
 				starting: "Getting ready",
 				datasets: "Training data",
@@ -4357,19 +4793,19 @@ var yc = {
 				worker: "Pipeline progress",
 				pipeline: "Live pipeline"
 			}[e] || e.replaceAll("-", " ");
-		}), v = J(() => {
-			let e = g.value?.percent;
+		}), x = q(() => {
+			let e = y.value?.percent;
 			if (e == null) return null;
 			let t = Number(e);
 			return Number.isFinite(t) ? Math.max(0, Math.min(100, t)) : null;
-		}), y = J(() => {
-			let e = g.value;
+		}), S = q(() => {
+			let e = y.value;
 			if (!e) return [];
 			let t = [], n = Number(e.current), r = Number(e.total), i = String(e.unit || "items");
 			return Number.isFinite(n) && Number.isFinite(r) && r > 0 ? t.push(`${Math.round(n).toLocaleString()} / ${Math.round(r).toLocaleString()} ${i}`) : Number.isFinite(n) && n > 0 && t.push(`${Math.round(n).toLocaleString()} ${i}`), e.elapsed && t.push(`Elapsed ${e.elapsed}`), e.eta && t.push(`About ${e.eta} left`), e.rate_text ? t.push(String(e.rate_text)) : Number(e.rate) > 0 && t.push(`${Number(e.rate).toLocaleString()} ${i}/sec`), t;
-		}), b = J(() => (Array.isArray(Y.training.summary?.models) ? Y.training.summary.models : []).find((e) => e.failure_kind === "quality_rejected" && String(e.id || "").startsWith("nano_"))), x = J(() => Y.wakeWordLibrary.find((e) => e.safe_word === Y.session.safe_word)), S = J(() => Y.modelHistory.slice(0, 16)), C = J(() => {
+		}), C = q(() => (Array.isArray(J.training.summary?.models) ? J.training.summary.models : []).find((e) => e.failure_kind === "quality_rejected" && String(e.id || "").startsWith("nano_"))), w = q(() => J.wakeWordLibrary.find((e) => e.safe_word === J.session.safe_word)), ee = q(() => {
 			let e = /* @__PURE__ */ new Map();
-			for (let t of Y.managedData.items || []) {
+			for (let t of J.managedData.items || []) {
 				let n = e.get(t.category) || [];
 				n.push(t), e.set(t.category, n);
 			}
@@ -4377,1016 +4813,1068 @@ var yc = {
 				name: e,
 				items: t
 			}));
-		}), w = J(() => Y.trainNanoWakeWordCnn || Y.trainNanoWakeWordGru), T = J(() => Y.autoForm.train_nanowakeword_cnn || Y.autoForm.train_nanowakeword_gru), ee = J(() => [
-			...Y.trainMicroWakeWord ? ["MWW"] : [],
-			...Y.trainOpenWakeWord ? ["OWW"] : [],
-			...w.value ? ["NWW"] : []
-		]), te = J(() => [
-			...Y.autoForm.train_microwakeword ? ["MWW"] : [],
-			...Y.autoForm.train_openwakeword ? ["OWW"] : [],
-			...T.value ? ["NWW"] : []
+		}), te = q(() => J.trainNanoWakeWordCnn || J.trainNanoWakeWordGru), ne = q(() => J.autoForm.train_nanowakeword_cnn || J.autoForm.train_nanowakeword_gru), T = q(() => [
+			...J.trainMicroWakeWord ? ["MWW"] : [],
+			...J.trainOpenWakeWord ? ["OWW"] : [],
+			...te.value ? ["NWW"] : []
+		]), re = q(() => [
+			...J.autoForm.train_microwakeword ? ["MWW"] : [],
+			...J.autoForm.train_openwakeword ? ["OWW"] : [],
+			...ne.value ? ["NWW"] : []
 		]);
-		Pn([() => Y.language, () => Y.ttsMode], Bs), Pn(() => Y.toast.serial, () => window.setTimeout(() => {
-			Y.toast.message = "";
-		}, 4500)), Pn(h, async () => {
-			r.value && (await gn(), r.value && n.value && (n.value.scrollTop = n.value.scrollHeight));
-		}), Pn(() => Y.consoleOpen, async (e) => {
-			e && (r.value = !0, await gn(), D());
-		}), Or(() => {
-			fc(), document.addEventListener("keydown", E);
-		}), jr(() => {
-			pc(), document.removeEventListener("keydown", E);
+		Nn([() => J.language, () => J.ttsMode], Hs), Nn(() => J.toast.serial, () => window.setTimeout(() => {
+			J.toast.message = "";
+		}, 4500)), Nn(v, async () => {
+			r.value && (await hn(), r.value && n.value && (n.value.scrollTop = n.value.scrollHeight));
+		}), Nn(() => J.activeView, async (e) => {
+			await hn(), window.scrollTo(0, 0), e === "training" && ae();
+		}), Nn(() => J.consoleOpen, (e) => {
+			e && (J.activeView = "training", J.consoleOpen = !1);
+		}), Dr(() => {
+			hc(), document.addEventListener("keydown", E);
+		}), Ar(() => {
+			gc(), document.removeEventListener("keydown", E);
 		});
 		function E(e) {
-			e.key === "Escape" && (Y.consoleOpen = !1, Y.taterLinkOpen = !1, Y.trimItem = null);
+			e.key === "Escape" && (J.taterLinkOpen = !1, J.trimItem = null);
 		}
-		function ne() {
+		function ie() {
 			let e = n.value;
 			if (!e) return;
 			let t = e.scrollHeight - e.clientHeight - e.scrollTop;
 			r.value = t <= 32;
 		}
-		function D() {
+		function ae() {
 			let e = n.value;
 			e && (r.value = !0, e.scrollTop = e.scrollHeight);
 		}
-		function re(e) {
-			Y.activeView = e, (e === "auto" ? Zs(!1) : e === "captured" ? Hs() : e === "samples" ? Vs() : e === "firmware" ? Promise.all([nc(), rc()]) : e === "data" ? ac() : Promise.resolve()).catch((e) => Q(e instanceof Error ? e.message : "Refresh failed.", "error"));
+		function D(e) {
+			J.activeView = e, document.querySelectorAll("details.workspace-more[open]").forEach((e) => e.removeAttribute("open")), (e === "home" ? ac(!0) : e === "auto" ? $s(!1) : e === "captured" ? Ws() : e === "samples" ? Us() : e === "firmware" ? Promise.all([ic(), ac()]) : e === "data" ? cc() : Promise.resolve()).catch((e) => Z(e instanceof Error ? e.message : "Refresh failed.", "error"));
 		}
-		function ie(e) {
-			Y.sampleBucket = e;
+		function oe(e) {
+			J.sampleBucket = e;
 		}
-		function ae(e, t) {
-			Y.trimBucket = t, Y.trimItem = e;
+		function O(e, t) {
+			J.trimBucket = t, J.trimItem = e;
 		}
-		function oe() {
-			w.value ? (Y.trainNanoWakeWordCnn = !1, Y.trainNanoWakeWordGru = !1) : Y.trainNanoWakeWordCnn = !0;
-		}
-		function O() {
-			T.value ? (Y.autoForm.train_nanowakeword_cnn = !1, Y.autoForm.train_nanowakeword_gru = !1) : Y.autoForm.train_nanowakeword_cnn = !0;
-		}
-		function se(e) {
-			return new Set(String(e || "").split(/[\n,]+/).map((e) => e.trim().toLocaleLowerCase()).filter(Boolean)).size;
+		function se() {
+			te.value ? (J.trainNanoWakeWordCnn = !1, J.trainNanoWakeWordGru = !1) : J.trainNanoWakeWordCnn = !0;
 		}
 		function ce() {
-			i.value = Y.autoForm.tater_url || "http://127.0.0.1:8501", a.value = "", o.value = !1, Y.taterLinkOpen = !0, gn(() => document.querySelector("#pairing-code")?.focus());
+			ne.value ? (J.autoForm.train_nanowakeword_cnn = !1, J.autoForm.train_nanowakeword_gru = !1) : J.autoForm.train_nanowakeword_cnn = !0;
 		}
-		function le() {
+		function le(e) {
+			return new Set(String(e || "").split(/[\n,]+/).map((e) => e.trim().toLocaleLowerCase()).filter(Boolean)).size;
+		}
+		function ue() {
+			i.value = J.autoForm.tater_url || "http://127.0.0.1:8501", a.value = "", o.value = !1, J.taterLinkOpen = !0, hn(() => document.querySelector("#pairing-code")?.focus());
+		}
+		function fe() {
 			let e = a.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
 			a.value = e.length > 4 ? `${e.slice(0, 4)}-${e.slice(4)}` : e;
 		}
-		async function ue() {
+		async function pe() {
 			if (!i.value.trim() || !a.value.trim()) {
-				Q("Tater address and pairing code are required.", "warning");
+				Z("Tater address and pairing code are required.", "warning");
 				return;
 			}
-			o.value = await ec(i.value, a.value);
+			o.value = await nc(i.value, a.value);
 		}
-		function fe(e) {
+		function me(e) {
 			let t = [];
 			return e.source_device && t.push(String(e.source_device)), e.wake_word && t.push(String(e.wake_word)), e.max_probability !== null && e.max_probability !== void 0 && t.push(`max ${e.max_probability}`), e.average_probability !== null && e.average_probability !== void 0 && t.push(`avg ${e.average_probability}`), e.detection_profile && t.push(`profile ${String(e.detection_profile).replaceAll("_", " ")}`), e.auto_review_status && t.push(`auto ${String(e.auto_review_status).replaceAll("_", " ")}`), e.vad_max_probability !== null && e.vad_max_probability !== void 0 && t.push(`VAD ${e.vad_max_probability}`), t;
 		}
-		function pe(e) {
+		function he(e) {
 			let t = [];
 			e.original_name && e.original_name !== e.saved_as && t.push(`From ${e.original_name}`);
-			let n = mc(e.reviewed_at || e.received_at || e.created_at);
+			let n = _c(e.reviewed_at || e.received_at || e.created_at);
 			return n && t.push(`Saved ${n}`), e.message && t.push(String(e.message)), e.auto_negative && t.push("Auto-reviewed false positive"), e.auto_positive && t.push("Auto-promoted close miss"), t.join(" · ") || "Training sample";
 		}
-		function me(e) {
-			return String(e.json_url || e.url || e.jsonUrl || "");
-		}
-		function he(e) {
-			return String(e.esphome_json_url || e.esphomeJsonUrl || "");
-		}
 		function ge(e) {
-			return String(e.model_url || e.modelUrl || "");
-		}
-		function _e(e) {
-			return String(e.openwakeword_model_url || "");
-		}
-		function ve(e) {
-			return String(e.wake_boundary_model_url || "");
-		}
-		function ye(e) {
-			return e.nanowakeword_models && typeof e.nanowakeword_models == "object" ? e.nanowakeword_models : {};
-		}
-		function be(e) {
 			let t = e.trim().toLowerCase();
 			return /^(✓|✅)|success|finished/.test(t) ? "success" : /^(✗|❌)|error|failed|traceback/.test(t) ? "error" : /^(⚠|warning)/.test(t) ? "warning" : /^={4,}|^-----|^=====/.test(t) ? "heading" : "";
 		}
-		return (e, d) => (H(), U("div", jc, [
-			d[172] ||= W("div", {
-				class: "ambient ambient-one",
-				"aria-hidden": "true"
-			}, null, -1),
-			d[173] ||= W("div", {
-				class: "ambient ambient-two",
-				"aria-hidden": "true"
-			}, null, -1),
-			W("header", Mc, [W("div", { class: "brand" }, [W("div", {
-				class: "brand-mark",
-				"aria-hidden": "true"
-			}, [W("img", {
-				src: Lf,
-				alt: ""
-			})]), d[58] ||= W("div", null, [
-				W("span", { class: "eyebrow" }, "Tater tools"),
-				W("h1", null, "Wake Word Studio"),
-				W("p", null, "Generate voices, curate real recordings, train, and publish.")
-			], -1)]), W("div", Nc, [W("div", { class: "local-trainer-status" }, [d[59] ||= W("span", { class: "live-dot" }, [W("i"), K("Local trainer")], -1), W("small", null, A("v47.7"))]), I(Y).session.safe_word ? (H(), U("span", Pc, A(I(Y).session.safe_word) + " · " + A(I(Y).language), 1)) : q("", !0)])]),
-			W("nav", Fc, [(H(), U(V, null, R(s, (e) => W("button", {
-				key: e.id,
+		function _e(e) {
+			J.selectedWord = e.safe_word, J.activeView = "word";
+		}
+		async function ve() {
+			if (J.training.running || Y("session")) {
+				Z("Wait for the active training run before creating another word.", "warning");
+				return;
+			}
+			J.session.safe_word && (await Bs(), J.session.safe_word) || (J.phrase = "", J.selectedWord = "", J.wizardRetrain = !1, J.wizardStep = 0, J.activeView = "trainer");
+		}
+		async function ye(e) {
+			return J.session.safe_word === e.safe_word ? !0 : J.training.running ? (Z("Wait for training before changing the recording workspace.", "warning"), !1) : J.session.safe_word && (await Bs(), J.session.safe_word) ? !1 : (await oc(e), J.session.safe_word === e.safe_word);
+		}
+		async function be(e) {
+			await ye(e) && (J.selectedWord = e.safe_word, J.wizardRetrain = !0, J.wizardStep = 2, J.activeView = "trainer");
+		}
+		async function xe(e) {
+			await ye(e) && (J.selectedWord = e.safe_word, D("samples"));
+		}
+		async function Se() {
+			if (!J.session.safe_word) {
+				let e = J.wakeWordLibrary.find((e) => e.phrase.trim().toLocaleLowerCase() === J.phrase.trim().toLocaleLowerCase());
+				if (e) {
+					_e(e), Z("This phrase is already saved. Open its results or train a new version.", "warning");
+					return;
+				}
+				if (await zs(), !J.session.safe_word) return;
+			}
+			await Us(!0), J.wizardStep = 1;
+		}
+		async function Ce() {
+			await Bs(), J.session.safe_word || (J.wizardStep = 0);
+		}
+		function we() {
+			let e = String(J.training.safe_word || J.training.summary?.safe_word || J.session.safe_word || ""), t = J.wakeWordLibrary.find((t) => t.safe_word === e);
+			t ? _e(t) : D("firmware");
+		}
+		function j(e) {
+			let t = e.split(":", 1)[0];
+			return {
+				starting: "Getting ready",
+				datasets: "Training data",
+				tts: "Speech generation",
+				features: "Feature building",
+				model: "Model training",
+				boundary: "Wake boundary",
+				calibration: "Calibration",
+				package: "JSON & models",
+				openwakeword: "openWakeWord",
+				nanowakeword: "NanoWakeWord",
+				complete: "Finished",
+				failed: "Needs attention"
+			}[t] || t.replaceAll("-", " ");
+		}
+		return (e, m) => (V(), H("div", du, [
+			U("header", fu, [U("div", pu, [m[66] ||= U("span", { class: "tater-wordmark" }, "Tater", -1), U("div", null, [m[65] ||= U("h1", null, "Wake Word Trainer", -1), U("div", mu, [U("span", null, A("NVIDIA · Docker / CUDA"), 1), U("small", null, A("v47.8"))])])]), U("nav", hu, [
+				(V(), H(B, null, z(s, (e) => U("button", {
+					key: e.id,
+					type: "button",
+					"aria-current": L(J).activeView === e.id || e.id === "firmware" && L(J).activeView === "word" ? "page" : void 0,
+					onClick: (t) => D(e.id)
+				}, [
+					W($, { name: e.icon }, null, 8, ["name"]),
+					G(A(e.label), 1),
+					e.id === "captured" && L(J).captured.captured_count ? (V(), H("span", _u, A(L(J).captured.captured_count), 1)) : K("", !0)
+				], 8, gu)), 64)),
+				L(js) ? (V(), H("button", {
+					key: 0,
+					type: "button",
+					"aria-current": L(J).activeView === "training" ? "page" : void 0,
+					onClick: m[0] ||= (e) => D("training")
+				}, [W($, { name: "activity" }), m[67] ||= G("Training", -1)], 8, vu)) : K("", !0),
+				U("details", yu, [m[68] ||= U("summary", null, "More", -1), U("div", null, [
+					L(J).session.safe_word ? (V(), H("button", {
+						key: 0,
+						type: "button",
+						onClick: m[1] ||= (e) => D("trainer")
+					}, "Resume setup · " + A(L(J).session.raw_phrase), 1)) : K("", !0),
+					U("button", {
+						type: "button",
+						onClick: m[2] ||= (e) => D("samples")
+					}, "Samples"),
+					U("button", {
+						type: "button",
+						onClick: m[3] ||= (e) => D("data")
+					}, "Data & storage"),
+					U("button", {
+						type: "button",
+						onClick: ue
+					}, A(L(Ns) ? "Tater connection" : "Link Tater"), 1)
+				])])
+			])]),
+			L(J).training.running && L(J).activeView !== "training" ? (V(), H("div", bu, [U("span", xu, [
+				W($, { name: "activity" }),
+				G("Training “" + A(u.value) + "” · " + A(b.value), 1),
+				x.value === null ? K("", !0) : (V(), H(B, { key: 0 }, [G(" · " + A(x.value.toFixed(1)) + "%", 1)], 64))
+			]), U("button", {
 				type: "button",
-				class: k({ active: I(Y).activeView === e.id }),
-				onClick: (t) => re(e.id)
-			}, [
-				W("span", Lc, A(e.label), 1),
-				W("span", Rc, A(e.short), 1),
-				e.id === "captured" && I(Y).captured.captured_count ? (H(), U("b", zc, A(I(Y).captured.captured_count), 1)) : q("", !0)
-			], 10, Ic)), 64))]),
-			W("main", Bc, [I(Y).initialized ? (H(), U(V, { key: 1 }, [I(Y).activeView === "trainer" ? (H(), U(V, { key: 0 }, [
-				d[94] ||= fa("<section class=\"hero training-hero\"><div><span class=\"eyebrow\">Training studio</span><h2>Build a personal wake word</h2><p>Choose a multilingual voice route, check your real samples, then follow the model pipeline live.</p></div><div class=\"step-row\"><span><b>1</b> Phrase</span><span><b>2</b> Samples</span><span><b>3</b> Train</span></div></section>", 1),
-				W("section", Hc, [
-					W("header", Uc, [
-						d[61] ||= W("div", { class: "number" }, "↺", -1),
-						d[62] ||= W("div", null, [W("h3", null, "Saved wake words"), W("p", null, "Switch words without regenerating their voices, features, or reviewed samples.")], -1),
-						W("span", { class: k(["pill", I(Y).wakeWordLibrary.length ? "success" : ""]) }, A(I(Y).wakeWordLibrary.length) + " saved", 3)
-					]),
-					I(Y).wakeWordLibrary.length ? (H(), U("div", Wc, [(H(!0), U(V, null, R(I(Y).wakeWordLibrary, (e) => (H(), U("article", {
-						key: e.safe_word,
-						class: k({ active: e.safe_word === I(Y).session.safe_word })
+				onClick: m[4] ||= (e) => D("training")
+			}, [m[69] ||= G("Open training", -1), W($, { name: "external" })])])) : K("", !0),
+			U("main", Su, [L(J).initialized ? (V(), H(B, { key: 1 }, [L(J).activeView === "trainer" ? (V(), H(B, { key: 0 }, [
+				U("button", {
+					type: "button",
+					class: "workspace-back",
+					onClick: m[5] ||= (e) => L(J).activeView = "home"
+				}, [W($, { name: "back" }), m[71] ||= G("Back to start", -1)]),
+				U("header", wu, [U("div", null, [
+					U("span", Tu, A(L(J).wizardRetrain ? "Improve an existing word" : "New wake word"), 1),
+					U("h2", null, A(L(J).wizardRetrain ? `Train a new version of “${L(J).phrase}”` : "Create a wake word"), 1),
+					m[72] ||= U("p", null, "Phrase → recordings → models → review.", -1)
+				]), L(J).session.safe_word ? (V(), H("span", Eu, A(L(J).session.raw_phrase), 1)) : K("", !0)]),
+				U("div", Du, [(V(), H(B, null, z([
+					"Phrase",
+					"Recordings",
+					"Models",
+					"Review"
+				], (e, t) => U("button", {
+					key: e,
+					type: "button",
+					"aria-current": L(J).wizardStep === t ? "step" : void 0,
+					disabled: t > 0 && !L(J).session.safe_word || t === 3 && !l.value.length,
+					onClick: (e) => L(J).wizardStep = t
+				}, [U("b", null, A(t < L(J).wizardStep ? "✓" : t + 1), 1), G(A(e), 1)], 8, Ou)), 64))])
+			], 64)) : K("", !0), L(J).activeView === "home" ? (V(), aa(fl, {
+				key: 1,
+				onCreate: ve,
+				onOpen: _e
+			})) : L(J).activeView === "firmware" || L(J).activeView === "word" && !c.value ? (V(), aa(fl, {
+				key: 2,
+				library: "",
+				onCreate: ve,
+				onOpen: _e
+			})) : L(J).activeView === "word" && c.value ? (V(), aa(uu, {
+				key: 3,
+				word: c.value,
+				onRetrain: be,
+				onRecordings: xe
+			}, null, 8, ["word"])) : L(J).activeView === "training" ? (V(), H(B, { key: 4 }, [
+				U("button", {
+					type: "button",
+					class: "workspace-back",
+					onClick: we
+				}, [W($, { name: "back" }), m[73] ||= G("Back to wake word", -1)]),
+				U("header", ku, [U("div", null, [
+					m[74] ||= U("span", { class: "eyebrow" }, "Training workspace", -1),
+					U("h2", null, A(L(J).training.running ? "Training" : "Training results for") + " “" + A(u.value) + "”", 1),
+					U("p", null, A(L(J).training.running ? "The current published version and its JSON links stay available while this run trains." : "Review the report, view saved results, or train another version."), 1)
+				]), U("span", { class: k(["pill", g.value.tone]) }, A(g.value.text), 3)]),
+				U("div", Au, [U("section", ju, [
+					U("header", Mu, [U("div", null, [U("h3", null, A(b.value), 1), U("p", null, A(y.value?.label || (L(J).training.running ? "Waiting for training output…" : "No stage details available.")), 1)])]),
+					y.value ? (V(), H("div", {
+						key: 0,
+						class: k(["console-progress", {
+							indeterminate: x.value === null && !y.value.status,
+							complete: y.value.status === "complete",
+							failed: y.value.status === "failed"
+						}])
 					}, [
-						W("header", null, [
-							W("div", Gc, A(e.phrase.slice(0, 2).toUpperCase()), 1),
-							W("div", null, [W("span", null, A(e.active ? "Working set" : "Saved word"), 1), W("strong", null, A(e.phrase), 1)]),
-							e.has_published_bundle ? (H(), U("i", Kc, "Ready")) : q("", !0)
-						]),
-						W("div", qc, [
-							W("span", null, [W("b", null, A(Number(e.dataset_file_count || 0).toLocaleString()), 1), d[63] ||= K(" cached files", -1)]),
-							W("span", null, [W("b", null, A(I(hc)(e.dataset_size_bytes)), 1), d[64] ||= K(" retained", -1)]),
-							W("span", null, [W("b", null, A(e.run_count), 1), d[65] ||= K(" runs", -1)])
-						]),
-						W("footer", null, [W("small", null, [K(A(e.language || "language saved on next use"), 1), e.latest_run?.completed_at ? (H(), U(V, { key: 0 }, [K(" · latest " + A(I(mc)(e.latest_run.completed_at)), 1)], 64)) : q("", !0)]), W("button", {
-							type: "button",
-							class: k({ primary: e.safe_word !== I(Y).session.safe_word }),
-							disabled: !!I(Y).session.safe_word && e.safe_word !== I(Y).session.safe_word,
-							onClick: (t) => I(ic)(e)
-						}, A(e.safe_word === I(Y).session.safe_word ? "Active" : "Use + retrain"), 11, Jc)])
-					], 2))), 128))])) : (H(), U("div", Yc, [...d[66] ||= [
-						W("div", null, "＋", -1),
-						W("strong", null, "Your first word will be saved automatically", -1),
-						W("span", null, "Its generated corpus and feature cache stay available for later retraining.", -1)
-					]])),
-					I(Y).session.safe_word && I(Y).wakeWordLibrary.some((e) => e.safe_word !== I(Y).session.safe_word) ? (H(), U("p", Xc, "End the current session before selecting a different saved word. Nothing is deleted when you switch.")) : q("", !0)
+						U("div", Nu, [U("div", null, [m[75] ||= U("span", null, "Current stage progress", -1), U("strong", null, A(y.value.label || "Working…"), 1)]), U("b", null, A(y.value.status === "failed" ? "Failed" : y.value.status === "complete" ? "Done" : x.value === null ? "Working" : `${x.value.toFixed(1)}%`), 1)]),
+						U("div", {
+							class: "console-progress-track",
+							role: "progressbar",
+							"aria-label": "Current training stage progress",
+							"aria-valuenow": x.value ?? void 0,
+							"aria-valuemin": "0",
+							"aria-valuemax": "100"
+						}, [U("i", { style: de({ width: y.value.status ? "100%" : x.value === null ? "38%" : `${x.value}%` }) }, null, 4)], 8, Pu),
+						S.value.length ? (V(), H("div", Fu, [(V(!0), H(B, null, z(S.value, (e) => (V(), H("span", { key: e }, A(e), 1))), 128))])) : K("", !0)
+					], 2)) : K("", !0),
+					U("div", Iu, [(V(!0), H(B, null, z(L(J).trainingStages, (e, t) => (V(), H("article", {
+						key: `${t}-${e.stage}`,
+						class: k(e.status)
+					}, [
+						W($, { name: e.status === "complete" ? "check" : e.status === "running" ? "activity" : "circle" }, null, 8, ["name"]),
+						U("div", null, [U("strong", null, A(j(e.stage)), 1), U("small", null, A(e.label), 1)]),
+						U("span", { class: k(["pill", e.status === "complete" ? "success" : e.status === "failed" ? "error" : ""]) }, A(e.status === "complete" ? "Done" : e.status === "failed" ? "Needs attention" : e.status === "running" ? "Running" : e.status), 3)
+					], 2))), 128)), L(J).trainingStages.length ? K("", !0) : (V(), H("p", Lu, "Stage details appear as the trainer reports them."))])
+				]), U("aside", Ru, [U("section", zu, [m[81] ||= U("h3", null, "This training run", -1), U("dl", Bu, [
+					U("div", null, [m[76] ||= U("dt", null, "Wake word", -1), U("dd", null, A(u.value), 1)]),
+					U("div", null, [m[77] ||= U("dt", null, "Trainer", -1), U("dd", null, A("NVIDIA · Docker / CUDA"), 1)]),
+					U("div", null, [m[78] ||= U("dt", null, "Recordings", -1), U("dd", null, A(L(Ds)) + " personal · " + A(L(Os)) + " negatives", 1)]),
+					L(J).trainingTargets.length ? (V(), H("div", Vu, [m[79] ||= U("dt", null, "Requested models", -1), U("dd", null, A(L(J).trainingTargets.join(", ")), 1)])) : K("", !0),
+					m[80] ||= U("div", null, [U("dt", null, "Published JSON"), U("dd", null, "Existing versions remain available")], -1)
+				])]), m[82] ||= pa("<section class=\"panel\"><h3>When it is ready</h3><p class=\"workspace-note\">Validation results, a saved version, and its JSON links appear on the word’s page.</p><div class=\"row\"><span class=\"pill\">Bundle JSON</span><span class=\"pill\">ESPHome JSON with MicroWakeWord</span></div></section>", 1)])]),
+				U("section", Hu, [U("header", Uu, [m[83] ||= U("div", null, [U("h3", null, "Training log"), U("p", null, "Training continues while you browse other pages.")], -1), r.value ? K("", !0) : (V(), H("button", {
+					key: 0,
+					type: "button",
+					class: "console-follow",
+					onClick: ae
+				}, "Jump to latest"))]), U("pre", {
+					ref_key: "consoleLog",
+					ref: n,
+					class: "console-log",
+					onScrollPassive: ie
+				}, [(V(!0), H(B, null, z(v.value, (e, t) => (V(), H("span", {
+					key: `${t}-${e}`,
+					class: k(ge(e))
+				}, A(e), 3))), 128))], 544)]),
+				!L(J).training.running && L(J).training.summary?.models?.length ? (V(), H("section", Wu, [U("header", null, [
+					U("div", { class: k(["summary-mark", L(J).training.summary.tone]) }, A(L(J).training.summary.tone === "success" ? "✓" : L(J).training.summary.tone === "error" ? "×" : "!"), 3),
+					U("div", null, [
+						m[84] ||= U("span", { class: "eyebrow" }, "Last completed run", -1),
+						U("h4", null, A(L(J).training.summary.wake_word), 1),
+						U("p", null, [G(A(L(J).training.summary.message), 1), L(J).training.summary.completed_at ? (V(), H(B, { key: 0 }, [G(" · " + A(L(_c)(L(J).training.summary.completed_at)), 1)], 64)) : K("", !0)])
+					]),
+					U("span", { class: k(["pill", L(J).training.summary.tone]) }, A(L(J).training.summary.overall), 3)
+				]), U("div", Gu, [(V(!0), H(B, null, z(L(J).training.summary.models, (e) => (V(), H("article", {
+					key: e.id,
+					class: k(e.tone)
+				}, [
+					U("header", null, [U("div", null, [U("span", null, A(e.id.replaceAll("_", " ")), 1), U("strong", null, A(e.label), 1)]), U("b", null, A(e.rating), 1)]),
+					U("p", null, A(e.message), 1),
+					e.metrics?.length ? (V(), H("div", Ku, [(V(!0), H(B, null, z(e.metrics, (e) => (V(), H("span", { key: `${e.label}-${e.value}` }, [U("small", null, A(e.label), 1), U("strong", null, A(e.value), 1)]))), 128))])) : K("", !0)
+				], 2))), 128))])])) : K("", !0),
+				U("div", qu, [L(J).training.running ? (V(), H("button", {
+					key: 0,
+					type: "button",
+					disabled: L(Y)("session"),
+					onClick: m[6] ||= (...e) => L(Bs) && L(Bs)(...e)
+				}, [W($, { name: "stop" }), m[85] ||= G("Stop training", -1)], 8, Ju)) : L(J).session.safe_word ? (V(), H("button", {
+					key: 1,
+					type: "button",
+					disabled: L(Y)("session"),
+					onClick: Ce
+				}, "End setup session", 8, Yu)) : (V(), H("span", Xu, "Every saved version stays in your library.")), U("button", {
+					type: "button",
+					class: "primary",
+					onClick: we
+				}, [G(A(L(J).training.running ? "View current word" : "View results & JSON"), 1), W($, { name: "next" })])])
+			], 64)) : L(J).activeView === "trainer" && L(J).wizardStep !== 1 ? (V(), H(B, { key: 5 }, [L(J).wizardStep === 0 ? (V(), H("section", Zu, [
+				U("header", Qu, [
+					m[86] ||= U("div", { class: "number" }, "1", -1),
+					m[87] ||= U("div", null, [U("h3", null, "Phrase + voice"), U("p", null, "The phrase and voice route lock while a session is active.")], -1),
+					U("span", { class: k(["pill", L(J).session.safe_word ? "success" : ""]) }, A(L(J).session.safe_word ? `Session · ${L(J).session.safe_word}` : "No session"), 3)
 				]),
-				W("section", Zc, [
-					W("header", Qc, [
-						d[67] ||= W("div", { class: "number" }, "1", -1),
-						d[68] ||= W("div", null, [W("h3", null, "Phrase + voice"), W("p", null, "The phrase and voice route lock while a session is active.")], -1),
-						W("span", { class: k(["pill", I(Y).session.safe_word ? "success" : ""]) }, A(I(Y).session.safe_word ? `Session · ${I(Y).session.safe_word}` : "No session"), 3)
+				U("div", $u, [
+					U("label", ed, [m[88] ||= U("span", null, "Wake phrase", -1), R(U("input", {
+						"onUpdate:modelValue": m[7] ||= (e) => L(J).phrase = e,
+						type: "text",
+						placeholder: "e.g. \"hey tater\"",
+						disabled: !!L(J).session.safe_word || L(Y)("session"),
+						onKeyup: ls(Se, ["enter"])
+					}, null, 40, td), [[Qo, L(J).phrase]])]),
+					U("label", nd, [
+						m[89] ||= U("span", null, "Language", -1),
+						R(U("select", {
+							"onUpdate:modelValue": m[8] ||= (e) => L(J).language = e,
+							disabled: !!L(J).session.safe_word || L(Y)("session")
+						}, [(V(!0), H(B, null, z(L(J).languages, (e) => (V(), H("option", {
+							key: e.code,
+							value: e.code
+						}, A(e.label), 9, id))), 128))], 8, rd), [[ts, L(J).language]]),
+						U("small", null, A(L(As)), 1)
 					]),
-					W("div", $c, [
-						W("label", el, [d[69] ||= W("span", null, "Wake phrase", -1), L(W("input", {
-							"onUpdate:modelValue": d[0] ||= (e) => I(Y).phrase = e,
-							type: "text",
-							placeholder: "e.g. \"hey tater\"",
-							disabled: !!I(Y).session.safe_word || I(X)("session"),
-							onKeyup: d[1] ||= cs((...e) => I(Ls) && I(Ls)(...e), ["enter"])
-						}, null, 40, tl), [[Zo, I(Y).phrase]])]),
-						W("label", nl, [
-							d[70] ||= W("span", null, "Language", -1),
-							L(W("select", {
-								"onUpdate:modelValue": d[2] ||= (e) => I(Y).language = e,
-								disabled: !!I(Y).session.safe_word || I(X)("session")
-							}, [(H(!0), U(V, null, R(I(Y).languages, (e) => (H(), U("option", {
-								key: e.code,
-								value: e.code
-							}, A(e.label), 9, il))), 128))], 8, rl), [[es, I(Y).language]]),
-							W("small", null, A(I(ks)), 1)
-						]),
-						I(Y).language === "en" && I(Y).ttsMode !== "piper" ? (H(), U("label", al, [
-							d[71] ||= W("span", null, "English accent emphasis", -1),
-							L(W("select", {
-								"onUpdate:modelValue": d[3] ||= (e) => I(Y).englishAccent = e,
-								disabled: !!I(Y).session.safe_word || I(X)("session")
-							}, [(H(!0), U(V, null, R(I(Y).englishAccents, (e) => (H(), U("option", {
-								key: e.code,
-								value: e.code
-							}, A(e.label), 9, sl))), 128))], 8, ol), [[es, I(Y).englishAccent]]),
-							d[72] ||= W("small", null, "Qwen emphasizes this accent; MOSS carries it through accepted references. OmniVoice and Piper keep broad English coverage.", -1)
-						])) : q("", !0),
-						W("label", cl, [
-							d[73] ||= W("span", null, "TTS source", -1),
-							L(W("select", {
-								"onUpdate:modelValue": d[4] ||= (e) => I(Y).ttsMode = e,
-								disabled: !!I(Y).session.safe_word || I(X)("session")
-							}, [
-								W("option", {
-									value: "hybrid",
-									disabled: !I(Y).languages.find((e) => e.code === I(Y).language)?.engines?.includes("piper")
-								}, "Four-provider ensemble · recommended", 8, ul),
-								W("option", {
-									value: "modern",
-									disabled: !I(Y).languages.find((e) => e.code === I(Y).language)?.engines?.some((e) => e !== "piper")
-								}, "Modern only · no Piper", 8, dl),
-								W("option", {
-									value: "piper",
-									disabled: !I(Y).languages.find((e) => e.code === I(Y).language)?.engines?.includes("piper")
-								}, "Piper only · legacy", 8, fl)
-							], 8, ll), [[es, I(Y).ttsMode]]),
-							d[74] ||= W("small", null, "Models download once and stay cached.", -1)
-						])
-					]),
-					W("div", pl, [I(Y).session.safe_word ? (H(), U("button", {
+					L(J).language === "en" && L(J).ttsMode !== "piper" ? (V(), H("label", ad, [
+						m[90] ||= U("span", null, "English accent emphasis", -1),
+						R(U("select", {
+							"onUpdate:modelValue": m[9] ||= (e) => L(J).englishAccent = e,
+							disabled: !!L(J).session.safe_word || L(Y)("session")
+						}, [(V(!0), H(B, null, z(L(J).englishAccents, (e) => (V(), H("option", {
+							key: e.code,
+							value: e.code
+						}, A(e.label), 9, sd))), 128))], 8, od), [[ts, L(J).englishAccent]]),
+						m[91] ||= U("small", null, "Qwen emphasizes this accent; MOSS carries it through accepted references. OmniVoice and Piper keep broad English coverage.", -1)
+					])) : K("", !0),
+					U("label", cd, [
+						m[92] ||= U("span", null, "TTS source", -1),
+						R(U("select", {
+							"onUpdate:modelValue": m[10] ||= (e) => L(J).ttsMode = e,
+							disabled: !!L(J).session.safe_word || L(Y)("session")
+						}, [
+							U("option", {
+								value: "hybrid",
+								disabled: !L(J).languages.find((e) => e.code === L(J).language)?.engines?.includes("piper")
+							}, "Four-provider ensemble · recommended", 8, ud),
+							U("option", {
+								value: "modern",
+								disabled: !L(J).languages.find((e) => e.code === L(J).language)?.engines?.some((e) => e !== "piper")
+							}, "Modern only · no Piper", 8, dd),
+							U("option", {
+								value: "piper",
+								disabled: !L(J).languages.find((e) => e.code === L(J).language)?.engines?.includes("piper")
+							}, "Piper only · legacy", 8, fd)
+						], 8, ld), [[ts, L(J).ttsMode]]),
+						m[93] ||= U("small", null, "Models download once and stay cached.", -1)
+					])
+				]),
+				U("div", pd, [
+					L(J).session.safe_word ? (V(), H("button", {
 						key: 1,
 						type: "button",
 						class: "button danger",
-						disabled: I(X)("session"),
-						onClick: d[6] ||= (...e) => I(Rs) && I(Rs)(...e)
-					}, A(I(X)("session") ? "Stopping…" : I(Y).training.running ? "Stop session + training" : "Stop session"), 9, hl)) : (H(), U("button", {
+						disabled: L(Y)("session"),
+						onClick: Ce
+					}, A(L(Y)("session") ? "Stopping…" : L(J).training.running ? "Stop training + end session" : "End setup session"), 9, hd)) : (V(), H("button", {
 						key: 0,
 						type: "button",
 						class: "button primary",
-						disabled: I(X)("session") || !I(Y).phrase.trim(),
-						onClick: d[5] ||= (...e) => I(Ls) && I(Ls)(...e)
-					}, A(I(X)("session") ? "Starting…" : "Start session"), 9, ml)), W("button", {
+						disabled: L(Y)("session") || !L(J).phrase.trim(),
+						onClick: Se
+					}, A(L(Y)("session") ? "Starting…" : "Continue"), 9, md)),
+					L(J).session.safe_word ? (V(), H("button", {
+						key: 2,
 						type: "button",
-						disabled: !I(Y).phrase.trim(),
-						onClick: d[7] ||= (...e) => I(zs) && I(zs)(...e)
-					}, "System preview", 8, gl)])
-				]),
-				W("section", _l, [
-					W("header", vl, [
-						d[75] ||= W("div", { class: "number" }, "2", -1),
-						d[76] ||= W("div", null, [W("h3", null, "Train wake word"), W("p", null, "Personal positives and reviewed false-wake negatives are automatically included.")], -1),
-						W("span", { class: k(["pill", p.value.tone]) }, A(p.value.text), 3)
-					]),
-					W("div", yl, [
-						W("article", null, [d[77] ||= W("span", null, "Positive samples", -1), W("strong", null, A(I(Es)), 1)]),
-						W("article", null, [d[78] ||= W("span", null, "Negative samples", -1), W("strong", null, A(I(Ds)), 1)]),
-						d[79] ||= W("article", null, [W("span", null, "Training format"), W("strong", { class: "format-value" }, "16 kHz · mono · WAV")], -1)
-					]),
-					W("div", bl, [
-						W("div", xl, [
-							W("button", {
-								type: "button",
-								class: k(["model-choice", { active: I(Y).trainMicroWakeWord }]),
-								"aria-pressed": I(Y).trainMicroWakeWord,
-								onClick: d[8] ||= (e) => I(Y).trainMicroWakeWord = !I(Y).trainMicroWakeWord
-							}, [...d[80] ||= [
-								W("i", null, "MWW", -1),
-								W("span", null, [W("strong", null, "MicroWakeWord"), W("small", null, "TFLite for ESP32 satellites and ESPHome.")], -1),
-								W("b", null, "✓", -1)
-							]], 10, Sl),
-							W("button", {
-								type: "button",
-								class: k(["model-choice", { active: I(Y).trainOpenWakeWord }]),
-								"aria-pressed": I(Y).trainOpenWakeWord,
-								onClick: d[9] ||= (e) => I(Y).trainOpenWakeWord = !I(Y).trainOpenWakeWord
-							}, [...d[81] ||= [
-								W("i", null, "OWW", -1),
-								W("span", null, [W("strong", null, "openWakeWord"), W("small", null, "ONNX for satellites with OWW support.")], -1),
-								W("b", null, "✓", -1)
-							]], 10, Cl),
-							W("button", {
-								type: "button",
-								class: k(["model-choice", { active: w.value }]),
-								"aria-pressed": w.value,
-								onClick: oe
-							}, [...d[82] ||= [
-								W("i", null, "NWW", -1),
-								W("span", null, [W("strong", null, "NanoWakeWord"), W("small", null, "ONNX with selectable CNN and GRU builds.")], -1),
-								W("b", null, "✓", -1)
-							]], 10, wl)
-						]),
-						w.value ? (H(), U("div", Tl, [W("div", El, [d[83] ||= W("div", null, [W("strong", null, "NanoWakeWord architectures"), W("small", null, "Select either architecture or train both.")], -1), W("span", null, A(I(Y).trainNanoWakeWordCnn && I(Y).trainNanoWakeWordGru ? "2 selected" : "1 selected"), 1)]), W("div", Dl, [W("button", {
-							type: "button",
-							class: k(["architecture-choice", { active: I(Y).trainNanoWakeWordCnn }]),
-							"aria-pressed": I(Y).trainNanoWakeWordCnn,
-							onClick: d[10] ||= (e) => I(Y).trainNanoWakeWordCnn = !I(Y).trainNanoWakeWordCnn
-						}, [...d[84] ||= [
-							W("i", null, "CNN", -1),
-							W("span", null, [W("strong", null, "CNN"), W("small", null, "Recommended default with stronger recall.")], -1),
-							W("b", null, "✓", -1)
-						]], 10, Ol), W("button", {
-							type: "button",
-							class: k(["architecture-choice", { active: I(Y).trainNanoWakeWordGru }]),
-							"aria-pressed": I(Y).trainNanoWakeWordGru,
-							onClick: d[11] ||= (e) => I(Y).trainNanoWakeWordGru = !I(Y).trainNanoWakeWordGru
-						}, [...d[85] ||= [
-							W("i", null, "GRU", -1),
-							W("span", null, [W("strong", null, "GRU"), W("small", null, "Recurrent model tuned for fewer false triggers.")], -1),
-							W("b", null, "✓", -1)
-						]], 10, kl)])])) : q("", !0),
-						ee.value.length ? (H(), U("section", Al, [
-							W("header", jl, [
-								d[86] ||= W("div", { class: "hard-negative-icon" }, "−", -1),
-								d[87] ||= W("div", null, [
-									W("span", { class: "eyebrow" }, "Optional precision tuning"),
-									W("strong", null, "Hard negative training"),
-									W("small", null, "Teach the selected models which similar-sounding phrases must not wake the assistant.")
-								], -1),
-								W("b", null, A(se(I(Y).generatedNegativePhrases) ? `${se(I(Y).generatedNegativePhrases)} phrase${se(I(Y).generatedNegativePhrases) === 1 ? "" : "s"}` : "Optional"), 1)
-							]),
-							W("div", Ml, [d[88] ||= W("span", null, "Applied to", -1), (H(), U(V, null, R([
-								"MWW",
-								"OWW",
-								"NWW"
-							], (e) => W("i", {
-								key: e,
-								class: k({ active: ee.value.includes(e) })
-							}, A(e), 3)), 64))]),
-							W("label", Nl, [
-								d[89] ||= W("span", null, "Phrases to reject", -1),
-								L(W("textarea", {
-									"onUpdate:modelValue": d[12] ||= (e) => I(Y).generatedNegativePhrases = e,
-									rows: "4",
-									placeholder: "hey later\nhey waiter\nokay tater"
-								}, null, 512), [[Zo, I(Y).generatedNegativePhrases]]),
-								d[90] ||= W("small", null, "One phrase per line. Each selected engine synthesizes and validates these near-misses alongside reviewed recordings and its broad negative data.", -1)
-							]),
-							d[91] ||= W("footer", null, [W("span", null, "Unchanged phrases reuse their cached audio on later runs."), W("strong", null, "The actual wake phrase is ignored automatically.")], -1)
-						])) : q("", !0)
-					]),
-					!I(Y).training.running && I(Y).training.summary?.models?.length ? (H(), U("section", Pl, [W("header", null, [
-						W("div", { class: k(["summary-mark", I(Y).training.summary.tone]) }, A(I(Y).training.summary.tone === "success" ? "✓" : I(Y).training.summary.tone === "error" ? "×" : "!"), 3),
-						W("div", null, [
-							d[92] ||= W("span", { class: "eyebrow" }, "Last completed run", -1),
-							W("h4", null, A(I(Y).training.summary.wake_word), 1),
-							W("p", null, [K(A(I(Y).training.summary.message), 1), I(Y).training.summary.completed_at ? (H(), U(V, { key: 0 }, [K(" · " + A(I(mc)(I(Y).training.summary.completed_at)), 1)], 64)) : q("", !0)])
-						]),
-						W("span", { class: k(["pill", I(Y).training.summary.tone]) }, A(I(Y).training.summary.overall), 3)
-					]), W("div", Fl, [(H(!0), U(V, null, R(I(Y).training.summary.models, (e) => (H(), U("article", {
-						key: e.id,
-						class: k(e.tone)
-					}, [
-						W("header", null, [W("div", null, [W("span", null, A(e.id.replaceAll("_", " ")), 1), W("strong", null, A(e.label), 1)]), W("b", null, A(e.rating), 1)]),
-						W("p", null, A(e.message), 1),
-						e.metrics?.length ? (H(), U("div", Il, [(H(!0), U(V, null, R(e.metrics, (e) => (H(), U("span", { key: `${e.label}-${e.value}` }, [W("small", null, A(e.label), 1), W("strong", null, A(e.value), 1)]))), 128))])) : q("", !0)
-					], 2))), 128))])])) : q("", !0),
-					W("div", Ll, [
-						W("button", {
-							type: "button",
-							class: "button primary large",
-							disabled: !I(Y).session.safe_word || I(Y).training.running || I(X)("training-start"),
-							onClick: d[13] ||= (...e) => I(cc) && I(cc)(...e)
-						}, A(I(Y).training.running ? "Training in progress" : "Start training"), 9, Rl),
-						W("button", {
-							type: "button",
-							class: "boundary-button",
-							disabled: !x.value?.boundary_only_ready || I(Y).training.running || I(X)("boundary-start"),
-							onClick: d[14] ||= (...e) => I(lc) && I(lc)(...e)
-						}, A(I(X)("boundary-start") ? "Starting boundary…" : "Retrain boundary only"), 9, zl),
-						b.value ? (H(), U("button", {
-							key: 0,
-							type: "button",
-							disabled: I(Y).training.running || I(X)("nww-revalidate"),
-							onClick: d[15] ||= (e) => I(uc)(String(b.value.id || "").replace("nano_", ""), String(I(Y).session.safe_word || ""))
-						}, A(I(X)("nww-revalidate") ? "Checking NWW…" : `Revalidate ${String(b.value.label || "NWW")} candidate`), 9, Bl)) : q("", !0)
-					]),
-					W("footer", Vl, [d[93] ||= W("span", null, "Training opens the console automatically and continues if the window is closed.", -1), W("button", {
+						class: "primary",
+						onClick: Se
+					}, "Continue to recordings")) : K("", !0),
+					U("button", {
 						type: "button",
-						disabled: !I(As),
-						onClick: d[16] ||= (e) => I(Y).consoleOpen = !0
-					}, "Open console", 8, Hl)])
+						disabled: !L(J).phrase.trim(),
+						onClick: m[11] ||= (...e) => L(Vs) && L(Vs)(...e)
+					}, "System preview", 8, gd)
 				])
-			], 64)) : I(Y).activeView === "auto" ? (H(), U(V, { key: 1 }, [
-				W("section", Ul, [d[95] ||= W("div", null, [
-					W("span", { class: "eyebrow" }, "False-positive loop"),
-					W("h2", null, "Auto Training"),
-					W("p", null, "Transcribe captures, sort negatives, recover close misses, retrain on schedule, and publish through Tater.")
-				], -1), W("span", { class: k(["pill hero-pill", m.value.tone]) }, A(m.value.text), 3)]),
-				W("section", Wl, [
-					d[105] ||= W("header", { class: "panel-head" }, [W("div", { class: "number" }, "1"), W("div", null, [W("h3", null, "Review rules"), W("p", null, "Conservative local STT keeps uncertain clips in the manual inbox.")])], -1),
-					W("div", Gl, [
-						W("label", null, [L(W("input", {
-							"onUpdate:modelValue": d[17] ||= (e) => I(Y).autoForm.enabled = e,
-							type: "checkbox"
-						}, null, 512), [[Qo, I(Y).autoForm.enabled]]), d[96] ||= W("span", null, [W("strong", null, "Enable Auto Training"), W("small", null, "Queue eligible wake triggers for local transcription.")], -1)]),
-						W("label", null, [L(W("input", {
-							"onUpdate:modelValue": d[18] ||= (e) => I(Y).autoForm.delete_confirmed_wakes = e,
-							type: "checkbox"
-						}, null, 512), [[Qo, I(Y).autoForm.delete_confirmed_wakes]]), d[97] ||= W("span", null, [W("strong", null, "Delete confirmed good wakes"), W("small", null, "Remove normal triggers when STT confirms the phrase.")], -1)]),
-						W("label", null, [L(W("input", {
-							"onUpdate:modelValue": d[19] ||= (e) => I(Y).autoForm.promote_close_misses = e,
-							type: "checkbox"
-						}, null, 512), [[Qo, I(Y).autoForm.promote_close_misses]]), d[98] ||= W("span", null, [W("strong", null, "Promote confirmed close misses"), W("small", null, "Move verified close misses into positive samples.")], -1)])
+			])) : L(J).wizardStep === 2 ? (V(), H("section", _d, [
+				U("header", vd, [
+					m[94] ||= U("div", { class: "number" }, "3", -1),
+					m[95] ||= U("div", null, [U("h3", null, "Train wake word"), U("p", null, "Personal positives and reviewed false-wake negatives are automatically included.")], -1),
+					U("span", { class: k(["pill", g.value.tone]) }, A(g.value.text), 3)
+				]),
+				U("div", yd, [
+					U("article", null, [m[96] ||= U("span", null, "Positive samples", -1), U("strong", null, A(L(Ds)), 1)]),
+					U("article", null, [m[97] ||= U("span", null, "Negative samples", -1), U("strong", null, A(L(Os)), 1)]),
+					m[98] ||= U("article", null, [U("span", null, "Training format"), U("strong", { class: "format-value" }, "16 kHz · mono · WAV")], -1)
+				]),
+				U("div", bd, [
+					U("div", xd, [
+						U("button", {
+							type: "button",
+							class: k(["model-choice", { active: L(J).trainMicroWakeWord }]),
+							"aria-pressed": L(J).trainMicroWakeWord,
+							onClick: m[12] ||= (e) => L(J).trainMicroWakeWord = !L(J).trainMicroWakeWord
+						}, [...m[99] ||= [
+							U("i", null, "MWW", -1),
+							U("span", null, [U("strong", null, "MicroWakeWord"), U("small", null, "TFLite for ESP32 satellites and ESPHome.")], -1),
+							U("b", null, "✓", -1)
+						]], 10, Sd),
+						U("button", {
+							type: "button",
+							class: k(["model-choice", { active: L(J).trainOpenWakeWord }]),
+							"aria-pressed": L(J).trainOpenWakeWord,
+							onClick: m[13] ||= (e) => L(J).trainOpenWakeWord = !L(J).trainOpenWakeWord
+						}, [...m[100] ||= [
+							U("i", null, "OWW", -1),
+							U("span", null, [U("strong", null, "openWakeWord"), U("small", null, "ONNX for satellites with OWW support.")], -1),
+							U("b", null, "✓", -1)
+						]], 10, Cd),
+						U("button", {
+							type: "button",
+							class: k(["model-choice", { active: te.value }]),
+							"aria-pressed": te.value,
+							onClick: se
+						}, [...m[101] ||= [
+							U("i", null, "NWW", -1),
+							U("span", null, [U("strong", null, "NanoWakeWord"), U("small", null, "ONNX with selectable CNN and GRU builds.")], -1),
+							U("b", null, "✓", -1)
+						]], 10, wd)
 					]),
-					W("div", Kl, [
-						W("label", ql, [d[99] ||= W("span", null, "Wake phrase", -1), L(W("input", {
-							"onUpdate:modelValue": d[20] ||= (e) => I(Y).autoForm.wake_phrase = e,
+					te.value ? (V(), H("div", Td, [U("div", Ed, [m[102] ||= U("div", null, [U("strong", null, "NanoWakeWord architectures"), U("small", null, "Select either architecture or train both.")], -1), U("span", null, A(L(J).trainNanoWakeWordCnn && L(J).trainNanoWakeWordGru ? "2 selected" : "1 selected"), 1)]), U("div", Dd, [U("button", {
+						type: "button",
+						class: k(["architecture-choice", { active: L(J).trainNanoWakeWordCnn }]),
+						"aria-pressed": L(J).trainNanoWakeWordCnn,
+						onClick: m[14] ||= (e) => L(J).trainNanoWakeWordCnn = !L(J).trainNanoWakeWordCnn
+					}, [...m[103] ||= [
+						U("i", null, "CNN", -1),
+						U("span", null, [U("strong", null, "CNN"), U("small", null, "Recommended default with stronger recall.")], -1),
+						U("b", null, "✓", -1)
+					]], 10, Od), U("button", {
+						type: "button",
+						class: k(["architecture-choice", { active: L(J).trainNanoWakeWordGru }]),
+						"aria-pressed": L(J).trainNanoWakeWordGru,
+						onClick: m[15] ||= (e) => L(J).trainNanoWakeWordGru = !L(J).trainNanoWakeWordGru
+					}, [...m[104] ||= [
+						U("i", null, "GRU", -1),
+						U("span", null, [U("strong", null, "GRU"), U("small", null, "Recurrent model tuned for fewer false triggers.")], -1),
+						U("b", null, "✓", -1)
+					]], 10, kd)])])) : K("", !0),
+					T.value.length ? (V(), H("section", Ad, [
+						U("header", jd, [
+							m[105] ||= U("div", { class: "hard-negative-icon" }, "−", -1),
+							m[106] ||= U("div", null, [
+								U("span", { class: "eyebrow" }, "Optional precision tuning"),
+								U("strong", null, "Hard negative training"),
+								U("small", null, "Teach the selected models which similar-sounding phrases must not wake the assistant.")
+							], -1),
+							U("b", null, A(le(L(J).generatedNegativePhrases) ? `${le(L(J).generatedNegativePhrases)} phrase${le(L(J).generatedNegativePhrases) === 1 ? "" : "s"}` : "Optional"), 1)
+						]),
+						U("div", Md, [m[107] ||= U("span", null, "Applied to", -1), (V(), H(B, null, z([
+							"MWW",
+							"OWW",
+							"NWW"
+						], (e) => U("i", {
+							key: e,
+							class: k({ active: T.value.includes(e) })
+						}, A(e), 3)), 64))]),
+						U("label", Nd, [
+							m[108] ||= U("span", null, "Phrases to reject", -1),
+							R(U("textarea", {
+								"onUpdate:modelValue": m[16] ||= (e) => L(J).generatedNegativePhrases = e,
+								rows: "4",
+								placeholder: "hey later\nhey waiter\nokay tater"
+							}, null, 512), [[Qo, L(J).generatedNegativePhrases]]),
+							m[109] ||= U("small", null, "One phrase per line. Each selected engine synthesizes and validates these near-misses alongside reviewed recordings and its broad negative data.", -1)
+						]),
+						m[110] ||= U("footer", null, [U("span", null, "Unchanged phrases reuse their cached audio on later runs."), U("strong", null, "The actual wake phrase is ignored automatically.")], -1)
+					])) : K("", !0)
+				]),
+				U("div", Pd, [U("button", {
+					type: "button",
+					onClick: m[17] ||= (e) => L(J).wizardStep = 1
+				}, "Back to recordings"), U("button", {
+					type: "button",
+					class: "primary",
+					disabled: !L(J).session.safe_word || !l.value.length || L(J).training.running,
+					onClick: m[18] ||= (e) => L(J).wizardStep = 3
+				}, [m[111] ||= G("Review training", -1), W($, { name: "next" })], 8, Fd)]),
+				U("details", Id, [m[112] ||= U("summary", null, "Additional training actions", -1), U("div", Ld, [
+					U("button", {
+						type: "button",
+						class: "boundary-button",
+						disabled: !w.value?.boundary_only_ready || L(J).training.running || L(Y)("boundary-start"),
+						onClick: m[19] ||= (...e) => L(fc) && L(fc)(...e)
+					}, A(L(Y)("boundary-start") ? "Starting boundary…" : "Retrain boundary only"), 9, Rd),
+					K("", !0),
+					C.value ? (V(), H("button", {
+						key: 1,
+						type: "button",
+						disabled: L(J).training.running || L(Y)("nww-revalidate"),
+						onClick: m[21] ||= (e) => L(pc)(String(C.value.id || "").replace("nano_", ""), String(L(J).session.safe_word || ""))
+					}, A(L(Y)("nww-revalidate") ? "Checking NWW…" : `Revalidate ${String(C.value.label || "NWW")} candidate`), 9, zd)) : K("", !0)
+				])])
+			])) : (V(), H("section", Bd, [
+				U("h3", null, "Ready to train “" + A(L(J).phrase) + "”", 1),
+				U("dl", Vd, [
+					m[113] ||= U("dt", null, "Language", -1),
+					U("dd", null, A(L(J).languages.find((e) => e.code === L(J).language)?.label || L(J).language), 1),
+					m[114] ||= U("dt", null, "Voice generation", -1),
+					U("dd", null, A(L(As)), 1),
+					m[115] ||= U("dt", null, "English accent", -1),
+					U("dd", null, A(L(J).englishAccents.find((e) => e.code === L(J).englishAccent)?.label || L(J).englishAccent), 1),
+					m[116] ||= U("dt", null, "Recordings", -1),
+					U("dd", null, A(L(Ds)) + " personal · " + A(L(Os)) + " reviewed negatives · generated voices included", 1),
+					m[117] ||= U("dt", null, "Models", -1),
+					U("dd", null, A(l.value.join(", ")), 1),
+					m[118] ||= U("dt", null, "Phrases to reject", -1),
+					U("dd", null, A(le(L(J).generatedNegativePhrases)) + " configured", 1),
+					m[119] ||= U("dt", null, "Your results", -1),
+					m[120] ||= U("dd", null, "Saved validation report, version history, bundle JSON, and ESPHome JSON when MicroWakeWord is included.", -1)
+				]),
+				m[122] ||= U("p", { class: "workspace-note" }, "Earlier saved versions and their JSON links stay available throughout training.", -1),
+				U("div", Hd, [U("button", {
+					type: "button",
+					onClick: m[22] ||= (e) => L(J).wizardStep = 2
+				}, "Back to models"), U("button", {
+					type: "button",
+					class: "primary",
+					disabled: L(J).training.running || L(Y)("training-start") || !L(J).session.safe_word,
+					onClick: m[23] ||= (...e) => L(dc) && L(dc)(...e)
+				}, [W($, { name: "activity" }), m[121] ||= G("Start training", -1)], 8, Ud)])
+			]))], 64)) : L(J).activeView === "auto" ? (V(), H(B, { key: 6 }, [
+				U("section", Wd, [m[123] ||= U("div", null, [
+					U("span", { class: "eyebrow" }, "False-positive loop"),
+					U("h2", null, "Auto Training"),
+					U("p", null, "Transcribe captures, sort negatives, recover close misses, retrain on schedule, and publish through Tater.")
+				], -1), U("span", { class: k(["pill hero-pill", _.value.tone]) }, A(_.value.text), 3)]),
+				U("section", Gd, [
+					m[133] ||= U("header", { class: "panel-head" }, [U("div", { class: "number" }, "1"), U("div", null, [U("h3", null, "Review rules"), U("p", null, "Conservative local STT keeps uncertain clips in the manual inbox.")])], -1),
+					U("div", Kd, [
+						U("label", null, [R(U("input", {
+							"onUpdate:modelValue": m[24] ||= (e) => L(J).autoForm.enabled = e,
+							type: "checkbox"
+						}, null, 512), [[$o, L(J).autoForm.enabled]]), m[124] ||= U("span", null, [U("strong", null, "Enable Auto Training"), U("small", null, "Queue eligible wake triggers for local transcription.")], -1)]),
+						U("label", null, [R(U("input", {
+							"onUpdate:modelValue": m[25] ||= (e) => L(J).autoForm.delete_confirmed_wakes = e,
+							type: "checkbox"
+						}, null, 512), [[$o, L(J).autoForm.delete_confirmed_wakes]]), m[125] ||= U("span", null, [U("strong", null, "Delete confirmed good wakes"), U("small", null, "Remove normal triggers when STT confirms the phrase.")], -1)]),
+						U("label", null, [R(U("input", {
+							"onUpdate:modelValue": m[26] ||= (e) => L(J).autoForm.promote_close_misses = e,
+							type: "checkbox"
+						}, null, 512), [[$o, L(J).autoForm.promote_close_misses]]), m[126] ||= U("span", null, [U("strong", null, "Promote confirmed close misses"), U("small", null, "Move verified close misses into positive samples.")], -1)])
+					]),
+					U("div", qd, [
+						U("label", Jd, [m[127] ||= U("span", null, "Wake phrase", -1), R(U("input", {
+							"onUpdate:modelValue": m[27] ||= (e) => L(J).autoForm.wake_phrase = e,
 							type: "text"
-						}, null, 512), [[Zo, I(Y).autoForm.wake_phrase]])]),
-						W("label", Jl, [d[100] ||= W("span", null, "STT language", -1), L(W("input", {
-							"onUpdate:modelValue": d[21] ||= (e) => I(Y).autoForm.language = e,
+						}, null, 512), [[Qo, L(J).autoForm.wake_phrase]])]),
+						U("label", Yd, [m[128] ||= U("span", null, "STT language", -1), R(U("input", {
+							"onUpdate:modelValue": m[28] ||= (e) => L(J).autoForm.language = e,
 							type: "text"
-						}, null, 512), [[Zo, I(Y).autoForm.language]])]),
-						String(I(Y).autoForm.language).toLowerCase().startsWith("en") ? (H(), U("label", Yl, [
-							d[101] ||= W("span", null, "English accent emphasis", -1),
-							L(W("select", { "onUpdate:modelValue": d[22] ||= (e) => I(Y).autoForm.english_accent = e }, [(H(!0), U(V, null, R(I(Y).englishAccents, (e) => (H(), U("option", {
+						}, null, 512), [[Qo, L(J).autoForm.language]])]),
+						String(L(J).autoForm.language).toLowerCase().startsWith("en") ? (V(), H("label", Xd, [
+							m[129] ||= U("span", null, "English accent emphasis", -1),
+							R(U("select", { "onUpdate:modelValue": m[29] ||= (e) => L(J).autoForm.english_accent = e }, [(V(!0), H(B, null, z(L(J).englishAccents, (e) => (V(), H("option", {
 								key: e.code,
 								value: e.code
-							}, A(e.label), 9, Xl))), 128))], 512), [[es, I(Y).autoForm.english_accent]]),
-							d[102] ||= W("small", null, "Used when Auto Training needs to regenerate English TTS.", -1)
-						])) : q("", !0),
-						W("label", Zl, [
-							d[103] ||= W("span", null, "STT engine", -1),
-							L(W("select", { "onUpdate:modelValue": d[23] ||= (e) => I(Y).autoForm.stt_engine = e }, [(H(!0), U(V, null, R(I(Ns), (e) => (H(), U("option", {
+							}, A(e.label), 9, Zd))), 128))], 512), [[ts, L(J).autoForm.english_accent]]),
+							m[130] ||= U("small", null, "Used when Auto Training needs to regenerate English TTS.", -1)
+						])) : K("", !0),
+						U("label", Qd, [
+							m[131] ||= U("span", null, "STT engine", -1),
+							R(U("select", { "onUpdate:modelValue": m[30] ||= (e) => L(J).autoForm.stt_engine = e }, [(V(!0), H(B, null, z(L(Ps), (e) => (V(), H("option", {
 								key: e.id || e.value,
 								value: e.id || e.value
-							}, A(e.label || e.name || e.id), 9, Ql))), 128))], 512), [[es, I(Y).autoForm.stt_engine]]),
-							W("small", null, A(I(Ns).find((e) => (e.id || e.value) === I(Y).autoForm.stt_engine)?.description || "Runs locally on this trainer."), 1)
+							}, A(e.label || e.name || e.id), 9, $d))), 128))], 512), [[ts, L(J).autoForm.stt_engine]]),
+							U("small", null, A(L(Ps).find((e) => (e.id || e.value) === L(J).autoForm.stt_engine)?.description || "Runs locally on this trainer."), 1)
 						]),
-						W("label", $l, [d[104] ||= W("span", null, "Minimum transcript characters", -1), L(W("input", {
-							"onUpdate:modelValue": d[24] ||= (e) => I(Y).autoForm.minimum_transcript_chars = e,
+						U("label", ef, [m[132] ||= U("span", null, "Minimum transcript characters", -1), R(U("input", {
+							"onUpdate:modelValue": m[31] ||= (e) => L(J).autoForm.minimum_transcript_chars = e,
 							min: "1",
 							max: "100",
 							type: "number"
 						}, null, 512), [[
-							Zo,
-							I(Y).autoForm.minimum_transcript_chars,
+							Qo,
+							L(J).autoForm.minimum_transcript_chars,
 							void 0,
 							{ number: !0 }
 						]])])
 					])
 				]),
-				W("section", eu, [
-					d[125] ||= W("header", { class: "panel-head" }, [W("div", { class: "number" }, "2"), W("div", null, [W("h3", null, "Training schedule"), W("p", null, "A run starts only after enough newly reviewed negatives accumulate.")])], -1),
-					W("div", tu, [W("label", nu, [d[107] ||= W("span", null, "Run training", -1), L(W("select", { "onUpdate:modelValue": d[25] ||= (e) => I(Y).autoForm.schedule_hours = e }, [...d[106] ||= [
-						W("option", { value: 0 }, "Manually only", -1),
-						W("option", { value: 6 }, "Every 6 hours", -1),
-						W("option", { value: 12 }, "Every 12 hours", -1),
-						W("option", { value: 24 }, "Every day", -1),
-						W("option", { value: 48 }, "Every 2 days", -1),
-						W("option", { value: 168 }, "Every week", -1)
+				U("section", tf, [
+					m[153] ||= U("header", { class: "panel-head" }, [U("div", { class: "number" }, "2"), U("div", null, [U("h3", null, "Training schedule"), U("p", null, "A run starts only after enough newly reviewed negatives accumulate.")])], -1),
+					U("div", nf, [U("label", rf, [m[135] ||= U("span", null, "Run training", -1), R(U("select", { "onUpdate:modelValue": m[32] ||= (e) => L(J).autoForm.schedule_hours = e }, [...m[134] ||= [
+						U("option", { value: 0 }, "Manually only", -1),
+						U("option", { value: 6 }, "Every 6 hours", -1),
+						U("option", { value: 12 }, "Every 12 hours", -1),
+						U("option", { value: 24 }, "Every day", -1),
+						U("option", { value: 48 }, "Every 2 days", -1),
+						U("option", { value: 168 }, "Every week", -1)
 					]], 512), [[
-						es,
-						I(Y).autoForm.schedule_hours,
+						ts,
+						L(J).autoForm.schedule_hours,
 						void 0,
 						{ number: !0 }
-					]])]), W("label", ru, [d[108] ||= W("span", null, "Minimum new negatives", -1), L(W("input", {
-						"onUpdate:modelValue": d[26] ||= (e) => I(Y).autoForm.minimum_new_negatives = e,
+					]])]), U("label", af, [m[136] ||= U("span", null, "Minimum new negatives", -1), R(U("input", {
+						"onUpdate:modelValue": m[33] ||= (e) => L(J).autoForm.minimum_new_negatives = e,
 						min: "1",
 						max: "10000",
 						type: "number"
 					}, null, 512), [[
-						Zo,
-						I(Y).autoForm.minimum_new_negatives,
+						Qo,
+						L(J).autoForm.minimum_new_negatives,
 						void 0,
 						{ number: !0 }
 					]])])]),
-					W("div", iu, [
-						W("div", au, [
-							W("button", {
+					U("div", of, [
+						U("div", sf, [
+							U("button", {
 								type: "button",
-								class: k(["model-choice", { active: I(Y).autoForm.train_microwakeword }]),
-								"aria-pressed": I(Y).autoForm.train_microwakeword,
-								onClick: d[27] ||= (e) => I(Y).autoForm.train_microwakeword = !I(Y).autoForm.train_microwakeword
-							}, [...d[109] ||= [
-								W("i", null, "MWW", -1),
-								W("span", null, [W("strong", null, "MicroWakeWord"), W("small", null, "Refresh the ESP32 and ESPHome model.")], -1),
-								W("b", null, "✓", -1)
-							]], 10, ou),
-							W("button", {
+								class: k(["model-choice", { active: L(J).autoForm.train_microwakeword }]),
+								"aria-pressed": L(J).autoForm.train_microwakeword,
+								onClick: m[34] ||= (e) => L(J).autoForm.train_microwakeword = !L(J).autoForm.train_microwakeword
+							}, [...m[137] ||= [
+								U("i", null, "MWW", -1),
+								U("span", null, [U("strong", null, "MicroWakeWord"), U("small", null, "Refresh the ESP32 and ESPHome model.")], -1),
+								U("b", null, "✓", -1)
+							]], 10, cf),
+							U("button", {
 								type: "button",
-								class: k(["model-choice", { active: I(Y).autoForm.train_openwakeword }]),
-								"aria-pressed": I(Y).autoForm.train_openwakeword,
-								onClick: d[28] ||= (e) => I(Y).autoForm.train_openwakeword = !I(Y).autoForm.train_openwakeword
-							}, [...d[110] ||= [
-								W("i", null, "OWW", -1),
-								W("span", null, [W("strong", null, "openWakeWord"), W("small", null, "Refresh the openWakeWord ONNX model.")], -1),
-								W("b", null, "✓", -1)
-							]], 10, su),
-							W("button", {
+								class: k(["model-choice", { active: L(J).autoForm.train_openwakeword }]),
+								"aria-pressed": L(J).autoForm.train_openwakeword,
+								onClick: m[35] ||= (e) => L(J).autoForm.train_openwakeword = !L(J).autoForm.train_openwakeword
+							}, [...m[138] ||= [
+								U("i", null, "OWW", -1),
+								U("span", null, [U("strong", null, "openWakeWord"), U("small", null, "Refresh the openWakeWord ONNX model.")], -1),
+								U("b", null, "✓", -1)
+							]], 10, lf),
+							U("button", {
 								type: "button",
-								class: k(["model-choice", { active: T.value }]),
-								"aria-pressed": T.value,
-								onClick: O
-							}, [...d[111] ||= [
-								W("i", null, "NWW", -1),
-								W("span", null, [W("strong", null, "NanoWakeWord"), W("small", null, "Refresh selected CNN and GRU models.")], -1),
-								W("b", null, "✓", -1)
-							]], 10, cu)
+								class: k(["model-choice", { active: ne.value }]),
+								"aria-pressed": ne.value,
+								onClick: ce
+							}, [...m[139] ||= [
+								U("i", null, "NWW", -1),
+								U("span", null, [U("strong", null, "NanoWakeWord"), U("small", null, "Refresh selected CNN and GRU models.")], -1),
+								U("b", null, "✓", -1)
+							]], 10, uf)
 						]),
-						T.value ? (H(), U("div", lu, [W("div", uu, [d[112] ||= W("div", null, [W("strong", null, "NanoWakeWord architectures"), W("small", null, "Select either architecture or retrain both.")], -1), W("span", null, A(I(Y).autoForm.train_nanowakeword_cnn && I(Y).autoForm.train_nanowakeword_gru ? "2 selected" : "1 selected"), 1)]), W("div", du, [W("button", {
+						ne.value ? (V(), H("div", df, [U("div", ff, [m[140] ||= U("div", null, [U("strong", null, "NanoWakeWord architectures"), U("small", null, "Select either architecture or retrain both.")], -1), U("span", null, A(L(J).autoForm.train_nanowakeword_cnn && L(J).autoForm.train_nanowakeword_gru ? "2 selected" : "1 selected"), 1)]), U("div", pf, [U("button", {
 							type: "button",
-							class: k(["architecture-choice", { active: I(Y).autoForm.train_nanowakeword_cnn }]),
-							"aria-pressed": I(Y).autoForm.train_nanowakeword_cnn,
-							onClick: d[29] ||= (e) => I(Y).autoForm.train_nanowakeword_cnn = !I(Y).autoForm.train_nanowakeword_cnn
-						}, [...d[113] ||= [
-							W("i", null, "CNN", -1),
-							W("span", null, [W("strong", null, "CNN"), W("small", null, "Recommended default with stronger recall.")], -1),
-							W("b", null, "✓", -1)
-						]], 10, fu), W("button", {
+							class: k(["architecture-choice", { active: L(J).autoForm.train_nanowakeword_cnn }]),
+							"aria-pressed": L(J).autoForm.train_nanowakeword_cnn,
+							onClick: m[36] ||= (e) => L(J).autoForm.train_nanowakeword_cnn = !L(J).autoForm.train_nanowakeword_cnn
+						}, [...m[141] ||= [
+							U("i", null, "CNN", -1),
+							U("span", null, [U("strong", null, "CNN"), U("small", null, "Recommended default with stronger recall.")], -1),
+							U("b", null, "✓", -1)
+						]], 10, mf), U("button", {
 							type: "button",
-							class: k(["architecture-choice", { active: I(Y).autoForm.train_nanowakeword_gru }]),
-							"aria-pressed": I(Y).autoForm.train_nanowakeword_gru,
-							onClick: d[30] ||= (e) => I(Y).autoForm.train_nanowakeword_gru = !I(Y).autoForm.train_nanowakeword_gru
-						}, [...d[114] ||= [
-							W("i", null, "GRU", -1),
-							W("span", null, [W("strong", null, "GRU"), W("small", null, "Recurrent model tuned for fewer false triggers.")], -1),
-							W("b", null, "✓", -1)
-						]], 10, pu)])])) : q("", !0),
-						te.value.length ? (H(), U("section", mu, [
-							W("header", hu, [
-								d[115] ||= W("div", { class: "hard-negative-icon" }, "−", -1),
-								d[116] ||= W("div", null, [
-									W("span", { class: "eyebrow" }, "Optional precision tuning"),
-									W("strong", null, "Hard negative training"),
-									W("small", null, "Keep near-miss protection consistent whenever Auto Training refreshes a model.")
+							class: k(["architecture-choice", { active: L(J).autoForm.train_nanowakeword_gru }]),
+							"aria-pressed": L(J).autoForm.train_nanowakeword_gru,
+							onClick: m[37] ||= (e) => L(J).autoForm.train_nanowakeword_gru = !L(J).autoForm.train_nanowakeword_gru
+						}, [...m[142] ||= [
+							U("i", null, "GRU", -1),
+							U("span", null, [U("strong", null, "GRU"), U("small", null, "Recurrent model tuned for fewer false triggers.")], -1),
+							U("b", null, "✓", -1)
+						]], 10, hf)])])) : K("", !0),
+						re.value.length ? (V(), H("section", gf, [
+							U("header", _f, [
+								m[143] ||= U("div", { class: "hard-negative-icon" }, "−", -1),
+								m[144] ||= U("div", null, [
+									U("span", { class: "eyebrow" }, "Optional precision tuning"),
+									U("strong", null, "Hard negative training"),
+									U("small", null, "Keep near-miss protection consistent whenever Auto Training refreshes a model.")
 								], -1),
-								W("b", null, A(se(I(Y).autoForm.generated_negative_phrases) ? `${se(I(Y).autoForm.generated_negative_phrases)} phrase${se(I(Y).autoForm.generated_negative_phrases) === 1 ? "" : "s"}` : "Optional"), 1)
+								U("b", null, A(le(L(J).autoForm.generated_negative_phrases) ? `${le(L(J).autoForm.generated_negative_phrases)} phrase${le(L(J).autoForm.generated_negative_phrases) === 1 ? "" : "s"}` : "Optional"), 1)
 							]),
-							W("div", gu, [d[117] ||= W("span", null, "Applied to", -1), (H(), U(V, null, R([
+							U("div", vf, [m[145] ||= U("span", null, "Applied to", -1), (V(), H(B, null, z([
 								"MWW",
 								"OWW",
 								"NWW"
-							], (e) => W("i", {
+							], (e) => U("i", {
 								key: e,
-								class: k({ active: te.value.includes(e) })
+								class: k({ active: re.value.includes(e) })
 							}, A(e), 3)), 64))]),
-							W("label", _u, [
-								d[118] ||= W("span", null, "Phrases to reject", -1),
-								L(W("textarea", {
-									"onUpdate:modelValue": d[31] ||= (e) => I(Y).autoForm.generated_negative_phrases = e,
+							U("label", yf, [
+								m[146] ||= U("span", null, "Phrases to reject", -1),
+								R(U("textarea", {
+									"onUpdate:modelValue": m[38] ||= (e) => L(J).autoForm.generated_negative_phrases = e,
 									rows: "4",
 									placeholder: "hey later\nhey waiter\nokay tater"
-								}, null, 512), [[Zo, I(Y).autoForm.generated_negative_phrases]]),
-								d[119] ||= W("small", null, "One phrase per line. Saved with the schedule and synthesized for every selected model.", -1)
+								}, null, 512), [[Qo, L(J).autoForm.generated_negative_phrases]]),
+								m[147] ||= U("small", null, "One phrase per line. Saved with the schedule and synthesized for every selected model.", -1)
 							]),
-							d[120] ||= W("footer", null, [W("span", null, "Reviewed false wakes still receive the strongest model weight."), W("strong", null, "The actual wake phrase is ignored automatically.")], -1)
-						])) : q("", !0)
+							m[148] ||= U("footer", null, [U("span", null, "Reviewed false wakes still receive the strongest model weight."), U("strong", null, "The actual wake phrase is ignored automatically.")], -1)
+						])) : K("", !0)
 					]),
-					!I(Y).training.running && I(Y).training.summary?.models?.length ? (H(), U("section", vu, [W("header", null, [
-						W("div", { class: k(["summary-mark", I(Y).training.summary.tone]) }, A(I(Y).training.summary.tone === "success" ? "✓" : I(Y).training.summary.tone === "error" ? "×" : "!"), 3),
-						W("div", null, [
-							d[121] ||= W("span", { class: "eyebrow" }, "Last completed run", -1),
-							W("h4", null, A(I(Y).training.summary.wake_word), 1),
-							W("p", null, [K(A(I(Y).training.summary.message), 1), I(Y).training.summary.completed_at ? (H(), U(V, { key: 0 }, [K(" · " + A(I(mc)(I(Y).training.summary.completed_at)), 1)], 64)) : q("", !0)])
+					!L(J).training.running && L(J).training.summary?.models?.length ? (V(), H("section", bf, [U("header", null, [
+						U("div", { class: k(["summary-mark", L(J).training.summary.tone]) }, A(L(J).training.summary.tone === "success" ? "✓" : L(J).training.summary.tone === "error" ? "×" : "!"), 3),
+						U("div", null, [
+							m[149] ||= U("span", { class: "eyebrow" }, "Last completed run", -1),
+							U("h4", null, A(L(J).training.summary.wake_word), 1),
+							U("p", null, [G(A(L(J).training.summary.message), 1), L(J).training.summary.completed_at ? (V(), H(B, { key: 0 }, [G(" · " + A(L(_c)(L(J).training.summary.completed_at)), 1)], 64)) : K("", !0)])
 						]),
-						W("span", { class: k(["pill", I(Y).training.summary.tone]) }, A(I(Y).training.summary.overall), 3)
-					]), W("div", yu, [(H(!0), U(V, null, R(I(Y).training.summary.models, (e) => (H(), U("article", {
+						U("span", { class: k(["pill", L(J).training.summary.tone]) }, A(L(J).training.summary.overall), 3)
+					]), U("div", xf, [(V(!0), H(B, null, z(L(J).training.summary.models, (e) => (V(), H("article", {
 						key: `auto-${e.id}`,
 						class: k(e.tone)
 					}, [
-						W("header", null, [W("div", null, [W("span", null, A(e.id.replaceAll("_", " ")), 1), W("strong", null, A(e.label), 1)]), W("b", null, A(e.rating), 1)]),
-						W("p", null, A(e.message), 1),
-						e.metrics?.length ? (H(), U("div", bu, [(H(!0), U(V, null, R(e.metrics, (e) => (H(), U("span", { key: `${e.label}-${e.value}` }, [W("small", null, A(e.label), 1), W("strong", null, A(e.value), 1)]))), 128))])) : q("", !0)
-					], 2))), 128))])])) : q("", !0),
-					W("div", xu, [
-						W("article", null, [d[122] ||= W("span", null, "Pending negatives", -1), W("strong", null, A(Number(u.value.pending_negative_count || 0)), 1)]),
-						W("article", null, [d[123] ||= W("span", null, "Next check", -1), W("strong", Su, A(u.value.next_run_at ? I(mc)(u.value.next_run_at) : "Manual"), 1)]),
-						W("article", null, [d[124] ||= W("span", null, "Last training", -1), W("strong", Cu, A(u.value.last_train_finished_at ? I(mc)(u.value.last_train_finished_at) : "Never"), 1)])
+						U("header", null, [U("div", null, [U("span", null, A(e.id.replaceAll("_", " ")), 1), U("strong", null, A(e.label), 1)]), U("b", null, A(e.rating), 1)]),
+						U("p", null, A(e.message), 1),
+						e.metrics?.length ? (V(), H("div", Sf, [(V(!0), H(B, null, z(e.metrics, (e) => (V(), H("span", { key: `${e.label}-${e.value}` }, [U("small", null, A(e.label), 1), U("strong", null, A(e.value), 1)]))), 128))])) : K("", !0)
+					], 2))), 128))])])) : K("", !0),
+					U("div", Cf, [
+						U("article", null, [m[150] ||= U("span", null, "Pending negatives", -1), U("strong", null, A(Number(p.value.pending_negative_count || 0)), 1)]),
+						U("article", null, [m[151] ||= U("span", null, "Next check", -1), U("strong", wf, A(p.value.next_run_at ? L(_c)(p.value.next_run_at) : "Manual"), 1)]),
+						U("article", null, [m[152] ||= U("span", null, "Last training", -1), U("strong", Tf, A(p.value.last_train_finished_at ? L(_c)(p.value.last_train_finished_at) : "Never"), 1)])
 					])
 				]),
-				W("section", wu, [
-					d[129] ||= W("header", { class: "panel-head" }, [W("div", { class: "number" }, "3"), W("div", null, [W("h3", null, "Publish to Tater"), W("p", null, "Securely activate successful models across every connected satellite.")])], -1),
-					W("div", Tu, [W("label", Eu, [
-						d[126] ||= W("span", null, "Trainer public URL", -1),
-						L(W("input", {
-							"onUpdate:modelValue": d[32] ||= (e) => I(Y).autoForm.advertised_base_url = e,
+				U("section", Ef, [
+					m[157] ||= U("header", { class: "panel-head" }, [U("div", { class: "number" }, "3"), U("div", null, [U("h3", null, "Publish to Tater"), U("p", null, "Securely activate successful models across every connected satellite.")])], -1),
+					U("div", Df, [U("label", Of, [
+						m[154] ||= U("span", null, "Trainer public URL", -1),
+						R(U("input", {
+							"onUpdate:modelValue": m[39] ||= (e) => L(J).autoForm.advertised_base_url = e,
 							type: "text",
 							placeholder: "Auto-detect LAN address"
-						}, null, 512), [[Zo, I(Y).autoForm.advertised_base_url]]),
-						W("small", null, A(I(Y).autoForm.advertised_base_url ? `Configured: ${I(Y).autoForm.advertised_base_url}` : `Detected: ${I(Y).auto.advertised_base_url || "unavailable"}`), 1)
-					]), W("label", Du, [d[127] ||= W("span", null, "Tater URL", -1), L(W("input", {
-						"onUpdate:modelValue": d[33] ||= (e) => I(Y).autoForm.tater_url = e,
+						}, null, 512), [[Qo, L(J).autoForm.advertised_base_url]]),
+						U("small", null, A(L(J).autoForm.advertised_base_url ? `Configured: ${L(J).autoForm.advertised_base_url}` : `Detected: ${L(J).auto.advertised_base_url || "unavailable"}`), 1)
+					]), U("label", kf, [m[155] ||= U("span", null, "Tater URL", -1), R(U("input", {
+						"onUpdate:modelValue": m[40] ||= (e) => L(J).autoForm.tater_url = e,
 						type: "text"
-					}, null, 512), [[Zo, I(Y).autoForm.tater_url]])])]),
-					W("div", Ou, [
-						W("span", { class: k(["pill", I(Ms) ? "success" : "warning"]) }, A(I(Ms) ? `Linked${I(Y).auto.trainer_link?.tater_name ? ` · ${I(Y).auto.trainer_link.tater_name}` : ""}` : "Not linked"), 3),
-						W("button", {
+					}, null, 512), [[Qo, L(J).autoForm.tater_url]])])]),
+					U("div", Af, [
+						U("span", { class: k(["pill", L(Ns) ? "success" : "warning"]) }, A(L(Ns) ? `Linked${L(J).auto.trainer_link?.tater_name ? ` · ${L(J).auto.trainer_link.tater_name}` : ""}` : "Not linked"), 3),
+						U("button", {
 							type: "button",
 							class: "button primary",
-							disabled: I(X)("auto"),
-							onClick: ce
-						}, A(I(Ms) ? "Relink Tater" : "Link Tater"), 9, ku),
-						I(Ms) ? (H(), U("button", {
+							disabled: L(Y)("auto"),
+							onClick: ue
+						}, A(L(Ns) ? "Relink Tater" : "Link Tater"), 9, jf),
+						L(Ns) ? (V(), H("button", {
 							key: 0,
 							type: "button",
 							class: "button danger",
-							disabled: I(X)("auto"),
-							onClick: d[34] ||= (...e) => I(tc) && I(tc)(...e)
-						}, "Unlink", 8, Au)) : q("", !0)
+							disabled: L(Y)("auto"),
+							onClick: m[41] ||= (...e) => L(rc) && L(rc)(...e)
+						}, "Unlink", 8, Mf)) : K("", !0)
 					]),
-					W("div", ju, [W("label", null, [L(W("input", {
-						"onUpdate:modelValue": d[35] ||= (e) => I(Y).autoForm.notify_satellites = e,
+					U("div", Nf, [U("label", null, [R(U("input", {
+						"onUpdate:modelValue": m[42] ||= (e) => L(J).autoForm.notify_satellites = e,
 						type: "checkbox"
-					}, null, 512), [[Qo, I(Y).autoForm.notify_satellites]]), d[128] ||= W("span", null, [W("strong", null, "Activate after successful training"), W("small", null, "Tater applies the new word globally.")], -1)])])
+					}, null, 512), [[$o, L(J).autoForm.notify_satellites]]), m[156] ||= U("span", null, [U("strong", null, "Activate after successful training"), U("small", null, "Tater applies the new word globally.")], -1)])])
 				]),
-				W("section", Mu, [W("div", Nu, [
-					W("button", {
+				U("section", Pf, [U("div", Ff, [
+					U("button", {
 						type: "button",
 						class: "button primary",
-						disabled: I(X)("auto"),
-						onClick: d[36] ||= (...e) => I(Qs) && I(Qs)(...e)
-					}, "Save Auto Training", 8, Pu),
-					W("button", {
+						disabled: L(Y)("auto"),
+						onClick: m[43] ||= (...e) => L(ec) && L(ec)(...e)
+					}, "Save Auto Training", 8, If),
+					U("button", {
 						type: "button",
-						disabled: I(X)("auto"),
-						onClick: d[37] ||= (e) => I($s)("review_now")
-					}, "Review inbox now", 8, Fu),
-					W("button", {
+						disabled: L(Y)("auto"),
+						onClick: m[44] ||= (e) => L(tc)("review_now")
+					}, "Review inbox now", 8, Lf),
+					U("button", {
 						type: "button",
-						disabled: I(X)("auto") || I(Y).training.running,
-						onClick: d[38] ||= (e) => I($s)("train_now")
-					}, "Train now", 8, Iu),
-					W("button", {
+						disabled: L(Y)("auto") || L(J).training.running,
+						onClick: m[45] ||= (e) => L(tc)("train_now")
+					}, "Train now", 8, Rf),
+					U("button", {
 						type: "button",
-						disabled: I(X)("auto") || !I(Ms),
-						onClick: d[39] ||= (e) => I($s)("notify_now")
-					}, "Publish current word", 8, Lu)
-				]), W("p", Ru, A(f.value), 1)])
-			], 64)) : I(Y).activeView === "captured" ? (H(), U(V, { key: 2 }, [
-				W("section", zu, [d[130] ||= W("div", null, [
-					W("span", { class: "eyebrow" }, "Capture review"),
-					W("h2", null, "Captured Audio"),
-					W("p", null, "Listen to clips from your satellites and turn every real-world event into a better model.")
-				], -1), W("span", { class: k(["pill hero-pill", I(Y).captured.captured_count ? "warning" : ""]) }, A(I(Y).captured.captured_count ? `${I(Y).captured.captured_count} waiting` : "Inbox idle"), 3)]),
-				W("section", Bu, [W("header", Vu, [
-					d[131] ||= W("div", { class: "number" }, "1", -1),
-					d[132] ||= W("div", null, [W("h3", null, "Review queue"), W("p", null, "Approve good phrases, keep false positives as negatives, or discard noise.")], -1),
-					W("button", {
+						disabled: L(Y)("auto") || !L(Ns),
+						onClick: m[46] ||= (e) => L(tc)("notify_now")
+					}, "Publish current word", 8, zf)
+				]), U("p", Bf, A(h.value), 1)])
+			], 64)) : L(J).activeView === "captured" ? (V(), H(B, { key: 7 }, [
+				U("section", Vf, [m[158] ||= U("div", null, [
+					U("span", { class: "eyebrow" }, "Capture review"),
+					U("h2", null, "Captured Audio"),
+					U("p", null, "Listen to clips from your satellites and turn every real-world event into a better model.")
+				], -1), U("span", { class: k(["pill hero-pill", L(J).captured.captured_count ? "warning" : ""]) }, A(L(J).captured.captured_count ? `${L(J).captured.captured_count} waiting` : "Inbox idle"), 3)]),
+				U("section", Hf, [U("header", Uf, [
+					m[159] ||= U("div", { class: "number" }, "1", -1),
+					m[160] ||= U("div", null, [U("h3", null, "Review queue"), U("p", null, "Approve good phrases, keep false positives as negatives, or discard noise.")], -1),
+					U("button", {
 						type: "button",
-						disabled: I(X)("captured"),
-						onClick: d[40] ||= (e) => I(Hs)()
-					}, A(I(X)("captured") ? "Refreshing…" : "Refresh inbox"), 9, Hu)
-				]), W("div", Uu, [
-					W("article", null, [d[133] ||= W("span", null, "Inbox", -1), W("strong", null, A(I(Y).captured.captured_count), 1)]),
-					W("article", null, [d[134] ||= W("span", null, "All-word negatives", -1), W("strong", null, A(I(Y).captured.negative_count), 1)]),
-					W("article", null, [d[135] ||= W("span", null, "All-word positives", -1), W("strong", null, A(I(Y).captured.personal_count), 1)])
+						disabled: L(Y)("captured"),
+						onClick: m[47] ||= (e) => L(Ws)()
+					}, A(L(Y)("captured") ? "Refreshing…" : "Refresh inbox"), 9, Wf)
+				]), U("div", Gf, [
+					U("article", null, [m[161] ||= U("span", null, "Inbox", -1), U("strong", null, A(L(J).captured.captured_count), 1)]),
+					U("article", null, [m[162] ||= U("span", null, "All-word negatives", -1), U("strong", null, A(L(J).captured.negative_count), 1)]),
+					U("article", null, [m[163] ||= U("span", null, "All-word positives", -1), U("strong", null, A(L(J).captured.personal_count), 1)])
 				])]),
-				W("section", Wu, [d[140] ||= W("header", { class: "panel-head" }, [W("div", { class: "number" }, "2"), W("div", null, [W("h3", null, "Listen + sort"), W("p", null, "Metadata remains visible so borderline detections are easy to understand.")])], -1), I(Y).captured.items?.length ? (H(), U("div", Ku, [(H(!0), U(V, null, R(I(Y).captured.items, (e) => (H(), U("article", {
+				U("section", Kf, [m[168] ||= U("header", { class: "panel-head" }, [U("div", { class: "number" }, "2"), U("div", null, [U("h3", null, "Listen + sort"), U("p", null, "Metadata remains visible so borderline detections are easy to understand.")])], -1), L(J).captured.items?.length ? (V(), H("div", Jf, [(V(!0), H(B, null, z(L(J).captured.items, (e) => (V(), H("article", {
 					key: e.capture_id || e.saved_as,
 					class: "audio-card"
 				}, [
-					W("header", null, [W("div", null, [W("strong", null, A(e.original_name || e.saved_as), 1), W("small", null, A(I(mc)(e.captured_at || e.received_at)) + " " + A(e.message || ""), 1)]), W("span", { class: k(["pill", I(_c)(e).tone]) }, A(I(_c)(e).label), 3)]),
-					fe(e).length ? (H(), U("div", qu, [(H(!0), U(V, null, R(fe(e), (e) => (H(), U("span", { key: e }, A(e), 1))), 128))])) : q("", !0),
-					W("div", { class: k(["capture-assignment", { unassigned: !e.review_wake_word }]) }, [W("label", null, [d[137] ||= W("span", null, "Train this clip for", -1), L(W("select", { "onUpdate:modelValue": (t) => e.review_wake_word = t }, [d[136] ||= W("option", { value: "" }, "Choose a saved wake word…", -1), (H(!0), U(V, null, R(I(Y).wakeWordLibrary, (e) => (H(), U("option", {
+					U("header", null, [U("div", null, [U("strong", null, A(e.original_name || e.saved_as), 1), U("small", null, A(L(_c)(e.captured_at || e.received_at)) + " " + A(e.message || ""), 1)]), U("span", { class: k(["pill", L(bc)(e).tone]) }, A(L(bc)(e).label), 3)]),
+					me(e).length ? (V(), H("div", Yf, [(V(!0), H(B, null, z(me(e), (e) => (V(), H("span", { key: e }, A(e), 1))), 128))])) : K("", !0),
+					U("div", { class: k(["capture-assignment", { unassigned: !e.review_wake_word }]) }, [U("label", null, [m[165] ||= U("span", null, "Train this clip for", -1), R(U("select", { "onUpdate:modelValue": (t) => e.review_wake_word = t }, [m[164] ||= U("option", { value: "" }, "Choose a saved wake word…", -1), (V(!0), H(B, null, z(L(J).wakeWordLibrary, (e) => (V(), H("option", {
 						key: e.safe_word,
 						value: e.safe_word
-					}, A(e.phrase) + " · " + A(e.safe_word), 9, Yu))), 128))], 8, Ju), [[es, e.review_wake_word]])]), W("span", { class: k(["pill", e.review_wake_word ? "success" : "warning"]) }, A(e.review_wake_word ? `Routed to ${e.review_wake_word}` : "Unassigned"), 3)], 2),
-					e.transcript ? (H(), U("div", Xu, [d[138] ||= W("b", null, "STT", -1), K(" " + A(e.transcript), 1)])) : q("", !0),
-					e.auto_review_guided_transcript ? (H(), U("div", Zu, [d[139] ||= W("b", null, "Guided wake check", -1), K(" " + A(e.auto_review_guided_transcript), 1)])) : q("", !0),
-					W("audio", {
+					}, A(e.phrase) + " · " + A(e.safe_word), 9, Zf))), 128))], 8, Xf), [[ts, e.review_wake_word]])]), U("span", { class: k(["pill", e.review_wake_word ? "success" : "warning"]) }, A(e.review_wake_word ? `Routed to ${e.review_wake_word}` : "Unassigned"), 3)], 2),
+					e.transcript ? (V(), H("div", Qf, [m[166] ||= U("b", null, "STT", -1), G(" " + A(e.transcript), 1)])) : K("", !0),
+					e.auto_review_guided_transcript ? (V(), H("div", $f, [m[167] ||= U("b", null, "Guided wake check", -1), G(" " + A(e.auto_review_guided_transcript), 1)])) : K("", !0),
+					U("audio", {
 						controls: "",
 						preload: "none",
-						src: I(vc)(e, "captured")
-					}, null, 8, Qu),
-					W("footer", null, [W("span", null, A(e.saved_as) + " · " + A(I(gc)(e.final_format)), 1), W("div", null, [
-						W("button", {
+						src: L(xc)(e, "captured")
+					}, null, 8, ep),
+					U("footer", null, [U("span", null, A(e.saved_as) + " · " + A(L(yc)(e.final_format)), 1), U("div", null, [
+						U("button", {
 							type: "button",
-							disabled: I(X)("review") || !e.review_wake_word,
-							onClick: (t) => I(Ks)(e, "approve_personal")
-						}, "Add positive", 8, $u),
-						W("button", {
+							disabled: L(Y)("review") || !e.review_wake_word,
+							onClick: (t) => L(Js)(e, "approve_personal")
+						}, "Add positive", 8, tp),
+						U("button", {
 							type: "button",
-							disabled: I(X)("review") || !e.review_wake_word,
-							onClick: (t) => I(Ks)(e, "mark_negative")
-						}, "Mark negative", 8, ed),
-						W("button", {
+							disabled: L(Y)("review") || !e.review_wake_word,
+							onClick: (t) => L(Js)(e, "mark_negative")
+						}, "Mark negative", 8, np),
+						U("button", {
 							type: "button",
 							class: "button danger ghost",
-							disabled: I(X)("review"),
-							onClick: (t) => I(Ks)(e, "discard")
-						}, "Discard", 8, td)
+							disabled: L(Y)("review"),
+							onClick: (t) => L(Js)(e, "discard")
+						}, "Discard", 8, rp)
 					])])
-				]))), 128))])) : (H(), U("div", Gu, "No captured audio yet. Clips sent by satellites will appear here."))])
-			], 64)) : I(Y).activeView === "samples" ? (H(), U(V, { key: 3 }, [
-				W("section", nd, [d[141] ||= W("div", null, [
-					W("span", { class: "eyebrow" }, "Sample library"),
-					W("h2", null, "Current Training Samples"),
-					W("p", null, "Audit positives and negatives, trim recordings precisely, and import seed audio.")
-				], -1), W("span", rd, A(I(Es) + I(Ds)) + " total", 1)]),
-				W("section", id, [
-					W("header", ad, [
-						d[144] ||= W("div", { class: "number" }, "1", -1),
-						d[145] ||= W("div", null, [W("h3", null, "Saved samples"), W("p", null, "Personal clips are positives. Negative clips are false wakes and hard negatives.")], -1),
-						W("div", od, [W("button", {
+				]))), 128))])) : (V(), H("div", qf, "No captured audio yet. Clips sent by satellites will appear here."))])
+			], 64)) : L(J).activeView === "samples" || L(J).activeView === "trainer" && L(J).wizardStep === 1 ? (V(), H(B, { key: 8 }, [
+				L(J).activeView === "samples" ? (V(), H("section", ip, [m[169] ||= U("div", null, [
+					U("span", { class: "eyebrow" }, "Sample library"),
+					U("h2", null, "Current Training Samples"),
+					U("p", null, "Audit positives and negatives, trim recordings precisely, and import seed audio.")
+				], -1), U("span", ap, A(L(Ds) + L(Os)) + " total", 1)])) : K("", !0),
+				U("section", op, [
+					U("header", sp, [
+						m[172] ||= U("div", { class: "number" }, "1", -1),
+						m[173] ||= U("div", null, [U("h3", null, "Saved samples"), U("p", null, "Personal clips are positives. Negative clips are false wakes and hard negatives.")], -1),
+						U("div", cp, [U("button", {
 							type: "button",
-							class: k({ active: I(Y).sampleBucket === "personal" }),
-							onClick: d[41] ||= (e) => ie("personal")
-						}, [d[142] ||= K("Personal ", -1), W("b", null, A(I(Es)), 1)], 2), W("button", {
+							class: k({ active: L(J).sampleBucket === "personal" }),
+							onClick: m[48] ||= (e) => oe("personal")
+						}, [m[170] ||= G("Personal ", -1), U("b", null, A(L(Ds)), 1)], 2), U("button", {
 							type: "button",
-							class: k({ active: I(Y).sampleBucket === "negative" }),
-							onClick: d[42] ||= (e) => ie("negative")
-						}, [d[143] ||= K("Negative ", -1), W("b", null, A(I(Ds)), 1)], 2)])
+							class: k({ active: L(J).sampleBucket === "negative" }),
+							onClick: m[49] ||= (e) => oe("negative")
+						}, [m[171] ||= G("Negative ", -1), U("b", null, A(L(Os)), 1)], 2)])
 					]),
-					W("div", sd, [
-						W("button", {
+					U("div", lp, [
+						U("button", {
 							type: "button",
-							disabled: I(X)("samples"),
-							onClick: d[43] ||= (e) => I(Vs)()
-						}, "Refresh", 8, cd),
-						W("button", {
+							disabled: L(Y)("samples"),
+							onClick: m[50] ||= (e) => L(Us)()
+						}, "Refresh", 8, up),
+						U("button", {
 							type: "button",
 							class: "button danger ghost",
-							disabled: I(X)("review") || I(Es) === 0,
-							onClick: d[44] ||= (e) => I(Ys)("personal")
-						}, "Clear positives", 8, ld),
-						W("button", {
+							disabled: L(Y)("review") || L(Ds) === 0,
+							onClick: m[51] ||= (e) => L(Zs)("personal")
+						}, "Clear positives", 8, dp),
+						U("button", {
 							type: "button",
 							class: "button danger ghost",
-							disabled: I(X)("review") || I(Ds) === 0,
-							onClick: d[45] ||= (e) => I(Ys)("negative")
-						}, "Clear negatives", 8, ud)
+							disabled: L(Y)("review") || L(Os) === 0,
+							onClick: m[52] ||= (e) => L(Zs)("negative")
+						}, "Clear negatives", 8, fp)
 					]),
-					I(js).length ? (H(), U("div", fd, [(H(!0), U(V, null, R(c.value, (e) => (H(), U("article", {
+					L(Ms).length ? (V(), H("div", mp, [(V(!0), H(B, null, z(d.value, (e) => (V(), H("article", {
 						key: e.saved_as,
 						class: "audio-card"
 					}, [
-						W("header", null, [W("div", null, [W("strong", null, A(e.saved_as), 1), W("small", null, A(pe(e)), 1)]), W("div", pd, [e.trimmed ? (H(), U("span", md, "Trimmed")) : q("", !0), W("span", { class: k(["pill", I(Y).sampleBucket === "personal" ? "success" : "error"]) }, A(I(Y).sampleBucket === "personal" ? "Positive" : "Negative"), 3)])]),
-						e.transcript ? (H(), U("div", hd, [d[146] ||= W("b", null, "STT", -1), K(" " + A(e.transcript), 1)])) : q("", !0),
-						e.auto_review_guided_transcript ? (H(), U("div", gd, [d[147] ||= W("b", null, "Guided wake check", -1), K(" " + A(e.auto_review_guided_transcript), 1)])) : q("", !0),
-						W("audio", {
+						U("header", null, [U("div", null, [U("strong", null, A(e.saved_as), 1), U("small", null, A(he(e)), 1)]), U("div", hp, [e.trimmed ? (V(), H("span", gp, "Trimmed")) : K("", !0), U("span", { class: k(["pill", L(J).sampleBucket === "personal" ? "success" : "error"]) }, A(L(J).sampleBucket === "personal" ? "Positive" : "Negative"), 3)])]),
+						e.transcript ? (V(), H("div", _p, [m[174] ||= U("b", null, "STT", -1), G(" " + A(e.transcript), 1)])) : K("", !0),
+						e.auto_review_guided_transcript ? (V(), H("div", vp, [m[175] ||= U("b", null, "Guided wake check", -1), G(" " + A(e.auto_review_guided_transcript), 1)])) : K("", !0),
+						U("audio", {
 							controls: "",
 							preload: "none",
-							src: I(vc)(e, I(Y).sampleBucket)
-						}, null, 8, _d),
-						W("footer", null, [W("span", null, A(I(gc)(e.final_format)), 1), W("div", null, [
-							W("button", {
+							src: L(xc)(e, L(J).sampleBucket)
+						}, null, 8, yp),
+						U("footer", null, [U("span", null, A(L(yc)(e.final_format)), 1), U("div", null, [
+							U("button", {
 								type: "button",
-								onClick: (t) => ae(e, I(Y).sampleBucket)
-							}, "Trim", 8, vd),
-							e.trimmed ? (H(), U("button", {
+								onClick: (t) => O(e, L(J).sampleBucket)
+							}, "Trim", 8, bp),
+							e.trimmed ? (V(), H("button", {
 								key: 0,
 								type: "button",
-								onClick: (t) => I(Js)(e, I(Y).sampleBucket)
-							}, "Revert", 8, yd)) : q("", !0),
-							W("button", {
+								onClick: (t) => L(Xs)(e, L(J).sampleBucket)
+							}, "Revert", 8, xp)) : K("", !0),
+							U("button", {
 								type: "button",
 								class: "button danger ghost",
-								disabled: I(X)("review"),
-								onClick: (t) => I(qs)(e, I(Y).sampleBucket)
-							}, "Remove", 8, bd)
+								disabled: L(Y)("review"),
+								onClick: (t) => L(Ys)(e, L(J).sampleBucket)
+							}, "Remove", 8, Sp)
 						])])
-					]))), 128))])) : (H(), U("div", dd, "No " + A(I(Y).sampleBucket) + " samples saved yet.", 1)),
-					l.value > 1 ? (H(), U("div", xd, [
-						W("button", {
+					]))), 128))])) : (V(), H("div", pp, "No " + A(L(J).sampleBucket) + " samples saved yet.", 1)),
+					f.value > 1 ? (V(), H("div", Cp, [
+						U("button", {
 							type: "button",
-							disabled: I(Y).samplePage[I(Y).sampleBucket] === 0,
-							onClick: d[46] ||= (e) => I(Y).samplePage[I(Y).sampleBucket]--
-						}, "Previous", 8, Sd),
-						W("span", null, "Page " + A(I(Y).samplePage[I(Y).sampleBucket] + 1) + " of " + A(l.value), 1),
-						W("button", {
+							disabled: L(J).samplePage[L(J).sampleBucket] === 0,
+							onClick: m[53] ||= (e) => L(J).samplePage[L(J).sampleBucket]--
+						}, "Previous", 8, wp),
+						U("span", null, "Page " + A(L(J).samplePage[L(J).sampleBucket] + 1) + " of " + A(f.value), 1),
+						U("button", {
 							type: "button",
-							disabled: I(Y).samplePage[I(Y).sampleBucket] >= l.value - 1,
-							onClick: d[47] ||= (e) => I(Y).samplePage[I(Y).sampleBucket]++
-						}, "Next", 8, Cd)
-					])) : q("", !0)
+							disabled: L(J).samplePage[L(J).sampleBucket] >= f.value - 1,
+							onClick: m[54] ||= (e) => L(J).samplePage[L(J).sampleBucket]++
+						}, "Next", 8, Tp)
+					])) : K("", !0)
 				]),
-				W("section", wd, [
-					d[149] ||= W("header", { class: "panel-head" }, [W("div", { class: "number" }, "2"), W("div", null, [W("h3", null, "Manual sample import"), W("p", null, "Optional seed recordings are normalized to the trainer’s required WAV format.")])], -1),
-					W("label", Td, [
-						W("input", {
+				U("section", Ep, [
+					m[177] ||= U("header", { class: "panel-head" }, [U("div", { class: "number" }, "2"), U("div", null, [U("h3", null, "Manual sample import"), U("p", null, "Optional seed recordings are normalized to the trainer’s required WAV format.")])], -1),
+					U("label", Dp, [
+						U("input", {
 							ref_key: "uploadInput",
 							ref: t,
 							type: "file",
 							multiple: "",
 							accept: "audio/*,.wav,.mp3,.m4a,.flac,.ogg,.aac,.webm,.opus",
-							onChange: d[48] ||= (...e) => I(Us) && I(Us)(...e)
+							onChange: m[55] ||= (...e) => L(Gs) && L(Gs)(...e)
 						}, null, 544),
-						d[148] ||= W("span", null, [W("strong", null, "Choose one or many audio files"), W("small", null, "WAV, MP3, M4A, FLAC, OGG, AAC, OPUS, and WEBM")], -1),
-						W("b", null, A(I(Y).selectedFiles.length ? `${I(Y).selectedFiles.length} selected` : "Browse"), 1)
+						m[176] ||= U("span", null, [U("strong", null, "Choose one or many audio files"), U("small", null, "WAV, MP3, M4A, FLAC, OGG, AAC, OPUS, and WEBM")], -1),
+						U("b", null, A(L(J).selectedFiles.length ? `${L(J).selectedFiles.length} selected` : "Browse"), 1)
 					]),
-					W("button", {
+					U("button", {
 						type: "button",
 						class: "button primary",
-						disabled: !I(Y).session.safe_word || !I(Y).selectedFiles.length || I(X)("upload"),
-						onClick: d[49] ||= (e) => I(Gs)(t.value)
-					}, A(I(X)("upload") ? "Uploading…" : "Upload selected samples"), 9, Ed),
-					W("div", Dd, [
-						W("div", null, [W("strong", null, A(I(Y).uploadLabel), 1), W("span", null, A(I(Y).uploadProgress) + "%", 1)]),
-						W("div", Od, [W("i", { style: de({ width: `${I(Y).uploadProgress}%` }) }, null, 4)]),
-						W("small", null, A(I(Y).uploadDetail), 1)
+						disabled: !L(J).session.safe_word || !L(J).selectedFiles.length || L(Y)("upload"),
+						onClick: m[56] ||= (e) => L(qs)(t.value)
+					}, A(L(Y)("upload") ? "Uploading…" : "Upload selected samples"), 9, Op),
+					U("div", kp, [
+						U("div", null, [U("strong", null, A(L(J).uploadLabel), 1), U("span", null, A(L(J).uploadProgress) + "%", 1)]),
+						U("div", Ap, [U("i", { style: de({ width: `${L(J).uploadProgress}%` }) }, null, 4)]),
+						U("small", null, A(L(J).uploadDetail), 1)
 					])
-				])
-			], 64)) : I(Y).activeView === "data" ? (H(), U(V, { key: 4 }, [
-				W("section", kd, [d[150] ||= W("div", null, [
-					W("span", { class: "eyebrow" }, "Local storage"),
-					W("h2", null, "Data Management"),
-					W("p", null, "See exactly what the trainer has downloaded, generated, recorded, and produced.")
-				], -1), W("span", Ad, A(I(hc)(I(Y).managedData.total_size_bytes)) + " total", 1)]),
-				W("section", jd, [
-					W("header", Md, [
-						d[151] ||= W("div", { class: "number" }, "i", -1),
-						d[152] ||= W("div", null, [W("h3", null, "Trainer storage"), W("p", null, "Deleting an item is permanent. Required downloads and generated caches will be rebuilt the next time training needs them.")], -1),
-						W("button", {
-							type: "button",
-							disabled: I(X)("data") || I(X)("data-delete"),
-							onClick: d[50] ||= (e) => I(ac)()
-						}, A(I(X)("data") ? "Scanning…" : "Refresh sizes"), 9, Nd)
-					]),
-					W("div", Pd, [
-						W("article", null, [d[153] ||= W("span", null, "Space used", -1), W("strong", Fd, A(I(hc)(I(Y).managedData.total_size_bytes)), 1)]),
-						W("article", null, [d[154] ||= W("span", null, "Files", -1), W("strong", null, A(Number(I(Y).managedData.total_file_count || 0).toLocaleString()), 1)]),
-						W("article", null, [d[155] ||= W("span", null, "Individual items", -1), W("strong", null, A(I(Y).managedData.items.length), 1)])
-					]),
-					I(Y).training.running ? (H(), U("p", Id, "Stop the active training session before deleting data.")) : q("", !0)
 				]),
-				(H(!0), U(V, null, R(C.value, (e, t) => (H(), U("section", {
+				L(J).activeView === "trainer" ? (V(), H("div", jp, [U("button", {
+					type: "button",
+					onClick: m[57] ||= (e) => L(J).wizardStep = 0
+				}, "Back to phrase"), U("button", {
+					type: "button",
+					class: "primary",
+					onClick: m[58] ||= (e) => L(J).wizardStep = 2
+				}, [m[178] ||= G("Continue to models", -1), W($, { name: "next" })])])) : K("", !0)
+			], 64)) : L(J).activeView === "data" ? (V(), H(B, { key: 9 }, [
+				U("section", Mp, [m[179] ||= U("div", null, [
+					U("span", { class: "eyebrow" }, "Local storage"),
+					U("h2", null, "Data Management"),
+					U("p", null, "See exactly what the trainer has downloaded, generated, recorded, and produced.")
+				], -1), U("span", Np, A(L(vc)(L(J).managedData.total_size_bytes)) + " total", 1)]),
+				K("", !0),
+				U("section", Pp, [
+					U("header", Fp, [
+						m[184] ||= U("div", { class: "number" }, "i", -1),
+						m[185] ||= U("div", null, [U("h3", null, "Trainer storage"), U("p", null, "Deleting an item is permanent. Required downloads and generated caches will be rebuilt the next time training needs them.")], -1),
+						U("button", {
+							type: "button",
+							disabled: L(Y)("data") || L(Y)("data-delete"),
+							onClick: m[60] ||= (e) => L(cc)()
+						}, A(L(Y)("data") ? "Scanning…" : "Refresh sizes"), 9, Ip)
+					]),
+					U("div", Lp, [
+						U("article", null, [m[186] ||= U("span", null, "Space used", -1), U("strong", Rp, A(L(vc)(L(J).managedData.total_size_bytes)), 1)]),
+						U("article", null, [m[187] ||= U("span", null, "Files", -1), U("strong", null, A(Number(L(J).managedData.total_file_count || 0).toLocaleString()), 1)]),
+						U("article", null, [m[188] ||= U("span", null, "Individual items", -1), U("strong", null, A(L(J).managedData.items.length), 1)])
+					]),
+					L(J).training.running ? (V(), H("p", zp, "Stop the active training session before deleting data.")) : K("", !0)
+				]),
+				(V(!0), H(B, null, z(ee.value, (e, t) => (V(), H("section", {
 					key: e.name,
 					class: "panel data-panel"
-				}, [W("header", Ld, [W("div", Rd, A(t + 1), 1), W("div", null, [W("h3", null, A(e.name), 1), W("p", null, A(e.items.length) + " separately managed item" + A(e.items.length === 1 ? "" : "s"), 1)])]), W("div", zd, [(H(!0), U(V, null, R(e.items, (e) => (H(), U("article", {
+				}, [U("header", Bp, [U("div", Vp, A(t + 1), 1), U("div", null, [U("h3", null, A(e.name), 1), U("p", null, A(e.items.length) + " separately managed item" + A(e.items.length === 1 ? "" : "s"), 1)])]), U("div", Hp, [(V(!0), H(B, null, z(e.items, (e) => (V(), H("article", {
 					key: e.id,
 					class: k(["data-row", { empty: !e.file_count }])
 				}, [
-					W("div", Bd, [
-						W("div", Vd, [W("strong", null, A(e.label), 1), W("code", null, A(e.location), 1)]),
-						W("small", null, A(e.description), 1),
-						e.rebuild_note ? (H(), U("span", Hd, A(e.rebuild_note), 1)) : q("", !0)
+					U("div", Up, [
+						U("div", Wp, [U("strong", null, A(e.label), 1), U("code", null, A(e.location), 1)]),
+						U("small", null, A(e.description), 1),
+						e.rebuild_note ? (V(), H("span", Gp, A(e.rebuild_note), 1)) : K("", !0)
 					]),
-					W("div", Ud, [W("strong", null, A(I(hc)(e.size_bytes)), 1), W("span", null, A(Number(e.file_count || 0).toLocaleString()) + " file" + A(e.file_count === 1 ? "" : "s"), 1)]),
-					W("button", {
+					U("div", Kp, [U("strong", null, A(L(vc)(e.size_bytes)), 1), U("span", null, A(Number(e.file_count || 0).toLocaleString()) + " file" + A(e.file_count === 1 ? "" : "s"), 1)]),
+					U("button", {
 						type: "button",
 						class: "button danger ghost",
-						disabled: !e.file_count || I(Y).training.running || I(X)("data") || I(X)("data-delete"),
-						onClick: (t) => I(oc)(e)
-					}, A(I(X)("data-delete") ? "Please wait…" : "Delete"), 9, Wd)
+						disabled: !e.file_count || L(J).training.running || L(Y)("data") || L(Y)("data-delete"),
+						onClick: (t) => L(lc)(e)
+					}, A(L(Y)("data-delete") ? "Please wait…" : "Delete"), 9, qp)
 				], 2))), 128))])]))), 128)),
-				!I(X)("data") && !I(Y).managedData.items.length ? (H(), U("section", Gd, "No managed trainer data was found.")) : q("", !0)
-			], 64)) : I(Y).activeView === "firmware" ? (H(), U(V, { key: 5 }, [
-				W("section", Kd, [d[156] ||= W("div", null, [
-					W("span", { class: "eyebrow" }, "Wake-word catalog"),
-					W("h2", null, "Trained Wake Words"),
-					W("p", null, "Copy a local JSON package URL into Tater to switch every native satellite live.")
-				], -1), W("span", { class: k(["pill hero-pill", I(Y).wakeWords.length ? "success" : "warning"]) }, A(I(Y).wakeWords.length ? `${I(Y).wakeWords.length} trained` : "Catalog empty"), 3)]),
-				d[163] ||= W("div", { class: "native-notice" }, [W("strong", null, "Tater Native"), W("span", null, "These packages include model metadata and a direct model URL for live satellite updates.")], -1),
-				W("section", qd, [W("header", Jd, [
-					d[157] ||= W("div", { class: "number" }, "v1", -1),
-					d[158] ||= W("div", null, [W("h3", null, "Published model URLs"), W("p", null, "URLs stay local and are refreshed after each successful run.")], -1),
-					W("button", {
-						type: "button",
-						disabled: I(X)("firmware") || I(X)("library"),
-						onClick: d[51] ||= (e) => {
-							I(nc)(), I(rc)();
-						}
-					}, "Refresh", 8, Yd)
-				]), I(Y).wakeWords.length ? (H(), U("div", Zd, [(H(!0), U(V, null, R(I(Y).wakeWords, (e) => (H(), U("article", { key: e.key || me(e) }, [W("div", null, [
-					W("strong", null, A(e.label || e.name || "Trained wake word"), 1),
-					me(e) ? (H(), U("a", {
-						key: 0,
-						href: me(e),
-						target: "_blank",
-						rel: "noreferrer"
-					}, "Tater wake-word bundle · " + A(me(e)), 9, Qd)) : (H(), U("span", $d, "Bundle URL unavailable")),
-					ge(e) ? (H(), U("a", {
-						key: 2,
-						href: ge(e),
-						target: "_blank",
-						rel: "noreferrer"
-					}, "MicroWakeWord model · " + A(ge(e)), 9, ef)) : q("", !0),
-					_e(e) ? (H(), U("a", {
-						key: 3,
-						href: _e(e),
-						target: "_blank",
-						rel: "noreferrer"
-					}, "openWakeWord model · " + A(_e(e)), 9, tf)) : q("", !0),
-					(H(!0), U(V, null, R(ye(e), (e, t) => (H(), U("a", {
-						key: t,
-						href: e,
-						target: "_blank",
-						rel: "noreferrer"
-					}, "NanoWakeWord " + A(String(t).toUpperCase()) + " model · " + A(e), 9, nf))), 128)),
-					ve(e) ? (H(), U("a", {
-						key: 4,
-						href: ve(e),
-						target: "_blank",
-						rel: "noreferrer"
-					}, "Wake boundary model · " + A(ve(e)), 9, rf)) : q("", !0),
-					W("div", af, [
-						(H(!0), U(V, null, R(e.available_engines || [], (e) => (H(), U("span", { key: e }, A(String(e).replaceAll("_", " ")), 1))), 128)),
-						e.wake_boundary_available ? (H(), U("span", of, "wake boundary · threshold " + A(e.wake_boundary_threshold), 1)) : q("", !0),
-						e.language ? (H(), U("span", sf, A(e.language), 1)) : q("", !0),
-						e.trained_at ? (H(), U("span", cf, A(I(mc)(e.trained_at)), 1)) : q("", !0),
-						e.recall === void 0 ? q("", !0) : (H(), U("span", lf, "recall " + A(e.recall), 1))
-					])
-				]), W("button", {
+				!L(Y)("data") && !L(J).managedData.items.length ? (V(), H("section", Jp, "No managed trainer data was found.")) : K("", !0)
+			], 64)) : K("", !0)], 64)) : (V(), H("div", Cu, [...m[70] ||= [U("span", { class: "spinner" }, null, -1), U("strong", null, "Connecting to the trainer…", -1)]]))]),
+			L(J).initialized ? (V(), H("footer", Yp, [U("span", Xp, [
+				W($, { name: "link" }),
+				G(A(L(Ns) ? "Tater linked" : "Local trainer"), 1),
+				U("button", {
 					type: "button",
-					disabled: !me(e),
-					onClick: (t) => I(sc)(me(e))
-				}, "Copy bundle URL", 8, uf)]))), 128))])) : (H(), U("div", Xd, "Train a wake word and its package will appear here."))]),
-				W("section", df, [W("header", ff, [
-					d[159] ||= W("div", { class: "number" }, "↗", -1),
-					d[160] ||= W("div", null, [W("h3", null, "Model history + quality"), W("p", null, "Immutable snapshots let you compare each word’s detector and boundary results over time.")], -1),
-					W("span", { class: k(["pill", S.value.length ? "success" : ""]) }, A(I(Y).modelHistory.length) + " runs", 3)
-				]), S.value.length ? (H(), U("div", pf, [(H(!0), U(V, null, R(S.value, (e) => (H(), U("article", { key: e.run_id }, [W("div", mf, [W("i", { class: k(e.summary?.tone || "neutral") }, null, 2)]), W("div", hf, [
-					W("header", null, [W("div", null, [W("span", null, A(e.run_kind === "boundary" ? "Boundary only" : "Model training"), 1), W("strong", null, A(e.wake_word), 1)]), W("b", { class: k(["pill", e.summary?.tone || ""]) }, A(e.summary?.overall || "Completed"), 3)]),
-					W("p", null, A(I(mc)(e.completed_at)) + " · " + A((e.selected_models || []).map((e) => e.replaceAll("_", " ")).join(" + ")), 1),
-					W("div", gf, [(H(!0), U(V, null, R(e.summary?.models || [], (e) => (H(), U("div", {
-						key: e.id,
-						class: k(e.tone)
-					}, [W("span", null, [W("strong", null, A(e.label), 1), W("b", null, A(e.rating), 1)]), (H(!0), U(V, null, R(e.metrics || [], (e) => (H(), U("small", { key: `${e.label}-${e.value}` }, [K(A(e.label) + " ", 1), W("b", null, A(e.value), 1)]))), 128))], 2))), 128))])
-				])]))), 128))])) : (H(), U("div", _f, "Completed training runs will appear here with their quality metrics."))]),
-				d[164] ||= W("div", { class: "native-notice esphome-notice" }, [W("strong", null, "ESPHome"), W("span", null, "Strict micro_wake_word manifest without Tater Native or calibration extensions.")], -1),
-				W("section", vf, [d[162] ||= W("header", { class: "panel-head" }, [W("div", { class: "number" }, "ESP"), W("div", null, [W("h3", null, "ESPHome JSON"), W("p", null, "Use this URL as the model in an ESPHome micro_wake_word configuration.")])], -1), I(Y).wakeWords.length ? (H(), U("div", bf, [(H(!0), U(V, null, R(I(Y).wakeWords, (e) => (H(), U("article", { key: `esphome-${e.key || he(e)}` }, [W("div", null, [
-					W("strong", null, A(e.label || e.name || "Trained wake word"), 1),
-					he(e) ? (H(), U("a", {
-						key: 0,
-						href: he(e),
-						target: "_blank",
-						rel: "noreferrer"
-					}, "ESPHome JSON · " + A(he(e)), 9, xf)) : (H(), U("span", Sf, "ESPHome package URL unavailable")),
-					d[161] ||= W("div", { class: "meta-row" }, [W("span", null, "Schema v2"), W("span", null, "Same TFLite model")], -1)
-				]), W("button", {
-					type: "button",
-					disabled: !he(e),
-					onClick: (t) => I(sc)(he(e))
-				}, "Copy ESPHome URL", 8, Cf)]))), 128))])) : (H(), U("div", yf, "ESPHome links appear after a wake word is trained."))])
-			], 64)) : q("", !0)], 64)) : (H(), U("div", Vc, [...d[60] ||= [W("span", { class: "spinner" }, null, -1), W("strong", null, "Connecting to the local trainer…", -1)]]))]),
-			(H(), ia(Yn, { to: "body" }, [I(Y).consoleOpen ? (H(), U("div", {
-				key: 0,
-				class: "modal-backdrop console-backdrop",
-				onClick: d[53] ||= os((e) => I(Y).consoleOpen = !1, ["self"])
-			}, [W("section", wf, [
-				W("header", Tf, [d[165] ||= W("div", null, [
-					W("span", { class: "eyebrow" }, "Live pipeline"),
-					W("h2", null, "Training Console"),
-					W("p", null, "Closing this window does not interrupt training.")
-				], -1), W("div", Ef, [
-					r.value ? q("", !0) : (H(), U("button", {
-						key: 0,
-						type: "button",
-						class: "console-follow",
-						onClick: D
-					}, "Jump to latest")),
-					W("span", { class: k(["pill", p.value.tone]) }, A(p.value.text), 3),
-					W("button", {
-						type: "button",
-						onClick: d[52] ||= (e) => I(Y).consoleOpen = !1
-					}, "Close")
-				])]),
-				g.value ? (H(), U("div", {
-					key: 0,
-					class: k(["console-progress", {
-						indeterminate: v.value === null && !g.value.status,
-						complete: g.value.status === "complete",
-						failed: g.value.status === "failed"
-					}])
-				}, [
-					W("div", Df, [W("div", null, [W("span", null, A(_.value), 1), W("strong", null, A(g.value.label || "Working…"), 1)]), W("b", null, A(g.value.status === "failed" ? "Failed" : g.value.status === "complete" ? "Done" : v.value === null ? "Working" : `${v.value.toFixed(1)}%`), 1)]),
-					W("div", Of, [W("i", { style: de({ width: g.value.status ? "100%" : v.value === null ? "38%" : `${v.value}%` }) }, null, 4)]),
-					y.value.length ? (H(), U("div", kf, [(H(!0), U(V, null, R(y.value, (e) => (H(), U("span", { key: e }, A(e), 1))), 128))])) : q("", !0)
-				], 2)) : q("", !0),
-				W("pre", {
-					ref_key: "consoleLog",
-					ref: n,
-					class: "console-log",
-					onScrollPassive: ne
-				}, [(H(!0), U(V, null, R(h.value, (e, t) => (H(), U("span", {
-					key: `${t}-${e}`,
-					class: k(be(e))
-				}, A(e), 3))), 128))], 544)
-			])])) : q("", !0)])),
-			(H(), ia(Yn, { to: "body" }, [I(Y).taterLinkOpen ? (H(), U("div", {
+					class: "text-button",
+					onClick: ue
+				}, A(L(Ns) ? "Connection" : "Link Tater"), 1)
+			]), m[189] ||= U("span", null, "Recordings, results, and every saved version stay with the word.", -1)])) : K("", !0),
+			(V(), aa(Jn, { to: "body" }, [L(J).taterLinkOpen ? (V(), H("div", {
 				key: 0,
 				class: "modal-backdrop",
-				onClick: d[57] ||= os((e) => I(Y).taterLinkOpen = !1, ["self"])
-			}, [W("section", Af, [W("header", jf, [W("div", null, [
-				d[166] ||= W("span", { class: "eyebrow" }, "Secure pairing", -1),
-				W("h2", null, A(o.value ? "Tater linked" : "Link Tater"), 1),
-				W("p", null, A(o.value ? "This trainer can securely publish wake-word updates." : "Enter the short-lived code shown in Tater Voice Settings."), 1)
-			]), W("button", {
+				onClick: m[64] ||= ss((e) => L(J).taterLinkOpen = !1, ["self"])
+			}, [U("section", Zp, [U("header", Qp, [U("div", null, [
+				m[190] ||= U("span", { class: "eyebrow" }, "Secure pairing", -1),
+				U("h2", null, A(o.value ? "Tater linked" : "Link Tater"), 1),
+				U("p", null, A(o.value ? "This trainer can securely publish wake-word updates." : "Enter the short-lived code shown in Tater Voice Settings."), 1)
+			]), U("button", {
 				type: "button",
-				onClick: d[54] ||= (e) => I(Y).taterLinkOpen = !1
-			}, "Close")]), o.value ? (H(), U("div", Mf, [
-				d[167] ||= W("i", null, "✓", -1),
-				W("strong", null, "Successfully linked" + A(I(Y).auto.trainer_link?.tater_name ? ` to ${I(Y).auto.trainer_link.tater_name}` : ""), 1),
-				d[168] ||= W("span", null, "The private link key is stored locally and is never displayed.", -1)
-			])) : (H(), U("div", Nf, [
-				W("label", Pf, [d[169] ||= W("span", null, "Tater address", -1), L(W("input", {
-					"onUpdate:modelValue": d[55] ||= (e) => i.value = e,
+				onClick: m[61] ||= (e) => L(J).taterLinkOpen = !1
+			}, "Close")]), o.value ? (V(), H("div", $p, [
+				m[191] ||= U("i", null, "✓", -1),
+				U("strong", null, "Successfully linked" + A(L(J).auto.trainer_link?.tater_name ? ` to ${L(J).auto.trainer_link.tater_name}` : ""), 1),
+				m[192] ||= U("span", null, "The private link key is stored locally and is never displayed.", -1)
+			])) : (V(), H("div", em, [
+				U("label", tm, [m[193] ||= U("span", null, "Tater address", -1), R(U("input", {
+					"onUpdate:modelValue": m[62] ||= (e) => i.value = e,
 					type: "text"
-				}, null, 512), [[Zo, i.value]])]),
-				W("label", Ff, [d[170] ||= W("span", null, "Tater pairing code", -1), L(W("input", {
+				}, null, 512), [[Qo, i.value]])]),
+				U("label", nm, [m[194] ||= U("span", null, "Tater pairing code", -1), R(U("input", {
 					id: "pairing-code",
-					"onUpdate:modelValue": d[56] ||= (e) => a.value = e,
+					"onUpdate:modelValue": m[63] ||= (e) => a.value = e,
 					class: "pairing-code",
 					maxlength: "9",
 					placeholder: "ABCD-EFGH",
 					autocomplete: "off",
-					onInput: le
-				}, null, 544), [[Zo, a.value]])]),
-				d[171] ||= W("small", null, "In Tater, open Voice Settings → Wake Word Trainer → Link Trainer.", -1),
-				W("button", {
+					onInput: fe
+				}, null, 544), [[Qo, a.value]])]),
+				m[195] ||= U("small", null, "In Tater, open Voice Settings → Wake Word Trainer → Link Trainer.", -1),
+				U("button", {
 					type: "button",
 					class: "button primary",
-					disabled: I(X)("link"),
-					onClick: ue
-				}, A(I(X)("link") ? "Linking securely…" : "Link Tater"), 9, If)
-			]))])])) : q("", !0)])),
-			G(Ac),
-			G(eo, { name: "toast" }, {
-				default: On(() => [I(Y).toast.message ? (H(), U("div", {
+					disabled: L(Y)("link"),
+					onClick: pe
+				}, A(L(Y)("link") ? "Linking securely…" : "Link Tater"), 9, rm)
+			]))])])) : K("", !0)])),
+			W(Nc),
+			W(to, { name: "toast" }, {
+				default: Dn(() => [L(J).toast.message ? (V(), H("div", {
 					key: 0,
-					class: k(["toast", I(Y).toast.tone]),
+					class: k(["toast", L(J).toast.tone]),
 					role: "status"
-				}, A(I(Y).toast.message), 3)) : q("", !0)]),
+				}, A(L(J).toast.message), 3)) : K("", !0)]),
 				_: 1
 			})
 		]));
 	}
-}), Bf = document.getElementById("trainer-app");
-if (!Bf) throw Error("Missing #trainer-app mount point");
-fs(zf).mount(Bf);
+}), om = document.getElementById("trainer-app");
+if (!om) throw Error("Missing #trainer-app mount point");
+ps(am).mount(om);
 //#endregion

@@ -20,6 +20,17 @@ import type {
   WakeWordItem,
 } from "./types";
 
+declare global {
+  interface Window {
+    __wakeWordTrainerMac?: { dataFolderPicker?: boolean };
+    webkit?: {
+      messageHandlers?: {
+        wakeWordTrainerStorage?: { postMessage: (message: unknown) => void };
+      };
+    };
+  }
+}
+
 const emptyTraining = (): TrainingState => ({ running: false, exit_code: null, log_lines: [], progress: null });
 const emptySamples = (): SamplesPayload => ({ personal: [], negative: [], personal_count: 0, negative_count: 0 });
 const emptyCaptured = (): CapturedPayload => ({ items: [], captured_count: 0, personal_count: 0, negative_count: 0 });
@@ -47,7 +58,12 @@ const defaultAutoForm = (): AutoTrainForm => ({
 });
 
 export const trainer = reactive({
-  activeView: "trainer" as ViewName,
+  activeView: "home" as ViewName,
+  selectedWord: "",
+  wizardStep: 0,
+  wizardRetrain: false,
+  trainingStages: [] as Array<{ stage: string; label: string; status: string }>,
+  trainingTargets: [] as string[],
   initialized: false,
   busy: new Set<string>(),
   phrase: "",
@@ -94,6 +110,11 @@ export const trainer = reactive({
   trimBucket: "personal" as SampleBucket,
   toast: { message: "", tone: "success", serial: 0 } as ToastState,
 });
+
+export const macDataFolderPickerAvailable = Boolean(
+  window.__wakeWordTrainerMac?.dataFolderPicker
+  && window.webkit?.messageHandlers?.wakeWordTrainerStorage,
+);
 
 let autoTimer = 0;
 let trainingTimer = 0;
@@ -147,6 +168,22 @@ function reportError(error: unknown, fallback: string): void {
   notify(error instanceof Error ? error.message : fallback, "error");
 }
 
+function applyTraining(payload: TrainingState): void {
+  trainer.training = payload;
+  const progress = payload.progress;
+  if (progress?.stage) {
+    const previous = trainer.trainingStages.at(-1);
+    if (!previous || previous.stage !== progress.stage) {
+      if (previous && previous.status === "running") previous.status = progress.status === "failed" ? "failed" : "complete";
+      trainer.trainingStages.push({ stage: progress.stage, label: progress.label, status: progress.status || (payload.running ? "running" : payload.exit_code === 0 ? "complete" : "failed") });
+      if (trainer.trainingStages.length > 40) trainer.trainingStages.shift();
+    } else {
+      previous.label = progress.label;
+      previous.status = progress.status || (payload.running ? "running" : payload.exit_code === 0 ? "complete" : "failed");
+    }
+  }
+}
+
 function applySession(payload: SessionPayload): void {
   trainer.session = payload || {};
   if (Array.isArray(payload.available_languages) && payload.available_languages.length) {
@@ -159,7 +196,7 @@ function applySession(payload: SessionPayload): void {
   if (payload.language) trainer.language = payload.language;
   if (payload.english_accent) trainer.englishAccent = payload.english_accent;
   if (payload.tts_mode) trainer.ttsMode = payload.tts_mode;
-  if (payload.training) trainer.training = payload.training;
+  if (payload.training) applyTraining(payload.training);
 }
 
 export async function refreshSession(): Promise<SessionPayload> {
@@ -426,7 +463,15 @@ export async function runAutoAction(action: "review_now" | "train_now" | "notify
     const payload = await postJson<AutoTrainPayload>("/api/auto_train/action", { action });
     applyAuto(payload, false);
     if (action === "train_now") {
-      trainer.consoleOpen = true;
+      trainer.trainingStages = [];
+      const config = trainer.auto.config || trainer.autoForm;
+      trainer.trainingTargets = [
+        ...(config.train_microwakeword ? ["MicroWakeWord"] : []),
+        ...(config.train_openwakeword ? ["openWakeWord"] : []),
+        ...(config.train_nanowakeword_cnn ? ["NanoWakeWord CNN"] : []),
+        ...(config.train_nanowakeword_gru ? ["NanoWakeWord GRU"] : []),
+      ];
+      trainer.activeView = "training";
       beginTrainingPoll();
     }
     notify(action === "review_now" ? `${Number(payload.queued || 0)} clips queued for review.` : action === "train_now" ? "Training started." : "Wake word published.");
@@ -516,6 +561,18 @@ export async function useSavedWord(word: WakeWordLibraryItem): Promise<void> {
   await Promise.all([refreshSamples(true), refreshWakeWordLibrary(true)]);
 }
 
+export async function publishSavedVersion(word: WakeWordLibraryItem, run: TrainingRun): Promise<void> {
+  if (trainer.training.running) { notify("Wait for training to finish before changing the published version.", "warning"); return; }
+  setBusy("version-publish", true);
+  try {
+    await postJson(`/api/wake_word_library/${encodeURIComponent(word.safe_word)}/runs/${encodeURIComponent(run.run_id)}/publish`);
+    await Promise.all([refreshWakeWords(true), refreshWakeWordLibrary(true)]);
+    notify(`Version ${run.version || run.run_id} is now current for ${word.phrase}. Publish through Tater when you want satellites to use it.`);
+  } catch (error) {
+    reportError(error, "The published version could not be changed.");
+  } finally { setBusy("version-publish", false); }
+}
+
 export async function refreshManagedData(): Promise<ManagedDataPayload> {
   setBusy("data", true);
   try {
@@ -525,6 +582,15 @@ export async function refreshManagedData(): Promise<ManagedDataPayload> {
   } finally {
     setBusy("data", false);
   }
+}
+
+export function chooseDataDirectory(): void {
+  const handler = window.webkit?.messageHandlers?.wakeWordTrainerStorage;
+  if (!macDataFolderPickerAvailable || !handler) {
+    notify("Open this page in the WakeWord Trainer Mac app to change the data folder.", "warning");
+    return;
+  }
+  handler.postMessage({ action: "choose" });
 }
 
 export async function deleteManagedData(item: ManagedDataItem): Promise<void> {
@@ -575,9 +641,16 @@ export async function startTraining(): Promise<void> {
     allowNoPersonal = window.confirm("No positive samples are saved. Train anyway without personal voices?");
     if (!allowNoPersonal) return;
   }
+  trainer.trainingTargets = [
+    ...(trainer.trainMicroWakeWord ? ["MicroWakeWord", "Wake boundary"] : []),
+    ...(trainer.trainOpenWakeWord ? ["openWakeWord"] : []),
+    ...(trainer.trainNanoWakeWordCnn ? ["NanoWakeWord CNN"] : []),
+    ...(trainer.trainNanoWakeWordGru ? ["NanoWakeWord GRU"] : []),
+  ];
   setBusy("training-start", true);
+  trainer.trainingStages = [];
   trainer.training = { running: true, exit_code: null, log_lines: ["Waiting for training output…"] };
-  trainer.consoleOpen = true;
+  trainer.activeView = "training";
   try {
     await postJson("/api/train", {
       allow_no_personal: allowNoPersonal,
@@ -606,9 +679,11 @@ export async function startBoundaryTraining(): Promise<void> {
     notify("Run one full MicroWakeWord training for this word before training its boundary only.", "warning");
     return;
   }
+  trainer.trainingTargets = ["Wake boundary"];
   setBusy("boundary-start", true);
+  trainer.trainingStages = [];
   trainer.training = { running: true, exit_code: null, log_lines: ["Preparing cached data for boundary-only training…"] };
-  trainer.consoleOpen = true;
+  trainer.activeView = "training";
   try {
     await postJson("/api/train", {
       allow_no_personal: true,
@@ -628,11 +703,30 @@ export async function startBoundaryTraining(): Promise<void> {
   }
 }
 
+export async function retryOpenWakeWord(safeWord = ""): Promise<void> {
+  trainer.trainingTargets = ["openWakeWord"];
+  setBusy("oww-retry", true);
+  trainer.trainingStages = [];
+  trainer.training = { running: true, exit_code: null, log_lines: ["Starting openWakeWord-only retry…"] };
+  trainer.activeView = "training";
+  try {
+    await postJson("/api/train_openwakeword", { safe_word: safeWord });
+    beginTrainingPoll();
+  } catch (error) {
+    trainer.training = { running: false, exit_code: 1, log_lines: [error instanceof Error ? error.message : String(error)] };
+    reportError(error, "openWakeWord retry could not start.");
+  } finally {
+    setBusy("oww-retry", false);
+  }
+}
+
 export async function revalidateNanoWakeWord(architecture: string, safeWord = ""): Promise<void> {
   const normalized = architecture.toLowerCase();
+  trainer.trainingTargets = [`NanoWakeWord ${normalized.toUpperCase()}`];
   setBusy("nww-revalidate", true);
+  trainer.trainingStages = [];
   trainer.training = { running: true, exit_code: null, log_lines: [`Revalidating existing NanoWakeWord ${normalized.toUpperCase()} candidate…`] };
-  trainer.consoleOpen = true;
+  trainer.activeView = "training";
   try {
     await postJson("/api/revalidate_nanowakeword", { architecture: normalized, safe_word: safeWord });
     beginTrainingPoll();
@@ -649,7 +743,7 @@ export function beginTrainingPoll(): void {
   const poll = async () => {
     try {
       const payload = await getJson<JsonRecord>("/api/train_status");
-      trainer.training = { ...emptyTraining(), ...(payload.training || {}) };
+      applyTraining({ ...emptyTraining(), ...(payload.training || {}) });
       if (!trainer.training.running) {
         window.clearInterval(trainingTimer);
         trainingTimer = 0;
@@ -678,9 +772,9 @@ export async function initializeTrainer(): Promise<void> {
     ensureSupportedTtsMode();
     try {
       const payload = await getJson<JsonRecord>("/api/train_status");
-      trainer.training = { ...emptyTraining(), ...(payload.training || {}) };
+      applyTraining({ ...emptyTraining(), ...(payload.training || {}) });
       if (trainer.training.running) {
-        trainer.consoleOpen = true;
+        trainer.activeView = "training";
         beginTrainingPoll();
       }
     } catch {

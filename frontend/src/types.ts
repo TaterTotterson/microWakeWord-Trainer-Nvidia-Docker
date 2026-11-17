@@ -1,6 +1,6 @@
 import type { JsonRecord } from "./api";
 
-export type ViewName = "trainer" | "auto" | "firmware" | "captured" | "samples" | "data";
+export type ViewName = "home" | "word" | "training" | "trainer" | "auto" | "firmware" | "captured" | "samples" | "data";
 export type SampleBucket = "personal" | "negative";
 
 export interface LanguageOption extends JsonRecord {
@@ -161,6 +161,9 @@ export interface WakeWordLibraryItem extends JsonRecord {
   english_accent?: string;
   tts_mode?: string;
   active: boolean;
+  published_run_id?: string;
+  personal_count?: number;
+  negative_count?: number;
   has_published_bundle: boolean;
   boundary_only_ready?: boolean;
   dataset_size_bytes: number;
@@ -177,6 +180,13 @@ export interface TrainingRun extends JsonRecord {
   completed_at: string;
   selected_models: string[];
   summary?: TrainingSummary;
+  version?: number;
+  is_current?: boolean;
+  restorable?: boolean;
+  json_url?: string;
+  esphome_json_url?: string;
+  artifact_urls?: Record<string, string>;
+  artifacts?: string[];
 }
 
 export interface ManagedDataItem extends JsonRecord {
@@ -192,6 +202,7 @@ export interface ManagedDataItem extends JsonRecord {
 }
 
 export interface ManagedDataPayload extends JsonRecord {
+  data_directory?: string;
   items: ManagedDataItem[];
   total_size_bytes: number;
   total_file_count: number;

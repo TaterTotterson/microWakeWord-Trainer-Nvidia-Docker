@@ -78,6 +78,15 @@ from wake_bundle import (
 from training_summary import build_training_summary, training_summary_log_lines
 from training_progress import iter_progress_lines, parse_progress_line
 from wake_word_library import active_word, activate_word, list_words, record_run, word_history
+from wake_word_versions import (
+    artifact_path as version_artifact_path,
+    pin_json_artifacts,
+    publish_version,
+    published_run_id,
+    run_directory as version_run_directory,
+    version_catalog,
+    version_json,
+)
 
 # In Docker, /data is the persistent workspace mounted by the user.
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/data")).resolve()
@@ -830,6 +839,13 @@ def _esphome_manifest(metadata: Dict[str, Any]) -> Dict[str, Any]:
     return {key: metadata[key] for key in ESPHOME_MANIFEST_KEYS if key in metadata}
 
 
+def _publication_in_progress() -> bool:
+    with STATE_LOCK:
+        if STATE["training"].get("running"):
+            return True
+    return False
+
+
 def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
     _sync_trained_wake_word_artifacts()
     base = str(base_url or "").rstrip("/")
@@ -847,7 +863,9 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
 
     for bundle_path in sorted(TRAINED_WAKE_WORDS_DIR.glob(f"*{OWW_BUNDLE_SUFFIX}")):
         safe = bundle_path.name[: -len(OWW_BUNDLE_SUFFIX)]
-        bundle = load_bundle(TRAINED_WAKE_WORDS_DIR, safe)
+        run_id = published_run_id(DATA_DIR, TRAINED_WAKE_WORDS_DIR, safe, prefer_committed=_publication_in_progress())
+        published_dir = version_run_directory(DATA_DIR, safe, run_id) / "artifacts" if run_id else TRAINED_WAKE_WORDS_DIR
+        bundle = load_bundle(published_dir, safe)
         if not bundle:
             continue
         meta = bundle.get("micro_wake_word") if isinstance(bundle.get("micro_wake_word"), dict) else {}
@@ -895,7 +913,17 @@ def _list_trained_wake_words(base_url: str = "") -> List[Dict[str, Any]]:
                 ),
                 "calibration_generated_at": str(calibration.get("generated_at") or "").strip(),
             }
-        row.update(canonical_bundle_catalog_fields(TRAINED_WAKE_WORDS_DIR, safe, base))
+        fields = canonical_bundle_catalog_fields(published_dir, safe, base)
+        if run_id:
+            prefix = f"{base.rstrip('/')}/api/wake_word_library/{quote(safe)}/runs/{quote(run_id)}/artifacts/"
+            def pin_url(value):
+                if isinstance(value, str) and "/api/trained_wake_words/" in value:
+                    return prefix + value.rsplit("/", 1)[-1]
+                if isinstance(value, dict):
+                    return {key: pin_url(item) for key, item in value.items()}
+                return value
+            fields = {key: pin_url(value) for key, value in fields.items()}
+        row.update(fields)
         rows.append(row)
     return rows
 
@@ -5000,20 +5028,57 @@ def wake_word_library_catalog():
             DATA_DIR,
             trained_dir=TRAINED_WAKE_WORDS_DIR,
             workspace_paths=WORD_WORKSPACE_PATHS,
+            prefer_committed=_publication_in_progress(),
         ),
     }
 
 
 @app.get("/api/wake_word_library/{safe_word}/history")
-def wake_word_library_history(safe_word: str):
+def wake_word_library_history(safe_word: str, request: Request):
     normalized = safe_name(safe_word)
     if normalized != safe_word:
         return JSONResponse({"ok": False, "error": "Invalid wake-word id."}, status_code=400)
-    return {"ok": True, "safe_word": normalized, "runs": word_history(DATA_DIR, normalized)}
+    try:
+        runs = version_catalog(DATA_DIR, TRAINED_WAKE_WORDS_DIR, normalized, word_history(DATA_DIR, normalized), _advertised_base_url(request), prefer_committed=_publication_in_progress())
+    except ValueError as error:
+        return JSONResponse({"ok": False, "error": str(error)}, status_code=400)
+    return {"ok": True, "safe_word": normalized, "runs": runs}
+
+
+@app.get("/api/wake_word_library/{safe_word}/runs/{run_id}/artifacts/{filename}")
+def saved_wake_word_artifact(safe_word: str, run_id: str, filename: str, request: Request):
+    try:
+        headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+        if filename.endswith(".json"):
+            artifact_base = f"{_advertised_base_url(request)}/api/wake_word_library/{quote(safe_word)}/runs/{quote(run_id)}/artifacts"
+            return JSONResponse(pin_json_artifacts(version_json(DATA_DIR, safe_word, run_id, filename), artifact_base), headers=headers)
+        path = version_artifact_path(DATA_DIR, safe_word, run_id, filename)
+        return FileResponse(str(path), media_type="application/octet-stream", filename=path.name, headers=headers)
+    except FileNotFoundError as error:
+        return JSONResponse({"ok": False, "error": str(error)}, status_code=404)
+    except ValueError as error:
+        return JSONResponse({"ok": False, "error": str(error)}, status_code=400)
+
+
+@app.post("/api/wake_word_library/{safe_word}/runs/{run_id}/publish")
+def publish_saved_wake_word(safe_word: str, run_id: str):
+    try:
+        with DATA_MANAGEMENT_LOCK:
+            with STATE_LOCK:
+                if STATE["training"]["running"]:
+                    return JSONResponse({"ok": False, "error": "Wait for training to finish before changing the published version."}, status_code=409)
+                publish_version(DATA_DIR, TRAINED_WAKE_WORDS_DIR, safe_word, run_id)
+        return {"ok": True, "safe_word": safe_word, "published_run_id": run_id}
+    except FileNotFoundError as error:
+        return JSONResponse({"ok": False, "error": str(error)}, status_code=404)
+    except ValueError as error:
+        return JSONResponse({"ok": False, "error": str(error)}, status_code=400)
+    except OSError as error:
+        return JSONResponse({"ok": False, "error": f"The published version could not be changed: {error}"}, status_code=500)
 
 
 @app.get("/api/trained_wake_words/{filename}")
-def trained_wake_word_artifact(filename: str):
+def trained_wake_word_artifact(filename: str, request: Request = None):
     safe_filename = Path(filename or "").name
     if not safe_filename or Path(safe_filename).suffix.lower() not in {
         ".json",
@@ -5023,6 +5088,18 @@ def trained_wake_word_artifact(filename: str):
         ".pkl",
     }:
         return JSONResponse({"ok": False, "error": "Unsupported wake word artifact."}, status_code=400)
+    # Stable JSON URLs resolve through the last committed snapshot. Model
+    # URLs inside them remain pinned while a later run writes working artifacts.
+    suffix = next((item for item in (OWW_BUNDLE_SUFFIX, ESPHOME_MANIFEST_SUFFIX) if safe_filename.endswith(item)), "")
+    if suffix:
+        word = safe_filename[:-len(suffix)]
+        try:
+            run_id = published_run_id(DATA_DIR, TRAINED_WAKE_WORDS_DIR, word, prefer_committed=_publication_in_progress())
+            if run_id:
+                base = f"{_advertised_base_url(request)}/api/wake_word_library/{quote(word)}/runs/{quote(run_id)}/artifacts"
+                return JSONResponse(pin_json_artifacts(version_json(DATA_DIR, word, run_id, safe_filename), base), headers={"Cache-Control": "no-store, max-age=0"})
+        except (ValueError, FileNotFoundError):
+            pass
     _sync_trained_wake_word_artifacts()
     if safe_filename.endswith(ESPHOME_MANIFEST_SUFFIX):
         source_stem = safe_filename[: -len(ESPHOME_MANIFEST_SUFFIX)]

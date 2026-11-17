@@ -1,5 +1,9 @@
-- Saved wake words now activate successfully when their samples are split between the working trainer folders and the saved-word library.
-- Empty working folders created while no word is active no longer trigger a false **both working and saved copies exist** conflict.
-- Positive, negative, captured, trim-history, and training workspace data are reconciled without overwriting either copy.
-- Identical files are safely deduplicated; true filename conflicts keep both recordings under deterministic recovery names with their JSON sidecars.
-- The reconciliation is idempotent, so a repaired word can be activated and retrained normally on every later use.
+- Refreshed the trainer to match the Tater app and Home Assistant bridge, with a shared light/dark theme and responsive layouts.
+- Added Guided Start with separate paths for creating a new phrase and opening an existing word. Existing words open for browsing without activating a recording session.
+- Added per-word validation results, saved-version browsing, side-by-side comparison, and an explicit action to use an older version as the current publication.
+- Made Tater bundle JSON and ESPHome JSON the primary actions. Version-specific JSON links keep pointing to the matching saved model files; raw model downloads remain available under technical details.
+- Replaced the training popup with a full-page workspace containing current-stage progress, live logs, stop controls, and the completed report. A running-status strip keeps training accessible while browsing.
+- Added validated version restoration with rollback on file-write failures. Existing recordings, cached datasets, and other saved runs remain intact, and versions cannot be switched while training is active.
+- Kept current JSON links on the last committed snapshot while a new run prepares its artifacts, while preserving direct command-line publications.
+- Preserved all model choices, CNN/GRU selection, generated hard negatives, audio imports, trimming and restore, capture review, Auto Training, recovery actions, and storage controls.
+- Both standard CUDA and Blackwell Docker images include the new version-support module and the prebuilt interface.

@@ -13,6 +13,7 @@ export default defineConfig({
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
     __TRAINER_VERSION__: JSON.stringify(trainerVersion),
+    __TRAINER_PLATFORM__: JSON.stringify("nvidia"),
   },
   build: {
     outDir: resolve(import.meta.dirname, "../static/ui"),

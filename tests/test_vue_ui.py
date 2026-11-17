@@ -41,12 +41,13 @@ class VueTrainerUiTests(unittest.TestCase):
         self.assertGreater((REPO_ROOT / "static" / "ui" / "trainer-ui.js").stat().st_size, 100_000)
         self.assertGreater((REPO_ROOT / "static" / "ui" / "trainer-ui.css").stat().st_size, 10_000)
 
-    def test_theme_uses_tater_orange_and_neutral_greys(self) -> None:
-        styles = (REPO_ROOT / "frontend" / "src" / "trainer.css").read_text(encoding="utf-8")
-        self.assertIn("--orange: #ff9134", styles)
-        self.assertIn("--surface: rgba(29, 29, 31, .9)", styles)
-        for old_blue in ("#070b15", "#11192b", "#5db6ff", "#8d75ff", "#7fc7ff", "#78caff"):
-            self.assertNotIn(old_blue, styles)
+    def test_theme_matches_tater_bridge_in_light_and_dark_modes(self) -> None:
+        styles = (REPO_ROOT / "frontend" / "src" / "workspace.css").read_text(encoding="utf-8")
+        entry = (REPO_ROOT / "frontend" / "src" / "main.ts").read_text(encoding="utf-8")
+        for token in ("--bg: #f5f3ef", "--bg: #111213", "--panel: #ffffff", "--panel: #1b1c1e",
+                      "--action: #b94b1a", "--action: #e87b40", "prefers-color-scheme: light"):
+            self.assertIn(token, styles)
+        self.assertGreater(entry.index('"./workspace.css"'), entry.index('"./trainer.css"'))
 
     def test_reactive_ui_keeps_trainer_workflows(self) -> None:
         app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
@@ -61,7 +62,6 @@ class VueTrainerUiTests(unittest.TestCase):
             "runAutoAction",
             "reviewCaptured",
             "uploadSelectedFiles",
-            "copyWakeWord",
             "deleteManagedData",
         ):
             self.assertIn(workflow, app)
@@ -81,7 +81,7 @@ class VueTrainerUiTests(unittest.TestCase):
         self.assertIn("OfflineAudioContext", trim)
         self.assertIn("/api/samples/trim", trim)
         self.assertIn(':disabled="Boolean(trainer.session.safe_word)', app)
-        self.assertIn('{ id: "data", label: "Data"', app)
+        self.assertIn("changeView('data')", app)
 
     def test_training_console_pauses_follow_mode_when_scrolled_up(self) -> None:
         app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
@@ -127,32 +127,59 @@ class VueTrainerUiTests(unittest.TestCase):
         self.assertIn("auto_review_guided_transcript?: string", types)
 
     def test_wake_word_card_uses_explicit_json_catalog_url(self) -> None:
-        app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
+        app = (REPO_ROOT / "frontend" / "src" / "components" / "WordWorkspace.vue").read_text(encoding="utf-8")
         types = (REPO_ROOT / "frontend" / "src" / "types.ts").read_text(encoding="utf-8")
 
-        self.assertIn("item.json_url || item.url || item.jsonUrl", app)
-        self.assertIn("copyWakeWord(wordJsonUrl(word))", app)
+        self.assertIn("catalog.value?.json_url || catalog.value?.url || catalog.value?.jsonUrl", app)
+        self.assertIn("copyWakeWord(item.url)", app)
         self.assertNotIn("copyWakeWord(word.url)", app)
         self.assertIn("json_url?: string", types)
 
     def test_wake_words_tab_exposes_esphome_manifest_urls(self) -> None:
-        app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
+        app = (REPO_ROOT / "frontend" / "src" / "components" / "WordWorkspace.vue").read_text(encoding="utf-8")
         types = (REPO_ROOT / "frontend" / "src" / "types.ts").read_text(encoding="utf-8")
 
         self.assertIn("ESPHome JSON", app)
-        self.assertIn("wordEsphomeJsonUrl", app)
-        self.assertIn("Copy ESPHome URL", app)
+        self.assertIn("selected.value.esphome_json_url", app)
+        self.assertIn("Copy {{ item.key === 'bundle' ? 'bundle JSON URL' : 'ESPHome URL' }}", app)
         self.assertIn("esphome_json_url?: string", types)
 
     def test_wake_words_tab_exposes_boundary_model_urls(self) -> None:
-        app = (REPO_ROOT / "frontend" / "src" / "TrainerApp.vue").read_text(encoding="utf-8")
+        app = (REPO_ROOT / "frontend" / "src" / "components" / "WordWorkspace.vue").read_text(encoding="utf-8")
         types = (REPO_ROOT / "frontend" / "src" / "types.ts").read_text(encoding="utf-8")
 
-        self.assertIn("wordWakeBoundaryUrl", app)
+        self.assertIn("word.wake_boundary_model_url", app)
         self.assertIn("Wake boundary model ·", app)
         self.assertIn("wake boundary · threshold", app)
         self.assertIn("wake_boundary_model_url?: string", types)
         self.assertIn("wake_boundary_threshold?: number", types)
+
+    def test_guided_flow_and_version_selection_are_explicit(self) -> None:
+        app = (REPO_ROOT / "frontend/src/TrainerApp.vue").read_text(encoding="utf-8")
+        welcome = (REPO_ROOT / "frontend/src/components/TrainerWelcome.vue").read_text(encoding="utf-8")
+        word = (REPO_ROOT / "frontend/src/components/WordWorkspace.vue").read_text(encoding="utf-8")
+        store = (REPO_ROOT / "frontend/src/trainerStore.ts").read_text(encoding="utf-8")
+        for action in ("Create a wake word", "Browse wake words", "Open word"):
+            self.assertIn(action, welcome)
+        browse = app.split("function openWord(", 1)[1].split("async function createWord", 1)[0]
+        self.assertNotIn("startSession", browse)
+        self.assertNotIn("useSavedWord", browse)
+        self.assertIn("trainer.activeView = \"word\"", browse)
+        self.assertIn("publishSavedVersion(word, selected)", word)
+        self.assertIn("!selected?.restorable || trainer.training.running", word)
+        self.assertLess(word.index('class="json-link-grid"'), word.index("Raw model files"))
+        self.assertIn("/publish`", store)
+        self.assertIn("Compare with current", word)
+
+    def test_training_is_a_full_page_with_persistent_running_status(self) -> None:
+        app = (REPO_ROOT / "frontend/src/TrainerApp.vue").read_text(encoding="utf-8")
+        self.assertIn("trainer.activeView === 'training'", app)
+        self.assertIn('class="training-status-strip"', app)
+        self.assertNotIn('class="modal console-modal"', app)
+        self.assertIn("Current stage progress", app)
+        self.assertIn("trainingStages", app)
+        self.assertIn("Jump to latest", app)
+        self.assertIn("Stop training", app)
 
     def test_runtime_packaging_uses_bundle_without_node(self) -> None:
         pending = ["trainer_server"]
@@ -188,6 +215,7 @@ class VueTrainerUiTests(unittest.TestCase):
                 with self.subTest(dockerfile=dockerfile.name, module=module):
                     self.assertIn(f"{module}.py", source)
             self.assertNotIn("npm install", source)
+            self.assertIn("wake_word_versions.py", source)
 
         macos_builder = REPO_ROOT / "macos" / "WakeWordTrainer" / "scripts" / "build_app.sh"
         if macos_builder.exists():

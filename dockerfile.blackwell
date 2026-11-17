@@ -51,6 +51,7 @@ COPY --chown=root:root --chmod=0644 \
     training_progress.py \
     wake_bundle.py \
     wake_word_library.py \
+    wake_word_versions.py \
     /root/mww-scripts/
 
 # CLI folder
