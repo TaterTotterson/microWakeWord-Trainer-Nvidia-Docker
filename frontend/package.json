@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "vue-tsc --noEmit && vite build",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
     "vue": "3.5.40"

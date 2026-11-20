@@ -1,9 +1,8 @@
-- Refreshed the trainer to match the Tater app and Home Assistant bridge, with a shared light/dark theme and responsive layouts.
-- Added Guided Start with separate paths for creating a new phrase and opening an existing word. Existing words open for browsing without activating a recording session.
-- Added per-word validation results, saved-version browsing, side-by-side comparison, and an explicit action to use an older version as the current publication.
-- Made Tater bundle JSON and ESPHome JSON the primary actions. Version-specific JSON links keep pointing to the matching saved model files; raw model downloads remain available under technical details.
-- Replaced the training popup with a full-page workspace containing current-stage progress, live logs, stop controls, and the completed report. A running-status strip keeps training accessible while browsing.
-- Added validated version restoration with rollback on file-write failures. Existing recordings, cached datasets, and other saved runs remain intact, and versions cannot be switched while training is active.
-- Kept current JSON links on the last committed snapshot while a new run prepares its artifacts, while preserving direct command-line publications.
-- Preserved all model choices, CNN/GRU selection, generated hard negatives, audio imports, trimming and restore, capture review, Auto Training, recovery actions, and storage controls.
-- Both standard CUDA and Blackwell Docker images include the new version-support module and the prebuilt interface.
+- The interface now stays live as training, satellite captures, recordings, Auto Training reviews, saved versions, results, and JSON links change. Training started by another tab or the scheduler appears automatically.
+- Added the same server-sent event pattern used by Tater, with automatic reconnect, polling fallback, and immediate catch-up when returning to a tab. A connection indicator shows live and reconnecting states.
+- Background updates preserve unsaved phrase/setup fields, Auto Training settings, capture assignments, and the older model version being viewed.
+- Lightweight library refreshes skip recursive dataset storage scans and reuse unchanged version histories. Requests are coalesced and timed out so a temporary network failure cannot stop future updates.
+- Corrected the progress bar so a running stage fills to its reported percentage. Open live streams no longer hold server shutdown open indefinitely.
+- Clarified that linking Tater is optional and is used to apply newly trained wake models automatically. Satellite audio uploads work without that link.
+- Preserved saved model versions, bundle JSON and ESPHome JSON links, model choices, recording tools, capture review, and storage controls.
+- Both standard CUDA and Blackwell Docker images include the updated server and prebuilt interface.

@@ -164,4 +164,4 @@ export TRAIN_CMD="source '${DATA_DIR}/.venv/bin/activate' && train_wake_word --d
 
 echo "Launching uvicorn on ${HOST}:${PORT}"
 cd "${ROOTDIR}"
-exec "${VENV_DIR}/bin/uvicorn" trainer_server:app --host "${HOST}" --port "${PORT}"
+exec "${VENV_DIR}/bin/uvicorn" trainer_server:app --host "${HOST}" --port "${PORT}" --timeout-graceful-shutdown 2

@@ -255,7 +255,7 @@ def _history(data_dir: Path, safe_word: str) -> list[dict[str, Any]]:
     return rows
 
 
-def list_words(data_dir: Path, *, trained_dir: Path, workspace_paths: Sequence[str], prefer_committed: bool = False) -> list[dict[str, Any]]:
+def list_words(data_dir: Path, *, trained_dir: Path, workspace_paths: Sequence[str], prefer_committed: bool = False, include_usage: bool = True) -> list[dict[str, Any]]:
     root = Path(data_dir).resolve()
     library = _library_root(root)
     current = active_word(root)
@@ -269,7 +269,7 @@ def list_words(data_dir: Path, *, trained_dir: Path, workspace_paths: Sequence[s
         profile = _read_json(_profile_path(root, safe_word))
         bundle = _read_json(Path(trained_dir) / f"{safe_word}.wake-bundle.json")
         assets_root = root if safe_word == current else library / "words" / safe_word / "assets"
-        size_bytes, file_count = _usage(assets_root / relative for relative in relative_paths)
+        size_bytes, file_count = _usage(assets_root / relative for relative in relative_paths) if include_usage else (0, 0)
         history = _history(root, safe_word)
         boundary_only_ready = any(path.is_file() for path in (
             assets_root / "work" / "trained_models" / "wakeword" / "training_config.yaml",
@@ -287,8 +287,7 @@ def list_words(data_dir: Path, *, trained_dir: Path, workspace_paths: Sequence[s
                 "personal_count": sum(path.is_file() for path in (assets_root / "personal_samples").glob("*.wav")),
                 "negative_count": sum(path.is_file() for path in (assets_root / "negative_samples").glob("*.wav")),
             "boundary_only_ready": bool(bundle) and boundary_only_ready,
-            "dataset_size_bytes": size_bytes,
-            "dataset_file_count": file_count,
+            **({"dataset_size_bytes": size_bytes, "dataset_file_count": file_count} if include_usage else {}),
             "run_count": len(history),
             "latest_run": history[0] if history else None,
             "created_at": profile.get("created_at"),

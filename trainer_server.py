@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # trainer_server.py
+import asyncio
 import contextlib
 import gc
 import hashlib
@@ -33,7 +34,7 @@ from urllib.error import HTTPError
 from urllib.request import Request as URLRequest, urlopen
 
 from fastapi import FastAPI, UploadFile, File, Form, Header, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -253,6 +254,28 @@ AUTO_TRAIN_DEFAULT_STATE: Dict[str, Any] = {
 
 
 app = FastAPI(title="microWakeWord Personal Samples")
+
+# Invalidation covers satellite uploads and changes made in other open tabs.
+# Training snapshots are read directly from memory, without scanning datasets.
+_UI_LIVE_LOCK = threading.Lock()
+_UI_LIVE_REVISION = 0
+_UI_LIVE_INSTANCE = secrets.token_hex(8)
+
+
+def _invalidate_live_ui() -> None:
+    global _UI_LIVE_REVISION
+    with _UI_LIVE_LOCK:
+        _UI_LIVE_REVISION += 1
+
+
+@app.middleware("http")
+async def live_ui_response(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"} and response.status_code < 400:
+            _invalidate_live_ui()
+        response.headers.setdefault("Cache-Control", "no-store")
+    return response
 
 # Serve static UI
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -1106,6 +1129,7 @@ def _save_auto_train_config_locked() -> None:
 def _save_auto_train_state_locked() -> None:
     persisted = {key: AUTO_TRAIN_STATE.get(key) for key in AUTO_TRAIN_DEFAULT_STATE}
     _write_json_object(AUTO_TRAIN_STATE_FILE, persisted)
+    _invalidate_live_ui()
 
 
 def _parse_iso_datetime(value: Any) -> datetime | None:
@@ -4202,6 +4226,36 @@ def _run_training_background(
 
 
 # -------------------- Routes --------------------
+
+async def _stream_live_ui(request: Request):
+    previous = ""
+    quiet_ticks = 0
+    while not await request.is_disconnected():
+        with STATE_LOCK:
+            training = json.loads(json.dumps(STATE["training"]))
+        with _UI_LIVE_LOCK:
+            revision = f"{_UI_LIVE_INSTANCE}:{_UI_LIVE_REVISION}"
+        snapshot = json.dumps({"training": training, "revision": revision}, separators=(",", ":"))
+        if snapshot != previous:
+            yield f"event: trainer\ndata: {snapshot}\n\n"
+            previous = snapshot
+            quiet_ticks = 0
+        else:
+            quiet_ticks += 1
+            if quiet_ticks >= 10:
+                yield "event: heartbeat\ndata: {}\n\n"
+                quiet_ticks = 0
+        await asyncio.sleep(1.5)
+
+
+@app.get("/api/events")
+async def live_ui_events(request: Request):
+    return StreamingResponse(
+        _stream_live_ui(request),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+    )
+
 @app.on_event("startup")
 def start_auto_train_worker_event():
     _start_auto_train_worker()
@@ -5021,7 +5075,7 @@ def trained_wake_words_catalog(request: Request):
 
 
 @app.get("/api/wake_word_library")
-def wake_word_library_catalog():
+def wake_word_library_catalog(include_usage: bool = True):
     return {
         "ok": True,
         "words": list_words(
@@ -5029,6 +5083,7 @@ def wake_word_library_catalog():
             trained_dir=TRAINED_WAKE_WORDS_DIR,
             workspace_paths=WORD_WORKSPACE_PATHS,
             prefer_committed=_publication_in_progress(),
+            include_usage=include_usage,
         ),
     }
 

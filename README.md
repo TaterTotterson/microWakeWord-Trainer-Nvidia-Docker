@@ -101,6 +101,10 @@ npm run build
 
 `npm run build` type-checks every Vue component before writing the offline bundle copied into both the standard CUDA and Blackwell images.
 
+The UI stays synchronized with training, satellite captures, recordings, and saved versions through `/api/events` (server-sent events). It reconnects automatically, polls if streaming is unavailable, and catches up when a browser tab becomes active again. Background refreshes preserve unsaved setup/settings, clip assignments, and the version being viewed. They skip recursive dataset storage scans. If using a reverse proxy, allow streaming responses on `/api/events` without buffering.
+
+Run `npm test` in `frontend` with Node.js 22.6 or newer to check live updates, connection recovery, and draft preservation.
+
 ---
 
 ## Captured Audio Workflow

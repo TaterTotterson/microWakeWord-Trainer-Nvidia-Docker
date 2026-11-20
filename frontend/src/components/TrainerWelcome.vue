@@ -29,7 +29,7 @@ function metric(word: WakeWordLibraryItem): string {
     <div v-if="!words.length" class="panel empty-state">Your first wake word will appear here with its recordings, models, and training history.</div>
     <article v-for="word in words" :key="word.safe_word" class="workspace-word-row">
       <div class="workspace-word-icon"><UiIcon :name="word.has_published_bundle ? 'wave' : 'file'" /></div>
-      <div><div class="row"><h3>{{ word.phrase }}</h3><span class="pill" :class="summary(word)?.tone || ''">{{ summary(word)?.overall || (word.has_published_bundle ? 'Published · results unavailable' : 'Draft') }}</span></div><p>{{ word.run_count }} saved {{ word.run_count === 1 ? 'run' : 'runs' }} · {{ word.personal_count || 0 }} recordings · {{ formatBytes(word.dataset_size_bytes) }} retained</p></div>
+      <div><div class="row"><h3>{{ word.phrase }}</h3><span class="pill" :class="summary(word)?.tone || ''">{{ summary(word)?.overall || (word.has_published_bundle ? 'Published · results unavailable' : 'Draft') }}</span></div><p>{{ word.run_count }} saved {{ word.run_count === 1 ? 'run' : 'runs' }} · {{ word.personal_count || 0 }} recordings<template v-if="word.dataset_size_bytes != null"> · {{ formatBytes(word.dataset_size_bytes) }} retained</template></p></div>
       <div class="workspace-word-actions"><button type="button" @click="$emit('open', word)"><UiIcon name="external" />Open word</button><small v-if="metric(word)">MicroWakeWord · {{ metric(word) }}</small></div>
     </article>
     <p v-if="trainer.training.running" class="workspace-note">A training run is in progress. You can open words and use their existing JSON links.</p>

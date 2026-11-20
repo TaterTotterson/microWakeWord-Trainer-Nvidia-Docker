@@ -1,5 +1,6 @@
 import { computed, reactive } from "vue";
 import { getJson, postJson, putJson, request, type JsonRecord } from "./api";
+import { createLiveUpdates, type LiveState } from "./liveUpdates";
 import type {
   AccentOption,
   AudioItem,
@@ -65,6 +66,7 @@ export const trainer = reactive({
   trainingStages: [] as Array<{ stage: string; label: string; status: string }>,
   trainingTargets: [] as string[],
   initialized: false,
+  liveState: "connecting" as LiveState,
   busy: new Set<string>(),
   phrase: "",
   language: "en",
@@ -116,8 +118,11 @@ export const macDataFolderPickerAvailable = Boolean(
   && window.webkit?.messageHandlers?.wakeWordTrainerStorage,
 );
 
-let autoTimer = 0;
-let trainingTimer = 0;
+let liveUpdates: ReturnType<typeof createLiveUpdates> | null = null;
+let autoBaseline = defaultAutoForm();
+const captureAssignments = new Map<string, unknown>();
+const historySignatures = new Map<string, string>();
+let lastDataRefresh = 0;
 
 export const personalCount = computed(() => Number(trainer.samples.personal_count ?? trainer.session.takes_received ?? 0));
 export const negativeCount = computed(() => Number(trainer.samples.negative_count ?? trainer.captured.negative_count ?? 0));
@@ -184,7 +189,8 @@ function applyTraining(payload: TrainingState): void {
   }
 }
 
-function applySession(payload: SessionPayload): void {
+function applySession(payload: SessionPayload, populate = true, includeTraining = true): void {
+  const previous = trainer.session;
   trainer.session = payload || {};
   if (Array.isArray(payload.available_languages) && payload.available_languages.length) {
     trainer.languages = payload.available_languages;
@@ -192,16 +198,16 @@ function applySession(payload: SessionPayload): void {
   if (Array.isArray(payload.available_english_accents) && payload.available_english_accents.length) {
     trainer.englishAccents = payload.available_english_accents;
   }
-  if (payload.raw_phrase) trainer.phrase = payload.raw_phrase;
-  if (payload.language) trainer.language = payload.language;
-  if (payload.english_accent) trainer.englishAccent = payload.english_accent;
-  if (payload.tts_mode) trainer.ttsMode = payload.tts_mode;
-  if (payload.training) applyTraining(payload.training);
+  if (payload.raw_phrase && (populate || trainer.phrase === (previous.raw_phrase || ""))) trainer.phrase = payload.raw_phrase;
+  if (payload.language && (populate || trainer.language === (previous.language || "en"))) trainer.language = payload.language;
+  if (payload.english_accent && (populate || trainer.englishAccent === (previous.english_accent || "mixed"))) trainer.englishAccent = payload.english_accent;
+  if (payload.tts_mode && (populate || trainer.ttsMode === (previous.tts_mode || "hybrid"))) trainer.ttsMode = payload.tts_mode;
+  if (populate && includeTraining && payload.training) applyTraining(payload.training);
 }
 
-export async function refreshSession(): Promise<SessionPayload> {
+export async function refreshSession(populate = true): Promise<SessionPayload> {
   const payload = await getJson<SessionPayload>("/api/session");
-  applySession(payload);
+  applySession(payload, populate, !liveUpdates);
   return payload;
 }
 
@@ -234,10 +240,6 @@ export async function stopSession(): Promise<void> {
     return;
   }
   setBusy("session", true);
-  if (trainingTimer) {
-    window.clearInterval(trainingTimer);
-    trainingTimer = 0;
-  }
   try {
     const payload = await postJson<SessionPayload>("/api/stop_session");
     applySession(payload);
@@ -287,6 +289,18 @@ export async function refreshCaptured(quiet = false): Promise<CapturedPayload> {
   if (!quiet) setBusy("captured", true);
   try {
     const payload = await getJson<CapturedPayload>("/api/captured_audio");
+    const current = new Map(trainer.captured.items.map(item => [`${item.capture_scope || ""}/${item.saved_as}`, item]));
+    const nextAssignments = new Map<string, unknown>();
+    for (const item of payload.items || []) {
+      const key = `${item.capture_scope || ""}/${item.saved_as}`;
+      const local = current.get(key);
+      nextAssignments.set(key, item.review_wake_word);
+      if (local && captureAssignments.has(key) && local.review_wake_word !== captureAssignments.get(key)) {
+        item.review_wake_word = local.review_wake_word;
+      }
+    }
+    captureAssignments.clear();
+    nextAssignments.forEach((value, key) => captureAssignments.set(key, value));
     trainer.captured = { ...emptyCaptured(), ...payload };
     return payload;
   } finally {
@@ -418,15 +432,18 @@ export async function clearSamples(bucket: SampleBucket): Promise<void> {
 
 function applyAuto(payload: AutoTrainPayload, populate: boolean): void {
   trainer.auto = payload || {};
-  if (!populate) return;
-  trainer.autoForm = { ...defaultAutoForm(), ...(payload.config || {}) };
+  const incoming = { ...defaultAutoForm(), ...(payload.config || {}) };
   if (Array.isArray(payload.config?.generated_negative_phrases)) {
-    trainer.autoForm.generated_negative_phrases = payload.config.generated_negative_phrases.join("\n");
+    incoming.generated_negative_phrases = payload.config.generated_negative_phrases.join("\n");
   }
-  if (!trainer.autoForm.wake_phrase) trainer.autoForm.wake_phrase = trainer.session.raw_phrase || "";
-  if (!trainer.autoForm.language) trainer.autoForm.language = trainer.session.language || "en";
-  if (!trainer.autoForm.english_accent) trainer.autoForm.english_accent = trainer.session.english_accent || "mixed";
-  if (!String(trainer.autoForm.language).toLowerCase().startsWith("en")) trainer.autoForm.english_accent = "mixed";
+  if (!incoming.wake_phrase) incoming.wake_phrase = trainer.session.raw_phrase || "";
+  if (!incoming.language) incoming.language = trainer.session.language || "en";
+  if (!incoming.english_accent) incoming.english_accent = trainer.session.english_accent || "mixed";
+  if (!String(incoming.language).toLowerCase().startsWith("en")) incoming.english_accent = "mixed";
+  for (const key of Object.keys(incoming) as Array<keyof AutoTrainForm>) {
+    if (populate || trainer.autoForm[key] === autoBaseline[key]) Object.assign(trainer.autoForm, { [key]: incoming[key] });
+  }
+  autoBaseline = { ...incoming };
 }
 
 export async function refreshAuto(populate = false): Promise<AutoTrainPayload> {
@@ -471,6 +488,7 @@ export async function runAutoAction(action: "review_now" | "train_now" | "notify
         ...(config.train_nanowakeword_cnn ? ["NanoWakeWord CNN"] : []),
         ...(config.train_nanowakeword_gru ? ["NanoWakeWord GRU"] : []),
       ];
+      trainer.training = { ...emptyTraining(), running: true };
       trainer.activeView = "training";
       beginTrainingPoll();
     }
@@ -522,17 +540,22 @@ export async function refreshWakeWords(quiet = false): Promise<void> {
   }
 }
 
-export async function refreshWakeWordLibrary(quiet = false): Promise<void> {
+export async function refreshWakeWordLibrary(quiet = false, live = false): Promise<void> {
   if (!quiet) setBusy("library", true);
   try {
-    const payload = await getJson<JsonRecord>("/api/wake_word_library");
-    trainer.wakeWordLibrary = Array.isArray(payload.words) ? payload.words as WakeWordLibraryItem[] : [];
+    const payload = await getJson<JsonRecord>(`/api/wake_word_library${live ? "?include_usage=false" : ""}`);
+    const previous = new Map(trainer.wakeWordLibrary.map(word => [word.safe_word, word]));
+    trainer.wakeWordLibrary = Array.isArray(payload.words)
+      ? payload.words.map((word: WakeWordLibraryItem) => ({ ...previous.get(word.safe_word), ...word })) : [];
     const histories = await Promise.all(trainer.wakeWordLibrary.map(async (word) => {
+      const signature = JSON.stringify([word.run_count, word.published_run_id, word.latest_run]);
+      if (live && historySignatures.get(word.safe_word) === signature) return trainer.modelHistory.filter(run => run.safe_word === word.safe_word);
       try {
         const result = await getJson<JsonRecord>(`/api/wake_word_library/${encodeURIComponent(word.safe_word)}/history`);
+        historySignatures.set(word.safe_word, signature);
         return Array.isArray(result.runs) ? result.runs as TrainingRun[] : [];
       } catch {
-        return [];
+        return trainer.modelHistory.filter(run => run.safe_word === word.safe_word);
       }
     }));
     trainer.modelHistory = histories.flat().sort((left, right) =>
@@ -573,14 +596,15 @@ export async function publishSavedVersion(word: WakeWordLibraryItem, run: Traini
   } finally { setBusy("version-publish", false); }
 }
 
-export async function refreshManagedData(): Promise<ManagedDataPayload> {
-  setBusy("data", true);
+export async function refreshManagedData(quiet = false): Promise<ManagedDataPayload> {
+  if (!quiet) setBusy("data", true);
   try {
     const payload = await getJson<ManagedDataPayload>("/api/data");
     trainer.managedData = { ...emptyManagedData(), ...payload };
+    lastDataRefresh = Date.now();
     return payload;
   } finally {
-    setBusy("data", false);
+    if (!quiet) setBusy("data", false);
   }
 }
 
@@ -738,27 +762,44 @@ export async function revalidateNanoWakeWord(architecture: string, safeWord = ""
   }
 }
 
-export function beginTrainingPoll(): void {
-  if (trainingTimer) return;
-  const poll = async () => {
-    try {
-      const payload = await getJson<JsonRecord>("/api/train_status");
-      applyTraining({ ...emptyTraining(), ...(payload.training || {}) });
-      if (!trainer.training.running) {
-        window.clearInterval(trainingTimer);
-        trainingTimer = 0;
-        await Promise.all([refreshSamples(true), refreshWakeWords(true), refreshWakeWordLibrary(true)]);
-        notify(trainer.training.exit_code === 0 ? "Training finished successfully." : `Training ended with exit ${trainer.training.exit_code}.`, trainer.training.exit_code === 0 ? "success" : "error");
-      }
-    } catch {
-      // A temporary request failure should not stop the live poll.
-    }
-  };
-  void poll();
-  trainingTimer = window.setInterval(() => void poll(), 1500);
+function applyLiveTraining(payload: TrainingState): void {
+  // Local start/stop requests own their optimistic state until they finish.
+  if (isBusy("session") || ["training-start", "boundary-start", "oww-retry", "nww-revalidate"].some(isBusy)) return;
+  const wasRunning = trainer.training.running;
+  if (!wasRunning && payload.running) {
+    trainer.trainingStages = [];
+    trainer.trainingTargets = [];
+  }
+  applyTraining({ ...emptyTraining(), ...payload });
+  if (wasRunning && !payload.running) {
+    liveUpdates?.refresh();
+    if (payload.exit_code !== null) notify(payload.exit_code === 0 ? "Training finished successfully." : `Training ended with exit ${payload.exit_code}.`, payload.exit_code === 0 ? "success" : "error");
+  }
 }
 
+async function synchronizeLive(options: { status: boolean; panels: boolean }): Promise<void> {
+  // Mutations already refresh their own panels. Let the next tick reconcile them.
+  if (isBusy()) return;
+  const tasks: Promise<unknown>[] = [];
+  if (options.status) tasks.push(getJson<JsonRecord>("/api/train_status").then(payload => applyLiveTraining(payload.training || emptyTraining())));
+  if (options.panels) {
+    tasks.push(refreshSession(false), refreshSamples(true), refreshCaptured(true), refreshAuto(false), refreshWakeWords(true), refreshWakeWordLibrary(true, true));
+    // Storage inspection walks large feature directories; never run it on every event.
+    if (trainer.activeView === "data" && Date.now() - lastDataRefresh >= 30000) {
+      lastDataRefresh = Date.now();
+      void refreshManagedData(true).catch(() => undefined);
+    }
+  }
+  await Promise.allSettled(tasks);
+}
+
+export function beginTrainingPoll(): void {
+  liveUpdates?.refresh();
+}
+
+let lifecycle = 0;
 export async function initializeTrainer(): Promise<void> {
+  const generation = ++lifecycle;
   setBusy("bootstrap", true);
   try {
     await Promise.allSettled([
@@ -770,30 +811,26 @@ export async function initializeTrainer(): Promise<void> {
       refreshWakeWordLibrary(true),
     ]);
     ensureSupportedTtsMode();
-    try {
-      const payload = await getJson<JsonRecord>("/api/train_status");
-      applyTraining({ ...emptyTraining(), ...(payload.training || {}) });
-      if (trainer.training.running) {
-        trainer.activeView = "training";
-        beginTrainingPoll();
-      }
-    } catch {
-      // Remaining panels can still function when status is temporarily unavailable.
-    }
-    autoTimer = window.setInterval(() => {
-      if (trainer.activeView === "auto" && !isBusy("auto")) void refreshAuto(false).catch(() => undefined);
-    }, 2500);
+    if (trainer.training.running) trainer.activeView = "training";
     trainer.initialized = true;
   } finally {
     setBusy("bootstrap", false);
+    if (generation === lifecycle) {
+      liveUpdates?.stop();
+      liveUpdates = createLiveUpdates({
+        synchronize: synchronizeLive,
+        training: payload => applyLiveTraining(payload as TrainingState),
+        state: state => { trainer.liveState = state; },
+      });
+      liveUpdates.start();
+    }
   }
 }
 
 export function disposeTrainer(): void {
-  window.clearInterval(autoTimer);
-  window.clearInterval(trainingTimer);
-  autoTimer = 0;
-  trainingTimer = 0;
+  lifecycle += 1;
+  liveUpdates?.stop();
+  liveUpdates = null;
 }
 
 export function formatTimestamp(value: unknown): string {

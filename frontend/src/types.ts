@@ -166,8 +166,8 @@ export interface WakeWordLibraryItem extends JsonRecord {
   negative_count?: number;
   has_published_bundle: boolean;
   boundary_only_ready?: boolean;
-  dataset_size_bytes: number;
-  dataset_file_count: number;
+  dataset_size_bytes?: number;
+  dataset_file_count?: number;
   run_count: number;
   latest_run?: TrainingRun | null;
 }

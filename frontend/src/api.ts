@@ -1,8 +1,10 @@
 export type JsonRecord = Record<string, any>;
+const pendingGets = new Map<string, Promise<unknown>>();
 
 export async function request<T = JsonRecord>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     credentials: "same-origin",
+    cache: "no-store",
     ...options,
     headers: {
       Accept: "application/json",
@@ -23,7 +25,21 @@ export async function request<T = JsonRecord>(path: string, options: RequestInit
 }
 
 export function getJson<T = JsonRecord>(path: string): Promise<T> {
-  return request<T>(path);
+  const existing = pendingGets.get(path);
+  if (existing) return existing as Promise<T>;
+  const load = async () => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), path === "/api/data" ? 120000 : 20000);
+    try {
+      return await request<T>(path, { signal: controller.signal });
+    } finally {
+      window.clearTimeout(timeout);
+      pendingGets.delete(path);
+    }
+  };
+  const promise = load();
+  pendingGets.set(path, promise);
+  return promise;
 }
 
 export function postJson<T = JsonRecord>(path: string, body: unknown = {}): Promise<T> {
