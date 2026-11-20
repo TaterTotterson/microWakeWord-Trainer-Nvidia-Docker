@@ -1,411 +1,181 @@
 <div align="center">
   <a href="https://taterassistant.com">
-    <img src="images/tater-repo-logo.png" alt="microWakeWord Trainer" width="460"/>
+    <img src="images/tater-repo-logo.png" alt="Tater Wake Word Trainer" width="460"/>
   </a>
 </div>
 <p align="center">
-  <a href="https://taterassistant.com">
-    <img alt="Visit Tater Assistant" src="https://img.shields.io/badge/Tater%20Assistant-Visit%20Website-F28C28?style=for-the-badge&logo=googlechrome&logoColor=white" />
-  </a>
+  <a href="https://taterassistant.com">taterassistant.com</a>
 </p>
 
-Train any mix of microWakeWord, openWakeWord, NanoWakeWord CNN, and NanoWakeWord GRU models in Docker with NVIDIA/CUDA acceleration, modern multilingual TTS, device-captured samples, reviewed false-wake negatives, live training logs, and local wake-word links for Tater Native satellites.
+# Wake Word Trainer for NVIDIA
 
-Real samples come from device-captured wake audio, close misses, or manual uploads. Every saved sample is normalized to `16 kHz / mono / 16-bit PCM WAV` before training.
+Train custom **MicroWakeWord**, **openWakeWord**, and **NanoWakeWord CNN/GRU**
+models with an NVIDIA GPU in Docker, with a per-word **wake-boundary model**
+for compatible satellites. Use the guided UI to add recordings, train, compare
+versions, and copy the JSON links for your devices.
 
----
+## Use your models with Tater or Home Assistant
 
-## Docker Image
+Choose the satellite firmware for your hardware, then manage its wake words in
+[Tater](https://github.com/TaterTotterson/Tater) or the
+[Home Assistant Satellites bridge](https://github.com/TaterTotterson/Tater-Home-Assistant-Satellites).
+The bridge connects compatible satellites directly to Home Assistant Assist;
+the Tater app is optional for that setup.
 
-```bash
-docker pull ghcr.io/tatertotterson/microwakeword:latest
-```
+| Satellite repo | Hardware | Wake detectors |
+| --- | --- | --- |
+| [Tater Native Firmware](https://github.com/TaterTotterson/Tater-Native-Firmware) | ESP32-S3: Voice PE, Satellite1, ReSpeaker XVF3800, S3 Box | MicroWakeWord |
+| [Tater Echo Firmware](https://github.com/TaterTotterson/Tater-Echo-Firmware) | Supported, unlocked Echo, Dot, Show, and Spot devices | MWW, OWW, NWW CNN/GRU, and dual modes |
+| [Tater ThirdReality Voice Firmware](https://github.com/TaterTotterson/Tater-ThirdReality-Voice-Firmware) | ThirdReality Voice & Music Assistant (S420) | MWW, OWW, NWW CNN/GRU, and dual modes |
 
-Tagged releases also publish matching immutable image tags:
+Check the firmware repo for supported hardware and installation instructions.
+Browse ready-made models or request a word in
+[Tater Wake Words](https://github.com/TaterTotterson/Tater-Wake-Words).
 
-```bash
-docker pull ghcr.io/tatertotterson/microwakeword:v39
-```
+## Get started with NVIDIA Docker
 
-The release tag must match `VERSION`. Update `WHATS_NEW.md` before tagging; the Docker workflow prepends it to GitHub's automatically generated release notes.
-
-RTX 50-series / Blackwell GPUs use a separate image with CUDA 12.8 and a
-Python 3.13 TensorFlow build for `sm_120`:
-
-```bash
-docker pull ghcr.io/tatertotterson/microwakeword:blackwell
-docker pull ghcr.io/tatertotterson/microwakeword:v39-blackwell
-```
-
-Use the Blackwell image only for RTX 50-series cards. It includes the
-community-built TensorFlow wheel from
-[chivitiH/tensorflow-blackwell-python313](https://github.com/chivitiH/tensorflow-blackwell-python313),
-which is unofficial and licensed CC BY-NC 4.0.
-
----
-
-## Run The Container
+Use a Linux host with Docker GPU access configured. Start the standard image:
 
 ```bash
-docker run -d \
+mkdir -p trainer-data
+docker run -d --name wakeword-trainer \
   --gpus all \
   --shm-size=8g \
   --network host \
   -e REC_PORT=8789 \
-  -v $(pwd):/data \
+  -v "$(pwd)/trainer-data:/data" \
   ghcr.io/tatertotterson/microwakeword:latest
 ```
 
-Use a version tag such as `ghcr.io/tatertotterson/microwakeword:v39` when you want to pin a known release instead of tracking `latest`.
-For RTX 50-series cards, use `ghcr.io/tatertotterson/microwakeword:blackwell`
-or a pinned tag such as `ghcr.io/tatertotterson/microwakeword:v39-blackwell`
-in the same `docker run` command.
+Open **http://localhost:8789**, then choose **Create a wake word**.
+From another device, use the trainer host's LAN address and the same port.
+`--shm-size=8g` provides shared memory for training workers; `/data` keeps your
+recordings, models, versions, settings, and caches across container replacements.
+
+**RTX 50-series / Blackwell:** use
+`ghcr.io/tatertotterson/microwakeword:blackwell` in the command above.
+That image uses the unofficial
+[Blackwell TensorFlow wheel](https://github.com/chivitiH/tensorflow-blackwell-python313),
+licensed **CC BY-NC 4.0**.
+
+To pin a release, use `:v47.9` or `:v47.9-blackwell` instead of a rolling tag.
+To update, pull the chosen tag and recreate the container with the same data
+mount. The first training run downloads models and datasets and needs extra
+time and disk space; later runs reuse the cached files.
+
+If you use Docker bridge networking, publish port `8789` and set
+**Trainer public URL** to the published host address. If you change `REC_PORT`,
+use that port in the browser and satellite trainer settings too.
+
+## Choose what to train
+
+Select one or more models during guided setup:
+
+| Model | Use it for |
+| --- | --- |
+| **MicroWakeWord (MWW)** | ESP32-S3 satellites, ESPHome, or a shared model for a mixed-device setup. |
+| **openWakeWord (OWW)** | An ONNX detector for compatible Echo and ThirdReality satellites. |
+| **NanoWakeWord (NWW)** | A choice of CNN, GRU, or both architectures for compatible Echo and ThirdReality satellites. |
+| **Wake boundary** | A companion model that locates the end of the wake phrase; trained with a full MWW run. |
+
+On capable satellites, **MWW + OWW** and **MWW + NWW** require both detectors
+to agree before opening a voice session. Train the matching models for the
+policy you want. Include MWW when the same bundle will serve ESP32 satellites;
+those devices use its MWW model. See the bridge's
+[wake-word guide](https://github.com/TaterTotterson/Tater-Home-Assistant-Satellites/blob/main/docs/user-guide.md#configure-wake-words)
+for model selection and fallback behavior.
+
+## Train your first word
+
+1. On **Start**, choose **Create a wake word** and enter the phrase and language.
+2. Add personal recordings if you have them, or continue with generated speech.
+   Personal samples are optional; reviewed false wakes help reduce unwanted triggers.
+3. Choose the models to train. You can also enter similar-sounding phrases to reject.
+4. Review the setup and start training. Progress and logs update live while you browse.
+5. Open the word's **Results & JSON** page to review its quality report and copy its links.
+
+For an existing phrase, open the saved word and choose **Train a new version**.
+Each run keeps its own results and model files. You can compare versions, copy
+an older version's JSON links, or choose **Use v… as current** to restore it.
+To switch your satellites, apply the chosen version's JSON link in Tater or
+the Home Assistant bridge.
+
+## Put the word on your satellites
+
+The two main links are on the word's **Results & JSON** page:
+
+| Link | Where to use it |
+| --- | --- |
+| **Tater bundle JSON** (`.wake-bundle.json`) | Tater or the Home Assistant bridge. One package carries the available MWW, OWW, NWW models and wake-boundary metadata. |
+| **ESPHome JSON** (`.esphome.json`) | An ESPHome `micro_wake_word` configuration. This link is MWW-only. |
+
+In Tater or the bridge, choose the wake engine or dual mode you want and use
+the custom bundle URL. Select CNN or GRU when using NanoWakeWord. Only engines
+included in the bundle and supported by the satellite can be used.
+
+Use the trainer's LAN address in **Trainer public URL**, for example
+`http://192.168.1.50:8789`, so satellites can download the models. Keep the
+trainer reachable, or host the JSON and all referenced model files at URLs
+your satellites can reach.
+Version-specific links stay tied to that saved run; the current publication
+follows whichever version you select as current.
+
+## What the wake-boundary model does
+
+The wake detector recognizes the phrase. The **wake-boundary model** locates
+where that phrase ends in the audio. For “hey tater turn on the lights,” it
+helps keep “turn on the lights” intact when removing “hey tater” before speech
+recognition. Current Echo firmware uses this model to preserve commands spoken
+immediately after the wake phrase.
+
+- A full **MicroWakeWord** run trains and calibrates a separate boundary model
+  for that word, with its own threshold separate from wake-detection sensitivity.
+- The `.boundary.tflite` file and its settings travel in **Tater bundle JSON**;
+  there is no separate download step for users of the bundle.
+- Compatible firmware can use the same boundary model with MWW, OWW, NWW,
+  **MWW + OWW**, or **MWW + NWW** detection.
+- To update only the boundary later, use **Additional training actions →
+  Retrain boundary only**. This requires the retained data/config from a full
+  MWW run and keeps the detector models intact.
+
+Boundary support depends on the satellite firmware. The separate ESPHome JSON
+link remains an MWW detector manifest.
+
+## Improve the word with real recordings
+
+In Tater or the Home Assistant bridge, enable satellite wake/close-miss audio
+capture and set **Trainer App URL** to the trainer's LAN address. Keep the
+trainer running while you collect clips. **Audio uploads do not require the
+optional auto-training link.**
+
+In **Captures**, play the clips and check which word they belong to:
 
-The flags:
+- **Add positive** keeps a good example of the phrase.
+- **Mark negative** keeps a false trigger as a phrase the model should reject.
+- **Discard** removes an unwanted clip.
 
-- `--gpus all` enables GPU acceleration.
-- `--shm-size=8g` gives PyTorch DataLoader workers enough shared memory during openWakeWord training. This is separate from free disk space and requires recreating an existing container.
-- `--network host` exposes the trainer server directly so satellites can send captured audio and load trained wake-word files.
-- `-e REC_PORT=8789` sets the trainer web UI and captured-audio port. Change this value if `8789` is already in use.
-- `-v $(pwd):/data` persists models, downloaded voices, datasets, samples, and generated wake-word artifacts.
+Use **Samples** to import audio, trim clips, restore their originals, or remove
+samples. **Auto training** can transcribe captures and retrain on a schedule.
+Pair the optional **Auto-training link** only if you want new models published
+back to Tater or the bridge automatically. The bridge's
+[trainer-link guide](https://github.com/TaterTotterson/Tater-Home-Assistant-Satellites/blob/main/docs/user-guide.md#link-the-wake-word-trainer)
+explains pairing and how publishing changes the shared wake profile.
 
-If you do not use host networking, publish the trainer port and make sure satellites can reach it from your LAN.
+## Your data and more help
 
-Open:
+Everything under `/data` lives in your mounted host folder. Keep that mount
+when updating the container, and back it up to preserve recordings and versions.
 
-```text
-http://localhost:8789
-```
+Use **Data & storage** to inspect disk use and remove selected caches. Saved
+versions and recordings are separate from rebuildable training data; read each
+category before deleting it.
 
-If you change `REC_PORT`, open that port instead and use the same port in the satellite `Trainer App URL`.
-
----
-
-## Features
-
-- `Start` separates creating a new phrase from opening a saved word. The guided setup covers phrase, recordings, models, and review, with MWW, OWW, NWW-CNN, NWW-GRU, or any combination. MWW is the default.
-- `Wake boundary` builds a small, separately calibrated model for each wake word so Echo firmware can remove the wake phrase without cutting off speech that follows it immediately. The detector-independent model works with MWW, OWW, NWW, MWW + OWW, and MWW + NWW modes, and can be retrained by itself after one full MicroWakeWord run.
-- `Auto Training` transcribes real wake triggers, promotes phrase-misses to hard negatives, schedules retraining, and refreshes Tater Native satellites.
-- `Captured Audio` reviews clips sent by Tater Native or ESPHome sats, including wake hits, close misses, and false wakes.
-- `Samples` plays, removes, clears, and manually imports personal or negative samples.
-- `Wake words` opens per-word validation results, saved versions, comparison, and prominent bundle JSON / ESPHome JSON links. Raw model downloads remain under technical details.
-- `Training` is a full-page workspace with stage progress, colorized logs, stop controls, and the completed report. A running-status strip keeps the job accessible while browsing other pages.
-
-The production bundle is committed under `static/ui`, so neither NVIDIA Docker image needs Node.js. To change the UI, edit `frontend/src` and rebuild it before building the image:
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-`npm run build` type-checks every Vue component before writing the offline bundle copied into both the standard CUDA and Blackwell images.
-
-The UI stays synchronized with training, satellite captures, recordings, and saved versions through `/api/events` (server-sent events). It reconnects automatically, polls if streaming is unavailable, and catches up when a browser tab becomes active again. Background refreshes preserve unsaved setup/settings, clip assignments, and the version being viewed. They skip recursive dataset storage scans. If using a reverse proxy, allow streaming responses on `/api/events` without buffering.
-
-Run `npm test` in `frontend` with Node.js 22.6 or newer to check live updates, connection recovery, and draft preservation.
-
----
-
-## Captured Audio Workflow
-
-To collect samples from a sat, point its trainer feedback setting at this app. Tater Native satellites use the native settings popup in Tater. Older ESPHome satellites can still use their device entities.
-
-For Tater Native satellites, enable trainer feedback in Tater:
-
-- `Send Good Wakes To Trainer` toggles upload of confirmed wake-word triggers.
-- `Send Close Misses To Trainer` toggles upload of near misses.
-- `Trainer App URL` sets the trainer address, for example `http://trainer.local:8789` or `http://<trainer-ip>:8789`.
-
-For older ESPHome firmware, the equivalent capture setup is exposed as device entities:
-
-- `Capture Wake Audio` toggles upload of wake-word triggers.
-- `Capture Close Misses` toggles upload of near misses.
-- `Trainer App URL` sets the trainer address, for example `http://<trainer-ip>:8789`.
-
-Satellites send raw captured audio to:
-
-```text
-/api/upload_captured_audio_raw
-```
-
-Keep the training app running and reachable at the `Trainer App URL` while capture is enabled. The sats upload clips live; if the app is stopped or the URL is wrong, captured audio will not be saved.
-
-In the `Captured Audio` tab:
-
-- play each clip from the inbox
-- mark good wake-word clips as `This is good`
-- mark bad triggers as `False wake`
-- discard clips that should not be used
-
-Approved clips move into:
-
-```text
-/data/personal_samples/
-```
-
-False wakes move into:
-
-```text
-/data/negative_samples/
-```
-
-Captured audio is boosted for easier playback in the UI, then kept in the correct training format.
-
----
-
-## Samples
-
-The `Samples` tab is the sample library.
-
-- `Personal` samples are positive examples of the wake word.
-- `Negative` samples are reviewed false wakes or hard negatives.
-- Both can be played back and removed one at a time.
-- Manual upload is available here as an optional seed path.
-
-Accepted manual upload formats include:
-
-- WAV
-- MP3
-- M4A
-- FLAC
-- OGG
-- AAC
-- OPUS
-- WEBM
-
-Uploads are validated or converted with `ffmpeg` into:
-
-```text
-16 kHz / mono / 16-bit PCM WAV
-```
-
-Starting a new session does not clear samples. Use the clear buttons in `Samples` if you want to remove saved personal or negative clips.
-
----
-
-## Auto Training
-
-`Auto Training` is an opt-in sample-review and retraining loop. It is disabled until you enter the exact wake phrase and enable it.
-
-For each new wake-trigger clip sent to the trainer:
-
-1. The selected local STT engine transcribes the audio.
-2. If the transcript contains the configured wake phrase, the clip stays in `Captured Audio` for manual review by default.
-3. If speech was transcribed but the wake phrase is absent, the clip moves to `/data/negative_samples/` as an auto-reviewed hard negative.
-4. Empty transcripts, VAD-blocked captures, and captures for another wake word stay out of the automatic negative path.
-
-Two optional cleanup rules are available:
-
-- `Delete confirmed good wakes` removes normal wake-trigger clips after STT confirms the configured phrase.
-- `Promote confirmed close misses` checks close misses that passed VAD and moves them to the personal positive samples only when STT confirms the configured phrase.
-
-A close miss with an empty transcript or without the configured phrase stays in `Captured Audio`; it is never turned into a negative automatically. Saving Auto Training settings also scans existing eligible captures. Enabling close-miss promotion reviews previous unreviewed close misses, while enabling cleanup removes previously confirmed good wakes without transcribing them a second time.
-
-Auto Training exposes only an engine selector. Faster Whisper is the recommended default and uses CUDA with `float16` when CTranslate2 can see an NVIDIA GPU, with a CPU `int8` fallback. The trainer manages `small.en` for English and `small` for other languages. Parakeet ONNX uses the managed INT8 `nemo-parakeet-tdt-0.6b-v3` model with CUDA and CPU fallback. Downloaded STT models are cached in `/data/auto_train_models/`.
-
-Scheduled training runs only after the configured number of new automatic negatives has accumulated. A successful run securely publishes the trained wake-word name and JSON URL to the linked Tater instance. Tater saves it as the global satellite wake word and pushes the updated setting to every connected satellite, so no satellite firmware change is required.
-
-The `Trainer public URL` must be reachable from the satellites. With the documented `--network host` command, the trainer can normally use the LAN address from the browser request or host network. If you open the UI as `http://localhost:8789`, enter a value such as `http://192.168.1.50:8789`, or start the container with `REC_PUBLIC_BASE_URL` set to that value. When using Docker bridge networking, always set this URL to the published host address; a container bridge address is not satellite-reachable.
-
-The default Tater URL, `http://127.0.0.1:8501`, assumes the documented host networking. Change it to a container-reachable Tater address if you use another Docker network. Click `Link Tater` and enter the short-lived code shown in Tater Voice Settings; the resulting trainer-specific link credential is stored in `/data/auto_train_config.json` with owner-only permissions.
-
----
-
-## Training Flow
-
-1. On `Start`, choose `Create a wake word`, or open a saved word to review results and JSON links without starting a session.
-2. For a new word, enter the phrase, language, English accent, and voice-generation source. `System preview` checks pronunciation with the system voice.
-3. Add or review personal recordings and negatives. Upload, playback, trimming, VAD, restore, and bulk import remain available in the sample manager.
-4. Select any combination of `MicroWakeWord`, `openWakeWord`, `NanoWakeWord · CNN`, and `NanoWakeWord · GRU`, plus optional phrases to reject. Recovery actions are under `Additional training actions`.
-5. Review the configuration and click `Start training`. The `Training` page shows the current stage and logs; training continues while you browse.
-6. Open the completed word for its measured validation results and JSON links. For an existing phrase, `Train a new version` reuses its saved data.
-
-Personal samples are optional. Training can run with zero personal samples after confirmation, using generated TTS samples and the stock negative datasets.
-
-### Saved words, cached datasets, and model history
-
-Every phrase started in the Trainer is added to the **Saved wake words** library. Switching to another saved word moves that word's personal samples, reviewed negatives, generated TTS corpus, augmented features, boundary examples, and retained training workspace back into the active paths. The previous word is archived under `/data/wake_word_library/words/<safe_word>/assets/`, so selecting a different phrase no longer discards or overwrites its expensive data.
-
-Each completed run also creates an immutable snapshot under `/data/wake_word_library/words/<safe_word>/runs/`. The **Wake Words** tab shows the run history, selected engines, recall/false-trigger metrics, thresholds, and quality rating so multiple attempts can be compared and open any saved version for its own bundle JSON and ESPHome JSON URLs. These version-specific links keep referencing that version’s model bytes. `Use v… as current` validates the saved artifacts and changes the current publication without deleting recordings, caches, or other versions. The stable published JSON URL follows the selected current version and remains on the committed snapshot while another run trains. Failed attempts remain in history and cannot replace the current publication. Publish through Tater separately when satellites should switch to the selected version.
-
-After a word has at least one detector bundle, **Retrain boundary only** rebuilds and calibrates only the wake-end model. It preserves MWW, OWW, and NWW detector weights and reuses the saved word's cached corpus and features. From the CLI, use:
-
-```bash
-train_wake_word --data-dir /data --boundary-only "hey tater"
-```
-
-Boundary-only mode requires the retained detector training config from an earlier full MicroWakeWord run.
-
-Reviewed negative samples are converted into `/data/work/reviewed_negative_features/` and inserted into the training YAML as a hard-negative feature set when present.
-
-The first OWW or NWW run downloads its separate trainer stack and caches it for later runs. NanoWakeWord reuses the direct-generated positive TTS corpus under `/data/work/wake_word_samples`, then adds personal positives, reviewed negatives, and its own adversarial negatives and held-out validation clips. CNN is the lightweight default architecture; GRU can be selected alone or alongside CNN. The streaming gate automatically calibrates threshold and consecutive-hit patience, and the validated policy is stored with each model in the bundle. Each successful stage updates only its section of the canonical Tater bundle while removing obsolete NWW architectures.
-
-On RTX 50-series / Blackwell GPUs, the Blackwell Docker image keeps sample generation and augmentation in the normal Python 3.12 trainer environment, then runs only the TensorFlow training/export stage in `/data/.venv-blackwell` with Python 3.13 and the Blackwell-native TensorFlow wheel.
-
-Immediately before TensorFlow starts, the trainer adds every pip-installed NVIDIA runtime library from the selected training environment—including cuSolver, cuSPARSE, cuFFT, and nvJitLink—to the child process library path. A GPU preflight prints the number of TensorFlow devices it registered, so a visible NVIDIA GPU cannot fall back to CPU without an explicit warning in the training log.
-
----
-
-## Language Support
-
-The language picker is built from OmniVoice's live catalog (currently more than 600 languages), with a bundled common-language fallback for offline startup. Languages covered by Qwen3-TTS and MOSS-TTS-Nano are automatically marked `Recommended`; OmniVoice-only languages are marked `Experimental` so lower-resource coverage is not presented as equal quality.
-
-The selected code is sent directly to the supporting model. Model downloads happen only when a language is used, and the Hugging Face cache is persisted under `/data/.cache/huggingface`. The fetched language catalog is cached under `/data/.cache/omnivoice_languages.json`.
-
-### TTS modes
-
-- `Four-provider ensemble` is the default. It uses OmniVoice for every catalog language, adds Qwen3-TTS and MOSS-TTS-Nano where supported, and adds Piper when a compatible model exists.
-- `Modern only` uses the multilingual providers without Piper.
-- `Piper only` preserves the previous generator as an explicit legacy fallback.
-
-Where a Piper voice is unavailable, the default route automatically continues with the modern providers.
-
-Qwen, OmniVoice, and Piper now generate final corpus candidates directly instead of cloning a 128-profile bank. Qwen provides 18,750 balanced voice conditions before an instruction repeats, and Piper uses every speaker in its installed model. MOSS Nano is clone-only, so each MOSS take uses a different already-accepted direct take as its carrier rather than cycling a small bank.
-
-Every generated file is normalized to `16 kHz / mono / 16-bit PCM WAV` and rejected if it contains static, broadband/high-frequency noise, silence, clipping, excessive duration/rambling, or an exact duplicate. A generation manifest records the planned and accepted provider counts and the applied safety limits.
-
----
-
-## Dataset Behavior
-
-The first training run downloads and prepares missing training assets into `/data`, including:
-
-- isolated Python environments for each selected modern TTS engine
-- selected TTS model weights and the direct generated corpus
-- additional language-specific Piper voices only when hybrid or legacy Piper mode is selected
-- negative datasets and background data
-- the Python training environment
-- generated samples and augmented feature caches
-
-The three modern engines deliberately use separate environments under `/data/tts-envs/`; their required PyTorch and Transformers versions conflict with one another and with the trainer environment. Model weights can require many gigabytes, so allow extra disk space and time on the first run. After the assets are prepared, later runs reuse the local copies unless the mounted `/data` contents are deleted.
-
----
-
-## Trained Wake Words
-
-The `Wake Words` tab lists locally trained wake-word packages from `/data/trained_wake_words/`.
-
-- Copy the JSON URL into the Tater Native satellite settings to switch wake words live.
-- Links use the configured public trainer URL, a non-loopback browser host, or the detected LAN address instead of advertising `127.0.0.1` to satellites.
-- Open the JSON or model links directly for quick inspection.
-- The JSON includes the matching model path plus Tater tuning metadata.
-- No firmware flashing happens from this trainer app anymore.
-
-Use the main Tater app for satellite firmware updates and USB flashing.
-
----
-
-## Output Files
-
-Successful runs produce timestamped training output folders such as:
-
-```text
-/data/output/<timestamp>-<wake_word>-<samples>-<steps>/<wake_word>.tflite
-/data/output/<timestamp>-<wake_word>-<samples>-<steps>/<wake_word>.json
-```
-
-The trainer also syncs Tater-ready wake-word artifacts into:
-
-```text
-/data/trained_wake_words/<wake_word>.tflite
-/data/trained_wake_words/<wake_word>.oww.onnx         # openWakeWord classifier
-/data/trained_wake_words/<wake_word>.oww.verifier.pkl # when positive + negative clips exist
-/data/trained_wake_words/<wake_word>.nww.cnn.onnx     # NanoWakeWord CNN classifier
-/data/trained_wake_words/<wake_word>.nww.gru.onnx     # NanoWakeWord GRU classifier
-/data/trained_wake_words/<wake_word>.wake-bundle.json
-/data/trained_wake_words/<wake_word>.esphome.json     # MWW-only ESPHome manifest
-```
-
-Tater always receives `<wake_word>.wake-bundle.json`. Schema v4 embeds the complete metadata for every model that has been built, including hashes, thresholds, validation results, available NWW architectures, and one detector-independent `wake_boundary` TFLite artifact used to locate the acoustic end of the phrase. It does not point at a second MWW metadata JSON. ESPHome remains deliberately separate and MWW-only through `<wake_word>.esphome.json`.
-
-The boundary artifact is trained and threshold-calibrated separately for each wake word. Wake-only clips remain positive while deterministic wake-plus-immediate-speech clips are hard negatives, forcing a causal score peak at the phrase endpoint. Packaging fails if that dedicated model was not exported; the normal wake detector is never substituted as boundary weights.
-
-When MWW is selected, the bundle's `micro_wake_word` section keeps the standard microWakeWord fields:
-
-```json
-{
-  "micro_wake_word": {
-    "micro": {
-      "probability_cutoff": 0.97,
-      "sliding_window_size": 6
-    }
-  }
-}
-```
-
-That same embedded section includes Tater Native metadata used by newer satellites and the Tater settings UI:
-
-```json
-{
-  "micro_wake_word": {
-    "model_format": "tflite_stream_state_internal_quant",
-    "quantization": "int8",
-    "sample_rate": 16000,
-    "tater_native": {
-      "format_version": 1,
-      "wake_threshold": 0.97,
-      "wake_sliding_window": 6,
-      "close_miss_threshold": 0.80,
-      "frontend": {
-        "name": "tflm_microfrontend",
-        "sample_rate": 16000,
-        "feature_duration_ms": 30,
-        "feature_step_ms": 10,
-        "feature_size": 40
-      }
-    }
-  }
-}
-```
-
-Calibration metrics are included under `calibration` so false accepts/hour and recall can be surfaced in the UI.
-Calibration evaluates thresholds from `0.95` through `1.00` with sliding windows of `5`, `6`, and `7`. Among candidates within 0.5 percentage points of the best recall, it prefers the lowest measured ambient false-accept rate. If calibration cannot complete, packaging uses the conservative `0.97` threshold and a window of `6`.
-
----
-
-## Resetting Everything
-
-If you want a clean slate, stop the container and remove the contents of the mounted `/data` directory.
-
-That removes:
-
-- personal samples
-- negative samples
-- captured inbox clips
-- downloaded Piper voices
-- modern TTS environments, model weights, and completed direct-generated corpora
-- cached datasets
-- training environments
-- trained models
-- Auto Training settings, state, transcripts, and cached Faster Whisper models
-
----
-
-## Important Notes
-
-- Personal samples are optional.
-- Negative samples are optional but useful for reducing false wakes.
-- Auto Training is disabled by default and only classifies actual wake triggers automatically.
-- The UI server is `trainer_server.py`.
-- The launcher is `run.sh`.
-- Trainer capture settings live in Tater for Tater Native satellites, and on device entities for older ESPHome satellites.
-
----
-
-## Credits
-
-Built on top of:
-
-- [microWakeWord](https://github.com/kahrendt/microWakeWord)
-- [piper-sample-generator](https://github.com/rhasspy/piper-sample-generator)
-- [OmniVoice](https://github.com/k2-fsa/OmniVoice)
-- [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS)
-- [MOSS-TTS-Nano](https://github.com/OpenMOSS/MOSS-TTS-Nano)
-- [tensorflow-blackwell-python313](https://github.com/chivitiH/tensorflow-blackwell-python313) for the optional RTX 50-series / Blackwell image
+- [Advanced guide](docs/advanced.md) — sample formats, Auto Training rules, languages, model files, and development.
+- [What's New](WHATS_NEW.md) and [releases](https://github.com/TaterTotterson/microWakeWord-Trainer-Nvidia-Docker/releases).
+- [Home Assistant wake-word setup](https://github.com/TaterTotterson/Tater-Home-Assistant-Satellites/blob/main/docs/user-guide.md#configure-wake-words).
+- [Credits](docs/advanced.md#credits).
 
 ## License and trademarks
 
 This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
-
-The Tater name and logo are governed by the [Tater Trademark Policy](TRADEMARKS.md).\n
+The Tater name and logo are governed by the [Tater Trademark Policy](TRADEMARKS.md).
