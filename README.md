@@ -125,8 +125,8 @@ follows whichever version you select as current.
 The wake detector recognizes the phrase. The **wake-boundary model** locates
 where that phrase ends in the audio. For “hey tater turn on the lights,” it
 helps keep “turn on the lights” intact when removing “hey tater” before speech
-recognition. Current Echo firmware uses this model to preserve commands spoken
-immediately after the wake phrase.
+recognition. All Tater satellite firmware uses this model to preserve commands
+spoken immediately after the wake phrase.
 
 - A full **MicroWakeWord** run trains and calibrates a separate boundary model
   for that word, with its own threshold separate from wake-detection sensitivity.
@@ -138,8 +138,7 @@ immediately after the wake phrase.
   Retrain boundary only**. This requires the retained data/config from a full
   MWW run and keeps the detector models intact.
 
-Boundary support depends on the satellite firmware. The separate ESPHome JSON
-link remains an MWW detector manifest.
+The separate ESPHome JSON link remains an MWW detector manifest.
 
 ## Improve the word with real recordings
 
