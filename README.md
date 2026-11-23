@@ -25,6 +25,7 @@ the Tater app is optional for that setup.
 | Satellite repo | Hardware | Wake detectors |
 | --- | --- | --- |
 | [Tater Native Firmware](https://github.com/TaterTotterson/Tater-Native-Firmware) | ESP32-S3: Voice PE, Satellite1, ReSpeaker XVF3800, S3 Box | MicroWakeWord |
+| [Tater SAT1 RPi](https://github.com/TaterTotterson/Tater-SAT1-RPi) | Satellite1 HAT + Raspberry Pi | MWW, OWW, NWW CNN/GRU, and dual modes |
 | [Tater Echo Firmware](https://github.com/TaterTotterson/Tater-Echo-Firmware) | Supported, unlocked Echo, Dot, Show, and Spot devices | MWW, OWW, NWW CNN/GRU, and dual modes |
 | [Tater ThirdReality Voice Firmware](https://github.com/TaterTotterson/Tater-ThirdReality-Voice-Firmware) | ThirdReality Voice & Music Assistant (S420) | MWW, OWW, NWW CNN/GRU, and dual modes |
 
